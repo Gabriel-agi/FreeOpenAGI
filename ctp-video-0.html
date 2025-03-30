@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Module 0: Lesson Simulation - Menu Control IDE</title> <!-- Updated Title -->
+    <title>Module 0: Lesson Simulation - Controlled Autoplay IDE v2</title>
     <!-- Fonts & Icons -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,22 +13,41 @@
     <style>
         /* --- Base Styles & Variables --- */
         :root {
-            /* ... (Same color variables as previous version) ... */
-            --bg-base: #181a1f; --bg-panel: #21252b; --bg-editor: #282c34; --bg-console: #1f2328;
-            --text-primary: #abb2bf; --text-secondary: #5c6370; --text-highlight: #e5c07b;
-            --border-color: #3a3f4b; --cursor-color: #528bff; --scrollbar-thumb: #4b5263;
+            --bg-base: #181a1f;         /* Very dark blue/grey base */
+            --bg-panel: #21252b;        /* Slightly lighter panels */
+            --bg-editor: #282c34;       /* Editor background (Atom One Dark-like) */
+            --bg-console: #1f2328;      /* Darker console */
+            --text-primary: #abb2bf;    /* Primary light grey text */
+            --text-secondary: #5c6370;  /* Dimmer grey for secondary info */
+            --text-highlight: #e5c07b;  /* Accent yellow/gold */
+            --border-color: #3a3f4b;    /* Subtle borders */
+            --cursor-color: #528bff;    /* Accent blue cursor */
+            --scrollbar-thumb: #4b5263;
             --scrollbar-track: var(--bg-panel);
-            --hl-keyword: #c678dd; --hl-string: #98c379; --hl-comment: var(--text-secondary);
-            --hl-function: #61afef; --hl-paren: var(--text-primary); --hl-number: #d19a66;
-            --hl-output: #a0e8ff; --hl-error: #e06c75;
-            --sidebar-bg: var(--bg-base); --statusbar-bg: #1b1d23; --statusbar-text: var(--text-secondary);
-            --titlebar-bg: var(--bg-base); --titlebar-text: var(--text-secondary);
+
+            /* Syntax Highlighting Palette (Atom One Dark inspired) */
+            --hl-keyword: #c678dd;  /* Purple */
+            --hl-string: #98c379;   /* Green */
+            --hl-comment: var(--text-secondary); /* Dim grey, italic */
+            --hl-function: #61afef;  /* Blue */
+            --hl-paren: var(--text-primary); /* Match default text */
+            --hl-number: #d19a66;   /* Orange/Brown */
+            --hl-output: #a0e8ff;   /* Light cyan for output */
+            --hl-error: #e06c75;    /* Red for errors (if needed later) */
+
+            /* UI Elements */
+            --sidebar-bg: var(--bg-base);
+            --statusbar-bg: #1b1d23;
+            --statusbar-text: var(--text-secondary);
+            --titlebar-bg: var(--bg-base);
+            --titlebar-text: var(--text-secondary);
+
             --font-code: 'Fira Code', 'Courier New', Courier, monospace;
             --font-ui: 'Roboto', sans-serif;
             --transition-speed: 0.3s;
             --typing-cursor-height: 1.4em;
             --line-height-editor: 1.7;
-            --overlay-bg: rgba(0, 0, 0, 0.75); /* Slightly darker overlay */
+            --overlay-bg: rgba(0, 0, 0, 0.7); /* Overlay background */
         }
 
         /* --- Reset & Base --- */
@@ -36,7 +55,7 @@
         html, body { height: 100%; overflow: hidden; background-color: var(--bg-base); font-family: var(--font-ui); color: var(--text-primary); }
 
         /* --- IDE Layout --- */
-        .ide-container { display: flex; flex-direction: column; width: 100vw; height: 100vh; background-color: var(--bg-base); position: relative; }
+        .ide-container { display: flex; flex-direction: column; width: 100vw; height: 100vh; background-color: var(--bg-base); position: relative; /* For overlay & button */ }
 
         /* --- Title Bar --- */
         .title-bar { background-color: var(--titlebar-bg); padding: 8px 15px; color: var(--titlebar-text); font-size: 0.9em; text-align: center; border-bottom: 1px solid var(--border-color); flex-shrink: 0; position: relative; }
@@ -53,7 +72,7 @@
         .sidebar-placeholder i.active { color: var(--text-primary); opacity: 1; }
 
         /* --- Editor & Console Split --- */
-        .editor-console-split { display: flex; flex-direction: column; flex-grow: 1; overflow: hidden; position: relative; /* For pause button positioning */}
+        .editor-console-split { display: flex; flex-direction: column; flex-grow: 1; overflow: hidden; }
 
         /* --- Editor Pane --- */
         .editor-pane { flex-grow: 1; background-color: var(--bg-editor); display: flex; overflow: hidden; position: relative; min-height: 150px; }
@@ -102,68 +121,55 @@
         ::-webkit-scrollbar-thumb:hover { background: #5a6375; }
         ::-webkit-scrollbar-corner { background: var(--scrollbar-track); }
 
-        /* --- Persistent Pause Button --- */
-        #persistent-pause-btn {
+        /* --- MODIFIED: Pause/Play/Restart Button (Top Right, Discreet) --- */
+        #control-button {
             position: absolute;
-            top: 10px;
-            right: 10px; /* Position within editor/console split area */
-            z-index: 100;
-            background-color: rgba(92, 99, 112, 0.6); /* Secondary text color, semi-transparent */
-            color: var(--text-primary);
-            border: 1px solid var(--border-color);
+            top: 55px; /* Below title bar, adjust as needed */
+            right: 20px; /* Position from right edge */
+            z-index: 100; /* Above minimap */
+            background-color: rgba(40, 44, 52, 0.7); /* Semi-transparent dark bg */
+            color: var(--text-secondary); /* Dimmer icon color */
+            border: 1px solid rgba(58, 63, 75, 0.5); /* Subtle border */
             border-radius: 50%;
-            width: 36px;
+            width: 36px; /* Smaller size */
             height: 36px;
-            font-size: 1em;
+            font-size: 1em; /* Adjust icon size */
             cursor: pointer;
-            display: none; /* Hidden initially */
+            display: flex;
             justify-content: center;
             align-items: center;
-            transition: background-color var(--transition-speed), opacity var(--transition-speed);
-            opacity: 0.7;
+            box-shadow: none; /* Remove prominent shadow */
+            transition: background-color var(--transition-speed), color var(--transition-speed), opacity var(--transition-speed);
+            opacity: 0.6; /* Start quite transparent */
         }
-        #persistent-pause-btn:hover {
-            background-color: rgba(92, 99, 112, 0.8);
-            opacity: 1;
+        #control-button:hover {
+            opacity: 1; /* Fully visible on hover */
+            background-color: rgba(40, 44, 52, 0.9);
+            color: var(--text-primary);
         }
-        #persistent-pause-btn.visible { display: flex; } /* Show when simulation starts */
-        #persistent-pause-btn.hidden { display: none; } /* Hide when finished */
-
+        #control-button.hidden { display: none; }
 
         /* --- Navigation Overlay & Menu --- */
-        #nav-overlay {
-            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-            background-color: var(--overlay-bg); z-index: 90;
-            display: flex; justify-content: center; align-items: center;
-            opacity: 0; pointer-events: none;
-            transition: opacity var(--transition-speed) ease-in-out;
-        }
+        #nav-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--overlay-bg); z-index: 90; display: flex; justify-content: center; align-items: center; opacity: 0; pointer-events: none; transition: opacity var(--transition-speed) ease-in-out; }
         #nav-overlay.visible { opacity: 1; pointer-events: auto; }
-
         .nav-menu { background-color: var(--bg-panel); padding: 25px 35px; border-radius: var(--border-radius); text-align: center; box-shadow: 0 5px 20px rgba(0,0,0,0.5); }
-        .nav-menu h3 { color: var(--text-highlight); margin-bottom: 25px; /* More space */ font-family: var(--font-title); font-size: 1.4em; }
-        .nav-menu .button-group { display: flex; flex-direction: column; gap: 15px; margin-top: 0; align-items: stretch; /* Ensure buttons fill width */}
-
-        /* Styles for ALL menu buttons */
-        .nav-menu .action-button { display: block; text-decoration: none; padding: 10px 20px; font-size: 1em; color: white; border: none; border-radius: 5px; cursor: pointer; transition: background-color var(--transition-speed), transform 0.1s ease; text-align: center; width: 100%; }
+        .nav-menu h3 { color: var(--text-highlight); margin-bottom: 20px; font-family: var(--font-title); font-size: 1.4em; }
+        .nav-menu .button-group { display: flex; flex-direction: column; gap: 15px; margin-top: 0; }
+        .nav-menu .action-button { display: block; text-decoration: none; padding: 10px 20px; font-size: 1em; color: white; border: none; border-radius: 5px; cursor: pointer; transition: background-color var(--transition-speed), transform 0.1s ease; text-align: center; }
         .nav-menu .action-button i { margin-right: 8px; }
+        .nav-menu .action-button.primary { background-color: var(--hl-output); color: var(--bg-base); }
+        .nav-menu .action-button.primary:hover { background-color: #b3f0ff; }
+        .nav-menu .action-button.secondary { background-color: var(--text-secondary); }
+        .nav-menu .action-button.secondary:hover { background-color: #7a828e; }
+        .nav-menu .action-button.tertiary { background-color: var(--border-color); font-size: 0.9em; padding: 8px 15px; }
+        .nav-menu .action-button.tertiary:hover { background-color: #4b5263; }
         .nav-menu .action-button:active { transform: scale(0.98); }
-
-        /* Specific Menu Button Styles */
-        #menu-control-btn { background-color: var(--cursor-color); margin-bottom: 10px;} /* Resume/Restart */
-        #menu-control-btn:hover { background-color: #6c9bff; }
-        .nav-menu .action-button.knowledge-check { background-color: var(--hl-output); color: var(--bg-base); } /* Knowledge check */
-        .nav-menu .action-button.knowledge-check:hover { background-color: #b3f0ff; }
-        .nav-menu .action-button.review { background-color: var(--text-secondary); } /* Review/Revisit */
-        .nav-menu .action-button.review:hover { background-color: #7a828e; }
-        .nav-menu .action-button.course-menu { background-color: var(--border-color); font-size: 0.9em; padding: 8px 15px; } /* Course Menu */
-        .nav-menu .action-button.course-menu:hover { background-color: #4b5263; }
 
     </style>
 </head>
 <body>
 
-    <div class="ide-container">
+    <div class="ide-container" id="ide-container">
         <!-- Title Bar -->
         <div class="title-bar"> <span class="file-name">module_0_review.py</span> </div>
         <!-- Main Content -->
@@ -172,18 +178,16 @@
             <div class="sidebar-placeholder"> <i class="fas fa-copy active"></i> <i class="fas fa-search"></i> <i class="fas fa-code-branch"></i> <i class="fas fa-bug"></i> <i class="fas fa-puzzle-piece"></i> </div>
             <!-- Editor & Console -->
             <div class="editor-console-split">
-                <!-- Editor Pane -->
                 <div class="editor-pane">
                     <div class="line-numbers" id="line-numbers">1</div>
                     <div class="code-area-wrapper" id="code-area-wrapper"> <div class="code-area" id="code-area"></div> </div>
                     <div class="minimap-placeholder"></div>
+                     <!-- **MOVED & STYLED**: Pause/Play/Restart Button -->
+                     <button id="control-button" class="hidden" title="Play/Pause">
+                         <i class="fas fa-pause" id="control-icon"></i>
+                     </button>
                 </div>
-                <!-- Console Pane -->
                 <div class="console-pane" id="console-pane"> <span class="placeholder">Python Console Ready... [Click to Start Lesson]</span> </div>
-                <!-- Persistent Pause Button -->
-                <button id="persistent-pause-btn" title="Pause Lesson">
-                    <i class="fas fa-pause"></i>
-                </button>
             </div>
         </div>
         <!-- Status Bar -->
@@ -192,27 +196,24 @@
              <div class="status-bar-right"> <span id="cursor-pos">Ln 1, Col 1</span> <span>Spaces: 4</span> <span>UTF-8</span> <span class="language"><i class="fab fa-python"></i> Python 3.1x.x</span> </div>
         </div>
 
-         <!-- Navigation Overlay -->
+         <!-- Navigation Overlay (Initially Hidden) -->
          <div id="nav-overlay">
              <div class="nav-menu">
                  <h3 id="nav-menu-title">Lesson Paused</h3>
                  <div class="button-group">
-                    <!-- Combined Resume/Restart Button -->
-                    <button id="menu-control-btn" class="action-button">
-                        <i class="fas fa-play" id="menu-control-icon"></i> <span id="menu-control-text">Resume</span>
-                    </button>
-                    <hr style="border: none; border-top: 1px solid var(--border-color); margin: 15px 0;">
-                     <a href="ctp-knowledge-check-0.html" class="action-button knowledge-check"><i class="fas fa-question-circle"></i> Knowledge Check</a>
-                     <a href="ctp-theory-0.html" class="action-button review"><i class="fas fa-book-open"></i> Review Theory</a>
-                     <a href="ctp-practice-0.html" class="action-button review"><i class="fas fa-undo-alt"></i> Revisit Basic Practice</a>
-                     <a href="ctp-advanced-0.html" class="action-button review"><i class="fas fa-redo-alt"></i> Revisit Advanced Practice</a>
-                     <a href="ctp.html" class="action-button course-menu"><i class="fas fa-list"></i> Course Menu</a>
+                     <!-- **UPDATE** Target for Knowledge Check -->
+                     <a href="ctp-knowledge-check-0.html" class="action-button primary"><i class="fas fa-question-circle"></i> Knowledge Check</a>
+                     <a href="ctp-theory-0.html" class="action-button secondary"><i class="fas fa-book-open"></i> Review Theory</a>
+                     <a href="ctp-practice-0.html" class="action-button secondary"><i class="fas fa-undo-alt"></i> Revisit Basic Practice</a>
+                     <a href="ctp-advanced-0.html" class="action-button secondary"><i class="fas fa-redo-alt"></i> Revisit Advanced Practice</a>
+                     <a href="ctp.html" class="action-button tertiary"><i class="fas fa-list"></i> Course Menu</a>
                  </div>
              </div>
          </div>
+
     </div>
 
-     <!-- Hidden Audio Elements -->
+     <!-- Hidden Audio Elements (Ensure src paths are correct!) -->
      <div style="display: none;">
         <audio id="audio-ctp-0-a1-eng" src="audio/ctp-0-a1-eng.mp3" preload="auto"></audio>
         <audio id="audio-ctp-0-a2-eng" src="audio/ctp-0-a2-eng.mp3" preload="auto"></audio>
@@ -243,19 +244,25 @@
         const statusBar = document.getElementById('status-bar');
         const cursorPosEl = document.getElementById('cursor-pos');
         const codeAreaWrapper = document.getElementById('code-area-wrapper');
-        const persistentPauseBtn = document.getElementById('persistent-pause-btn'); // New Pause Button
+        const controlButton = document.getElementById('control-button');
+        const controlIcon = document.getElementById('control-icon');
         const navOverlay = document.getElementById('nav-overlay');
         const navMenuTitle = document.getElementById('nav-menu-title');
-        const menuControlBtn = document.getElementById('menu-control-btn'); // New Menu Button
-        const menuControlIcon = document.getElementById('menu-control-icon');
-        const menuControlText = document.getElementById('menu-control-text');
 
         // --- State Variables ---
-        let currentLineNumber = 1; let currentCol = 1; let currentContentHTML = '';
-        let charWidthEstimate = 9; let lineHeightEstimate = 27;
-        let simulationStarted = false; let isPaused = false; let isFinished = false;
-        let currentStepIndex = 0; let currentAudioElement = null; let audioPromiseResolve = null;
-        let currentAbortController = null;
+        let currentLineNumber = 1;
+        let currentCol = 1;
+        let currentContentHTML = '';
+        let charWidthEstimate = 9;
+        let lineHeightEstimate = 27;
+        let simulationStarted = false;
+        let isPaused = false;
+        let isFinished = false;
+        let currentStepIndex = 0;
+        let currentAudioElement = null;
+        let audioPromiseResolve = null; // For awaiting audio end
+        let currentTimeoutId = null; // To cancel pauses if needed
+
 
         // --- Audio Setup ---
         const audioElements = {};
@@ -263,294 +270,447 @@
             audioElements[el.id] = el;
              el.onerror = () => console.error(`Error loading audio: ${el.src}`);
              el.addEventListener('ended', handleAudioEnd);
+             el.addEventListener('pause', handleAudioPause); // Handle external pauses
         });
 
-        // --- Helper Functions ---
-        function getTextWidth(text, font) { /* ... as before ... */ }
-        function updateStatusBarAndCursor() { /* ... as before ... */ }
-        function updateLineNumbers() { /* ... as before ... */ }
-        function showOutput(outputLines, isInfo = false, isError = false) { /* ... as before ... */ }
-        function clearConsole() { /* ... as before ... */ }
-        function clearEditor() { /* ... as before ... */ }
-        function simulateTyping(textToTypeHTML, typingSpeed, signal) { /* ... Modified version from previous response ... */
-             return new Promise((resolve, reject) => { if (isPaused) { resolve(); return; } codeArea.classList.add('typing'); codeArea.classList.remove('idle', 'no-cursor'); let charIndex = 0; let currentHTML = currentContentHTML; let typingTimeoutId = null; function typeStep() { if (signal?.aborted) { console.log("Typing aborted."); codeArea.classList.remove('typing'); codeArea.classList.add('idle'); reject(new DOMException('Aborted', 'AbortError')); return; } if (isPaused) { clearTimeout(typingTimeoutId); codeArea.classList.remove('typing'); codeArea.classList.add('idle'); return; } if (charIndex >= textToTypeHTML.length) { currentContentHTML = currentHTML; codeArea.classList.remove('typing'); codeArea.classList.add('idle'); updateLineNumbers(); updateStatusBarAndCursor(); resolve(); return; } let nextChar = textToTypeHTML[charIndex]; let stepSize = 1; if (nextChar === '<') { const tagEndIndex = textToTypeHTML.indexOf('>', charIndex); if (tagEndIndex !== -1) { stepSize = tagEndIndex - charIndex + 1; nextChar = textToTypeHTML.substring(charIndex, tagEndIndex + 1); } } currentHTML += nextChar; codeArea.innerHTML = currentHTML; updateLineNumbers(); updateStatusBarAndCursor(); charIndex += stepSize; typingTimeoutId = setTimeout(typeStep, typingSpeed); } typeStep(); }); }
-        async function playAudio(audioId, signal) { /* ... Modified version from previous response ... */
-             return new Promise(async (resolve, reject) => { if (signal?.aborted) { reject(new DOMException('Aborted', 'AbortError')); return; } currentAudioElement = audioElements[audioId]; audioPromiseResolve = resolve; if (!currentAudioElement) { console.warn(`Audio ${audioId} not found.`); resolve(); return; } try { currentAudioElement.onended = () => handleAudioEnd(null); if (currentAudioElement.paused) { currentAudioElement.currentTime = 0; await currentAudioElement.play(); console.log(`Playing: ${audioId}`); } else { console.log(`Audio ${audioId} already playing.`); } } catch (error) { console.error(`Error playing ${audioId}:`, error); currentAudioElement = null; audioPromiseResolve = null; reject(error); } }); }
-        function handleAudioEnd(event) { /* ... as before ... */ if (audioPromiseResolve) { audioPromiseResolve(); audioPromiseResolve = null; } currentAudioElement = null; }
-        async function pause(duration, signal) { /* ... Modified version from previous response ... */
-             return new Promise((resolve, reject) => { codeArea.classList.add('idle'); codeArea.classList.remove('typing', 'no-cursor'); updateStatusBarAndCursor(); let elapsed = 0; const interval = 100; const intervalId = setInterval(() => { if (signal?.aborted) { clearInterval(intervalId); reject(new DOMException('Aborted', 'AbortError')); return; } if (isPaused) return; elapsed += interval; if (elapsed >= duration) { clearInterval(intervalId); resolve(); } }, interval); }); }
+         // --- Helper Functions ---
+         function getTextWidth(text, font) { /* ... as before ... */
+              const canvas = getTextWidth.canvas || (getTextWidth.canvas = document.createElement("canvas"));
+              const context = canvas.getContext("2d");
+              context.font = font || getComputedStyle(codeArea).font;
+              return context.measureText(text).width;
+          }
 
-        // --- THE LESSON SCRIPT (Same as previous version) ---
-        const audioDurations = { /* ... */ };
-        const lessonScript = [ /* ... same script array as previous version ... */
+        function updateStatusBarAndCursor() { /* ... as before ... */
+            const lines = codeArea.innerText.split('\n');
+            currentLineNumber = lines.length;
+            const lastLineText = lines[currentLineNumber - 1] || '';
+            currentCol = lastLineText.length + 1;
+            cursorPosEl.textContent = `Ln ${currentLineNumber}, Col ${currentCol}`;
+            const cursorTop = (currentLineNumber - 1) * lineHeightEstimate;
+            const cursorLeft = getTextWidth(lastLineText, getComputedStyle(codeArea).font);
+            const cursorPseudoStyle = `
+                 .code-area.idle::after, .code-area.typing::after {
+                     top: ${cursorTop}px; left: ${cursorLeft}px;
+                     height: ${getComputedStyle(codeArea).lineHeight}; }`;
+            let styleSheet = document.getElementById('cursor-style');
+            if (!styleSheet) { styleSheet = document.createElement('style'); styleSheet.id = 'cursor-style'; document.head.appendChild(styleSheet); }
+            styleSheet.textContent = cursorPseudoStyle;
+            const wrapperRect = codeAreaWrapper.getBoundingClientRect();
+            const cursorAbsoluteTop = codeArea.offsetTop + cursorTop;
+            const scrollTop = codeAreaWrapper.scrollTop; const scrollBottom = scrollTop + wrapperRect.height;
+            const currentLineHeight = parseFloat(getComputedStyle(codeArea).lineHeight);
+            if (cursorAbsoluteTop + currentLineHeight > scrollBottom) { codeAreaWrapper.scrollTop = cursorAbsoluteTop + currentLineHeight - wrapperRect.height + 10; }
+            else if (cursorAbsoluteTop < scrollTop) { codeAreaWrapper.scrollTop = Math.max(0, cursorAbsoluteTop - 10); }
+        }
+        function updateLineNumbers() { /* ... as before ... */
+             const lines = codeArea.innerText.split('\n').length; const maxLines = Math.max(lines, 1);
+             let numbersHTML = ''; for (let i = 1; i <= maxLines; i++) { numbersHTML += i + '\n'; }
+             lineNumbersEl.textContent = numbersHTML.trimEnd();
+         }
+        function simulateTyping(textToTypeHTML, typingSpeed) { /* ... Modified to use currentTimeoutId for cancellation ... */
+             return new Promise((resolve, reject) => {
+                 if (isPaused) { resolve(); return; }
+                 codeArea.classList.add('typing'); codeArea.classList.remove('idle', 'no-cursor');
+                 let charIndex = 0; let currentHTML = currentContentHTML;
+
+                 function typeStep() {
+                     // Check for external stop signal or pause
+                     if (stopExecution || isPaused) {
+                        console.log("Typing interrupted.");
+                        codeArea.classList.remove('typing'); codeArea.classList.add('idle');
+                         clearTimeout(currentTimeoutId); // Clear pending timeout
+                         reject("stopped"); // Reject promise to halt script execution cleanly
+                         return;
+                     }
+                     if (charIndex >= textToTypeHTML.length) {
+                         currentContentHTML = currentHTML; codeArea.classList.remove('typing'); codeArea.classList.add('idle');
+                         updateLineNumbers(); updateStatusBarAndCursor(); resolve(); return;
+                     }
+                     // ... (rest of typing logic: find nextChar, stepSize, update HTML/status/cursor) ...
+                      let nextChar = textToTypeHTML[charIndex]; let stepSize = 1;
+                      if (nextChar === '<') { const tagEndIndex = textToTypeHTML.indexOf('>', charIndex); if (tagEndIndex !== -1) { stepSize = tagEndIndex - charIndex + 1; nextChar = textToTypeHTML.substring(charIndex, tagEndIndex + 1); } }
+                      currentHTML += nextChar; codeArea.innerHTML = currentHTML; updateLineNumbers(); updateStatusBarAndCursor();
+                     charIndex += stepSize;
+                     currentTimeoutId = setTimeout(typeStep, typingSpeed); // Store timeout ID
+                 }
+                 typeStep();
+             });
+        }
+        function showOutput(outputLines, isInfo = false, isError = false) { /* ... as before ... */
+             return new Promise((resolve) => {
+                 consolePane.innerHTML = ''; outputLines.forEach(line => {
+                     const lineEl = document.createElement('div');
+                     if (isError) { lineEl.className = 'error-line'; lineEl.textContent = `❌ ${line}`; }
+                     else if (isInfo) { lineEl.className = 'info-line'; lineEl.textContent = `ℹ️ ${line}`; }
+                     else { lineEl.className = 'output-line'; const promptSpan = document.createElement('span'); promptSpan.className = 'console-prompt'; promptSpan.textContent = '>>>'; lineEl.appendChild(promptSpan); lineEl.appendChild(document.createTextNode(` ${line}`)); }
+                     consolePane.appendChild(lineEl);
+                 }); consolePane.scrollTop = consolePane.scrollHeight; resolve();
+             });
+        }
+        function clearConsole() { /* ... as before ... */ return new Promise((resolve) => { consolePane.innerHTML = '<span class="placeholder">Console cleared.</span>'; resolve(); }); }
+        function clearEditor() { /* ... as before ... */ return new Promise((resolve) => { currentContentHTML = ''; codeArea.innerHTML = ''; currentLineNumber = 1; currentCol = 1; updateLineNumbers(); updateStatusBarAndCursor(); codeArea.classList.add('idle'); codeArea.classList.remove('typing', 'no-cursor'); resolve(); }); }
+
+         // Modified playAudio to handle external pause/stop
+        async function playAudio(audioId) {
+             return new Promise(async (resolve, reject) => {
+                 // Clear previous resolver if any (e.g., if restarted quickly)
+                 if (audioPromiseResolve) { audioPromiseResolve(); audioPromiseResolve = null; }
+
+                 currentAudioElement = audioElements[audioId];
+                 audioPromiseResolve = resolve; // Store resolve for handleAudioEnd
+
+                 if (!currentAudioElement) { console.warn(`Audio ${audioId} not found.`); resolve(); return; }
+
+                 // Function to check for stop signal during audio playback attempt
+                 const checkStop = () => {
+                    if (stopExecution) {
+                        console.log(`Audio ${audioId} playback cancelled by stop signal.`);
+                        if (currentAudioElement) { currentAudioElement.pause(); currentAudioElement.currentTime = 0; }
+                        if (audioPromiseResolve) { audioPromiseResolve(); audioPromiseResolve = null;} // Resolve immediately on stop
+                        currentAudioElement = null;
+                        return true; // Indicate stopped
+                    }
+                    return false;
+                 };
+
+                 try {
+                     if (checkStop()) return; // Check before playing
+                     currentAudioElement.currentTime = 0;
+                     await currentAudioElement.play();
+                     if (checkStop()) return; // Check immediately after play starts
+                     console.log(`Playing: ${audioId}`);
+                     // Resolve is handled by handleAudioEnd or handleAudioPause (if paused externally)
+                 } catch (error) {
+                     console.error(`Error playing ${audioId}:`, error);
+                     currentAudioElement = null;
+                     audioPromiseResolve = null;
+                     if (!checkStop()) reject(error); // Reject only if not stopped externally
+                 }
+             });
+         }
+
+         // Handler for when audio finishes NATURALLY
+         function handleAudioEnd(event) {
+             console.log(`Audio ended: ${event.target.id}`);
+             if (audioPromiseResolve && currentAudioElement === event.target) {
+                 audioPromiseResolve(); // Resolve the promise
+                 audioPromiseResolve = null;
+             }
+             currentAudioElement = null; // Clear tracker only if it matches ended element
+         }
+
+         // Handler for when audio is PAUSED (either by user or script end)
+         function handleAudioPause(event) {
+            // If the pause was initiated by the script stopping, don't interfere
+            if (stopExecution) return;
+            // If the audio pauses AND the script is NOT in the 'isPaused' state,
+            // it means something else paused it (browser, end event race condition).
+            // We still need to resolve the promise to avoid blocking the script forever.
+            if (!isPaused && audioPromiseResolve && currentAudioElement === event.target) {
+                 console.log(`Audio paused externally or ended race condition: ${event.target.id}. Resolving promise.`);
+                 audioPromiseResolve(); // Resolve to unblock script
+                 audioPromiseResolve = null;
+                 // Don't clear currentAudioElement here, togglePause needs it if user paused
+            }
+         }
+
+
+        // Modified pause to be cancellable
+        async function pause(duration) {
+             return new Promise((resolve, reject) => {
+                 codeArea.classList.add('idle');
+                 codeArea.classList.remove('typing', 'no-cursor');
+                 updateStatusBarAndCursor();
+
+                 currentTimeoutId = setTimeout(() => {
+                     if (stopExecution) { // Check if stopped during the timeout
+                        console.log("Pause cancelled by stop signal.");
+                        reject("stopped");
+                     } else {
+                         resolve();
+                     }
+                 }, duration);
+
+                 // Check periodically if paused externally during timeout
+                 const checkPauseInterval = setInterval(() => {
+                     if (isPaused || stopExecution) {
+                         console.log("Pause interrupted.");
+                         clearTimeout(currentTimeoutId); // Cancel original timeout
+                         clearInterval(checkPauseInterval); // Stop checking
+                         reject("stopped"); // Reject promise to halt script
+                     }
+                 }, 100);
+
+                 // Clear interval when promise resolves or rejects naturally
+                 const cleanup = () => clearInterval(checkPauseInterval);
+                 Promise.resolve().then(resolve, reject).finally(cleanup); // Doesnt work exactly like this
+             });
+         }
+
+        // --- THE LESSON SCRIPT (Sequential Order a1-a16) ---
+        const audioDurations = { /* ... same durations map ... */
+             'a1': 13000, 'a2': 13000, 'a3': 14000, 'a4': 30000, 'a5': 6000,
+             'a6': 9000, 'a7': 8000, 'a8': 5000, 'a9': 11000, 'a10': 16000,
+             'a11': 2000, 'a12': 18000, 'a13': 8000, 'a14': 8000, 'a15': 15000,
+             'a16': 32000
+         };
+        // --- SCRIPT with type 'playAudio' which waits for audio end ---
+        const lessonScript = [
              // --- Segment 1: Intro (a1) ---
-             { type: 'playAudio', audioId: 'audio-ctp-0-a1-eng', note: "Start a1" },
-             { type: 'pause', duration: 1500, note: "Short pause before typing" },
+             { type: 'playAudio', audioId: 'audio-ctp-0-a1-eng', note: "Play a1" },
+             { type: 'pause', duration: 1500, note: "Visual timing pause" },
              { type: 'typeCode', content: `<span class="hl-comment"># Module 0 Review: print() and comments</span>\n\n`, speed: 70 },
-             // await playAudio waits for a1's duration
+             // await playAudio waits for the full 13s
 
              // --- Segment 2: Review Concepts (a2) ---
-             { type: 'playAudio', audioId: 'audio-ctp-0-a2-eng', note: "Start a2" },
-              // await playAudio waits for a2
+             { type: 'playAudio', audioId: 'audio-ctp-0-a2-eng', note: "Play a2" },
+             // await playAudio waits for 13s
 
              // --- Segment 3: Introduce print(), basic structure (a3) ---
-             { type: 'playAudio', audioId: 'audio-ctp-0-a3-eng', note: "Start a3" },
-             { type: 'pause', duration: 11000, note: "Pause until 'looks like this:'" }, // Timing based on audio content
+             { type: 'playAudio', audioId: 'audio-ctp-0-a3-eng', note: "Play a3" },
+             { type: 'pause', duration: 11000, note: "Wait until 'looks like this:'" },
              { type: 'typeCode', content: `<span class="hl-keyword">print</span><span class="hl-paren">(</span><span class="hl-string">"..."</span><span class="hl-paren">)</span>`, speed: 90 },
-             // await playAudio waits for a3
+             // await playAudio waits for full 14s
 
-              // --- Segment 4: Break down print() (a4 - Long) ---
-             { type: 'playAudio', audioId: 'audio-ctp-0-a4-eng', note: "Start a4" },
-             { type: 'pause', duration: 5000, note: "Pause while explaining 'print'" },
-              { type: 'clearEditor' }, { type: 'pause', duration: 100},
-              { type: 'typeCode', content: `<span class="hl-keyword">print</span><span class="hl-paren">(</span><span class="hl-string">"Hello, World!"</span><span class="hl-paren">)</span>`, speed: 80 },
-             // await playAudio waits for a4
+             // --- Segment 4: Break down print() (a4 - Long) ---
+             { type: 'playAudio', audioId: 'audio-ctp-0-a4-eng', note: "Play a4" },
+             { type: 'pause', duration: 5000, note: "Wait while explaining 'print'" },
+             { type: 'clearEditor' }, { type: 'pause', duration: 100 },
+             { type: 'typeCode', content: `<span class="hl-keyword">print</span><span class="hl-paren">(</span><span class="hl-string">"Hello, World!"</span><span class="hl-paren">)</span>`, speed: 80 },
+             // await playAudio waits for full 30s
 
              // --- Segment 5: Run code, print different things (a5) ---
-             { type: 'playAudio', audioId: 'audio-ctp-0-a5-eng', note: "Start a5" },
+             { type: 'playAudio', audioId: 'audio-ctp-0-a5-eng', note: "Play a5" },
              { type: 'runCode', output: ["Hello, World!"] },
-             { type: 'pause', duration: 2000, note: "Pause after run"},
+             { type: 'pause', duration: 2000, note: "Pause after run" },
              { type: 'typeCode', content: `\n<span class="hl-keyword">print</span><span class="hl-paren">(</span><span class="hl-string">"Python is powerful."</span><span class="hl-paren">)</span>`, speed: 70 },
-              // await playAudio waits for a5
+             // await playAudio waits for 6s
 
              // --- Segment 6: Blank line explanation (a6) ---
-             { type: 'playAudio', audioId: 'audio-ctp-0-a6-eng', note: "Start a6" },
-             { type: 'typeCode', content: `\n<span class="hl-keyword">print</span><span class="hl-paren">(</span><span class="hl-string">"Practice makes perfect!"</span><span class="hl-paren">)</span>`, speed: 70 }, // Finish typing previous examples
-             { type: 'pause', duration: 3000, note: "Pause after typing examples"},
+             { type: 'playAudio', audioId: 'audio-ctp-0-a6-eng', note: "Play a6" },
+             { type: 'typeCode', content: `\n<span class="hl-keyword">print</span><span class="hl-paren">(</span><span class="hl-string">"Practice makes perfect!"</span><span class="hl-paren">)</span>`, speed: 70 },
+             { type: 'pause', duration: 3000, note: "Pause after typing examples" },
              { type: 'typeCode', content: `\n\n<span class="hl-comment"># Adding a blank line</span>\n`, speed: 60 },
              { type: 'typeCode', content: `<span class="hl-keyword">print</span><span class="hl-paren">(</span><span class="hl-paren">)</span>`, speed: 95 },
-              // await playAudio waits for a6
+             // await playAudio waits for 9s
 
              // --- Segment 7: Multi-line explanation (a7) ---
-             { type: 'playAudio', audioId: 'audio-ctp-0-a7-eng', note: "Start a7" },
-              { type: 'runCode', output: ["Hello, World!", "Python is powerful.", "Practice makes perfect!", ""] }, // Show blank line effect
-              { type: 'pause', duration: 3000, note: "Show blank line output"},
-              { type: 'typeCode', content: `\n<span class="hl-keyword">print</span><span class="hl-paren">(</span><span class="hl-string">"This appears after the space."</span><span class="hl-paren">)</span>`, speed: 70 },
-              // await playAudio waits for a7
+             { type: 'playAudio', audioId: 'audio-ctp-0-a7-eng', note: "Play a7" },
+             { type: 'runCode', output: ["Hello, World!", "Python is powerful.", "Practice makes perfect!", ""] },
+             { type: 'pause', duration: 3000, note: "Show blank line output" },
+             { type: 'typeCode', content: `\n<span class="hl-keyword">print</span><span class="hl-paren">(</span><span class="hl-string">"This appears after the space."</span><span class="hl-paren">)</span>`, speed: 70 },
+             // await playAudio waits for 8s
 
              // --- Segment 8: Default behavior (new line) (a8) ---
-             { type: 'playAudio', audioId: 'audio-ctp-0-a8-eng', note: "Start a8" },
-             { type: 'runCode', output: ["Hello, World!", "Python is powerful.", "Practice makes perfect!", "", "This appears after the space."]},
-              // await playAudio waits for a8
+             { type: 'playAudio', audioId: 'audio-ctp-0-a8-eng', note: "Play a8" },
+             { type: 'runCode', output: ["Hello, World!", "Python is powerful.", "Practice makes perfect!", "", "This appears after the space."] },
+             // await playAudio waits for 5s
 
              // --- Segment 9: Introduce comments (a9) ---
-             { type: 'playAudio', audioId: 'audio-ctp-0-a9-eng', note: "Start a9" },
-             { type: 'clearEditor' }, { type: 'clearConsole' }, { type: 'pause', duration: 1000 }, // Longer pause after clear
+             { type: 'playAudio', audioId: 'audio-ctp-0-a9-eng', note: "Play a9" },
+             { type: 'clearEditor' }, { type: 'clearConsole' }, { type: 'pause', duration: 1000 },
              { type: 'typeCode', content: `<span class="hl-comment"># This is a full-line comment.</span>\n`, speed: 60 },
-              // await playAudio waits for a9
+             // await playAudio waits for 11s
 
              // --- Segment 10: Run comment (no output), explain usefulness, end-of-line (a10) ---
-             { type: 'playAudio', audioId: 'audio-ctp-0-a10-eng', note: "Start a10" },
+             { type: 'playAudio', audioId: 'audio-ctp-0-a10-eng', note: "Play a10" },
              { type: 'runCode', output: ["(No output from comments)"], isInfo: true },
              { type: 'pause', duration: 5000, note: "Pause after running comment" },
              { type: 'typeCode', content: `<span class="hl-keyword">print</span><span class="hl-paren">(</span><span class="hl-string">"Processing data..."</span><span class="hl-paren">)</span> `, speed: 70 },
              { type: 'typeCode', content: `<span class="hl-comment"># End-of-line comment</span>`, speed: 55 },
-              // await playAudio waits for a10
+             // await playAudio waits for 16s
 
              // --- Segment 11: Run code with end-of-line comment (a11) ---
-             { type: 'playAudio', audioId: 'audio-ctp-0-a11-eng', note: "Start a11" },
+             { type: 'playAudio', audioId: 'audio-ctp-0-a11-eng', note: "Play a11" },
              { type: 'runCode', output: ["Processing data..."] },
-             // await playAudio waits for a11
+             // await playAudio waits for 2s
 
              // --- Segment 12: Explain end-of-line result, commented-out code (a12) ---
-             { type: 'playAudio', audioId: 'audio-ctp-0-a12-eng', note: "Start a12" },
-              { type: 'pause', duration: 10000, note: "Pause during explanation"},
-              { type: 'typeCode', content: `\n<span class="hl-comment"># print("Old debug message") # Temporarily disabled</span>`, speed: 55 },
-              // await playAudio waits for a12
+             { type: 'playAudio', audioId: 'audio-ctp-0-a12-eng', note: "Play a12" },
+             { type: 'pause', duration: 10000, note: "Pause during explanation" },
+             { type: 'typeCode', content: `\n<span class="hl-comment"># print("Old debug message") # Temporarily disabled</span>`, speed: 55 },
+             // await playAudio waits for 18s
 
              // --- Segment 13: Syntax errors intro + ADDED 1s pause (a13) ---
-             { type: 'playAudio', audioId: 'audio-ctp-0-a13-eng', note: "Start a13" },
+             { type: 'playAudio', audioId: 'audio-ctp-0-a13-eng', note: "Play a13" },
              { type: 'clearEditor' }, { type: 'clearConsole' }, { type: 'pause', duration: 500 },
              { type: 'typeCode', content: `<span class="hl-comment"># Finally: Syntax is important!</span>\n`, speed: 65 },
-              { type: 'pause', duration: 1000, note: "ADDED 1s pause after 'Finally'" },
-              // await playAudio waits for a13
+             { type: 'pause', duration: 1000, note: "ADDED 1s pause after 'Finally'" },
+             // await playAudio waits for 8s
 
              // --- Segment 14: Syntax recap (a14) ---
-             { type: 'playAudio', audioId: 'audio-ctp-0-a14-eng', note: "Start a14" },
+             { type: 'playAudio', audioId: 'audio-ctp-0-a14-eng', note: "Play a14" },
              { type: 'typeCode', content: `<span class="hl-comment"># - print (lowercase)</span>\n<span class="hl-comment"># - () Parentheses</span>\n<span class="hl-comment"># - "" or '' Quotes for text</span>`, speed: 65 },
-              // await playAudio waits for a14
+             // await playAudio waits for 8s
 
              // --- Segment 15: Review wrap-up (a15) ---
-             { type: 'playAudio', audioId: 'audio-ctp-0-a15-eng', note: "Start a15" },
+             { type: 'playAudio', audioId: 'audio-ctp-0-a15-eng', note: "Play a15" },
              { type: 'clearEditor' }, { type: 'pause', duration: 300 },
              { type: 'typeCode', content: `<span class="hl-comment"># You've mastered the basics!</span>\n`, speed: 60 },
              { type: 'pause', duration: 500 },
              { type: 'typeCode', content: `<span class="hl-keyword">print</span><span class="hl-paren">(</span><span class="hl-string">"Module 0 Complete!"</span><span class="hl-paren">)</span>`, speed: 70 },
              { type: 'pause', duration: 1000 },
              { type: 'runCode', output: ["Module 0 Complete!"] },
-              // await playAudio waits for a15
+             // await playAudio waits for 15s
 
              // --- Segment 16: Final conclusion/next steps (a16) ---
-             { type: 'playAudio', audioId: 'audio-ctp-0-a16-eng', note: "Start a16" },
+             { type: 'playAudio', audioId: 'audio-ctp-0-a16-eng', note: "Play a16" },
              { type: 'clearConsole'}, { type: 'pause', duration: 500 },
-             { type: 'showOutput', output: ["Great job!", "Next: Knowledge Check"], isInfo: true},
-              // await playAudio waits for a16
+             { type: 'showOutput', output: ["Great job!", "Next: Knowledge Check"], isInfo: true}, // Updated next step
+             // await playAudio waits for 32s
 
              { type: 'end', note: "End of Simulation" }
         ];
 
+
         // --- AUTOPLAY EXECUTION & CONTROL LOGIC ---
+        let stopExecution = false; // Flag to signal loop termination
 
-        async function executeScript(startIndex = 0) {
+        async function executeScript() {
              if (!simulationStarted) return;
-             console.log(`Starting script execution from step ${startIndex}...`);
+             console.log("Starting script execution...");
              consolePane.innerHTML = '<span class="placeholder">Lesson playing...</span>';
+             controlButton.classList.remove('hidden');
+             setControlButtonState('pause');
              isFinished = false;
-             isPaused = false;
-             showNavMenu(false); // Ensure menu is hidden on start/restart
-             persistentPauseBtn.classList.add('visible'); // Show pause button
-             persistentPauseBtn.classList.remove('hidden');
-             ideContainer.classList.remove("paused"); // Remove paused class visually
+             stopExecution = false; // Ensure stop flag is reset
 
-             currentStepIndex = startIndex;
-             currentAbortController = new AbortController();
-             const signal = currentAbortController.signal;
-
-             while (currentStepIndex < lessonScript.length) {
-                 // Pause Check - waits here if isPaused is true
-                 while (isPaused) {
-                     if (signal.aborted) { console.log("Execution aborted during pause."); return; }
-                     await new Promise(resolve => setTimeout(resolve, 200));
-                 }
-                 if (signal.aborted) { console.log("Execution aborted."); return; }
+             while (currentStepIndex < lessonScript.length && !stopExecution) {
+                  while (isPaused && !stopExecution) { await new Promise(resolve => setTimeout(resolve, 200)); } // Wait if paused
+                  if (stopExecution) break;
 
                  const step = lessonScript[currentStepIndex];
+                 console.log(`Executing Step ${currentStepIndex}: ${step.type} - ${step.note || ''}`);
                  codeArea.classList.remove('idle', 'typing', 'no-cursor');
 
                  try {
                      switch (step.type) {
-                         case 'playAudio': await playAudio(step.audioId, signal); break;
-                         case 'typeCode': await simulateTyping(step.content, step.speed || 75, signal); break;
-                         case 'runCode': await pause(200, signal); await showOutput(step.output, step.isInfo || false, step.isError || false); break;
+                         case 'playAudio': await playAudio(step.audioId); break; // Now waits for audio end
+                         case 'typeCode': await simulateTyping(step.content, step.speed || 75); break;
+                         case 'runCode': await pause(200); await showOutput(step.output, step.isInfo || false, step.isError || false); break;
                          case 'clearConsole': await clearConsole(); break;
                          case 'clearEditor': await clearEditor(); break;
-                         case 'pause': await pause(step.duration || 1000, signal); break;
+                         case 'pause': await pause(step.duration || 1000); break;
                          case 'end':
-                             isFinished = true; showEndState();
-                             console.log("Script finished normally.");
-                             return;
-                         default: console.warn(`Unknown step type: ${step.type}`); await pause(100, signal);
+                             isFinished = true; showEndState(); stopExecution = true; console.log("Script finished normally."); break;
+                         default: console.warn(`Unknown step type: ${step.type}`); await pause(100);
                      }
-                 } catch (error) { /* ... error handling as before ... */ if (error.name === 'AbortError') { console.log('Script execution aborted successfully.'); return; } console.error("Error during script execution:", error); showOutput(["An error occurred during playback."], false, true); isFinished = true; showEndState(); return; }
-
-
-                 if (step.type !== 'end') {
-                      codeArea.classList.add('idle'); codeArea.classList.remove('typing', 'no-cursor');
-                       updateStatusBarAndCursor();
-                  }
-                 currentStepIndex++;
-             }
-        }
-
-         function showNavMenu(show = true, title = "Lesson Paused") {
-             navMenuTitle.textContent = title;
-             if (show) {
-                 // Update menu button based on state
-                 if (isFinished) {
-                    menuControlIcon.className = 'fas fa-redo-alt';
-                    menuControlText.textContent = 'Restart Lesson';
-                 } else { // Paused state
-                     menuControlIcon.className = 'fas fa-play';
-                     menuControlText.textContent = 'Resume Lesson';
+                 } catch (error) {
+                      if (error !== "stopped") { // Don't log expected stops
+                          console.error("Error during script execution:", error);
+                          showOutput(["An error occurred during playback."], false, true);
+                      }
+                       stopExecution = true; // Stop on error or manual stop
                  }
-                 navOverlay.classList.add('visible');
-             } else {
-                 navOverlay.classList.remove('visible');
+
+                 if (step.type !== 'end' && !stopExecution) {
+                      codeArea.classList.add('idle'); codeArea.classList.remove('typing', 'no-cursor');
+                      updateStatusBarAndCursor();
+                  }
+                 if (!stopExecution) { currentStepIndex++; }
              }
-         }
 
-        function showEndState() {
-             isFinished = true; isPaused = false;
-             console.log("Showing end state");
-             codeArea.classList.add('no-cursor'); codeArea.classList.remove('idle', 'typing');
-             persistentPauseBtn.classList.add('hidden'); // Hide pause button when finished
-             persistentPauseBtn.classList.remove('visible');
-             showNavMenu(true, "Lesson Finished"); // Show menu with "Finished" title
-             if (currentAudioElement) { currentAudioElement.pause(); currentAudioElement.currentTime = 0; }
-             currentAudioElement = null;
-             if (audioPromiseResolve) { audioPromiseResolve(); audioPromiseResolve = null; }
+             // Handle state if loop exited without reaching 'end' (e.g., due to error/manual stop)
+             if (!isFinished && stopExecution) {
+                console.log("Script execution stopped or restarted before end.");
+                // Ensure UI reflects stopped state if paused
+                if(isPaused) { setControlButtonState('play'); showNavMenu(true, "Lesson Paused"); }
+             }
+             // Final check in case loop finishes but end state wasn't set
+             else if (currentStepIndex >= lessonScript.length && !isFinished) {
+                  isFinished = true; showEndState(); console.log("Script loop completed (final check).");
+             }
         }
 
-         function pauseSimulation() {
-             if (isFinished || isPaused || !simulationStarted) return; // Don't pause if not running or already paused/finished
-             isPaused = true;
-             console.log("Pausing...");
-             if (currentAudioElement) { currentAudioElement.pause(); }
-             ideContainer.classList.add("paused"); // Optional visual cue
-             showNavMenu(true, "Lesson Paused");
-         }
+        // --- Control/UI Functions ---
+        function setControlButtonState(state) { /* ... as before ... */
+            switch(state){case 'play': controlIcon.className = 'fas fa-play'; controlButton.title = 'Resume'; break; case 'pause': controlIcon.className = 'fas fa-pause'; controlButton.title = 'Pause'; break; case 'restart': controlIcon.className = 'fas fa-redo-alt'; controlButton.title = 'Restart Lesson'; break;}
+        }
+        function showNavMenu(show = true, title = "Lesson Paused") { /* ... as before ... */
+            navMenuTitle.textContent = title; if (show) { navOverlay.classList.add('visible'); } else { navOverlay.classList.remove('visible'); }
+        }
+        function showEndState() { /* ... as before ... */
+            console.log("Showing end state"); setControlButtonState('restart'); codeArea.classList.add('no-cursor'); codeArea.classList.remove('idle', 'typing'); showNavMenu(true, "Lesson Finished"); if (currentAudioElement) { currentAudioElement.pause(); currentAudioElement.currentTime = 0; } currentAudioElement = null; clearTimeout(currentTimeoutId); // Cancel any pending pause timeouts
+        }
 
-        function resumeSimulation() {
-            if (isFinished || !isPaused || !simulationStarted) return; // Can only resume if paused
-            isPaused = false;
-            console.log("Resuming...");
-            showNavMenu(false); // Hide menu
-            ideContainer.classList.remove("paused");
-            if (currentAudioElement && currentAudioElement.paused) {
-                currentAudioElement.play().catch(e => console.error("Resume play error", e));
+        function togglePause() {
+            if (isFinished) return;
+            isPaused = !isPaused; console.log(isPaused ? "Pausing..." : "Resuming...");
+            if (isPaused) {
+                if (currentAudioElement) { currentAudioElement.pause(); }
+                clearTimeout(currentTimeoutId); // Cancel pending pauses
+                codeArea.classList.remove('typing'); codeArea.classList.add('idle'); // Ensure blinking cursor
+                updateStatusBarAndCursor(); // Update cursor pos immediately
+                setControlButtonState('play'); showNavMenu(true, "Lesson Paused");
+            } else {
+                 showNavMenu(false);
+                if (currentAudioElement) { currentAudioElement.play().catch(e => console.error("Resume play error", e)); }
+                setControlButtonState('pause');
+                // Resume execution - the main loop will pick up
+                // No need to call executeScript() again, just unblock the loop/timeouts
             }
-            // The main executeScript loop will continue on its own
         }
-
 
         function restartSimulation() {
             console.log("Restarting simulation...");
-            if (currentAbortController) { currentAbortController.abort(); }
-            if (currentAudioElement) { currentAudioElement.pause(); currentAudioElement.currentTime = 0; currentAudioElement.onended = null; }
-            if (audioPromiseResolve) { audioPromiseResolve(); audioPromiseResolve = null; }
-            currentAudioElement = null;
-            isPaused = false; isFinished = false; currentStepIndex = 0; currentContentHTML = ''; simulationStarted = true;
+            stopExecution = true; // Signal current loop/promises to stop
+            clearTimeout(currentTimeoutId); // Clear any active pause timeout
 
-            setTimeout(async () => {
-                await clearEditor(); await clearConsole(); showNavMenu(false);
-                codeArea.classList.add('idle');
-                executeScript(0); // Start from beginning
-             }, 150);
+            // Stop and reset audio
+            if (currentAudioElement) {
+                currentAudioElement.pause();
+                currentAudioElement.onended = null; // Remove listener to prevent race condition
+                currentAudioElement.currentTime = 0;
+            }
+             if (audioPromiseResolve) { // Resolve any pending audio promise immediately
+                audioPromiseResolve();
+                audioPromiseResolve = null;
+             }
+            currentAudioElement = null;
+
+            // Reset state variables
+            currentStepIndex = 0;
+            isPaused = false;
+            isFinished = false;
+            currentContentHTML = '';
+
+            // Reset UI immediately
+             clearEditor();
+             clearConsole();
+             showNavMenu(false);
+             codeArea.classList.add('idle'); // Show initial cursor
+
+             // Start new execution after a very brief delay
+             setTimeout(() => {
+                 stopExecution = false; // Reset stop flag for new execution
+                 simulationStarted = true;
+                 executeScript(); // Start from beginning
+             }, 50); // Shorter delay for restart
         }
 
 
         // --- Event Listeners ---
-        // Listener for the PERSISTENT pause button
-        persistentPauseBtn.addEventListener('click', pauseSimulation);
-
-        // Listener for the button INSIDE the menu overlay
-        menuControlBtn.addEventListener('click', () => {
-            if (isFinished) {
-                restartSimulation();
-            } else if (isPaused) {
-                resumeSimulation();
-            }
+        controlButton.addEventListener('click', () => {
+            if (!simulationStarted) return; // Ignore clicks before start
+            if (isFinished) { restartSimulation(); }
+            else { togglePause(); }
         });
 
-
         // --- User Interaction Start ---
-        function startSimulation() {
-             if (simulationStarted) return;
-             simulationStarted = true;
-
-            document.body.removeEventListener('click', startSimulation);
-            document.body.removeEventListener('keydown', startSimulation);
-            console.log("User interaction detected, starting simulation...");
-             consolePane.innerHTML = '<span class="placeholder">Starting lesson...</span>';
-
-             const context = new (window.AudioContext || window.webkitAudioContext)();
-             if (context.state === 'suspended') { context.resume().catch(e=>console.warn("AudioContext resume failed:", e)); }
-             Object.values(audioElements).forEach(audio => {
-                 audio.load(); const promise = audio.play();
-                 if (promise !== undefined) { promise.then(_ => { audio.pause(); }).catch(() => {}); }
-             });
-
-             persistentPauseBtn.classList.add('visible'); // Show the persistent pause button
+        function startSimulation() { /* ... as before ... */
+            if (simulationStarted) return; simulationStarted = true;
+            document.body.removeEventListener('click', startSimulation); document.body.removeEventListener('keydown', startSimulation);
+            console.log("User interaction detected, starting simulation..."); consolePane.innerHTML = '<span class="placeholder">Starting lesson...</span>';
+            const context = new (window.AudioContext || window.webkitAudioContext)(); if (context.state === 'suspended') { context.resume(); }
+            Object.values(audioElements).forEach(audio => { audio.load(); const promise = audio.play(); if (promise !== undefined) { promise.then(_ => { audio.pause(); }).catch(() => {}); } });
+            controlButton.classList.remove('hidden');
             setTimeout(executeScript, 500);
         }
-
-        document.body.addEventListener('click', startSimulation, { once: true });
-        document.body.addEventListener('keydown', startSimulation, { once: true });
+        document.body.addEventListener('click', startSimulation, { once: true }); document.body.addEventListener('keydown', startSimulation, { once: true });
 
         // --- Initial Setup ---
-        updateLineNumbers();
-        updateStatusBarAndCursor();
-        codeArea.classList.add('idle');
+        updateLineNumbers(); updateStatusBarAndCursor(); codeArea.classList.add('idle');
 
     }); // End DOMContentLoaded
     </script>
