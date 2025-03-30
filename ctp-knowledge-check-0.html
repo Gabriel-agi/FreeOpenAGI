@@ -2,18 +2,19 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>AI Practice & Hyper-Help Assistant</title>
+    <title>Practice Mode / Cat Chat Toggle</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Using Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
     <style>
-        /* --- Variables & Basic Setup --- */
+        /* --- Basic Setup & Variables --- */
         :root {
             --sim-primary: #007bff; /* Blue */
             --sim-secondary: #6c757d; /* Grey */
-            --sim-background: #f8f9fa;
+            --sim-background: #f8f9fa; /* Very Light Grey */
             --sim-panel-bg: #ffffff;
-            --sim-text: #212529;
+            --sim-text: #212529; /* Dark Text */
             --sim-light-text: #f8f9fa;
             --sim-code-bg: #2b2b2b;
             --sim-code-text: #a9b7c6;
@@ -22,99 +23,121 @@
             --border-radius: 8px;
             --success-color: #28a745;
             --error-color: #dc3545;
-            --warning-color: #ffc107; /* Yellow for MAYBE */
-            --help-color: #17a2b8;    /* Teal for HELP */
-            --ai-message-bg: #f0f8ff; /* General AI response */
+            --warning-color: #ffc107;
+            --ai-message-bg: #f0f8ff;
+            /* NEW Cat Mode Colors */
+            --cat-primary: #fca311; /* Orange */
+            --cat-secondary: #14213d; /* Dark Blue */
+            --cat-mode-bg: #fffaf0; /* Creamy background for cat chat */
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        /* --- Base, Layout, Playground (Mostly same) --- */
+         * { box-sizing: border-box; margin: 0; padding: 0; }
         html { height: 100%; }
         body { font-family: var(--font-main); background-color: var(--sim-background); color: var(--sim-text); height: 100%; overflow: hidden; display: flex; }
         #main-container { display: flex; width: 100%; height: 100%; background-color: var(--sim-secondary); }
-
-        /* --- Playground Area --- */
-        #playground-area { flex: 1; background-color: var(--sim-panel-bg); display: flex; flex-direction: column; height: 100%; border-right: 3px solid var(--sim-primary); box-shadow: 2px 0 5px rgba(0,0,0,0.1); }
-        .playground-header { background-color: var(--sim-secondary); color: var(--sim-light-text); padding: 10px 15px; font-size: 1.1em; font-weight: bold; flex-shrink: 0; border-bottom: 2px solid var(--sim-primary); }
-        .playground-header .fa-tasks { margin-right: 8px; color: var(--sim-primary); }
+        #playground-area { flex: 1; background-color: var(--sim-panel-bg); display: flex; flex-direction: column; height: 100%; border-right: 3px solid var(--sim-primary); box-shadow: 2px 0 5px rgba(0,0,0,0.1); transition: border-color 0.3s ease; }
+        .playground-header { background-color: var(--sim-secondary); color: var(--sim-light-text); padding: 10px 15px; font-size: 1.1em; font-weight: bold; flex-shrink: 0; border-bottom: 2px solid var(--sim-primary); transition: background-color 0.3s ease, border-color 0.3s ease; }
+        .playground-header .fa-icon { margin-right: 8px; color: var(--sim-primary); transition: color 0.3s ease;} /* Generic icon class */
         #playground-content { padding: 20px; flex-grow: 1; overflow-y: auto; font-size: 0.95em; line-height: 1.6; }
-        #playground-content h3 { color: var(--sim-primary); margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 5px;}
+        #playground-content h3 { color: var(--sim-primary); margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 5px; transition: color 0.3s ease;}
         #playground-content h4 { color: #333; margin-top: 15px; margin-bottom: 8px; }
         #playground-content p { margin-bottom: 10px; }
         #playground-content pre { background-color: var(--sim-code-bg); color: var(--sim-code-text); padding: 15px; border-radius: var(--border-radius); font-family: var(--font-code); white-space: pre-wrap; word-wrap: break-word; margin-top: 10px; font-size: 0.9em; border: 1px solid #444; box-shadow: inset 0 0 5px rgba(0,0,0,0.3); }
-        .code-keyword { color: #cc7832; } .code-string { color: #6a8759; } .code-comment { color: #808080; } .code-function { color: #ffc66d; } .code-paren { color: #bbb; }
-        .playground-text-display i { display: block; background-color: #f0f0f0; padding: 10px; border-radius: 4px; border-left: 3px solid var(--sim-primary); }
+        .code-keyword { color: #cc7832; font-weight: bold; } .code-string { color: #6a8759; } .code-comment { color: #808080; font-style: italic; } .code-function { color: #ffc66d; } .code-paren { color: #bbb; }
+        .playground-text-display i { display: block; background-color: #f0f0f0; padding: 10px; border-radius: 4px; border-left: 3px solid var(--sim-primary); transition: border-color 0.3s ease; }
+        /* Hide playground content in cat mode */
+        body.cat-mode #playground-content { /* Add class to body */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: var(--sim-secondary);
+        }
+         body.cat-mode #playground-content::before {
+            content: "\f1b0 \A Cat Chat Mode Active"; /* Paw icon */
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900;
+            font-size: 2em;
+            opacity: 0.3;
+            white-space: pre; /* Allow line break */
+            line-height: 1.2;
+         }
+         body.cat-mode #playground-content > *:not(::before) { display: none; } /* Hide original content */
+
 
         /* --- Chatbot Area --- */
-        #chatbot-container { display: flex; flex-direction: column; width: 450px; /* Slightly wider */ min-width: 380px; height: 100%; border-left: 3px solid var(--sim-primary); background: var(--sim-panel-bg); }
-        #message-list { flex-grow: 1; overflow-y: auto; padding: 15px; border-bottom: 1px solid #eee; background: #fdfdfd; }
+        #chatbot-container { display: flex; flex-direction: column; width: 400px; min-width: 350px; height: 100%; border-left: 3px solid var(--sim-primary); background: var(--sim-panel-bg); transition: border-color 0.3s ease, background-color 0.3s ease; }
+        #message-list { flex-grow: 1; overflow-y: auto; padding: 15px; border-bottom: 1px solid #eee; background: #fdfdfd; transition: background-color 0.3s ease;}
         #input-container { display: flex; padding: 10px 15px; background: #f9f9f9; flex-shrink: 0; border-top: 1px solid #eee; }
         #messageInput { flex-grow: 1; padding: 10px; margin-right: 10px; border: 1px solid #ccc; border-radius: 18px; resize: none; font-size: 1em; line-height: 1.4; height: 38px; overflow-y: hidden; transition: border-color 0.2s ease; }
         #messageInput:focus { outline: none; border-color: var(--sim-primary); }
         #messageInput:disabled { background-color: #eee; cursor: not-allowed; }
-        #sendMessageBtn { padding: 0 15px; cursor: pointer; background: var(--sim-primary); color: white; border: none; border-radius: 50%; font-size: 1.1em; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; transition: background-color 0.2s ease; }
+
+        /* Button Container */
+        .button-wrapper { display: flex; align-items: center; }
+
+        /* Send Button */
+        #sendMessageBtn { padding: 0 15px; cursor: pointer; background: var(--sim-primary); color: white; border: none; border-radius: 50%; font-size: 1.1em; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; transition: background-color 0.3s ease; margin-right: 8px; /* Space between buttons */ }
         #sendMessageBtn:hover:not(:disabled) { background: #0056b3; }
         #sendMessageBtn:disabled { background: #aaa; cursor: not-allowed; opacity: 0.7;}
-        #status-bar { padding: 6px 15px; background: var(--sim-secondary); color: white; font-size: 0.8em; flex-shrink: 0; height: 28px; display: flex; align-items: center; }
-        #status-bar .icon { margin-right: 8px; }
+
+        /* Toggle Mode Button */
+        #toggleModeBtn { padding: 0; cursor: pointer; background: var(--sim-secondary); color: white; border: none; border-radius: 50%; font-size: 1.1em; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; transition: background-color 0.3s ease, transform 0.3s ease; }
+        #toggleModeBtn:hover { background: #5a6268; transform: scale(1.05); }
+        #toggleModeBtn .fa-icon { transition: transform 0.3s ease-in-out; } /* For potential rotation */
+
+        /* Status Bar */
+        #status-bar { padding: 6px 15px; background: var(--sim-secondary); color: white; font-size: 0.8em; flex-shrink: 0; height: 28px; display: flex; align-items: center; transition: background-color 0.3s ease;}
+        #status-bar .icon { margin-right: 8px; width: 1.2em; text-align: center;}
         #status-bar .text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
         /* Message Styling */
-        .message { margin-bottom: 12px; padding: 10px 15px; border-radius: 15px; max-width: 88%; /* Slightly wider */ word-wrap: break-word; line-height: 1.45; box-shadow: 0 1px 2px rgba(0,0,0,0.08); opacity: 0; animation: messageFadeIn 0.4s ease-out forwards; }
+        .message { margin-bottom: 12px; padding: 10px 15px; border-radius: 15px; max-width: 85%; word-wrap: break-word; line-height: 1.45; box-shadow: 0 1px 2px rgba(0,0,0,0.08); opacity: 0; animation: messageFadeIn 0.4s ease-out forwards; }
         @keyframes messageFadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-        .user-message { background-color: var(--sim-primary); color: white; margin-left: auto; border-bottom-right-radius: 5px; }
+        .user-message { background-color: var(--sim-primary); color: white; margin-left: auto; border-bottom-right-radius: 5px; transition: background-color 0.3s ease;}
         .bot-message { background-color: #e9ecef; color: var(--sim-text); margin-right: auto; border-bottom-left-radius: 5px; }
-
-        /* AI general responses */
         .bot-message.ai-response { background-color: var(--ai-message-bg); border-left: 4px solid #75aadb; }
-
-        /* Task prompts */
-        .bot-message.task-prompt { font-weight: 500; border-left: 4px solid var(--sim-primary);}
-
-        /* Feedback messages (Evaluation & Help) */
+        .bot-message.task-prompt { font-weight: 500; border-left: 4px solid var(--sim-primary); transition: border-color 0.3s ease;}
         .bot-feedback { border-left-width: 4px; border-left-style: solid; padding-left: 12px; }
         .bot-feedback.correct { border-left-color: var(--success-color); background-color: #eaf7ec; }
         .bot-feedback.incorrect { border-left-color: var(--error-color); background-color: #fdecea; }
         .bot-feedback.maybe { border-left-color: var(--warning-color); background-color: #fff8e1; }
-        .bot-feedback.help { border-left-color: var(--help-color); background-color: #e3f2fd; } /* Teal border, light teal bg */
-         .bot-feedback strong::before { /* Icon prefix */
-             margin-right: 6px;
-             font-family: "Font Awesome 6 Free";
-             font-weight: 900;
-             font-size: 1.1em;
-             display: inline-block;
-             width: 1.2em; /* Ensure space */
-         }
-         .bot-feedback.correct strong::before { content: "\f058"; color: var(--success-color); } /* Check Circle */
-         .bot-feedback.incorrect strong::before { content: "\f057"; color: var(--error-color);} /* Times Circle */
-         .bot-feedback.maybe strong::before { content: "\f12a"; color: var(--warning-color); } /* Exclamation Triangle */
-         .bot-feedback.help strong::before { content: "\f05a"; color: var(--help-color); }    /* Info Circle */
+        .bot-feedback strong::before { margin-right: 6px; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 1.1em; display: inline-block; width: 1.2em; }
+        .bot-feedback.correct strong::before { content: "\f058"; color: var(--success-color); }
+        .bot-feedback.incorrect strong::before { content: "\f057"; color: var(--error-color);}
+        .bot-feedback.maybe strong::before { content: "\f12a"; color: var(--warning-color); }
+        .error-display { background-color: #f8d7da; color: #721c24; margin-right: auto; border: 1px solid #f5c6cb; font-weight: bold; border-radius: 5px; padding: 10px 15px; margin-bottom: 12px; }
 
+        /* --- Cat Mode Specific Styles --- */
+        body.cat-mode #playground-area { border-right-color: var(--cat-primary); }
+        body.cat-mode .playground-header { background-color: var(--cat-secondary); border-bottom-color: var(--cat-primary); }
+        body.cat-mode .playground-header .fa-icon { color: var(--cat-primary); }
+        body.cat-mode #chatbot-container { border-left-color: var(--cat-primary); }
+        body.cat-mode #message-list { background-color: var(--cat-mode-bg); }
+        body.cat-mode #status-bar { background-color: var(--cat-secondary); }
+        body.cat-mode .user-message { background-color: var(--cat-primary); }
+        body.cat-mode #messageInput:focus { border-color: var(--cat-primary); }
+        body.cat-mode #sendMessageBtn { background-color: var(--cat-primary); }
+        body.cat-mode #sendMessageBtn:hover:not(:disabled) { background-color: #e0930f; }
+        body.cat-mode .bot-message.ai-response { background-color: #fff0f5; border-left-color: #ffb6c1; } /* Lavender blush / Pink for cat AI */
+        body.cat-mode .bot-message.task-prompt { display: none; } /* Hide task prompts in cat mode */
 
-         .error-display { background-color: #f8d7da; color: #721c24; margin-right: auto; border: 1px solid #f5c6cb; font-weight: bold; border-radius: 5px; padding: 10px 15px; margin-bottom: 12px; }
-
-         /* Responsive */
-         @media (max-width: 768px) { /* Adjust breakpoint if needed */
-             #main-container { flex-direction: column; }
-             #playground-area { order: 1; border-right: none; border-bottom: 3px solid var(--sim-primary); height: 40vh; flex-basis: auto; flex-grow: 0;} /* Adjust height */
-             #chatbot-container { order: 2; width: 100%; height: calc(60vh - 28px); /* Adjust height minus status bar */ border-left: none; flex-basis: auto; flex-grow: 1;}
-             #status-bar { order: 3; width: 100%;}
-             #messageInput { max-height: 100px; }
-         }
-         @media (max-width: 480px) {
-             #playground-content { padding: 15px; } #message-list { padding: 10px; } .message { max-width: 90%; }
-             #messageInput { font-size: 0.95em;} #sendMessageBtn { width: 38px; height: 38px; font-size: 1em;}
-         }
+        /* Responsive */
+        @media (max-width: 768px) { #main-container { flex-direction: column; } #playground-area { border-right: none; border-bottom: 3px solid var(--sim-primary); height: 45%; flex-basis: 45%; flex-grow: 0;} #chatbot-container { width: 100%; height: 55%; border-left: none; flex-basis: 55%; flex-grow: 0;} #messageInput { max-height: 100px; } }
+        @media (max-width: 480px) { #playground-content { padding: 15px; } #message-list { padding: 10px; } .message { max-width: 90%; } #messageInput { font-size: 0.95em;} #sendMessageBtn, #toggleModeBtn { width: 38px; height: 38px; font-size: 1em;} }
     </style>
 </head>
-<body>
+<body class="practice-mode"> <!-- Start in practice mode -->
     <div id="main-container">
         <!-- Playground Area -->
         <div id="playground-area">
             <div class="playground-header">
-                <i class="fas fa-tasks"></i> Task Information
+                <i class="fas fa-tasks fa-icon"></i> <!-- Use generic icon class -->
+                <span id="playground-title">Task Information</span>
             </div>
             <div id="playground-content">
-                <p>Welcome! Instructions appear here. Ask questions anytime.</p>
+                <p>Welcome! Instructions will appear here. Ask general programming questions anytime.</p>
             </div>
         </div>
 
@@ -125,176 +148,211 @@
             </div>
             <div id="input-container">
                 <textarea id="messageInput" placeholder="Enter answer or ask a question..." rows="1"></textarea>
-                <button id="sendMessageBtn" title="Submit / Send">
-                    <i class="fas fa-paper-plane"></i>
-                </button>
+                <div class="button-wrapper">
+                    <button id="sendMessageBtn" title="Submit / Send">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                    <button id="toggleModeBtn" title="Switch to Cat Chat Mode">
+                        <i class="fas fa-cat fa-icon"></i> <!-- Cat icon initially shown -->
+                    </button>
+                </div>
             </div>
-        </div>
-         <!-- Status bar moved outside chatbot-container for better responsive layout -->
-         <div id="status-bar">
-            <span class="icon"><i class="fas fa-robot"></i></span>
-            <span class="text">Status: Ready</span>
+             <div id="status-bar">
+                <span class="icon"><i class="fas fa-robot"></i></span> <!-- Start with robot icon -->
+                <span class="text">Status: Ready</span>
+            </div>
         </div>
     </div>
 
-
     <script>
     document.addEventListener('DOMContentLoaded', () => {
-        console.log("Full AI Eval + Help Script: DOM Loaded.");
+        console.log("Mode Toggle Script: DOM Loaded.");
 
         // --- Get References to Elements ---
         const messageList = document.getElementById('message-list');
         const messageInput = document.getElementById('messageInput');
         const sendMessageBtn = document.getElementById('sendMessageBtn');
+        const toggleModeBtn = document.getElementById('toggleModeBtn'); // New button
         const statusBarText = document.querySelector('#status-bar .text');
+        const statusIcon = document.querySelector('#status-bar .icon i'); // Icon in status bar
         const playgroundContent = document.getElementById('playground-content');
+        const playgroundHeaderIcon = document.querySelector('.playground-header .fa-icon'); // Playground icon
+        const playgroundTitle = document.getElementById('playground-title'); // Playground title span
 
         // --- State ---
         let currentQuestionIndex = -1;
         let currentTask = null;
-        let isWaitingForNext = false; // Prevents sending during task transition
-        let isWaitingForAI = false;  // Prevents sending while waiting for any AI response
-        let conversationHistory = [];
+        let isWaitingForNext = false;
+        let isWaitingForAI = false;
+        // Separate histories and current mode
+        const State = {
+            currentMode: 'practice', // 'practice' or 'cat'
+            histories: {
+                practice: [],
+                cat: []
+            }
+        };
 
         // --- Configuration ---
         const Config = {
-            proxyUrl: '/api/proxy', // CRITICAL: Ensure this points to your working proxy
+            proxyUrl: '/api/proxy', // CRITICAL: Update if needed
             model: "glm-4-flash",
-            temperature: 0.6,
-            max_tokens: 400, // Slightly increase for potentially more helpful answers
-            // System prompt for the hyper-helpful assistant (general chat)
-            helperSystemPrompt: "You are an extremely helpful AI assistant. Your primary goal is to help the user learn basic Python programming. Answer any questions they have clearly and concisely. Provide explanations, code examples, and guidance. If they ask for help with a specific task or even ask for the answer directly ('cheat'), provide the help or answer they need without judgment, perhaps explaining *why* it works.",
-            // System prompt used ONLY when evaluating a task answer attempt
-            evaluationSystemPrompt: "You are evaluating a student's input related to a basic Python task. The user's message contains the [TASK DETAILS] and their [USER INPUT]. First, analyze the [USER INPUT]: does it seem like an attempt to ANSWER the task, or is it a general QUESTION or request for HELP (e.g., 'how do I do this?', 'what does X mean?', 'give me the answer')? Respond ONLY with ONE of the following prefixes, followed by a colon and your explanation:\n- YES: (If it's an ANSWER attempt and CORRECTLY meets the [TASK CRITERIA])\n- NO: (If it's an ANSWER attempt and INCORRECTLY meets the [TASK CRITERIA])\n- MAYBE: (If it's an ANSWER attempt and is partially correct/ambiguous)\n- HELP: (If it's a QUESTION or request for HELP, even if asking for the answer). Ignore the criteria and provide the requested help/answer.\nDo not add text before the prefix.",
+            temperature: 0.7, // Slightly higher temp for cat persona?
+            max_tokens: 350,
+            standardSystemPrompt: "You are a helpful AI assistant explaining basic Python programming concepts clearly and concisely. Answer the user's questions related to Python or programming in general.",
+            evaluationSystemPrompt: "You are evaluating a student's answer to a basic Python programming task. The user's message contains the task details, their answer, and evaluation criteria. First, determine if the user's input seems like a genuine attempt to answer the specific TASK, or if it looks like a general QUESTION (even if related). If it's an ANSWER attempt, evaluate it against the CRITERIA. If it's a QUESTION, ignore the criteria and answer the question helpfully. VERY IMPORTANT: Start your response *immediately* with ONLY ONE of the following prefixes, followed by a colon and then your explanation:\n- YES: (If the input is an ANSWER attempt and CORRECTLY meets the criteria)\n- NO: (If the input is an ANSWER attempt and INCORRECTLY meets the criteria)\n- MAYBE: (If the input is an ANSWER attempt and is partially correct, ambiguous, or needs clarification)\n- QUESTION: (If the input appears to be a general QUESTION, not an answer attempt)\nDo not add any text before the prefix.",
+            // NEW Cat Persona Prompt
+            catSystemPrompt: "You are a quirky, slightly lazy, but ultimately helpful cat AI assistant. Respond to user questions and chat messages in character. Use cat puns (meow, purr, paw-some, fur-real), mention cat behaviors (*stretches*, *yawns*, *bats at screen*), but still provide accurate and helpful information when asked programming questions. Keep your answers relatively concise.",
             nextQuestionDelay: 1500, // ms
             aiTypingDelay: 800 // ms
         };
 
-        // --- Question Bank (Only AI Criteria needed) ---
+        // --- Question Bank (Criteria only needed now) ---
         const QuestionBank = [
-             {
-                id: 'print_hello',
-                prompt: "Task 1: Write the Python code to print the exact text 'Hello, Python!' to the screen.",
-                aiCriteria: "The code must use the print() function to output the exact string 'Hello, Python!'. Single or double quotes are acceptable.",
-                visual_aid_type: 'code_editor_display',
-                visual_aid_content: "# Task: Print 'Hello, Python!'\n# Enter your code below."
-            },
-            {
-                id: 'comment_write',
-                prompt: "Task 2: Write a Python comment that says exactly: # This is a comment",
-                aiCriteria: "The response must be a single line starting exactly with '#' followed by a space and the text 'This is a comment'.",
-                visual_aid_type: 'code_editor_display',
-                visual_aid_content: "# Task: Write the comment '# This is a comment'\n# Enter the full comment line below."
-            },
-            {
-                id: 'print_blank',
-                prompt: "Task 3: How do you write the Python code to print just a blank line?",
-                aiCriteria: "The code should be exactly `print()`. It must include the parentheses.",
-                visual_aid_type: 'code_editor_display',
-                visual_aid_content: "# Task: Print a blank line using Python.\n# Enter the code below."
-            },
-            {
-                 id: 'concept_print',
-                 prompt: "Task 4: In your own words, what does the `print()` function *do* in Python?",
-                 aiCriteria: "The student should explain that print() displays output (text, values, etc.) to the screen/console. Key concepts: display, output, show, screen, console, terminal.",
-                 visual_aid_type: 'text_display',
-                 visual_aid_content: "Task: Explain the purpose of the `print()` function."
-            },
-            {
-                id: 'end',
-                prompt: "Great job! You've completed the tasks. Feel free to ask any general Python questions now.",
-                aiCriteria: null, // No evaluation needed
-                visual_aid_type: 'text_display',
-                visual_aid_content: "Practice Complete!"
-            }
+            { id: 'print_hello', prompt: "Let's start! Write the Python code to print the exact text 'Hello, Python!' to the screen.", aiCriteria: "The code must use the print() function to output the exact string 'Hello, Python!'. Single or double quotes are acceptable.", visual_aid_type: 'code_editor_display', visual_aid_content: "# Task: Print 'Hello, Python!'" },
+            { id: 'comment_write', prompt: "Good! Now, write a Python comment that says exactly: # This is a comment", aiCriteria: "The response must be a single line starting exactly with '#' followed by a space and the text 'This is a comment'.", visual_aid_type: 'code_editor_display', visual_aid_content: "# Task: Write the comment '# This is a comment'" },
+            { id: 'print_blank', prompt: "How do you write the Python code to print just a blank line?", aiCriteria: "The code should be exactly `print()`. It must include the parentheses.", visual_aid_type: 'code_editor_display', visual_aid_content: "# Task: Print a blank line using Python." },
+            { id: 'concept_print', prompt: "In your own words, what does the `print()` function *do* in Python?", aiCriteria: "The student should explain that print() displays output (text, values, etc.) to the screen/console. Key concepts: display, output, show, screen, console, terminal.", visual_aid_type: 'text_display', visual_aid_content: "Task: Explain the purpose of the `print()` function." },
+            { id: 'end', prompt: "Great job! You've completed the basic practice tasks. Feel free to ask any general Python questions now, or switch to Cat Chat mode!", aiCriteria: null, visual_aid_type: 'text_display', visual_aid_content: "Practice Complete!" }
         ];
 
-        // --- UI Functions (addMessage updated for 'help' type) ---
+        // --- UI Functions ---
         const UI = {
-            addMessage: (sender, text, type = '') => {
-                 if (!messageList) return;
-                 const messageDiv = document.createElement('div');
-                 messageDiv.classList.add('message');
-                 messageDiv.classList.add(sender === 'user' ? 'user-message' : 'bot-message');
+            addMessage: (sender, text, type = '', targetHistory) => { // Target history needed for loading
+                if (!messageList) return;
+                const listToAddTo = targetHistory ? targetHistory : messageList; // Use specified list or default chatbox
 
-                 if (sender === 'bot') {
-                    // Evaluation Feedback or Help
-                    if (['correct', 'incorrect', 'maybe', 'help'].includes(type)) {
-                         messageDiv.classList.add('bot-feedback', type);
-                         messageDiv.innerHTML = `<strong></strong>${text}`; // Strong for icon via CSS
-                    }
-                    // General AI Response (outside evaluation context)
-                    else if (type === 'ai-response') {
-                         messageDiv.classList.add('ai-response');
-                         messageDiv.textContent = text;
-                    }
-                    // Task Prompt
-                    else if (type === 'task-prompt') {
-                         messageDiv.classList.add('task-prompt');
-                         messageDiv.textContent = text;
-                    }
-                    // Default (e.g., welcome message)
-                    else {
-                         messageDiv.textContent = text;
-                     }
-                 } else { // User message
-                     messageDiv.textContent = text;
+                const messageDiv = document.createElement('div');
+                messageDiv.classList.add('message');
+                messageDiv.classList.add(sender === 'user' ? 'user-message' : 'bot-message');
+
+                if (sender === 'bot') {
+                    if (type === 'correct' || type === 'incorrect' || type === 'maybe') { messageDiv.classList.add('bot-feedback', type); messageDiv.innerHTML = `<strong></strong>${text}`; }
+                    else if (type === 'ai-response') { messageDiv.classList.add('ai-response'); messageDiv.textContent = text; }
+                    else if (type === 'task-prompt') { messageDiv.classList.add('task-prompt'); messageDiv.textContent = text; }
+                    else { messageDiv.textContent = text; }
+                } else { messageDiv.textContent = text; }
+
+                listToAddTo.appendChild(messageDiv);
+                // Scroll only the main message list, not the history fragment during load
+                 if (listToAddTo === messageList) {
+                     messageList.scrollTop = messageList.scrollHeight;
                  }
-
-                 messageList.appendChild(messageDiv);
-                 messageList.scrollTop = messageList.scrollHeight;
             },
+
             updateStatus: (text, isBusy = false) => {
                  if (statusBarText) statusBarText.textContent = `Status: ${text}`;
                  const currentlyBusy = isWaitingForNext || isWaitingForAI || isBusy;
                  if (sendMessageBtn) sendMessageBtn.disabled = currentlyBusy;
+                 if (toggleModeBtn) toggleModeBtn.disabled = currentlyBusy; // Disable toggle while busy too
                  if (messageInput) messageInput.disabled = currentlyBusy;
                  if (messageInput && !messageInput.disabled) messageInput.focus();
             },
+
             updatePlayground: (task) => {
-                 if (!playgroundContent) return;
-                 if (!task) {
-                     playgroundContent.innerHTML = "<p>Practice complete. Ask questions anytime!</p>"; return;
-                 }
+                if (!playgroundContent) return;
+                if (!task || State.currentMode === 'cat') { // Also clear if in cat mode
+                    playgroundContent.innerHTML = ""; // Clear content (let CSS handle message)
+                    return;
+                }
+                // ...(rest of updatePlayground logic as before)...
                  let contentHTML = `<h3>Task: ${task.id.replace(/_/g, ' ')}</h3><p>${task.prompt}</p>`;
                  const visualContent = task.visual_aid_content || '';
                  const escapedVisualContent = (typeof visualContent === 'string' ? visualContent : '').replace(/</g, "<").replace(/>/g, ">");
                  if (task.visual_aid_type === 'code_editor_display') {
-                     contentHTML += `<h4>Code Area / Example:</h4><pre id="code-display-area">${escapedVisualContent}</pre>`;
+                     contentHTML += `<h4>Instructions / Example:</h4><pre id="code-display-area">${escapedVisualContent}</pre>`;
                  } else if (task.visual_aid_type === 'text_display') {
                      contentHTML += `<div class="playground-text-display"><i>${escapedVisualContent}</i></div>`;
                  }
                  playgroundContent.innerHTML = contentHTML;
             },
-            updateCodeDisplay: (code) => {
-                 const codeArea = document.getElementById('code-display-area');
-                 if (codeArea) {
-                     let escapedCode = code.replace(/&/g, "&").replace(/</g, "<").replace(/>/g, ">");
-                     let highlightedCode = escapedCode
-                         .replace(/^(#.*)$/gm, '<span class="code-comment">$1</span>')
-                         .replace(/\b(print)\b/g, '<span class="code-keyword">$1</span>')
-                         .replace(/(".*?"|'.*?')/g, '<span class="code-string">$1</span>')
-                         .replace(/(\(|\))/g, '<span class="code-paren">$1</span>');
-                     codeArea.innerHTML = highlightedCode;
-                 }
+
+             updateCodeDisplay: (code) => { // Used by evaluation prompt creation
+                const codeArea = document.getElementById('code-display-area');
+                if (codeArea) {
+                    let escapedCode = code.replace(/&/g, "&").replace(/</g, "<").replace(/>/g, ">");
+                    let highlightedCode = escapedCode
+                        .replace(/^(#.*)$/gm, '<span class="code-comment">$1</span>').replace(/\b(print)\b/g, '<span class="code-keyword">$1</span>')
+                        .replace(/(".*?"|'.*?')/g, '<span class="code-string">$1</span>').replace(/(\(|\))/g, '<span class="code-paren">$1</span>');
+                    codeArea.innerHTML = highlightedCode;
+                }
              },
-             autoResizeTextarea: () => {
+
+            autoResizeTextarea: () => {
                  if (!messageInput) return;
                  messageInput.style.height = 'auto';
                  const maxHeight = 150;
                  messageInput.style.height = Math.min(messageInput.scrollHeight, maxHeight) + 'px';
-             }
+            },
+
+            // NEW: Reload chat display from a history array
+            loadHistoryToChat: (historyArray) => {
+                if (!messageList) return;
+                messageList.innerHTML = ''; // Clear current display
+                // Use a DocumentFragment for efficiency
+                const fragment = document.createDocumentFragment();
+                historyArray.forEach(msg => {
+                    // Determine type for styling based on history content/role (simplified)
+                    let type = '';
+                    if (msg.role === 'assistant') {
+                        if (msg.content.startsWith("Correct!") || msg.content.startsWith("YES:")) type = 'correct';
+                        else if (msg.content.startsWith("Not quite right.") || msg.content.startsWith("NO:")) type = 'incorrect';
+                        else if (msg.content.startsWith("MAYBE:") || msg.content.includes("unexpected format")) type = 'maybe';
+                        else if (msg.isTaskPrompt) type = 'task-prompt'; // Need to store this flag maybe? Or re-evaluate based on context. Let's simplify: assume non-feedback is ai-response for now.
+                        else type = 'ai-response'; // Default assumption for past bot messages
+                    }
+                    // Add message to fragment (without adding to main list yet)
+                    UI.addMessage(msg.role, msg.content, type, fragment);
+                });
+                messageList.appendChild(fragment); // Append all at once
+                messageList.scrollTop = messageList.scrollHeight; // Scroll to bottom
+            },
+
+            // NEW: Update UI elements based on mode
+            setModeUI: (mode) => {
+                 const isPractice = mode === 'practice';
+                 document.body.classList.toggle('cat-mode', !isPractice);
+                 document.body.classList.toggle('practice-mode', isPractice);
+
+                 if (toggleModeBtn) {
+                     toggleModeBtn.title = isPractice ? "Switch to Cat Chat Mode" : "Switch to Practice Mode";
+                     toggleModeBtn.innerHTML = `<i class="fas ${isPractice ? 'fa-cat' : 'fa-robot'} fa-icon"></i>`;
+                 }
+                 if (statusIcon) statusIcon.className = `fas ${isPractice ? 'fa-robot' : 'fa-cat'}`;
+                 if (playgroundHeaderIcon) playgroundHeaderIcon.className = `fas ${isPractice ? 'fa-tasks' : 'fa-comments'} fa-icon`; // Comments icon for cat chat
+                 if (playgroundTitle) playgroundTitle.textContent = isPractice ? "Task Information" : "Cat Chat";
+                 if (messageInput) messageInput.placeholder = isPractice ? (currentTask && currentTask.id !== 'end' ? "Enter your answer..." : "Ask a general question...") : "Chat with the cat AI...";
+
+                 // Update status text based on mode and current task
+                 let statusMsg = "Ready";
+                  if (isPractice) {
+                    const totalTasks = QuestionBank.length - 1;
+                    const currentTaskNum = Math.min(currentQuestionIndex + 1, totalTasks);
+                     statusMsg = currentTask ? (currentTask.id === 'end' ? "Practice Complete" : `Task ${currentTaskNum}/${totalTasks}: ${currentTask.id}`) : "Ready";
+                  } else {
+                     statusMsg = "Cat Chat Mode";
+                  }
+                  UI.updateStatus(statusMsg, isWaitingForAI || isWaitingForNext); // Preserve busy state
+
+                  UI.updatePlayground(isPractice ? currentTask : null); // Update playground visibility/content
+            }
         };
 
-        // --- Function to Proceed to Next Question ---
+
+        // --- Function to Proceed to Next Question (Practice Mode Only) ---
          const nextQuestion = () => {
+             if (State.currentMode !== 'practice') return; // Only advance in practice mode
+
              currentQuestionIndex++;
-             isWaitingForNext = false; // Ready for input for the new task
+             isWaitingForNext = false; // Reset flag
 
              if (currentQuestionIndex < QuestionBank.length) {
                  currentTask = QuestionBank[currentQuestionIndex];
-                 console.log(`Loading Task: ${currentTask.id}`);
+                 console.log(`PRACTICE: Loading Task: ${currentTask.id}`);
                  UI.updatePlayground(currentTask);
+                 // Add task prompt to practice history AND display it
+                 const taskPromptMsg = { role: 'assistant', content: currentTask.prompt, isTaskPrompt: true }; // Flag it
+                 State.histories.practice.push(taskPromptMsg);
                  UI.addMessage('bot', currentTask.prompt, 'task-prompt');
 
                  const totalTasks = QuestionBank.length - 1;
@@ -302,189 +360,198 @@
                  const statusMsg = currentTask.id === 'end' ? "Practice Complete" : `Task ${currentTaskNum}/${totalTasks}: ${currentTask.id}`;
                  UI.updateStatus(statusMsg, false); // Not busy
 
-                 if (messageInput) {
-                     messageInput.placeholder = (currentTask.id === 'end') ? "Ask a general question..." : "Enter your answer or ask for help...";
+                 if(messageInput) {
+                     messageInput.placeholder = (currentTask.id === 'end') ? "Ask a general question..." : "Enter your answer...";
                  }
 
              } else {
-                 console.log("End of practice sequence.");
+                 console.log("PRACTICE: End of sequence.");
                  currentTask = null;
                  UI.updatePlayground(null);
-                 UI.updateStatus("Practice Complete! Ask questions.", false);
-                 if (messageInput) {
+                 UI.updateStatus("Practice Complete! Ask questions or switch mode.", false);
+                 if(messageInput) {
                      messageInput.placeholder = "Ask a general question...";
                  }
              }
-             // Ensure focus and enabled state if not busy
-             if (messageInput && !isWaitingForAI) {
-                  messageInput.disabled = false;
-                  messageInput.focus();
-             }
+              if (messageInput && !isWaitingForAI && !isWaitingForNext) messageInput.focus();
          };
 
-        // --- Create Evaluation Prompt for AI (YES/NO/MAYBE/HELP format) ---
-        const createAIEvaluationPromptContent = (task, userAnswer) => {
-             if (!task || !task.aiCriteria) return null;
 
-             if (task.visual_aid_type === 'code_editor_display') {
-                 UI.updateCodeDisplay(userAnswer); // Show user's attempt
-             }
+        // --- NEW: Toggle Mode Function ---
+        const toggleMode = () => {
+            console.log(`Toggling mode from ${State.currentMode}`);
+            State.currentMode = (State.currentMode === 'practice') ? 'cat' : 'practice';
+            console.log(`New mode: ${State.currentMode}`);
 
-             // Construct the content that will replace the user's message for the evaluation API call
-             const promptContent = `
-[TASK DETAILS]
-Task Prompt: "${task.prompt}"
-Evaluation Criteria: ${task.aiCriteria}
+            // Load the history for the new mode into the chat display
+            UI.loadHistoryToChat(State.histories[State.currentMode]);
 
-[USER INPUT]
-"${userAnswer}"
+            // Update UI elements (buttons, status, placeholder, playground)
+            UI.setModeUI(State.currentMode);
 
+            // Ensure input is enabled if not busy
+            UI.updateStatus(statusBarText.textContent.replace('Status: ', ''), false); // Update status text based on mode, reset busy
+
+            console.log(`Mode switched. Displaying ${State.currentMode} history.`);
+        };
+
+        // --- Create Evaluation Prompt for AI (YES/NO/MAYBE/QUESTION format) ---
+        const createAIEvaluationPrompt = (task, userAnswer) => {
+            // ...(Keep the exact same function as before)...
+            if (!task || !task.aiCriteria) return null;
+            if (task.visual_aid_type === 'code_editor_display') { UI.updateCodeDisplay(userAnswer); }
+            const promptContent = `
+TASK PROMPT: "${task.prompt}"
+STUDENT ANSWER: "${userAnswer}"
+EVALUATION CRITERIA: ${task.aiCriteria}
 ---
-[AI Instructions]
-Analyze [USER INPUT]. Is it an attempt to answer the [TASK DETAILS], or is it a general QUESTION/request for HELP? Respond ONLY with the correct prefix (YES:, NO:, MAYBE:, HELP:) followed by your explanation/answer.
+Instructions for AI (already in System Prompt, reiterated here for clarity):
+Based on the above, is the STUDENT ANSWER a valid attempt to address the TASK PROMPT according to the EVALUATION CRITERIA, or is it a general QUESTION? Respond with YES:, NO:, MAYBE:, or QUESTION: followed by your explanation.
 `;
-             console.log("Evaluation: Created prompt content for LLM.");
-             return promptContent;
-         };
+            console.log("Evaluation: Created prompt content for LLM.");
+            return promptContent;
+        };
 
-        // --- Parse Multi-Prefix Response (YES/NO/MAYBE/HELP) ---
-        const parseMultiPrefixResponse = (responseText) => {
-             console.log("Evaluation: Parsing AI response:", responseText);
-             if (!responseText) return { type: 'maybe', explanation: "Received empty response from AI." };
-
-             const upperResponse = responseText.toUpperCase();
-             let type = 'maybe'; // Default if no prefix matches
-             let explanation = `AI response format unexpected: "${responseText}"`;
-
-             if (upperResponse.startsWith("YES:")) { type = 'correct'; explanation = responseText.substring(4).trim(); }
-             else if (upperResponse.startsWith("NO:")) { type = 'incorrect'; explanation = responseText.substring(3).trim(); }
-             else if (upperResponse.startsWith("MAYBE:")) { type = 'maybe'; explanation = responseText.substring(6).trim(); }
-             else if (upperResponse.startsWith("HELP:")) { type = 'help'; explanation = responseText.substring(5).trim(); }
-             else { console.warn("Evaluation: Response prefix not matched."); }
-
-             console.log(`Evaluation: Parsed as ${type.toUpperCase()}`);
-             return { type: type, explanation: explanation };
-         };
+        // --- Parse Simple YES/NO/MAYBE/QUESTION Response ---
+        const parseSimpleEvaluation = (responseText) => {
+            // ...(Keep the exact same function as before)...
+            console.log("Evaluation: Attempting to parse AI response:", responseText);
+            if (!responseText) return { result: 'maybe', explanation: "Received an empty response from the AI." };
+            const upperResponse = responseText.toUpperCase();
+            let result = 'maybe'; let explanation = `The AI response format was unexpected: "${responseText}"`;
+            if (upperResponse.startsWith("YES:")) { result = 'correct'; explanation = responseText.substring(4).trim(); console.log("Evaluation: Parsed as CORRECT"); }
+            else if (upperResponse.startsWith("NO:")) { result = 'incorrect'; explanation = responseText.substring(3).trim(); console.log("Evaluation: Parsed as INCORRECT"); }
+            else if (upperResponse.startsWith("MAYBE:")) { result = 'maybe'; explanation = responseText.substring(6).trim(); console.log("Evaluation: Parsed as MAYBE/CLARIFICATION"); }
+            else if (upperResponse.startsWith("QUESTION:")) { result = 'question'; explanation = responseText.substring(9).trim(); console.log("Evaluation: Parsed as QUESTION"); }
+            else { console.warn("Evaluation: Response did not start with YES:, NO:, MAYBE:, or QUESTION:"); }
+            return { result: result, explanation: explanation };
+        };
 
          // --- API Module ---
          const API = {
+            // ...(Keep the exact same API.fetchChatResponse function)...
              fetchChatResponse: async (messages, systemPrompt = Config.standardSystemPrompt) => {
-                 // ...(Keep the exact same API.fetchChatResponse function from the previous response)...
-                 console.log(`API: Calling proxy with system prompt type: ${systemPrompt === Config.evaluationSystemPrompt ? 'Evaluation' : 'Helper'}`);
+                 console.log(`API: Calling proxy with system prompt type: ${systemPrompt === Config.evaluationSystemPrompt ? 'Evaluation' : (systemPrompt === Config.catSystemPrompt ? 'Cat' : 'Standard')}`);
                  isWaitingForAI = true;
                  UI.updateStatus("AI is thinking...", true);
 
-                 const messagesToSend = [ { role: "system", content: systemPrompt }, ...messages.filter(m => m.role !== 'system') ];
+                 const messagesToSend = [{ role: "system", content: systemPrompt }, ...messages.filter(m => m.role !== 'system')];
                  // console.log("API: Sending messages:", JSON.stringify(messagesToSend)); // DEBUG
 
                  try {
-                     const response = await fetch(Config.proxyUrl, {
-                         method: 'POST',
-                         headers: { 'Content-Type': 'application/json' },
-                         body: JSON.stringify({ model: Config.model, messages: messagesToSend, temperature: Config.temperature, max_tokens: Config.max_tokens, })
-                     });
+                     const response = await fetch(Config.proxyUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: Config.model, messages: messagesToSend, temperature: Config.temperature, max_tokens: Config.max_tokens }) });
                      console.log("API: Proxy response status:", response.status);
-                     await new Promise(resolve => setTimeout(resolve, Config.aiTypingDelay)); // Simulate typing
-
-                     if (!response.ok) {
-                         const errorText = await response.text(); let detail = errorText;
-                         try { detail = JSON.parse(errorText).error?.message || errorText; } catch(e) {}
-                         throw new Error(`Request failed (${response.status}). ${detail}`);
-                     }
+                     await new Promise(resolve => setTimeout(resolve, Config.aiTypingDelay));
+                     if (!response.ok) { const errorText = await response.text(); let detail = errorText; try { detail = JSON.parse(errorText).error?.message || errorText; } catch(e) {} throw new Error(`Request failed (${response.status}). ${detail}`); }
                      const data = await response.json();
-                     if (data.choices && data.choices.length > 0 && data.choices[0].message && data.choices[0].message.content) {
-                         return data.choices[0].message.content.trim();
-                     } else { throw new Error("Invalid API response structure."); }
+                     if (data.choices && data.choices.length > 0 && data.choices[0].message && data.choices[0].message.content) { return data.choices[0].message.content.trim(); }
+                     else { throw new Error("Invalid API response structure."); }
                  } catch (error) {
                      console.error('API: Fetch failed:', error);
-                     UI.addMessage('bot', `Error communicating with AI: ${error.message}`, 'error');
+                     UI.addMessage('bot', `Error communicating with AI: ${error.message}`, 'error'); // Add error to current view
                      return null;
                  } finally {
                      isWaitingForAI = false;
-                     // Update status correctly based on whether a task transition is also pending
-                     if (!isWaitingForNext) {
-                          const statusMsg = currentTask && currentTask.id !== 'end' ? `Task ${Math.min(currentQuestionIndex + 1, QuestionBank.length - 1)}/${QuestionBank.length - 1}: ${currentTask.id}` : "Ready";
-                          UI.updateStatus(statusMsg, false); // No longer busy from AI perspective
-                     } else {
-                          // Still waiting for next question, status will be updated by nextQuestion() later
-                          console.log("API finished, but waiting for next question transition.");
-                     }
+                      // Update status based on the *current* mode after AI finishes
+                      const isPractice = State.currentMode === 'practice';
+                      let statusMsg = "Ready";
+                      if (isPractice) {
+                           const totalTasks = QuestionBank.length - 1;
+                           const currentTaskNum = Math.min(currentQuestionIndex + 1, totalTasks);
+                           statusMsg = currentTask ? (currentTask.id === 'end' ? "Practice Complete" : `Task ${currentTaskNum}/${totalTasks}: ${currentTask.id}`) : "Ready";
+                      } else { statusMsg = "Cat Chat Mode"; }
+                      // Only set busy to false if the other flag is also false
+                      UI.updateStatus(statusMsg, isWaitingForNext);
                  }
              }
          };
 
-        // --- Main Send Message Handler ---
+        // --- Main Send Message Handler (Mode Aware) ---
         const handleSendMessage = async () => {
             if (!messageInput || isWaitingForNext || isWaitingForAI) return;
 
             const userText = messageInput.value.trim();
             if (!userText) return;
 
-            console.log(`Handling send: "${userText}"`);
-            UI.addMessage('user', userText);
-            conversationHistory.push({ role: "user", content: userText });
+            console.log(`Handling send in mode: ${State.currentMode}, Text: "${userText}"`);
+            UI.addMessage('user', userText); // Display in current view
+
+            // Get the relevant history and system prompt for the current mode
+            const activeHistory = State.histories[State.currentMode];
+            activeHistory.push({ role: "user", content: userText }); // Add to the correct history
+
             messageInput.value = '';
             UI.autoResizeTextarea();
 
-            let isTaskActive = currentTask && currentTask.id !== 'end';
+            // --- Practice Mode Logic ---
+            if (State.currentMode === 'practice') {
+                let isTaskActive = currentTask && currentTask.id !== 'end';
 
-            if (isTaskActive) {
-                 console.log(`Task active (${currentTask.id}). Sending for AI interpretation (Eval or Help).`);
-                 const evaluationPromptContent = createAIEvaluationPromptContent(currentTask, userText);
+                if (isTaskActive) {
+                    console.log(`PRACTICE: Task active (${currentTask.id}). Sending for AI evaluation/interpretation.`);
+                    const evaluationPromptContent = createAIEvaluationPrompt(currentTask, userText);
 
-                 if (evaluationPromptContent) {
-                      // Use a temporary history for the API call, replacing user text with the structured prompt
-                      const tempEvalHistory = [...conversationHistory];
-                      if (tempEvalHistory.length > 0) tempEvalHistory[tempEvalHistory.length-1].content = evaluationPromptContent;
-                      else tempEvalHistory.push({ role: "user", content: evaluationPromptContent }); // Fallback
+                    if (evaluationPromptContent) {
+                        const tempEvalHistory = [...activeHistory]; // Use practice history
+                        if (tempEvalHistory.length > 0 && tempEvalHistory[tempEvalHistory.length-1].role === 'user') {
+                            tempEvalHistory[tempEvalHistory.length-1].content = evaluationPromptContent;
+                        } else { tempEvalHistory.push({ role: "user", content: evaluationPromptContent }); }
 
-                      // Call API using the EVALUATION system prompt
-                      const aiResponseText = await API.fetchChatResponse(tempEvalHistory, Config.evaluationSystemPrompt);
+                        const aiResponseText = await API.fetchChatResponse(tempEvalHistory, Config.evaluationSystemPrompt);
 
-                      if (aiResponseText !== null) {
-                          // Add the AI's *actual raw response* to the main history for context
-                          conversationHistory.push({ role: "assistant", content: aiResponseText });
+                        if (aiResponseText !== null) {
+                            const evaluation = parseSimpleEvaluation(aiResponseText);
+                            // Add AI's actual response to practice history
+                            activeHistory.push({ role: "assistant", content: aiResponseText });
+                            // Display feedback based on parsed result
+                            if (evaluation.result === 'question') {
+                                console.log("PRACTICE: AI identified input as QUESTION");
+                                UI.addMessage('bot', evaluation.explanation, 'ai-response');
+                                UI.updateStatus(`Task ${currentQuestionIndex + 1}/${QuestionBank.length -1}: ${currentTask.id}`, false); // Keep task active
+                            } else {
+                                UI.addMessage('bot', evaluation.explanation, evaluation.result);
+                                if (evaluation.result === 'correct') {
+                                    console.log("PRACTICE: AI Evaluation: Correct");
+                                    UI.updateStatus("Correct! Loading next task...", true);
+                                    isWaitingForNext = true;
+                                    setTimeout(nextQuestion, Config.nextQuestionDelay);
+                                } else {
+                                    console.log(`PRACTICE: AI Evaluation: ${evaluation.result}`);
+                                    const statusMsg = evaluation.result === 'incorrect' ? "Incorrect. Please try again." : "Clarification needed.";
+                                    UI.updateStatus(statusMsg, false);
+                                }
+                            }
+                        } else { console.log("PRACTICE: AI evaluation call failed."); }
+                    } else { console.error("PRACTICE: Failed to create evaluation prompt."); UI.updateStatus("Error preparing evaluation", false); }
 
-                          const result = parseMultiPrefixResponse(aiResponseText);
-
-                          // Display the explanation part, styled by the parsed type
-                          UI.addMessage('bot', result.explanation, result.type); // 'correct', 'incorrect', 'maybe', or 'help'
-
-                          if (result.type === 'correct') {
-                              console.log("AI Evaluation: Correct");
-                              UI.updateStatus("Correct! Loading next task...", true); // Set busy
-                              isWaitingForNext = true;
-                              setTimeout(nextQuestion, Config.nextQuestionDelay); // Proceed
-                          } else if (result.type === 'help') {
-                               console.log("AI identified as HELP request");
-                               UI.updateStatus("AI provided help. Try the task again or ask another question.", false); // Not busy, allow retry/next question
-                          } else { // 'incorrect' or 'maybe' (or parsing fail treated as maybe)
-                               console.log(`AI Evaluation: ${result.type}`);
-                               const statusMsg = result.type === 'incorrect' ? "Incorrect. Please review and try again." : "Clarification needed. Review feedback/try again.";
-                               UI.updateStatus(statusMsg, false); // Not busy, allow retry
-                          }
-                      } else { console.log("AI evaluation call failed."); }
-                 } else {
-                      console.error("Failed to create evaluation prompt.");
-                      UI.updateStatus("Error preparing evaluation", false);
-                 }
-
-            } else {
-                 // Not an active task, treat as general query using HELPER prompt
-                 console.log("Handling as general AI query (Helper Persona).");
-                 const botResponse = await API.fetchChatResponse(conversationHistory, Config.helperSystemPrompt);
-                 if (botResponse !== null) {
-                     UI.addMessage('bot', botResponse, 'ai-response'); // General AI style
-                     conversationHistory.push({ role: "assistant", content: botResponse });
-                 }
-                 // Status/button state handled by API finally block
+                } else { // General query within practice mode (e.g., after 'end' task)
+                     console.log("PRACTICE: Handling as general AI query.");
+                     const botResponse = await API.fetchChatResponse(activeHistory, Config.standardSystemPrompt);
+                     if (botResponse !== null) {
+                         UI.addMessage('bot', botResponse, 'ai-response');
+                         activeHistory.push({ role: "assistant", content: botResponse });
+                     }
+                }
+            }
+            // --- Cat Mode Logic ---
+            else if (State.currentMode === 'cat') {
+                console.log("CAT: Handling as general AI query.");
+                // Send cat history using the cat system prompt
+                const botResponse = await API.fetchChatResponse(activeHistory, Config.catSystemPrompt);
+                if (botResponse !== null) {
+                    UI.addMessage('bot', botResponse, 'ai-response'); // Display in chat
+                    activeHistory.push({ role: "assistant", content: botResponse }); // Add to cat history
+                }
             }
         };
 
+
         // --- Event Listeners & Initialize ---
-        if (sendMessageBtn && messageInput && messageList && statusBarText && playgroundContent) {
+        if (sendMessageBtn && toggleModeBtn && messageInput && messageList && statusBarText && playgroundContent) {
              console.log("All elements found. Adding listeners.");
              sendMessageBtn.addEventListener('click', handleSendMessage);
+             toggleModeBtn.addEventListener('click', toggleMode); // Listener for new button
+
              messageInput.addEventListener('keypress', (event) => {
                  if (event.key === 'Enter' && !event.shiftKey) {
                      event.preventDefault();
@@ -493,15 +560,30 @@ Analyze [USER INPUT]. Is it an attempt to answer the [TASK DETAILS], or is it a 
              });
              messageInput.addEventListener('input', UI.autoResizeTextarea);
 
-             console.log("Initializing practice + Full AI Eval + Help...");
+             // --- Initial Setup ---
+             console.log("Initializing practice + AI + Mode Toggle...");
              UI.updateStatus("Initializing...", true);
-             conversationHistory = [];
-             UI.addMessage('bot', "Welcome! I'll guide you through tasks. Ask for help or general questions anytime.");
-             conversationHistory.push({ role: "assistant", content: "Welcome! I'll guide you through tasks. Ask for help or general questions anytime." });
-             setTimeout(nextQuestion, 1000);
+             State.histories.practice = []; // Clear histories on load
+             State.histories.cat = [];
+             // Add initial welcome message only to practice history
+             const welcomeMsg = "Welcome! I'll guide you through some Python tasks. Answer the prompts, or ask general questions anytime. Use the button next to Send to switch to Cat Chat mode!";
+             State.histories.practice.push({ role: "assistant", content: welcomeMsg });
+             UI.addMessage('bot', welcomeMsg); // Display initial message
 
-        } else { /* Error Handling */ } // Keep error handling as before
-    });
+             setTimeout(nextQuestion, 1000); // Load the first practice question
+             UI.setModeUI('practice'); // Ensure initial UI state is correct
+
+        } else {
+            console.error("Initialization failed: One or more essential elements are missing.");
+             const errorMsg = "CRITICAL ERROR: Could not initialize interface. Check console (F12).";
+             if (statusBarText) statusBarText.textContent = errorMsg;
+             const errorDiv = document.createElement('div');
+             errorDiv.classList.add('error-display');
+             errorDiv.textContent = errorMsg;
+             if(messageList) messageList.appendChild(errorDiv); else document.body.prepend(errorDiv);
+        }
+
+    }); // End DOMContentLoaded
     </script>
 
 </body>
