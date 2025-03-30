@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Module 0: Lesson Simulation - Audio Synced IDE (Sequential)</title>
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Roboto:wght@400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* --- Base Styles & Variables --- */
+        :root {
+            --bg-base: #181a1f;         /* Very dark blue/grey base */
+            --bg-panel: #21252b;        /* Slightly lighter panels */
+            --bg-editor: #282c34;       /* Editor background (Atom One Dark-like) */
+            --bg-console: #1f2328;      /* Darker console */
+            --text-primary: #abb2bf;    /* Primary light grey text */
+            --text-secondary: #5c6370;  /* Dimmer grey for secondary info */
+            --text-highlight: #e5c07b;  /* Accent yellow/gold */
+            --border-color: #3a3f4b;    /* Subtle borders */
+            --cursor-color: #528bff;    /* Accent blue cursor */
+            --scrollbar-thumb: #4b5263;
+            --scrollbar-track: var(--bg-panel);
+
+            /* Syntax Highlighting Palette (Atom One Dark inspired) */
+            --hl-keyword: #c678dd;  /* Purple */
+            --hl-string: #98c379;   /* Green */
+            --hl-comment: var(--text-secondary); /* Dim grey, italic */
+            --hl-function: #61afef;  /* Blue */
+            --hl-paren: var(--text-primary); /* Match default text */
+            --hl-number: #d19a66;   /* Orange/Brown */
+            --hl-output: #a0e8ff;   /* Light cyan for output */
+            --hl-error: #e06c75;    /* Red for errors (if needed later) */
+
+            /* UI Elements */
+            --sidebar-bg: var(--bg-base);
+            --statusbar-bg: #1b1d23;
+            --statusbar-text: var(--text-secondary);
+            --titlebar-bg: var(--bg-base);
+            --titlebar-text: var(--text-secondary);
+
+            --font-code: 'Fira Code', 'Courier New', Courier, monospace;
+            --font-ui: 'Roboto', sans-serif;
+            --transition-speed: 0.3s; /* For UI elements, not typing */
+             --typing-cursor-height: 1.4em; /* Consistent cursor height */
+             --line-height-editor: 1.7;
+        }
+
+        /* --- Reset & Base --- */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body {
+            height: 100%;
+            overflow: hidden; /* Fullscreen - no scrollbars on body */
+            background-color: var(--bg-base); /* Match IDE base */
+            font-family: var(--font-ui);
+            color: var(--text-primary);
+        }
+
+        /* --- IDE Layout --- */
+        .ide-container {
+            display: flex;
+            flex-direction: column;
+            width: 100vw;
+            height: 100vh;
+            background-color: var(--bg-base);
+        }
+
+        /* --- Mock Title Bar (Minimalist) --- */
+        .title-bar {
+            background-color: var(--titlebar-bg);
+            padding: 8px 15px;
+            color: var(--titlebar-text);
+            font-size: 0.9em;
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+            flex-shrink: 0;
+            position: relative;
+        }
+        .title-bar .file-name {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+         .title-bar-icons {
+            position: absolute;
+            left: 10px; top: 50%; transform: translateY(-50%);
+            display: flex; gap: 8px;
+        }
+         .title-bar-icons i { font-size: 0.8em; color: #555; }
+
+        /* --- Main Content Area (Sidebar + Editor/Console) --- */
+        .main-content { display: flex; flex-grow: 1; overflow: hidden; }
+
+        /* --- Mock Sidebar --- */
+        .sidebar-placeholder {
+            width: 50px; background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color); flex-shrink: 0;
+            display: flex; flex-direction: column; align-items: center;
+            padding-top: 20px; gap: 25px;
+        }
+        .sidebar-placeholder i { font-size: 1.4em; color: var(--text-secondary); opacity: 0.6; }
+         .sidebar-placeholder i.active { color: var(--text-primary); opacity: 1; }
+
+        /* --- Editor & Console Split --- */
+        .editor-console-split { display: flex; flex-direction: column; flex-grow: 1; overflow: hidden; }
+
+        /* --- Editor Pane Styling --- */
+        .editor-pane {
+            flex-grow: 1; background-color: var(--bg-editor);
+            display: flex; overflow: hidden; position: relative; min-height: 150px;
+        }
+        .line-numbers {
+            font-family: var(--font-code); font-size: 1em; line-height: var(--line-height-editor);
+            color: var(--text-secondary); text-align: right;
+            padding: 15px 15px 15px 10px; user-select: none;
+            background-color: var(--bg-editor); border-right: 1px solid var(--border-color);
+            white-space: pre; overflow: hidden; flex-shrink: 0;
+        }
+        .code-area-wrapper { flex-grow: 1; overflow-y: auto; padding: 15px; position: relative; }
+        .code-area {
+            font-family: var(--font-code); font-size: 1em; line-height: var(--line-height-editor);
+            color: var(--text-primary); white-space: pre; outline: none;
+            min-height: 100%; position: relative; /* For cursor */
+        }
+
+         /* --- Mock Minimap --- */
+        .minimap-placeholder {
+            position: absolute; top: 0; right: 0; bottom: 0; width: 80px;
+            background-color: rgba(0, 0, 0, 0.1); border-left: 1px solid var(--border-color);
+            flex-shrink: 0; overflow: hidden; opacity: 0.5; pointer-events: none;
+        }
+         .minimap-placeholder::before {
+            content: ''; position: absolute; top: 10px; left: 10px; right: 10px; bottom: 10px;
+             background: linear-gradient( rgba(255,255,255,0.08) 1px, transparent 1px );
+             background-size: 100% 4px; /* Simulate lines */
+         }
+
+        /* --- Cursor Styling --- */
+        .code-area::after {
+            content: ''; display: block; width: 2px; height: var(--typing-cursor-height);
+            background-color: var(--cursor-color); position: absolute;
+            top: 0; left: 0; /* Updated by JS */
+            opacity: 0; /* Hidden initially */
+            transition: opacity 0.1s ease-out, top 0.05s linear, left 0.05s linear;
+             border-radius: 1px; box-shadow: 0 0 5px var(--cursor-color);
+        }
+        .code-area.typing::after { opacity: 1; animation: none; }
+        .code-area.idle::after { opacity: 1; animation: blink 1.1s steps(1) infinite; }
+        .code-area.no-cursor::after { opacity: 0; animation: none; }
+        @keyframes blink { 50% { opacity: 0; } }
+
+        /* --- Console Pane Styling --- */
+        .console-pane {
+            height: 30%; max-height: 350px; min-height: 120px;
+            background-color: var(--bg-console); border-top: 1px solid var(--border-color);
+            color: var(--text-primary); font-family: var(--font-code);
+            font-size: 0.95em; line-height: 1.6; padding: 10px 15px;
+            overflow-y: auto; flex-shrink: 0; white-space: pre-wrap; word-wrap: break-word;
+        }
+        .console-pane .output-line { color: var(--hl-output); }
+        .console-pane .error-line { color: var(--hl-error); font-weight: bold;}
+        .console-pane .placeholder { color: var(--text-secondary); font-style: italic; }
+        .console-pane .info-line { color: var(--text-secondary); font-style: italic;}
+        .console-prompt { color: var(--text-secondary); margin-right: 8px; user-select: none;}
+
+        /* --- Status Bar Styling --- */
+        .status-bar {
+            background-color: var(--statusbar-bg); color: var(--statusbar-text);
+            padding: 5px 15px; font-size: 0.85em; display: flex;
+            justify-content: space-between; align-items: center;
+            border-top: 1px solid var(--border-color); flex-shrink: 0; white-space: nowrap;
+        }
+        .status-bar-left, .status-bar-right { display: flex; gap: 15px; align-items: center; }
+        .status-bar i { margin-right: 5px; font-size: 1.1em; vertical-align: middle;}
+        .status-bar .git-branch i { color: #e8ae59; }
+        .status-bar .language i { color: #61afef; }
+
+        /* --- Syntax Highlighting Classes --- */
+        .hl-keyword { color: var(--hl-keyword); font-weight: 500; }
+        .hl-string { color: var(--hl-string); }
+        .hl-comment { color: var(--hl-comment); font-style: italic; }
+        .hl-function { color: var(--hl-function); }
+        .hl-paren { color: var(--hl-paren); }
+        .hl-number { color: var(--hl-number); }
+
+        /* --- Scrollbar Styling (Webkit) --- */
+        ::-webkit-scrollbar { width: 10px; height: 10px; }
+        ::-webkit-scrollbar-track { background: var(--scrollbar-track); }
+        ::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 5px; }
+        ::-webkit-scrollbar-thumb:hover { background: #5a6375; }
+        ::-webkit-scrollbar-corner { background: var(--scrollbar-track); }
+
+    </style>
+</head>
+<body>
+
+    <div class="ide-container">
+        <!-- Title Bar -->
+        <div class="title-bar">
+             <span class="file-name">module_0_review.py</span>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Sidebar Placeholder -->
+            <div class="sidebar-placeholder">
+                 <i class="fas fa-copy active"></i> <i class="fas fa-search"></i> <i class="fas fa-code-branch"></i>
+                 <i class="fas fa-bug"></i> <i class="fas fa-puzzle-piece"></i>
+            </div>
+
+            <!-- Editor & Console -->
+            <div class="editor-console-split">
+                <!-- Editor Pane -->
+                <div class="editor-pane">
+                    <div class="line-numbers" id="line-numbers">1</div>
+                     <div class="code-area-wrapper" id="code-area-wrapper">
+                        <div class="code-area" id="code-area"></div>
+                     </div>
+                     <div class="minimap-placeholder"></div>
+                </div>
+                <!-- Console Pane -->
+                <div class="console-pane" id="console-pane">
+                    <span class="placeholder">Python Console Ready... [Click to Start Lesson]</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status Bar -->
+        <div class="status-bar" id="status-bar">
+             <div class="status-bar-left">
+                 <span class="git-branch"><i class="fas fa-code-branch"></i> main</span>
+             </div>
+             <div class="status-bar-right">
+                <span id="cursor-pos">Ln 1, Col 1</span>
+                <span>Spaces: 4</span>
+                <span>UTF-8</span>
+                <span class="language"><i class="fab fa-python"></i> Python 3.1x.x</span> <!-- Updated Version -->
+             </div>
+        </div>
+    </div>
+
+     <!-- Hidden Audio Elements (Ensure src paths are correct!) -->
+     <div style="display: none;">
+        <audio id="audio-ctp-0-a1-eng" src="audio/ctp-0-a1-eng.mp3" preload="auto"></audio>
+        <audio id="audio-ctp-0-a2-eng" src="audio/ctp-0-a2-eng.mp3" preload="auto"></audio>
+        <audio id="audio-ctp-0-a3-eng" src="audio/ctp-0-a3-eng.mp3" preload="auto"></audio>
+        <audio id="audio-ctp-0-a4-eng" src="audio/ctp-0-a4-eng.mp3" preload="auto"></audio>
+        <audio id="audio-ctp-0-a5-eng" src="audio/ctp-0-a5-eng.mp3" preload="auto"></audio>
+        <audio id="audio-ctp-0-a6-eng" src="audio/ctp-0-a6-eng.mp3" preload="auto"></audio>
+        <audio id="audio-ctp-0-a7-eng" src="audio/ctp-0-a7-eng.mp3" preload="auto"></audio>
+        <audio id="audio-ctp-0-a8-eng" src="audio/ctp-0-a8-eng.mp3" preload="auto"></audio>
+        <audio id="audio-ctp-0-a9-eng" src="audio/ctp-0-a9-eng.mp3" preload="auto"></audio>
+        <audio id="audio-ctp-0-a10-eng" src="audio/ctp-0-a10-eng.mp3" preload="auto"></audio>
+        <audio id="audio-ctp-0-a11-eng" src="audio/ctp-0-a11-eng.mp3" preload="auto"></audio>
+        <audio id="audio-ctp-0-a12-eng" src="audio/ctp-0-a12-eng.mp3" preload="auto"></audio>
+        <audio id="audio-ctp-0-a13-eng" src="audio/ctp-0-a13-eng.mp3" preload="auto"></audio>
+        <audio id="audio-ctp-0-a14-eng" src="audio/ctp-0-a14-eng.mp3" preload="auto"></audio>
+        <audio id="audio-ctp-0-a15-eng" src="audio/ctp-0-a15-eng.mp3" preload="auto"></audio>
+        <audio id="audio-ctp-0-a16-eng" src="audio/ctp-0-a16-eng.mp3" preload="auto"></audio>
+     </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // --- Element References ---
+        const codeArea = document.getElementById('code-area');
+        const consolePane = document.getElementById('console-pane');
+        const lineNumbersEl = document.getElementById('line-numbers');
+        const statusBar = document.getElementById('status-bar');
+        const cursorPosEl = document.getElementById('cursor-pos');
+        const codeAreaWrapper = document.getElementById('code-area-wrapper');
+
+        // --- State Variables ---
+        let currentLineNumber = 1;
+        let currentCol = 1;
+        let currentContentHTML = '';
+        let charWidthEstimate = 9; // Adjust if needed
+        let lineHeightEstimate = 27; // Adjust based on --line-height-editor * font-size
+
+        // --- Audio Setup ---
+        const audioElements = {};
+        document.querySelectorAll('audio[id^="audio-ctp-0-a"]').forEach(el => {
+            audioElements[el.id] = el;
+             el.onerror = () => console.error(`Error loading audio: ${el.src}`);
+        });
+
+        // --- Helper Functions (getTextWidth, updateStatusBarAndCursor, updateLineNumbers, simulateTyping, showOutput, clearConsole, clearEditor, playAudio) ---
+        // These functions remain largely the same as the previous version. Included here for completeness.
+
+         function getTextWidth(text, font) {
+             const canvas = getTextWidth.canvas || (getTextWidth.canvas = document.createElement("canvas"));
+             const context = canvas.getContext("2d");
+             context.font = font || getComputedStyle(codeArea).font;
+             return context.measureText(text).width;
+         }
+
+        function updateStatusBarAndCursor() {
+            const lines = codeArea.innerText.split('\n');
+            currentLineNumber = lines.length;
+            const lastLineText = lines[currentLineNumber - 1] || '';
+            currentCol = lastLineText.length + 1;
+            cursorPosEl.textContent = `Ln ${currentLineNumber}, Col ${currentCol}`;
+
+            const cursorTop = (currentLineNumber - 1) * lineHeightEstimate;
+            const cursorLeft = getTextWidth(lastLineText, getComputedStyle(codeArea).font);
+
+             const cursorPseudoStyle = `
+                 .code-area.idle::after,
+                 .code-area.typing::after {
+                     top: ${cursorTop}px;
+                     left: ${cursorLeft}px;
+                 }`;
+             let styleSheet = document.getElementById('cursor-style');
+             if (!styleSheet) {
+                 styleSheet = document.createElement('style'); styleSheet.id = 'cursor-style';
+                 document.head.appendChild(styleSheet);
+             }
+             styleSheet.textContent = cursorPseudoStyle;
+
+            const wrapperRect = codeAreaWrapper.getBoundingClientRect();
+            const cursorAbsoluteTop = codeArea.offsetTop + cursorTop;
+
+             if (cursorAbsoluteTop + lineHeightEstimate > codeAreaWrapper.scrollTop + wrapperRect.height) {
+                 codeAreaWrapper.scrollTop = cursorAbsoluteTop + lineHeightEstimate - wrapperRect.height + 10;
+             }
+             else if (cursorAbsoluteTop < codeAreaWrapper.scrollTop) {
+                 codeAreaWrapper.scrollTop = cursorAbsoluteTop - 10;
+             }
+        }
+
+        function updateLineNumbers() {
+             const lines = codeArea.innerText.split('\n').length;
+             const maxLines = Math.max(lines, 1);
+             let numbersHTML = '';
+             for (let i = 1; i <= maxLines; i++) { numbersHTML += i + '\n'; }
+             lineNumbersEl.textContent = numbersHTML.trimEnd();
+         }
+
+        function simulateTyping(textToTypeHTML, typingSpeed) {
+             return new Promise((resolve) => {
+                 codeArea.classList.add('typing');
+                 codeArea.classList.remove('idle', 'no-cursor');
+                 let charIndex = 0;
+                 let currentHTML = currentContentHTML;
+
+                 function typeStep() {
+                     if (charIndex >= textToTypeHTML.length) {
+                         currentContentHTML = currentHTML;
+                         codeArea.classList.remove('typing');
+                         codeArea.classList.add('idle');
+                         updateLineNumbers();
+                         updateStatusBarAndCursor();
+                         resolve();
+                         return;
+                     }
+                     let nextChar = textToTypeHTML[charIndex];
+                     let stepSize = 1;
+                     if (nextChar === '<') {
+                         const tagEndIndex = textToTypeHTML.indexOf('>', charIndex);
+                         if (tagEndIndex !== -1) {
+                             stepSize = tagEndIndex - charIndex + 1;
+                             nextChar = textToTypeHTML.substring(charIndex, tagEndIndex + 1);
+                         }
+                     }
+                     currentHTML += nextChar;
+                     codeArea.innerHTML = currentHTML;
+                     updateLineNumbers();
+                     updateStatusBarAndCursor(); // Update cursor position while typing
+                     charIndex += stepSize;
+                     setTimeout(typeStep, typingSpeed);
+                 }
+                 typeStep();
+             });
+        }
+
+        function showOutput(outputLines, isInfo = false, isError = false) {
+             return new Promise((resolve) => {
+                 consolePane.innerHTML = '';
+                 outputLines.forEach(line => {
+                     const lineEl = document.createElement('div');
+                     if (isError) { lineEl.className = 'error-line'; lineEl.textContent = `❌ ${line}`; }
+                     else if (isInfo) { lineEl.className = 'info-line'; lineEl.textContent = `ℹ️ ${line}`; }
+                     else {
+                         lineEl.className = 'output-line';
+                         const promptSpan = document.createElement('span'); promptSpan.className = 'console-prompt'; promptSpan.textContent = '>>>';
+                         lineEl.appendChild(promptSpan); lineEl.appendChild(document.createTextNode(` ${line}`));
+                     }
+                     consolePane.appendChild(lineEl);
+                 });
+                 consolePane.scrollTop = consolePane.scrollHeight;
+                 resolve();
+             });
+        }
+
+        function clearConsole() {
+             return new Promise((resolve) => {
+                 consolePane.innerHTML = '<span class="placeholder">Console cleared.</span>';
+                 resolve();
+             });
+        }
+
+        function clearEditor() {
+             return new Promise((resolve) => {
+                 currentContentHTML = ''; codeArea.innerHTML = ''; currentLineNumber = 1; currentCol = 1;
+                 updateLineNumbers(); updateStatusBarAndCursor();
+                 codeArea.classList.add('idle'); codeArea.classList.remove('typing', 'no-cursor');
+                 resolve();
+             });
+        }
+
+        async function playAudio(audioId) {
+            const audioElement = audioElements[audioId];
+            if (!audioElement) {
+                console.warn(`Audio element with ID ${audioId} not found.`); return;
+            }
+            try {
+                audioElement.currentTime = 0; await audioElement.play(); console.log(`Playing audio: ${audioId}`);
+            } catch (error) {
+                console.error(`Error playing audio ${audioId}:`, error);
+                if (error.name === 'NotAllowedError') {
+                   alert("Audio autoplay failed. Please click the page once to enable audio, then reload.");
+                }
+            }
+        }
+
+        async function pause(duration) {
+             return new Promise((resolve) => {
+                 codeArea.classList.add('idle');
+                 codeArea.classList.remove('typing', 'no-cursor');
+                 updateStatusBarAndCursor();
+                 setTimeout(resolve, duration);
+             });
+         }
+
+
+        // --- THE LESSON SCRIPT ---
+        // Uses corrected durations and sequential order a1, a2, a3...
+        const audioDurations = {
+            'a1': 13000, 'a2': 13000, 'a3': 14000, 'a4': 30000, 'a5': 6000,
+            'a6': 9000, 'a7': 8000, 'a8': 5000, 'a9': 11000, 'a10': 16000,
+            'a11': 2000, 'a12': 18000, 'a13': 8000, // Corrected duration
+            'a14': 8000, 'a15': 15000, 'a16': 32000
+        };
+
+        const lessonScript = [
+            // Segment 1: Intro & Welcome (a1)
+            { type: 'audio', audioId: 'audio-ctp-0-a1-eng', duration: audioDurations['a1'] },
+            { type: 'typeCode', content: `<span class="hl-comment"># Module 0 Review: print() and comments</span>\n\n`, speed: 70, note: "Type title during a1" },
+            { type: 'pause', duration: audioDurations['a1'], note: "Wait for a1" }, // Wait for audio
+
+            // Segment 2: First print() explanation (a2)
+            { type: 'audio', audioId: 'audio-ctp-0-a2-eng', duration: audioDurations['a2'] },
+            { type: 'typeCode', content: `<span class="hl-keyword">print</span><span class="hl-paren">(</span><span class="hl-string">"Hello, World!"</span><span class="hl-paren">)</span>`, speed: 80, note: "Type print() during a2" },
+            { type: 'pause', duration: audioDurations['a2'], note: "Wait for a2" },
+
+            // Segment 3: Breaking down print (a3)
+            { type: 'audio', audioId: 'audio-ctp-0-a3-eng', duration: audioDurations['a3'] },
+             // Visual focus or subtle highlight could be added here if desired
+            { type: 'pause', duration: audioDurations['a3'], note: "Wait for a3 (anatomy explanation)" },
+
+            // Segment 4: Printing different things (a4 - Long)
+            { type: 'audio', audioId: 'audio-ctp-0-a4-eng', duration: audioDurations['a4'] },
+            { type: 'typeCode', content: `\n<span class="hl-keyword">print</span><span class="hl-paren">(</span><span class="hl-string">"Python is powerful."</span><span class="hl-paren">)</span>`, speed: 70, note: "Type second print during a4" },
+            { type: 'pause', duration: 500 },
+            { type: 'typeCode', content: `\n<span class="hl-keyword">print</span><span class="hl-paren">(</span><span class="hl-string">"Practice makes perfect!"</span><span class="hl-paren">)</span>`, speed: 70, note: "Type third print during a4" },
+            { type: 'pause', duration: 1500 }, // Pause after typing
+            { type: 'runCode', output: ["Hello, World!", "Python is powerful.", "Practice makes perfect!"] },
+             // Calculate remaining pause time needed to match audio
+            { type: 'pause', duration: Math.max(0, audioDurations['a4'] - 500 - 1500 - 1000), note: "Wait remaining a4" },
+
+            // Segment 5: Blank line explanation (a5)
+            { type: 'audio', audioId: 'audio-ctp-0-a5-eng', duration: audioDurations['a5'] },
+            { type: 'typeCode', content: `\n\n<span class="hl-comment"># Adding a blank line</span>\n`, speed: 60, note: "Type blank comment during a5" },
+            { type: 'typeCode', content: `<span class="hl-keyword">print</span><span class="hl-paren">(</span><span class="hl-paren">)</span>`, speed: 95, note: "Type print() during a5" },
+            { type: 'pause', duration: audioDurations['a5'], note: "Wait for a5" },
+
+            // Segment 6: Running the code (result of print("Hello World")) (a6)
+            { type: 'audio', audioId: 'audio-ctp-0-a6-eng', duration: audioDurations['a6'] },
+            // Code already shows print("Hello...") from step a2/a4. Re-run shows all current code.
+            { type: 'runCode', output: ["Hello, World!", "Python is powerful.", "Practice makes perfect!", ""] },
+            { type: 'pause', duration: audioDurations['a6'], note: "Wait for a6 (run result)" },
+
+
+            // Segment 7: Multi-line default behavior (a7)
+            { type: 'audio', audioId: 'audio-ctp-0-a7-eng', duration: audioDurations['a7'] },
+            { type: 'typeCode', content: `\n<span class="hl-keyword">print</span><span class="hl-paren">(</span><span class="hl-string">"Third line."</span><span class="hl-paren">)</span>`, speed: 75, note: "Type third line during a7" },
+            { type: 'pause', duration: 1000 },
+            { type: 'runCode', output: ["Hello, World!", "Python is powerful.", "Practice makes perfect!", "", "Third line."]},
+            { type: 'pause', duration: Math.max(0, audioDurations['a7'] - 1000 - 500), note: "Wait remaining a7" },
+            { type: 'clearConsole' },
+            { type: 'clearEditor' },
+            { type: 'pause', duration: 500 },
+
+            // Segment 8: End-of-line comment explanation (a8)
+            { type: 'audio', audioId: 'audio-ctp-0-a8-eng', duration: audioDurations['a8'] },
+            { type: 'typeCode', content: `<span class="hl-keyword">print</span><span class="hl-paren">(</span><span class="hl-string">"Processing data..."</span><span class="hl-paren">)</span> `, speed: 70, note: "Type print during a8" },
+            { type: 'typeCode', content: `<span class="hl-comment"># End-of-line comment</span>`, speed: 55, note: "Type end comment during a8" },
+            { type: 'pause', duration: audioDurations['a8'], note: "Wait for a8" },
+
+
+            // Segment 9: Run code with blank line (result of print()) (a9)
+            { type: 'audio', audioId: 'audio-ctp-0-a9-eng', duration: audioDurations['a9'] },
+            // Code should show the print() from step a5. Re-run to show its effect if needed.
+            // Let's assume the previous run already showed the blank line. If not, re-run here.
+            // { type: 'runCode', output: ["Processing data..."] }, // Assuming the editor still has the last code
+            { type: 'pause', duration: audioDurations['a9'], note: "Wait for a9 (blank run result)" },
+
+
+            // Segment 10: Run comment code (no output) (a10)
+            { type: 'audio', audioId: 'audio-ctp-0-a10-eng', duration: audioDurations['a10'] },
+            { type: 'clearEditor' },
+            { type: 'pause', duration: 500 },
+            { type: 'typeCode', content: `<span class="hl-comment"># This is just a comment line.</span>\n`, speed: 60, note: "Type comment during a10" },
+            { type: 'pause', duration: 1000 },
+            { type: 'runCode', output: ["(No output from comments)"], isInfo: true },
+            { type: 'pause', duration: audioDurations['a10'] - 500 - 1000 - 1000, note: "Wait remaining a10" },
+
+            // Segment 11: Run end-of-line comment code (a11)
+             { type: 'audio', audioId: 'audio-ctp-0-a11-eng', duration: audioDurations['a11'] },
+             { type: 'clearEditor' },
+             { type: 'pause', duration: 300 },
+             { type: 'typeCode', content: `<span class="hl-keyword">print</span><span class="hl-paren">(</span><span class="hl-string">"Data Processed"</span><span class="hl-paren">)</span> <span class="hl-comment"># Final step</span>`, speed: 70, note: "Type code with end comment" },
+             { type: 'pause', duration: 500 },
+             { type: 'runCode', output: ["Data Processed"] },
+             { type: 'pause', duration: audioDurations['a11'], note: "Wait for a11" }, // Short audio, likely covered by action time
+
+             // Segment 12: Explain commenting out code (a12)
+             { type: 'audio', audioId: 'audio-ctp-0-a12-eng', duration: audioDurations['a12'] },
+             { type: 'typeCode', content: `\n<span class="hl-comment"># print("Old debug message") # Temporarily disabled</span>`, speed: 50, note: "Type commented-out code during a12" },
+             // { type: 'runCode', output: ["Data Processed"] }, // Run again shows only previous output
+             { type: 'pause', duration: audioDurations['a12'], note: "Wait for a12" },
+             { type: 'clearConsole' },
+             { type: 'clearEditor' },
+             { type: 'pause', duration: 500 },
+
+             // Segment 13: Syntax reminder intro (a13)
+             { type: 'audio', audioId: 'audio-ctp-0-a13-eng', duration: audioDurations['a13'] },
+             { type: 'typeCode', content: `<span class="hl-comment"># Remember: Syntax is important!</span>\n`, speed: 60, note: "Type syntax intro during a13" },
+             { type: 'pause', duration: audioDurations['a13'], note: "Wait for a13" },
+
+             // Segment 14: Syntax recap (spelling, parens, quotes) (a14)
+             { type: 'audio', audioId: 'audio-ctp-0-a14-eng', duration: audioDurations['a14'] },
+             { type: 'typeCode', content: `<span class="hl-comment"># - print (lowercase)</span>\n<span class="hl-comment"># - () Parentheses</span>\n<span class="hl-comment"># - "" or '' Quotes</span>`, speed: 65, note: "Type syntax details during a14" },
+             { type: 'pause', duration: audioDurations['a14'], note: "Wait for a14" },
+
+            // Segment 15: Wrap-up message (a15)
+            { type: 'audio', audioId: 'audio-ctp-0-a15-eng', duration: audioDurations['a15'] },
+            { type: 'clearEditor' }, { type: 'pause', duration: 300 },
+            { type: 'typeCode', content: `<span class="hl-comment"># You've mastered the basics!</span>`, speed: 60, note: "Type wrap-up 1 during a15" },
+            { type: 'pause', duration: 500 },
+            { type: 'typeCode', content: `\n<span class="hl-keyword">print</span><span class="hl-paren">(</span><span class="hl-string">"Module 0 Complete!"</span><span class="hl-paren">)</span>`, speed: 65, note: "Type wrap-up 2 during a15" },
+            { type: 'pause', duration: 1000 },
+            { type: 'runCode', output: ["Module 0 Complete!"] },
+            { type: 'pause', duration: Math.max(0, audioDurations['a15'] - 300 - 500 - 1000 - 1000), note: "Wait remaining a15" },
+
+
+            // Segment 16: Final conclusion and next steps (a16 - Long)
+            { type: 'audio', audioId: 'audio-ctp-0-a16-eng', duration: audioDurations['a16'] },
+            { type: 'clearConsole'}, { type: 'pause', duration: 300 },
+            { type: 'showOutput', output: ["Great job!", "Next: Knowledge Check & Module 1"], isInfo: true},
+            { type: 'pause', duration: audioDurations['a16'] - 300, note: "Wait for a16" }, // Wait for the long final audio
+
+            { type: 'end', note: "End of Simulation" }
+        ];
+
+
+        // --- AUTOPLAY EXECUTION (Modified Logic) ---
+        let currentStepIndex = 0;
+        let simulationStarted = false;
+
+        async function executeScript() {
+            if (!simulationStarted) return;
+            console.log("Starting script execution...");
+            consolePane.innerHTML = '<span class="placeholder">Lesson playing...</span>';
+
+            while (currentStepIndex < lessonScript.length) {
+                const step = lessonScript[currentStepIndex];
+                // console.log(`Executing Step ${currentStepIndex}: ${step.type} - ${step.note || ''}`);
+                codeArea.classList.remove('idle', 'typing', 'no-cursor');
+
+                // --- Play Audio at the start of its segment ---
+                if (step.type === 'audio' && step.audioId) {
+                    await playAudio(step.audioId);
+                    // The corresponding pause step later will handle waiting
+                }
+
+                // --- Execute Visual/Pause Actions ---
+                switch (step.type) {
+                    case 'typeCode':
+                        await simulateTyping(step.content, step.speed || 75);
+                        break;
+                    case 'runCode':
+                        await pause(200); // Shorter pause before showing output
+                        await showOutput(step.output, step.isInfo || false, step.isError || false);
+                        break;
+                    case 'clearConsole':
+                        await clearConsole(); break;
+                    case 'clearEditor':
+                        await clearEditor(); break;
+                    case 'pause':
+                         // This pause is now the primary way to wait for audio or create timed delays
+                        await pause(step.duration || 1000);
+                        break;
+                    case 'audio':
+                        // Audio already started. This step type is now just a marker.
+                        // The pause step *after* this segment's actions handles the wait.
+                         await pause(50); // Tiny pause to prevent tight looping if no other action
+                        break;
+                    case 'end':
+                        console.log("Script finished.");
+                        codeArea.classList.add('no-cursor');
+                        consolePane.innerHTML += '<div class="info-line">ℹ️ Lesson playback finished.</div>';
+                        return;
+                    default:
+                        console.warn(`Unknown step type: ${step.type}`);
+                        await pause(100);
+                }
+
+                if (step.type !== 'end') {
+                     codeArea.classList.add('idle');
+                     codeArea.classList.remove('typing', 'no-cursor');
+                      updateStatusBarAndCursor();
+                 }
+                currentStepIndex++;
+            }
+        }
+
+        // --- User Interaction Start ---
+        function startSimulation() {
+            if (simulationStarted) return;
+            simulationStarted = true;
+
+            document.body.removeEventListener('click', startSimulation);
+            document.body.removeEventListener('keydown', startSimulation);
+            console.log("User interaction detected, starting simulation...");
+             consolePane.innerHTML = '<span class="placeholder">Starting lesson...</span>'; // Update prompt
+
+            // Ensure all audio can play (often requires initial interaction)
+             Object.values(audioElements).forEach(audio => {
+                 audio.load(); // Encourage loading
+                 audio.play().then(() => audio.pause()).catch(() => {}); // Silent play/pause trick
+             });
+
+            setTimeout(executeScript, 500);
+        }
+
+        document.body.addEventListener('click', startSimulation, { once: true });
+        document.body.addEventListener('keydown', startSimulation, { once: true });
+
+        // --- Initial Setup ---
+        updateLineNumbers();
+        updateStatusBarAndCursor();
+        codeArea.classList.add('idle');
+
+    }); // End DOMContentLoaded
+    </script>
+
+</body>
+</html>
