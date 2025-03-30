@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Minimal Chatbot (Protected)</title>
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: monospace;
+    }
+    body {
+        background: #050505;
+        color: #0f0;
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        padding: 10px;
+    }
+    #chatbox {
+        flex-grow: 1;
+        overflow-y: auto;
+        border: 1px solid #0a0;
+        padding: 15px;
+        margin-bottom: 10px;
+        background: #001100;
+        line-height: 1.6;
+    }
+    .message {
+        margin-bottom: 12px;
+        padding: 8px 12px;
+        border-radius: 5px;
+        max-width: 80%;
+        word-wrap: break-word;
+    }
+    .user-message {
+        background-color: #003300;
+        color: #0f0;
+        margin-left: auto;
+        text-align: right;
+    }
+    .bot-message {
+        background-color: #002222;
+        color: #0ff;
+        margin-right: auto;
+        text-align: left;
+    }
+    .bot-message strong,
+    .user-message strong,
+    .error-message strong {
+       display: block; /* Put label on its own line */
+       margin-bottom: 4px;
+       font-size: 0.8em;
+       opacity: 0.7;
+    }
+     .bot-message strong { color: #0aa; }
+     .user-message strong { color: #0a0; }
+     .error-message strong { color: #f55; }
+
+    .typing-indicator {
+        color: #0aa;
+        font-style: italic;
+        margin-bottom: 10px;
+        padding: 8px 12px;
+    }
+     .error-message {
+        background-color: #440000;
+        color: #fcc; /* Lighter red for better contrast */
+        margin-right: auto;
+        text-align: left;
+     }
+    #input-area {
+        display: flex;
+        border: 1px solid #0a0;
+        background: #001100;
+    }
+    #userInput {
+        flex-grow: 1;
+        background: transparent;
+        color: #0f0;
+        border: none;
+        padding: 12px;
+        font-size: 16px;
+        outline: none;
+    }
+    #sendButton {
+        background: #003300;
+        color: #0f0;
+        border: none;
+        padding: 10px 20px;
+        cursor: pointer;
+        font-size: 16px;
+        border-left: 1px solid #0a0;
+    }
+    #sendButton:hover {
+        background: #004400;
+    }
+    #sendButton:disabled {
+         background: #002200;
+         color: #050;
+         cursor: not-allowed;
+    }
+</style>
+</head>
+<body>
+
+<div id="chatbox">
+    <!-- Chat messages will appear here -->
+    <div class="message bot-message"><strong>Bot:</strong> Hello! How can I help you today?</div>
+</div>
+
+<div id="input-area">
+    <input id="userInput" type="text" autofocus placeholder="Type your message... (Press Enter)">
+    <button id="sendButton">Send</button>
+</div>
+
+<script>
+    const chatbox = document.getElementById('chatbox');
+    const userInput = document.getElementById('userInput');
+    const sendButton = document.getElementById('sendButton');
+
+    // --- Conversation History (Memory) ---
+    // Initialize with the first bot message if you want it to appear on load
+    let conversationHistory = [
+         { role: "assistant", content: "Hello! How can I help you today?" }
+        // Start empty if you don't want the initial greeting in history:
+        // let conversationHistory = [];
+    ];
+
+    // --- Display Messages ---
+    function displayMessage(role, text) {
+        const messageDiv = document.createElement('div');
+        messageDiv.classList.add('message');
+
+        const strong = document.createElement('strong');
+
+        if (role === 'user') {
+            messageDiv.classList.add('user-message');
+            strong.textContent = "You:";
+        } else if (role === 'assistant') {
+             messageDiv.classList.add('bot-message');
+             strong.textContent = "Bot:";
+        } else if (role === 'error') {
+            messageDiv.classList.add('error-message');
+            strong.textContent = "Error:";
+            text = text || "An unknown error occurred."; // Default error message
+        } else if (role === 'typing') { // Typing indicator specific handling
+             messageDiv.classList.add('typing-indicator');
+             messageDiv.textContent = text || 'Bot is thinking...'; // Allow custom typing message
+             chatbox.appendChild(messageDiv);
+             chatbox.scrollTop = chatbox.scrollHeight; // Scroll down
+             return messageDiv; // Return the indicator div so it can be removed
+        } else { // Fallback for unknown roles
+            strong.textContent = "System:"; // Or handle as needed
+        }
+
+        messageDiv.appendChild(strong);
+        // Add the actual message text - handle potential line breaks safely
+        (text || '').split('\n').forEach((line, index) => {
+            if (index > 0) messageDiv.appendChild(document.createElement('br'));
+            // Create text node to prevent accidental HTML injection
+            messageDiv.appendChild(document.createTextNode(' ' + line));
+        });
+
+        chatbox.appendChild(messageDiv);
+        chatbox.scrollTop = chatbox.scrollHeight; // Scroll down
+    }
+
+    // --- Send Message & Get Response via Proxy ---
+    async function sendMessage() {
+        const userText = userInput.value.trim();
+        if (!userText) return; // Don't send empty messages
+
+        // 1. Add user message to history & display it
+        conversationHistory.push({ role: "user", content: userText });
+        displayMessage('user', userText);
+        userInput.value = ''; // Clear input field
+        sendButton.disabled = true; // Disable button while waiting
+
+        // 2. Show typing indicator
+        const typingIndicator = displayMessage('typing', 'Bot is thinking...');
+
+        // Define the URL for the Cloudflare Pages Function proxy
+        const proxyUrl = '/api/proxy'; // Relative path to the function
+
+        try {
+            // 3. Call the Proxy Function (which adds the API key securely)
+            const response = await fetch(proxyUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    // NO 'Authorization' header here - the proxy function adds it!
+                },
+                body: JSON.stringify({
+                    // Pass the payload the BigModel API expects
+                    model: "glm-4-flash", // Or your preferred model
+                    messages: conversationHistory, // Send the whole conversation history
+                    temperature: 0.7, // Adjust creativity/focus
+                    max_tokens: 1024 // Adjust response length limit
+                    // Add any other parameters BigModel accepts if needed
+                })
+            });
+
+            // Remove typing indicator immediately after getting a response status
+             if (typingIndicator) typingIndicator.remove();
+
+            if (!response.ok) {
+                 // Try to get error text from the proxy or the API itself
+                 const errorText = await response.text();
+                 console.error(`Proxy/API Error Response (${response.status}):`, errorText);
+                 // Display a more user-friendly error based on status if possible
+                 let displayError = `Request failed (${response.status}).`;
+                 if (response.status === 500 && errorText.includes('API key configuration error')) {
+                     displayError = "Server configuration error (API Key). Please contact admin.";
+                 } else if (response.status === 429) {
+                      displayError = "Rate limit exceeded. Please try again later.";
+                 } else if (errorText) {
+                     // Truncate long error messages
+                     displayError += ` Details: ${errorText.substring(0, 100)}${errorText.length > 100 ? '...' : ''}`;
+                 }
+                 throw new Error(displayError); // Throw to be caught below
+            }
+
+            const data = await response.json(); // Assuming the API returns JSON
+
+            // 4. Get the bot's response
+             if (data.choices && data.choices.length > 0 && data.choices[0].message && data.choices[0].message.content) {
+                const botText = data.choices[0].message.content.trim();
+
+                // 5. Add bot response to history & display it
+                conversationHistory.push({ role: "assistant", content: botText });
+                displayMessage('assistant', botText);
+            } else {
+                 // Handle cases where the response structure is unexpected
+                 console.error("Invalid API response structure:", data);
+                 throw new Error("Received an invalid or empty response from the API.");
+            }
+
+        } catch (error) {
+            console.error('Failed to fetch chat response via proxy:', error);
+            // Remove typing indicator if it's still there from a network error before response
+             if (typingIndicator && typingIndicator.parentNode === chatbox) typingIndicator.remove();
+            // Display error message in chat
+            displayMessage('error', error.message || "An unexpected network error occurred.");
+            // Optional: Remove the last user message from history if the call failed badly?
+            // conversationHistory.pop(); // Consider if this makes sense for your flow
+        } finally {
+            sendButton.disabled = false; // Re-enable button
+            userInput.focus(); // Set focus back to input
+        }
+    }
+
+    // --- Event Listeners ---
+    sendButton.addEventListener('click', sendMessage);
+    userInput.addEventListener('keypress', (event) => {
+        // Send message on Enter key press, but allow Shift+Enter for new lines
+        if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault(); // Prevent default Enter behavior (like adding a newline)
+            sendMessage();
+        }
+    });
+
+    // --- Initial Focus ---
+     userInput.focus();
+
+     // Optional: Display initial history if not done via HTML
+     // function initializeChat() {
+     //     chatbox.innerHTML = ''; // Clear initial placeholder if any
+     //     conversationHistory.forEach(msg => displayMessage(msg.role, msg.content));
+     // }
+     // if (conversationHistory.length > 0) {
+     //    initializeChat();
+     // }
+
+
+</script>
+
+</body>
+</html>
