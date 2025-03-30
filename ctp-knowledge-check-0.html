@@ -1,462 +1,903 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Professor Paws's Python Playground</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Add Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-document.addEventListener('DOMContentLoaded', () => {
-
-    // --- DOM Elements ---
-    const chatbox = document.getElementById('chatbox');
-    const userInput = document.getElementById('userInput');
-    const sendButton = document.getElementById('sendButton');
-    const playgroundContent = document.getElementById('playground-content');
-    const catStatusText = document.querySelector('#cat-status .status-text');
-    const catStatusIcon = document.querySelector('#cat-status .status-icon i'); // Assuming FontAwesome
-    const catStatusContainer = document.getElementById('cat-status');
-
-    // --- State ---
-    const State = {
-        conversationHistory: [],
-        currentQuestionIndex: -1, // Start before the first question
-        isWaitingForResponse: false,
-        userScore: 0,
-        totalQuestions: 0,
-        currentTaskInfo: null, // Holds info about the active question
-    };
-
-    // --- Configuration ---
-    const Config = {
-        proxyUrl: '/api/proxy', // Your Cloudflare/backend proxy URL
-        model: "glm-4-flash",   // Or your preferred model
-        temperature: 0.6,       // Moderate creativity for persona
-        max_tokens: 300,        // Adjust based on expected response length
-        personaSystemPrompt: `You are Professor Paws, a slightly mischievous, easily distracted, but knowledgeable and encouraging cat teaching beginner Python to a student. Your language should be full of cat puns (like meow, purrfect, litter-ally, paw-some, fur-real, claw-ver) and descriptions of cat actions (*stretches*, *yawns*, *bats playfully at the screen*, *tilts head*, *chases tail briefly*). Keep your explanations simple and clear for a complete beginner. When evaluating student input based on criteria, respond ONLY in the requested JSON format. Do not add extra text outside the JSON when evaluation is requested. Be encouraging even when the student is wrong. You are talking directly to the student via chat.`,
-        typingDelayMin: 800, // ms
-        typingDelayMax: 2000, // ms
-        catInterjectionChance: 0.15 // 15% chance of random cat comment
-    };
-
-    // --- Question Bank ---
-    // Each question needs: id, type, cat_prompt, evaluation_criteria, visual_aid_type, visual_aid_content (optional initial content)
-    const QuestionBank = [
-        {
-            id: 'intro',
-            type: 'greeting',
-            cat_prompt: "Mrow! *stretches luxuriously* I am Professor Paws. Ready to learn some Python, or are you just here to offer scratches? *looks hopeful*",
-            evaluation_criteria: "N/A - just a greeting.",
-            visual_aid_type: 'text_display',
-            visual_aid_content: "Welcome! Let's get started."
-        },
-        {
-            id: 'print_hello',
-            type: 'code_write',
-            cat_prompt: "Okay, first things first! How do you make this Python thingy say 'Hello, Human!' on the screen? Show meow the code!",
-            evaluation_criteria: "The code must use the print() function to output the string 'Hello, Human!'. Single or double quotes are fine. Focus on the core print command usage.",
-            visual_aid_type: 'code_editor_display', // Shows an area for code
-            visual_aid_content: "# Task: Print 'Hello, Human!'\n# Your code attempt will appear here..."
-        },
-        {
-            id: 'print_concept',
-            type: 'concept',
-            cat_prompt: "Hmm, that `print` command... what's it actually *do*? Like, fur-real. Explain it to meow in your own words. Keep it simple, my brain is smol.",
-            evaluation_criteria: "The student should explain that print() displays output (text, numbers, etc.) to the screen/console. Keywords: display, output, show, screen, console.",
-            visual_aid_type: 'text_display',
-            visual_aid_content: "Task: Explain the `print()` function."
-        },
-        {
-            id: 'comment_whatis',
-            type: 'concept',
-            cat_prompt: "Sometimes I see lines starting with... *squints*... this '#' symbol. They look important, but maybe they're just dust bunnies? What are they?",
-            evaluation_criteria: "The student needs to identify '#' as creating a comment. Key points: ignored by Python, notes for humans, explanation.",
-            visual_aid_type: 'text_display',
-            visual_aid_content: "Task: Explain what the `#` symbol does in Python."
-        },
-         {
-            id: 'comment_write',
-            type: 'code_write',
-            cat_prompt: "Clever human! Now, show meow how you'd write a comment that says 'This is my awesome note'.",
-            evaluation_criteria: "The code must start with '#' followed by the text 'This is my awesome note'. Leading/trailing whitespace around the text is acceptable.",
-            visual_aid_type: 'code_editor_display',
-            visual_aid_content: "# Task: Write a comment 'This is my awesome note'\n# Your code attempt will appear here..."
-        },
-        {
-            id: 'print_blank',
-            type: 'code_write',
-            cat_prompt: "My human servant often leaves blank lines in their code... makes it look tidy, I guess? *licks paw* How would you print *nothing*? Just a blank line?",
-            evaluation_criteria: "The code should be `print()`. Must have the parentheses.",
-            visual_aid_type: 'code_editor_display',
-            visual_aid_content: "# Task: Print a blank line\n# Your code attempt will appear here..."
-        },
-         {
-            id: 'code_fix_print',
-            type: 'code_fix',
-            cat_prompt: "Meeeow! *accidentally knocks keyboard* I tried to print 'Oops' but it didn't work! Look: `prnt('Oops')`. What did I do wrong? How should it look?",
-            evaluation_criteria: "The student must identify the typo 'prnt' and provide the corrected code: `print('Oops')`.",
-            visual_aid_type: 'code_editor_display',
-            visual_aid_content: "# Task: Fix the broken code\n# Broken: prnt('Oops')\n# Your corrected code attempt will appear here..."
-         },
-        {
-            id: 'farewell',
-            type: 'summary',
-            cat_prompt: `Paw-some work, human! You got ${() => State.userScore} out of ${() => State.totalQuestions} right! That's enough learning for one nap... I mean, lesson. *curls up* Any final questions before I doze off?`, // Dynamic score
-            evaluation_criteria: "N/A - Farewell message.",
-            visual_aid_type: 'text_display',
-            visual_aid_content: "Lesson Complete!"
+    <style>
+        /* --- Basic Setup & Variables --- */
+        :root {
+            --cat-primary: #fca311; /* Orange */
+            --cat-secondary: #14213d; /* Dark Blue */
+            --cat-background: #e5e5e5; /* Light Grey */
+            --cat-text: #000000;
+            --cat-light-text: #ffffff;
+            --cat-code-bg: #2b2b2b;
+            --cat-code-text: #a9b7c6;
+            --font-main: 'Arial', sans-serif; /* Keep it simple */
+            --font-code: 'Courier New', Courier, monospace;
+            --border-radius: 8px;
         }
-        // Add more questions covering comments after code, multiple prints, etc.
-    ];
-    State.totalQuestions = QuestionBank.filter(q => q.type !== 'greeting' && q.type !== 'summary').length;
 
-
-    // --- UI Functions ---
-    const UI = {
-        displayMessage: (role, text, options = {}) => {
-            const messageDiv = document.createElement('div');
-            messageDiv.classList.add('message', `${role}-message`);
-
-            const strong = document.createElement('strong');
-            if (role === 'user') {
-                strong.textContent = "You:";
-            } else if (role === 'bot') {
-                strong.textContent = "Professor Paws:";
-                if (options.correctness === 'correct') messageDiv.classList.add('correct-answer');
-                else if (options.correctness === 'incorrect') messageDiv.classList.add('incorrect-answer');
-                else if (options.correctness === 'clarification') messageDiv.classList.add('clarification-needed');
-
-                 // Add cat actions/interjections from text
-                 const actionRegex = /\*([^*]+)\*/g;
-                 let processedText = text.replace(actionRegex, (match, action) => `<i>*${action.trim()}*</i>`);
-                 text = processedText;
-
-            } else if (role === 'error') {
-                strong.textContent = "System Error:";
-                messageDiv.classList.add('error-message'); // Use distinct class
-                 text = text || "An unknown error occurred.";
-            }
-
-            messageDiv.appendChild(strong);
-             // Use innerHTML carefully for actions, but textContent for the main message part to prevent XSS
-             const textNode = document.createElement('span');
-             textNode.textContent = ' '; // Add space after label
-             messageDiv.appendChild(textNode);
-             messageDiv.insertAdjacentHTML('beforeend', text.split('\n').join('<br>')); // Render line breaks
-
-
-            chatbox.appendChild(messageDiv);
-            chatbox.scrollTop = chatbox.scrollHeight; // Scroll down
-        },
-
-        showTypingIndicator: (show = true) => {
-             if (show) {
-                UI.setCatStatus('typing');
-                // Optional: Could add a temporary "..." message in chatbox too
-            } else {
-                 UI.setCatStatus(State.isWaitingForResponse ? 'thinking' : 'idle'); // Revert based on state
-            }
-        },
-
-        updatePlayground: (taskInfo) => {
-             if (!taskInfo) {
-                playgroundContent.innerHTML = "<p>Waiting for Professor Paws...</p>";
-                return;
-            }
-
-            let content = `<h3>Current Task:</h3><p>${taskInfo.cat_prompt.split('\n')[0]}</p>`; // Show first line of prompt
-
-             if (taskInfo.visual_aid_type === 'code_editor_display') {
-                 content += `<h4>Code Scratchpad:</h4><pre id="code-display-area">${taskInfo.visual_aid_content || ''}</pre>`;
-             } else if (taskInfo.visual_aid_type === 'text_display') {
-                 content += `<p><i>${taskInfo.visual_aid_content || ''}</i></p>`;
-             }
-             // Add more visual types later (e.g., simple output simulation)
-
-            playgroundContent.innerHTML = content;
-        },
-
-        updateCodeDisplay: (code) => {
-             const codeArea = document.getElementById('code-display-area');
-             if (codeArea) {
-                 // Basic highlighting (can be improved with libraries or more regex)
-                 let highlightedCode = code
-                     .replace(/</g, "<").replace(/>/g, ">") // Basic HTML escaping
-                     .replace(/^(#.*)$/gm, '<span class="code-comment">$1</span>') // Comments
-                     .replace(/\b(print)\b/g, '<span class="code-keyword">$1</span>') // Keywords
-                     .replace(/(".*?"|'.*?')/g, '<span class="code-string">$1</span>') // Strings
-                     .replace(/(\(|\))/g, '<span class="code-paren">$1</span>'); // Parens
-
-                 codeArea.innerHTML = highlightedCode;
-             }
-         },
-
-        setCatStatus: (status = 'idle') => { // idle, thinking, typing, error
-            let text = "Professor Paws is napping...";
-            let iconClass = 'fa-paw';
-            let containerClass = 'cat-status-idle';
-
-            if (status === 'thinking') {
-                text = "Professor Paws is thinking... *tail twitches*";
-                iconClass = 'fa-brain'; // Or fa-spinner
-                 containerClass = 'cat-status-thinking';
-            } else if (status === 'typing') {
-                 text = "Professor Paws is typing furiously...";
-                 iconClass = 'fa-keyboard';
-                 containerClass = 'cat-status-typing';
-             } else if (status === 'error') {
-                 text = "Uh oh, Professor Paws dropped the yarn ball...";
-                 iconClass = 'fa-heart-crack'; // Or fa-exclamation-triangle
-                 containerClass = 'cat-status-error'; // Add specific style if needed
-             }
-
-            catStatusText.textContent = text;
-            if (catStatusIcon) catStatusIcon.className = `fas ${iconClass}`; // Update icon if using FontAwesome
-             catStatusContainer.className = status; // Update container class for styling/animation
-        },
-
-         adjustTextareaHeight: () => {
-            userInput.style.height = 'auto'; // Reset height
-            userInput.style.height = userInput.scrollHeight + 'px'; // Set to content height
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { height: 100%; }
+        body {
+            font-family: var(--font-main);
+            background-color: var(--cat-background);
+            color: var(--cat-text);
+            height: 100%;
+            overflow: hidden; /* Prevent body scroll */
+            display: flex;
         }
-    };
 
-     // --- API Communication ---
-     const API = {
-         fetchChatResponse: async (messages) => {
-             State.isWaitingForResponse = true;
-             UI.setCatStatus('thinking');
-             sendButton.disabled = true;
+        #main-container {
+            display: flex;
+            width: 100%;
+            height: 100%;
+            background-color: var(--cat-secondary); /* Background between panels */
+        }
 
-             // Add system prompt if it's not already there (or periodically)
-             const messagesToSend = [{ role: "system", content: Config.personaSystemPrompt }, ...messages];
+        /* --- Playground Area (Left/Top) --- */
+        #playground-area {
+            flex: 1; /* Takes up remaining space */
+            background-color: var(--cat-light-text);
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            border-right: 5px solid var(--cat-primary);
+        }
 
-             try {
-                 const response = await fetch(Config.proxyUrl, {
-                     method: 'POST',
-                     headers: { 'Content-Type': 'application/json' },
-                     body: JSON.stringify({
-                         model: Config.model,
-                         messages: messagesToSend,
-                         temperature: Config.temperature,
-                         max_tokens: Config.max_tokens,
-                         // Add `response_format: { "type": "json_object" }` if your model/proxy supports it
-                         // This helps enforce the JSON structure for evaluations
-                     })
-                 });
+        .playground-header {
+            background-color: var(--cat-secondary);
+            color: var(--cat-light-text);
+            padding: 10px 15px;
+            font-size: 1.1em;
+            font-weight: bold;
+            flex-shrink: 0; /* Prevent shrinking */
+        }
+        .playground-header .fa-cat { margin-right: 8px; color: var(--cat-primary); }
 
-                UI.showTypingIndicator(true); // Show typing *after* getting response status
-                await new Promise(resolve => setTimeout(resolve, Math.random() * (Config.typingDelayMax - Config.typingDelayMin) + Config.typingDelayMin)); // Simulate typing
+        #playground-content {
+            padding: 20px;
+            flex-grow: 1;
+            overflow-y: auto;
+            font-size: 0.95em;
+            line-height: 1.6;
+        }
+        #playground-content h3 { color: var(--cat-secondary); margin-bottom: 15px; }
+        #playground-content p { margin-bottom: 10px; }
+        #playground-content pre {
+            background-color: var(--cat-code-bg);
+            color: var(--cat-code-text);
+            padding: 15px;
+            border-radius: var(--border-radius);
+            font-family: var(--font-code);
+            white-space: pre-wrap; /* Wrap long lines */
+            word-wrap: break-word;
+            margin-top: 10px;
+            font-size: 0.9em;
+            border: 1px solid #444;
+        }
+        /* Basic Syntax Highlighting (can be expanded) */
+        .code-keyword { color: #cc7832; font-weight: bold; }
+        .code-string { color: #6a8759; }
+        .code-comment { color: #808080; font-style: italic; }
+        .code-function { color: #ffc66d; }
+        .code-paren { color: #bbb; }
 
-                if (!response.ok) {
-                     const errorText = await response.text();
-                     throw new Error(`API Error (${response.status}): ${errorText}`);
-                 }
+        /* --- Chatbot Area (Right/Bottom) --- */
+        #chatbot-area {
+            width: 400px; /* Adjust as needed */
+            min-width: 350px;
+            background-color: #f0f0f0; /* Lighter background for chat */
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            border-left: 5px solid var(--cat-primary);
+        }
 
-                const data = await response.json();
+        #chatbox {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 15px;
+            border-bottom: 1px solid #ccc;
+        }
 
-                if (data.choices && data.choices.length > 0 && data.choices[0].message && data.choices[0].message.content) {
-                    return data.choices[0].message.content.trim();
+        .message {
+            margin-bottom: 15px;
+            padding: 10px 15px;
+            border-radius: var(--border-radius);
+            max-width: 90%;
+            word-wrap: break-word;
+            line-height: 1.5;
+            position: relative; /* For potential decorations */
+            animation: fadeIn 0.3s ease-out;
+        }
+        .message strong { /* Label */
+            display: block;
+            font-size: 0.8em;
+            margin-bottom: 4px;
+            opacity: 0.8;
+        }
+
+        .user-message {
+            background-color: #d1e7fd; /* Light blue */
+            color: #0a3678;
+            margin-left: auto;
+            border-bottom-right-radius: 0;
+        }
+        .user-message strong { color: #0a3678; }
+
+        .bot-message {
+            background-color: var(--cat-light-text); /* White */
+            color: var(--cat-text);
+            margin-right: auto;
+            border: 1px solid #ddd;
+            border-bottom-left-radius: 0;
+        }
+        .bot-message strong { color: var(--cat-primary); font-weight: bold; }
+        /* Cat actions styling */
+        .bot-message i {
+            font-style: normal; /* Don't italicize the asterisks */
+            opacity: 0.7;
+            font-size: 0.9em;
+            display: block; /* Put actions on their own line */
+            margin-top: 5px;
+            color: #555; /* Subtle grey */
+        }
+        .bot-message.correct-answer { border-left: 5px solid #28a745; background-color: #f0fff0; } /* Light Green tint */
+        .bot-message.incorrect-answer { border-left: 5px solid #dc3545; background-color: #fff0f0;} /* Light Red tint */
+        .bot-message.clarification-needed { border-left: 5px solid var(--cat-primary); background-color: #fff8e1;} /* Light Yellow tint */
+
+        .error-message {
+            background-color: #f8d7da;
+            color: #721c24;
+            margin-right: auto;
+            border: 1px solid #f5c6cb;
+        }
+        .error-message strong { color: #721c24; }
+
+        .typing-indicator { /* This is now handled by the status bar, but keeping for potential future use */
+            font-style: italic;
+            color: #6c757d;
+            padding: 10px 15px;
+        }
+
+        #input-area {
+            display: flex;
+            padding: 10px;
+            background: #e9ecef; /* Slightly darker input area bg */
+            flex-shrink: 0; /* Prevent shrinking */
+            border-top: 1px solid #ccc;
+        }
+
+        #userInput {
+            flex-grow: 1;
+            background: var(--cat-light-text);
+            color: var(--cat-text);
+            border: 1px solid #ccc;
+            border-radius: var(--border-radius);
+            padding: 10px;
+            font-size: 1em;
+            font-family: var(--font-main);
+            outline: none;
+            resize: none; /* Prevent manual resize */
+            margin-right: 10px;
+            max-height: 150px; /* Limit growth */
+            overflow-y: auto; /* Allow scrolling if needed */
+            line-height: 1.4;
+        }
+        #userInput:focus { border-color: var(--cat-primary); box-shadow: 0 0 0 2px rgba(252, 163, 17, 0.3); }
+
+        #sendButton {
+            background: var(--cat-primary);
+            color: var(--cat-light-text);
+            border: none;
+            border-radius: var(--border-radius);
+            padding: 0 15px; /* Adjust padding for icon */
+            cursor: pointer;
+            font-size: 1.2em; /* Make icon slightly larger */
+            transition: background-color 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #sendButton:hover:not(:disabled) { background: #e0930f; /* Darker orange */ }
+        #sendButton:disabled { background: #aaa; cursor: not-allowed; opacity: 0.7; }
+
+        /* --- Cat Status Bar --- */
+        #cat-status {
+            padding: 5px 15px;
+            font-size: 0.85em;
+            background-color: var(--cat-secondary);
+            color: var(--cat-light-text);
+            display: flex;
+            align-items: center;
+            flex-shrink: 0;
+            transition: background-color 0.5s ease;
+            height: 30px; /* Fixed height */
+        }
+        #cat-status .status-icon { margin-right: 8px; display: inline-block; transition: transform 0.5s ease, color 0.5s ease; width: 16px; text-align: center;}
+        #cat-status .status-text { flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
+
+        /* Status animations/styles */
+        #cat-status.cat-status-idle .status-icon { color: #aaa; }
+        #cat-status.cat-status-thinking { background-color: #5a6268; animation: pulse 1.5s infinite ease-in-out; }
+        #cat-status.cat-status-thinking .status-icon { color: var(--cat-primary); transform: scale(1.1); }
+        #cat-status.cat-status-typing { background-color: var(--cat-primary); }
+        #cat-status.cat-status-typing .status-icon { color: var(--cat-light-text); animation: typing-bounce 0.8s infinite ease-in-out; }
+        #cat-status.cat-status-error { background-color: #dc3545; } /* Red */
+        #cat-status.cat-status-error .status-icon { color: var(--cat-light-text); transform: rotate(15deg); }
+
+
+        @keyframes pulse { 0%, 100% { opacity: 0.8; } 50% { opacity: 1; } }
+        @keyframes typing-bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- Responsive (Basic Example) --- */
+        @media (max-width: 768px) {
+            #main-container { flex-direction: column; }
+            #playground-area { border-right: none; border-bottom: 5px solid var(--cat-primary); height: 40%; flex-basis: 40%; flex-grow: 0;}
+            #chatbot-area { width: 100%; height: 60%; border-left: none; flex-basis: 60%; flex-grow: 0;}
+            #userInput { max-height: 100px; } /* Adjust for smaller height */
+        }
+         @media (max-width: 480px) {
+             #chatbot-area { width: 100%; }
+             .message { max-width: 95%; }
+             #userInput { font-size: 0.95em;}
+             #sendButton { font-size: 1.1em; padding: 0 12px;}
+             #playground-content { padding: 15px; }
+             .playground-header { font-size: 1em; }
+         }
+
+    </style>
+</head>
+<body>
+    <div id="main-container">
+        <!-- Area updated by the chatbot - shows task, code, simple output -->
+        <div id="playground-area">
+            <div class="playground-header">
+                <i class="fas fa-cat"></i> Professor Paws's Scratchpad
+            </div>
+            <div id="playground-content">
+                <!-- Content dynamically inserted by JS -->
+                <p>Waiting for Professor Paws to wake up...</p>
+            </div>
+        </div>
+
+        <!-- Chatbot Interface Area -->
+        <div id="chatbot-area">
+            <div id="chatbox">
+                <!-- Messages dynamically added by JS -->
+            </div>
+            <div id="input-area">
+                <!-- Use a textarea for potentially multi-line code input -->
+                <textarea id="userInput" placeholder="Talk to Professor Paws... (Shift+Enter for new line)" rows="1"></textarea>
+                <button id="sendButton" title="Send Message (Enter)">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+             <div id="cat-status" class="cat-status-idle">
+                <!-- Professor Paws is idle / thinking / typing -->
+                <span class="status-icon"><i class="fas fa-paw"></i></span>
+                <span class="status-text">Professor Paws is napping...</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // --- DOM Elements ---
+        const chatbox = document.getElementById('chatbox');
+        const userInput = document.getElementById('userInput');
+        const sendButton = document.getElementById('sendButton');
+        const playgroundContent = document.getElementById('playground-content');
+        const catStatusText = document.querySelector('#cat-status .status-text');
+        const catStatusIcon = document.querySelector('#cat-status .status-icon i'); // Assuming FontAwesome
+        const catStatusContainer = document.getElementById('cat-status');
+
+        // --- State ---
+        const State = {
+            conversationHistory: [],
+            currentQuestionIndex: -1, // Start before the first question
+            isWaitingForResponse: false,
+            userScore: 0,
+            totalQuestions: 0,
+            currentTaskInfo: null, // Holds info about the active question
+        };
+
+        // --- Configuration ---
+        const Config = {
+            // IMPORTANT: Replace with YOUR actual proxy URL
+            proxyUrl: '/api/proxy', // Example: Cloudflare Pages function route
+            model: "glm-4-flash",   // Or your preferred model (ensure it's good with instructions/JSON)
+            temperature: 0.6,       // Moderate creativity for persona
+            max_tokens: 350,        // Increased slightly for feedback + persona
+            personaSystemPrompt: `You are Professor Paws, a slightly mischievous, easily distracted, but knowledgeable and encouraging cat teaching beginner Python to a student. Your language should be full of cat puns (like meow, purrfect, litter-ally, paw-some, fur-real, claw-ver) and descriptions of cat actions (*stretches*, *yawns*, *bats playfully at the screen*, *tilts head*, *chases tail briefly*). Keep your explanations simple and clear for a complete beginner. When evaluating student input based on criteria provided in square brackets like [Criteria: ...], respond ONLY in the requested JSON format. Do not add any extra text, commentary, or formatting outside the JSON when evaluation is requested. Ensure the JSON is valid. Be encouraging even when the student is wrong. You are talking directly to the student via chat.`,
+            typingDelayMin: 600, // ms
+            typingDelayMax: 1800, // ms
+            catInterjectionChance: 0.15 // 15% chance of random cat comment after bot message
+        };
+
+        // --- Question Bank ---
+        // Each question needs: id, type, cat_prompt, evaluation_criteria, visual_aid_type, visual_aid_content (optional initial content)
+        const QuestionBank = [
+            {
+                id: 'intro',
+                type: 'greeting',
+                cat_prompt: "Mrow! *stretches luxuriously* I am Professor Paws. Ready to learn some Python, or are you just here to offer scratches? *looks hopeful*",
+                evaluation_criteria: "N/A - just a greeting.",
+                visual_aid_type: 'text_display',
+                visual_aid_content: "Welcome! Let's get started."
+            },
+            {
+                id: 'print_hello',
+                type: 'code_write',
+                cat_prompt: "Okay, first things first! How do you make this Python thingy say 'Hello, Human!' on the screen? Show meow the code!",
+                evaluation_criteria: "The code must use the print() function to output the exact string 'Hello, Human!'. Single or double quotes are acceptable. Focus on the core print command usage with the correct text.",
+                visual_aid_type: 'code_editor_display', // Shows an area for code
+                visual_aid_content: "# Task: Print 'Hello, Human!'\n# Your code attempt will appear here..."
+            },
+            {
+                id: 'print_concept',
+                type: 'concept',
+                cat_prompt: "Hmm, that `print` command... what's it actually *do*? Like, fur-real. Explain it to meow in your own words. Keep it simple, my brain is smol.",
+                evaluation_criteria: "The student should explain that print() displays output (text, numbers, results, etc.) to the screen/console. Keywords expected: display, output, show, print, screen, console, terminal, value, text.",
+                visual_aid_type: 'text_display',
+                visual_aid_content: "Task: Explain the purpose of the `print()` function in Python."
+            },
+            {
+                id: 'comment_whatis',
+                type: 'concept',
+                cat_prompt: "Sometimes I see lines starting with... *squints*... this '#' symbol. They look like important secret messages, but maybe they're just dust bunnies? What are they for?",
+                evaluation_criteria: "The student needs to identify '#' as creating a comment. Key points to mention: ignored by Python, notes for humans, explanation, not executed.",
+                visual_aid_type: 'text_display',
+                visual_aid_content: "Task: Explain what the `#` symbol does in Python code."
+            },
+            {
+                id: 'comment_write',
+                type: 'code_write',
+                cat_prompt: "Claw-ver human! Now, show meow how you'd write a comment that says 'This is my awesome note'. Just the comment line!",
+                evaluation_criteria: "The code must start exactly with '#' followed by a space and then the text 'This is my awesome note'. No extra code, just the comment.",
+                visual_aid_type: 'code_editor_display',
+                visual_aid_content: "# Task: Write a comment 'This is my awesome note'\n# Your code attempt will appear here..."
+            },
+            {
+                id: 'print_blank',
+                type: 'code_write',
+                cat_prompt: "My human servant often leaves blank lines in their code... makes it look tidy, I guess? *licks paw* How would you print *nothing*? Just make Python skip a line?",
+                evaluation_criteria: "The code should be exactly `print()`. It must have the parentheses.",
+                visual_aid_type: 'code_editor_display',
+                visual_aid_content: "# Task: Print a blank line\n# Your code attempt will appear here..."
+            },
+            {
+                id: 'code_fix_print',
+                type: 'code_fix',
+                cat_prompt: "Meeeow! *accidentally knocks keyboard* I tried to print 'Oops' but it didn't work! Look: `prnt('Oops')`. What did I do wrong? How should it look?",
+                evaluation_criteria: "The student must identify the typo 'prnt' and provide the correctly spelled code: `print('Oops')`. Single or double quotes acceptable.",
+                visual_aid_type: 'code_editor_display',
+                visual_aid_content: "# Task: Fix the broken code\n# Broken Code:\nprnt('Oops')\n\n# Your corrected code attempt will appear here..."
+            },
+             {
+                id: 'code_fix_quotes',
+                type: 'code_fix',
+                cat_prompt: "Hisss! This one's tricky too: `print(Hello)` Why doesn't that work? And how *should* I print the word Hello?",
+                evaluation_criteria: "The student must explain that 'Hello' needs quotes to be treated as text (a string) and provide the corrected code: `print('Hello')` or `print(\"Hello\")`.",
+                visual_aid_type: 'code_editor_display',
+                visual_aid_content: "# Task: Explain the error & fix the code\n# Broken Code:\nprint(Hello)\n\n# Your explanation and corrected code attempt will appear here..."
+             },
+            {
+                id: 'farewell',
+                type: 'summary',
+                // Using a function allows dynamic score insertion
+                cat_prompt: () => `Paw-some work, human! You got ${State.userScore} out of ${State.totalQuestions} right! That's enough learning for one nap... I mean, lesson. *curls up comfortably* Any final questions before I doze off completely?`,
+                evaluation_criteria: "N/A - Farewell message.",
+                visual_aid_type: 'text_display',
+                visual_aid_content: () => `Lesson Complete! Final Score: ${State.userScore}/${State.totalQuestions}` // Also dynamic
+            }
+            // TODO: Add more questions covering comments after code, multiple prints, etc.
+        ];
+        // Calculate total scoreable questions
+        State.totalQuestions = QuestionBank.filter(q => q.type !== 'greeting' && q.type !== 'summary').length;
+
+
+        // --- UI Functions ---
+        const UI = {
+            displayMessage: (role, text, options = {}) => {
+                const messageDiv = document.createElement('div');
+                messageDiv.classList.add('message', `${role}-message`);
+
+                const strong = document.createElement('strong');
+                if (role === 'user') {
+                    strong.textContent = "You:";
+                } else if (role === 'bot') {
+                    strong.textContent = "Professor Paws:";
+                    // Apply correctness styling
+                    if (options.correctness === 'correct') messageDiv.classList.add('correct-answer');
+                    else if (options.correctness === 'incorrect') messageDiv.classList.add('incorrect-answer');
+                    else if (options.correctness === 'clarification') messageDiv.classList.add('clarification-needed');
+
+                    // Process cat actions (*action*) into styled elements
+                    // Split text by potential action tags to handle multiple actions and surrounding text
+                    const parts = text.split(/(\*.*?\*)/g); // Split and keep delimiters
+                    const contentFragment = document.createDocumentFragment();
+                    parts.forEach(part => {
+                        if (part.startsWith('*') && part.endsWith('*')) {
+                            const italic = document.createElement('i');
+                            italic.textContent = part; // Keep the asterisks visually
+                            contentFragment.appendChild(italic);
+                        } else if (part) { // Append non-empty text parts
+                            contentFragment.appendChild(document.createTextNode(part));
+                        }
+                    });
+                     messageDiv.appendChild(strong);
+                     // Append the processed content fragment (Handles potential HTML injection better than innerHTML)
+                     messageDiv.appendChild(contentFragment);
+
+
+                } else if (role === 'error') {
+                    strong.textContent = "System Error:";
+                    messageDiv.classList.add('error-message'); // Use distinct class
+                    text = text || "An unknown error occurred.";
+                     messageDiv.appendChild(strong);
+                    // For errors, simple text append is safer
+                     messageDiv.appendChild(document.createTextNode(' ' + text.split('\n').join('\n')));
                 } else {
-                    throw new Error("Invalid API response structure.");
+                     // Fallback for other roles if needed
+                     messageDiv.appendChild(strong);
+                     messageDiv.appendChild(document.createTextNode(' ' + text.split('\n').join('\n')));
                 }
 
-             } catch (error) {
-                 console.error('Failed to fetch chat response:', error);
-                 UI.displayMessage('error', `Meowch! ${error.message}`);
-                 UI.setCatStatus('error'); // Indicate error state
-                 return null; // Indicate failure
-             } finally {
-                 State.isWaitingForResponse = false;
-                 sendButton.disabled = false;
-                 UI.showTypingIndicator(false); // Hide typing indicator
-                 userInput.focus();
-             }
-         }
-     };
+                chatbox.appendChild(messageDiv);
+                // Slight delay before scrolling to allow animation to start
+                setTimeout(() => {
+                   chatbox.scrollTop = chatbox.scrollHeight;
+                }, 50);
+                 return messageDiv; // Return for potential modification
+            },
 
-     // --- Evaluation Logic ---
-     const Evaluation = {
-         createEvaluationPrompt: (task, userResponse) => {
-             // Add user response to playground display if it's code
-             if (task.type === 'code_write' || task.type === 'code_fix') {
-                 UI.updateCodeDisplay(userResponse);
-             }
+            showTypingIndicator: (show = true) => {
+                 // Now handled entirely by setCatStatus, keep function signature for compatibility
+                 if (show) {
+                    UI.setCatStatus('typing');
+                } else {
+                     // Revert status based on current state when typing stops
+                     UI.setCatStatus(State.isWaitingForResponse ? 'thinking' : 'idle');
+                }
+            },
 
-             const prompt = `
+            updatePlayground: (taskInfo) => {
+                 if (!taskInfo) {
+                    playgroundContent.innerHTML = "<p>Waiting for Professor Paws...</p>";
+                    return;
+                }
+
+                // Resolve dynamic content if visual_aid_content is a function
+                 let visualContent = typeof taskInfo.visual_aid_content === 'function'
+                    ? taskInfo.visual_aid_content()
+                    : taskInfo.visual_aid_content;
+
+                // Resolve dynamic prompt text if needed (usually done in Controller.nextQuestion)
+                 let promptText = typeof taskInfo.cat_prompt === 'function'
+                    ? taskInfo.cat_prompt()
+                    : taskInfo.cat_prompt;
+
+                let content = `<h3>Current Task:</h3><p>${promptText.split('\n')[0]}</p>`; // Show first line of prompt as intro
+
+                 if (taskInfo.visual_aid_type === 'code_editor_display') {
+                     content += `<h4>Code Scratchpad:</h4><pre id="code-display-area">${visualContent || ''}</pre>`;
+                 } else if (taskInfo.visual_aid_type === 'text_display') {
+                      // Use a div for potentially longer text to allow wrapping
+                     content += `<div class="playground-text-display"><i>${visualContent || ''}</i></div>`;
+                 }
+                 // TODO: Add more visual types later (e.g., simple output simulation)
+
+                playgroundContent.innerHTML = content;
+            },
+
+            updateCodeDisplay: (code) => {
+                 const codeArea = document.getElementById('code-display-area');
+                 if (codeArea) {
+                     // Basic highlighting (improved escaping)
+                     let escapedCode = code
+                        .replace(/&/g, "&")
+                        .replace(/</g, "<")
+                        .replace(/>/g, ">")
+                        .replace(/"/g, """)
+                        .replace(/'/g, "'");
+
+                     let highlightedCode = escapedCode
+                         .replace(/^(#.*)$/gm, '<span class="code-comment">$1</span>') // Comments
+                         .replace(/\b(print)\b/g, '<span class="code-keyword">$1</span>') // Keywords
+                         .replace(/(".*?"|'.*?')/g, '<span class="code-string">$1</span>') // Strings using escaped quotes
+                         .replace(/(\(|\))/g, '<span class="code-paren">$1</span>'); // Parens
+
+                     codeArea.innerHTML = highlightedCode;
+                 }
+             },
+
+            setCatStatus: (status = 'idle') => { // idle, thinking, typing, error
+                let text = "Professor Paws is napping...";
+                let iconClass = 'fa-paw';
+                let containerClass = 'cat-status-idle';
+
+                switch (status) {
+                    case 'thinking':
+                        text = "Professor Paws is thinking... *tail twitches*";
+                        iconClass = 'fa-brain'; // Or fa-spinner, fa-cat with question mark?
+                        containerClass = 'cat-status-thinking';
+                        break;
+                    case 'typing':
+                        text = "Professor Paws is typing furiously...";
+                        iconClass = 'fa-keyboard';
+                        containerClass = 'cat-status-typing';
+                        break;
+                    case 'error':
+                        text = "Uh oh, Professor Paws dropped the yarn ball...";
+                        iconClass = 'fa-heart-crack'; // Or fa-exclamation-triangle
+                        containerClass = 'cat-status-error'; // Add specific style if needed
+                        break;
+                    case 'idle':
+                    default:
+                         // Keep default values
+                        break;
+                }
+
+                catStatusText.textContent = text;
+                if (catStatusIcon) catStatusIcon.className = `fas ${iconClass}`; // Update icon if using FontAwesome
+                catStatusContainer.className = `cat-status-${status}`; // Update container class for styling/animation
+            },
+
+            adjustTextareaHeight: () => {
+                userInput.style.height = 'auto'; // Reset height to shrink if needed
+                // Calculate scroll height but limit to max-height defined in CSS
+                 const maxHeight = parseInt(window.getComputedStyle(userInput).maxHeight, 10);
+                 const requiredHeight = userInput.scrollHeight;
+                 userInput.style.height = Math.min(requiredHeight, maxHeight) + 'px';
+            }
+        };
+
+        // --- API Communication ---
+        const API = {
+            fetchChatResponse: async (messages) => {
+                State.isWaitingForResponse = true;
+                UI.setCatStatus('thinking');
+                sendButton.disabled = true;
+
+                // Ensure system prompt is the first message
+                const messagesToSend = [
+                    { role: "system", content: Config.personaSystemPrompt },
+                    // Filter out any existing system messages from history before adding ours
+                    ...messages.filter(m => m.role !== 'system')
+                 ];
+
+                UI.displayMessage('system-debug', `Sending to API: ${JSON.stringify(messagesToSend)}`); // Debug only
+
+                try {
+                    const response = await fetch(Config.proxyUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            model: Config.model,
+                            messages: messagesToSend,
+                            temperature: Config.temperature,
+                            max_tokens: Config.max_tokens,
+                            // Attempt to force JSON output for evaluation if supported by model/API
+                            // This syntax varies (e.g., tool use, response_format)
+                            // response_format: { "type": "json_object" } // Example for OpenAI compatible APIs
+                        })
+                    });
+
+                    // Simulate typing delay *after* receiving the response status
+                    const typingDuration = Math.random() * (Config.typingDelayMax - Config.typingDelayMin) + Config.typingDelayMin;
+                    UI.showTypingIndicator(true);
+                    await new Promise(resolve => setTimeout(resolve, typingDuration));
+
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        console.error(`API Error Response (${response.status}):`, errorText);
+                        // Try to parse error JSON if possible
+                        let detail = errorText;
+                        try {
+                             const errorJson = JSON.parse(errorText);
+                             detail = errorJson.error?.message || errorText;
+                        } catch(e) { /* Ignore parsing error, use raw text */ }
+                        throw new Error(`API Error (${response.status}). ${detail}`);
+                    }
+
+                    const data = await response.json();
+                    UI.displayMessage('system-debug', `Received from API: ${JSON.stringify(data)}`); // Debug only
+
+
+                    if (data.choices && data.choices.length > 0 && data.choices[0].message && data.choices[0].message.content) {
+                        return data.choices[0].message.content.trim();
+                    } else {
+                         console.error("Invalid API response structure:", data);
+                        throw new Error("Received an invalid or empty response structure from the API.");
+                    }
+
+                } catch (error) {
+                    console.error('Failed to fetch chat response:', error);
+                    // Display user-friendly error in chat
+                    UI.displayMessage('error', `Meowch! Something went wrong talking to my catnip cloud... (${error.message})`);
+                    UI.setCatStatus('error'); // Indicate error state
+                    return null; // Indicate failure
+                } finally {
+                    State.isWaitingForResponse = false;
+                    sendButton.disabled = false;
+                    UI.showTypingIndicator(false); // Revert status bar
+                    userInput.focus();
+                }
+            }
+        };
+
+
+        // --- Evaluation Logic ---
+        const Evaluation = {
+            createEvaluationPrompt: (task, userResponse) => {
+                // Add user response to playground display if it's code related
+                 if (task.type === 'code_write' || task.type === 'code_fix') {
+                    // Show the raw user input in the scratchpad for context
+                     UI.updateCodeDisplay(userResponse);
+                 }
+
+                // Construct the prompt for the LLM, asking for JSON output
+                // Clearly state the criteria within the prompt itself.
+                const prompt = `
 [Professor Paws's Question to Student: "${task.cat_prompt}"]
 [Student's Response: "${userResponse}"]
 
-Professor Paws, evaluate this student's response based ONLY on these criteria: ${task.evaluation_criteria}
+[Criteria: ${task.evaluation_criteria}]
 
-Is the student's understanding or code conceptually correct for a beginner, even if not perfectly formatted or worded? Focus on the core concept being tested. Respond ONLY with the following JSON format, nothing else:
+Professor Paws, evaluate the student's response based ONLY on the criteria above. Is the student's understanding or code conceptually correct for a complete beginner, even if not perfectly formatted or worded? Focus on the core concept. Respond ONLY with valid JSON in the following format, with no other text before or after the JSON block:
 {
   "is_correct": boolean,
-  "explanation": "Your cat-like feedback/explanation for the student (keep it short!)"
+  "explanation": "Your brief, encouraging, cat-like feedback/explanation for the student based on the criteria and their response."
 }
-             `;
-             return prompt;
-         },
+`;
+                return prompt;
+            },
 
-         parseEvaluationResponse: (responseText) => {
-             try {
-                 // Attempt to clean the response text (remove potential markdown/```json)
-                 const cleanedText = responseText.replace(/^```json\s*|\s*```$/g, '').trim();
-                 const result = JSON.parse(cleanedText);
-                 if (typeof result.is_correct === 'boolean' && typeof result.explanation === 'string') {
-                     return result;
-                 } else {
-                     console.error("Parsed JSON missing required fields:", result);
-                     return null;
-                 }
-             } catch (e) {
-                 console.error("Failed to parse LLM evaluation response:", e, "\nResponse Text:", responseText);
-                  // Fallback: Try to guess correctness based on keywords if parsing fails? Risky.
-                  // Or just ask for clarification.
-                 return null; // Indicate parsing failure
-             }
-         }
-     };
+            parseEvaluationResponse: (responseText) => {
+                try {
+                    // Try to extract JSON even if there's surrounding text (less ideal)
+                    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+                    if (!jsonMatch) {
+                         console.error("No JSON block found in LLM response:", responseText);
+                        return null;
+                    }
 
-     // --- Core Logic / Controller ---
-     const Controller = {
-         init: () => {
-             userInput.addEventListener('keypress', Controller.handleKeyPress);
-             userInput.addEventListener('input', UI.adjustTextareaHeight); // Auto-resize textarea
-             sendButton.addEventListener('click', Controller.handleSendMessage);
-             Controller.nextQuestion();
-             UI.setCatStatus('idle');
-             userInput.focus();
-         },
+                    const jsonString = jsonMatch[0];
+                    const result = JSON.parse(jsonString);
 
-         handleKeyPress: (event) => {
-             if (event.key === 'Enter' && !event.shiftKey && !State.isWaitingForResponse) {
-                 event.preventDefault();
-                 Controller.handleSendMessage();
-             }
-         },
+                    // Validate the structure
+                    if (typeof result.is_correct === 'boolean' && typeof result.explanation === 'string') {
+                        return result;
+                    } else {
+                        console.error("Parsed JSON missing required fields (is_correct, explanation):", result);
+                        return null;
+                    }
+                } catch (e) {
+                    console.error("Failed to parse LLM evaluation response as JSON:", e, "\nRaw Response Text:", responseText);
+                    // Parsing failed, return null to indicate evaluation wasn't successful
+                    return null;
+                }
+            }
+        };
 
-         handleSendMessage: async () => {
-             const userText = userInput.value.trim();
-             if (!userText || State.isWaitingForResponse) return;
+        // --- Core Logic / Controller ---
+        const Controller = {
+            init: () => {
+                userInput.addEventListener('keypress', Controller.handleKeyPress);
+                userInput.addEventListener('input', UI.adjustTextareaHeight); // Auto-resize textarea
+                sendButton.addEventListener('click', Controller.handleSendMessage);
+                // Add initial greeting from bot after a short delay
+                setTimeout(Controller.nextQuestion, 500);
+                UI.setCatStatus('idle');
+                userInput.focus();
+            },
 
-             UI.displayMessage('user', userText);
-             State.conversationHistory.push({ role: "user", content: userText });
-             userInput.value = ''; // Clear input
-             UI.adjustTextareaHeight(); // Reset textarea height
+            handleKeyPress: (event) => {
+                // Send on Enter unless Shift is pressed
+                if (event.key === 'Enter' && !event.shiftKey && !State.isWaitingForResponse) {
+                    event.preventDefault(); // Prevent newline in textarea
+                    Controller.handleSendMessage();
+                }
+            },
 
-             const currentTask = State.currentTaskInfo;
+            handleSendMessage: async () => {
+                const userText = userInput.value.trim();
+                if (!userText || State.isWaitingForResponse) return;
 
-             if (!currentTask || currentTask.type === 'greeting' || currentTask.type === 'summary') {
-                 // General chat or end of quiz
-                 const botResponse = await API.fetchChatResponse(State.conversationHistory);
-                 if (botResponse) {
-                     UI.displayMessage('bot', botResponse);
-                     State.conversationHistory.push({ role: "assistant", content: botResponse });
-                 }
-                 if(currentTask.type === 'summary') {
-                    // Quiz ended, maybe disable input or show a restart button
-                    sendButton.disabled = true;
-                    userInput.disabled = true;
-                    UI.setCatStatus('idle');
-                 }
+                // Display user message immediately
+                UI.displayMessage('user', userText);
+                State.conversationHistory.push({ role: "user", content: userText });
+                userInput.value = ''; // Clear input
+                UI.adjustTextareaHeight(); // Reset textarea height
 
-             } else {
-                 // This is an answer to a question - evaluate it
-                 const evaluationPrompt = Evaluation.createEvaluationPrompt(currentTask, userText);
-                 // We send only the relevant context for evaluation, not the whole history maybe?
-                 // Or add the eval prompt to the history. Let's add it.
-                 const tempHistory = [...State.conversationHistory];
-                 tempHistory[tempHistory.length - 1].content = evaluationPrompt; // Replace user text with the structured prompt for the API
+                const currentTask = State.currentTaskInfo;
 
-                 const evaluationResponseText = await API.fetchChatResponse(tempHistory);
+                // --- Determine if it's a general chat or an answer to evaluate ---
+                if (!currentTask || currentTask.type === 'greeting' || currentTask.type === 'summary') {
+                    // --- General Chat / End of Quiz ---
+                    const botResponse = await API.fetchChatResponse(State.conversationHistory);
+                    if (botResponse) {
+                        UI.displayMessage('bot', botResponse);
+                        State.conversationHistory.push({ role: "assistant", content: botResponse });
+                    }
+                    // If it was the summary/farewell, disable input
+                    if(currentTask && currentTask.type === 'summary') {
+                        sendButton.disabled = true;
+                        userInput.disabled = true;
+                        userInput.placeholder = "Professor Paws is napping now...";
+                        UI.setCatStatus('idle');
+                    }
 
-                 if (evaluationResponseText) {
-                     const evaluationResult = Evaluation.parseEvaluationResponse(evaluationResponseText);
+                } else {
+                    // --- Answer Evaluation ---
+                    const evaluationPrompt = Evaluation.createEvaluationPrompt(currentTask, userText);
 
-                     let botFeedback = "Hmm, I'm a bit confused... *chases tail* Could you try explaining that again?";
-                     let correctness = 'clarification'; // Default if parsing fails
+                    // Send *only* the evaluation prompt as the user message for this turn
+                    // This focuses the LLM on the evaluation task.
+                    // We still keep the original user message in State.conversationHistory
+                    const evaluationApiHistory = [...State.conversationHistory];
+                    // Replace the last user message content with the structured evaluation prompt
+                    if (evaluationApiHistory.length > 0 && evaluationApiHistory[evaluationApiHistory.length - 1].role === 'user') {
+                        evaluationApiHistory[evaluationApiHistory.length - 1].content = evaluationPrompt;
+                    } else {
+                        // Should not happen if logic is correct, but handle defensively
+                        evaluationApiHistory.push({ role: "user", content: evaluationPrompt });
+                    }
 
-                     if (evaluationResult) {
-                         botFeedback = evaluationResult.explanation;
-                         correctness = evaluationResult.is_correct ? 'correct' : 'incorrect';
-                         if (evaluationResult.is_correct) {
-                            State.userScore++;
-                            // Add a random positive cat quip?
-                            if(Math.random() < 0.3) botFeedback += ` ${Persona.getCatQuip('positive')}`;
-                         } else {
-                             if(Math.random() < 0.2) botFeedback += ` ${Persona.getCatQuip('negative')}`;
+
+                    const evaluationResponseText = await API.fetchChatResponse(evaluationApiHistory);
+
+                    if (evaluationResponseText) {
+                        const evaluationResult = Evaluation.parseEvaluationResponse(evaluationResponseText);
+
+                        let botFeedback = "Hmm, I'm a bit confused... *chases imaginary yarn* Could you try explaining that again, perhaps differently?";
+                        let correctness = 'clarification'; // Default if parsing fails
+
+                        if (evaluationResult) {
+                            // Successfully parsed the evaluation JSON
+                            botFeedback = evaluationResult.explanation;
+                            correctness = evaluationResult.is_correct ? 'correct' : 'incorrect';
+                            // Add persona quips based on correctness
+                            if (evaluationResult.is_correct) {
+                                // Only increment score for non-greeting/summary questions
+                                if (currentTask.type !== 'greeting' && currentTask.type !== 'summary') {
+                                    State.userScore++;
+                                }
+                                if(Math.random() < 0.4) botFeedback += ` ${Persona.getCatQuip('positive')}`; // Higher chance on correct
+                            } else {
+                                if(Math.random() < 0.3) botFeedback += ` ${Persona.getCatQuip('negative')}`;
+                            }
+                        } else {
+                            // Handle LLM not returning valid JSON - show raw response for debugging/info
+                            // We already logged the error in parseEvaluationResponse
+                            botFeedback = `Mrow? My thoughts got tangled like yarn! Here's what I was thinking: ${evaluationResponseText}\nLet's try that question again.`;
+                             // Don't advance if evaluation failed
+                            UI.displayMessage('bot', botFeedback, { correctness: 'clarification' });
+                            State.conversationHistory.push({ role: "assistant", content: botFeedback }); // Add confused response
+                            // Optional: Reset scratchpad if needed?
+                            // UI.updateCodeDisplay(""); // Clear code display on failed eval?
+                            return; // Exit without proceeding
+                        }
+
+                        // Display the feedback and add to official history
+                        UI.displayMessage('bot', botFeedback, { correctness: correctness });
+                        State.conversationHistory.push({ role: "assistant", content: botFeedback });
+
+                        // Move to next question only if evaluation was successful (parsed)
+                        Controller.nextQuestion();
+
+                    } else {
+                        // API call failed entirely, error message already shown by API.fetchChatResponse
+                        // UI state (button, status) handled in API.fetchChatResponse finally block
+                    }
+                }
+
+                 // Random cat interjection? (Only if not waiting)
+                 if (Math.random() < Config.catInterjectionChance && !State.isWaitingForResponse) {
+                    setTimeout(() => {
+                         // Check again if still not waiting, in case user sent another msg quickly
+                         if (!State.isWaitingForResponse) {
+                            const quip = Persona.getCatQuip('random');
+                            const msgDiv = UI.displayMessage('bot', quip);
+                            // Optional: style random quips differently?
+                            State.conversationHistory.push({ role: "assistant", content: quip });
                          }
-                     } else {
-                         // Handle LLM not returning valid JSON
-                         botFeedback = `Mrow? My wires got tangled trying to understand that. Let's try this: ${evaluationResponseText}`; // Show raw response if parsing fails
-                         // Don't advance if evaluation failed
-                         UI.displayMessage('bot', botFeedback, { correctness: 'clarification' });
-                         State.conversationHistory.push({ role: "assistant", content: botFeedback }); // Add confused response
-                         return; // Don't proceed to next question
-                     }
+                     }, 700); // Slight delay after main response
+                }
+            },
 
-                     UI.displayMessage('bot', botFeedback, { correctness: correctness });
-                     State.conversationHistory.push({ role: "assistant", content: botFeedback }); // Add the feedback to history
+           nextQuestion: () => {
+                State.currentQuestionIndex++;
+                if (State.currentQuestionIndex < QuestionBank.length) {
+                    const task = QuestionBank[State.currentQuestionIndex];
 
-                     // Move to next question only if evaluation was successful (parsed)
-                     Controller.nextQuestion();
+                    // Resolve dynamic text in prompts (like score) - important for summary
+                    let promptText = typeof task.cat_prompt === 'function'
+                        ? task.cat_prompt() // Execute function to get dynamic text
+                        : task.cat_prompt;
 
-                 } else {
-                     // API call failed entirely, error already shown
-                 }
-             }
-             // Random cat interjection?
-             if (Math.random() < Config.catInterjectionChance && !State.isWaitingForResponse) {
-                setTimeout(() => {
-                     const quip = Persona.getCatQuip('random');
-                     UI.displayMessage('bot', quip);
-                     State.conversationHistory.push({ role: "assistant", content: quip });
-                 }, 500); // Slight delay
+                    // Store the processed task info for the current state
+                    State.currentTaskInfo = { ...task, cat_prompt: promptText };
+
+                    // --- Display the question from the bot ---
+                    // Add slight delay before asking next question (unless it's the very first)
+                    const delay = State.currentQuestionIndex === 0 ? 100 : 1300; // ms
+                    setTimeout(() => {
+                        // Ensure we haven't been interrupted by an error or user action
+                        if (!State.isWaitingForResponse) {
+                            UI.updatePlayground(State.currentTaskInfo); // Update visual area *before* asking
+                            UI.displayMessage('bot', State.currentTaskInfo.cat_prompt);
+                            State.conversationHistory.push({ role: "assistant", content: State.currentTaskInfo.cat_prompt });
+                            UI.setCatStatus('idle'); // Ready for user input
+                            userInput.focus();
+                             userInput.disabled = false; // Ensure input is enabled
+                             userInput.placeholder = "Talk to Professor Paws...";
+                        }
+                    }, delay);
+
+                } else {
+                    // End of questions sequence (actual handling in handleSendMessage when type is 'summary')
+                    console.log("End of question bank reached.");
+                    // Final status update if needed, though summary message handles it
+                     UI.setCatStatus('idle');
+                     // Input disabled via summary message handling
+                }
+            },
+
+            // Helper for debugging - not used in normal flow
+            displayDebugMessage: (text) => {
+                 console.log("DEBUG:", text); // Log to console as well
+                 const debugDiv = document.createElement('div');
+                 debugDiv.style.fontSize = '0.7em';
+                 debugDiv.style.color = '#888';
+                 debugDiv.style.marginTop = '5px';
+                 debugDiv.style.borderTop = '1px dashed #ccc';
+                 debugDiv.textContent = `[DEBUG] ${text}`;
+                 chatbox.appendChild(debugDiv);
+                 chatbox.scrollTop = chatbox.scrollHeight;
             }
-         },
-
-        nextQuestion: () => {
-            State.currentQuestionIndex++;
-            if (State.currentQuestionIndex < QuestionBank.length) {
-                const task = QuestionBank[State.currentQuestionIndex];
-
-                 // Handle dynamic text in prompts (like score)
-                 let promptText = task.cat_prompt;
-                 if (typeof promptText === 'function') {
-                     promptText = promptText(); // Execute function to get dynamic text
-                 }
-
-                State.currentTaskInfo = { ...task, cat_prompt: promptText }; // Store processed prompt
-
-                // Display the question from the bot
-                 // Add slight delay before asking next question
-                setTimeout(async () => {
-                    UI.updatePlayground(State.currentTaskInfo); // Update visual area first
-                    UI.displayMessage('bot', State.currentTaskInfo.cat_prompt);
-                    State.conversationHistory.push({ role: "assistant", content: State.currentTaskInfo.cat_prompt });
-                     UI.setCatStatus('idle'); // Ready for user input
-                 }, State.currentQuestionIndex === 0 ? 100 : 1200); // No delay for first question
-
-            } else {
-                // End of questions - handled in handleSendMessage when type is 'summary'
-                console.log("End of questions reached.");
-                 // Final status update if needed
-                 UI.setCatStatus('idle');
-
+        };
+         // Monkey-patch displayMessage to route debug messages (optional)
+         const originalDisplayMessage = UI.displayMessage;
+         UI.displayMessage = (role, text, options = {}) => {
+            if(role === 'system-debug' && window.location.search.includes('debug=true')) { // Only show if debug flag is set
+                 Controller.displayDebugMessage(text);
+            } else if (role !== 'system-debug') {
+                 return originalDisplayMessage(role, text, options);
             }
-        }
-     };
-
-     // --- Persona Helpers ---
-     const Persona = {
-        catQuips: {
-            positive: ["Purrfect!", "Meow-nificent!", "Claw-ver!", "You've got the eye of the tiger!", "Paw-some!"],
-            negative: ["Hmm, not quite.", "Needs more cat-nap... I mean, thought.", "Are you kitten me? Try again!", "Mrow... close, but no tuna."],
-            random: ["*Chases a laser dot only I can see*", "*Stares intently at a wall*", "*Suddenly grooms paw*", "Is it naptime yet?", "*Yawns widely*"]
-        },
-        getCatQuip: (type = 'random') => {
-             const quips = Persona.catQuips[type] || Persona.catQuips.random;
-             return quips[Math.floor(Math.random() * quips.length)];
-        }
-        // Could add more formatting functions here if needed
-     };
+            return null; // Don't display debug messages unless flag is on
+         };
 
 
-    // --- Start the application ---
-    Controller.init();
+        // --- Persona Helpers ---
+        const Persona = {
+           catQuips: {
+               positive: ["Purrfect!", "Meow-nificent!", "Claw-ver!", "You've got the eye of the tiger!", "Paw-some!", "Litter-ally genius!", "That's the cat's pajamas!", "Fur-real, great job!"],
+               negative: ["Hmm, not quite right.", "Needs more cat-nap... I mean, thought.", "Are you kitten me? Try again!", "Mrow... close, but no tuna.", "Let's paws and rethink that.", "That's a bit catastroph-ic, try again!", "Don't get stressed, take a paws."],
+               random: ["*Chases a laser dot only I can see*", "*Stares intently at a wall*", "*Suddenly grooms paw*", "Is it naptime yet?", "*Yawns widely*", "*Pats your answer gently*", "*Knocks something off a virtual desk* Oops.", "*Purrrrrrrrs contentedly*", "Did someone say tuna?"]
+           },
+           getCatQuip: (type = 'random') => {
+                const quips = Persona.catQuips[type] || Persona.catQuips.random;
+                return quips[Math.floor(Math.random() * quips.length)];
+           }
+           // Could add more formatting functions here if needed
+        };
 
-}); // End DOMContentLoaded
+
+       // --- Start the application ---
+       Controller.init();
+
+    }); // End DOMContentLoaded
+    </script>
+
+</body>
+</html>
