@@ -5,7 +5,7 @@
     <title>Professor Paws's Python Playground</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Add Font Awesome for icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
     <style>
         /* --- Basic Setup & Variables --- */
@@ -17,8 +17,8 @@
             --cat-light-text: #ffffff;
             --cat-code-bg: #2b2b2b;
             --cat-code-text: #a9b7c6;
-            --font-main: 'Arial', sans-serif; /* Keep it simple */
-            --font-code: 'Courier New', Courier, monospace;
+            --font-main: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Common system font */
+            --font-code: 'Consolas', 'Courier New', Courier, monospace;
             --border-radius: 8px;
         }
 
@@ -57,6 +57,7 @@
             font-size: 1.1em;
             font-weight: bold;
             flex-shrink: 0; /* Prevent shrinking */
+            border-bottom: 2px solid var(--cat-primary);
         }
         .playground-header .fa-cat { margin-right: 8px; color: var(--cat-primary); }
 
@@ -67,7 +68,8 @@
             font-size: 0.95em;
             line-height: 1.6;
         }
-        #playground-content h3 { color: var(--cat-secondary); margin-bottom: 15px; }
+        #playground-content h3 { color: var(--cat-secondary); margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 5px;}
+        #playground-content h4 { color: #333; margin-top: 15px; margin-bottom: 8px; }
         #playground-content p { margin-bottom: 10px; }
         #playground-content pre {
             background-color: var(--cat-code-bg);
@@ -80,13 +82,22 @@
             margin-top: 10px;
             font-size: 0.9em;
             border: 1px solid #444;
+            box-shadow: inset 0 0 5px rgba(0,0,0,0.3);
         }
-        /* Basic Syntax Highlighting (can be expanded) */
+        /* Basic Syntax Highlighting */
         .code-keyword { color: #cc7832; font-weight: bold; }
         .code-string { color: #6a8759; }
         .code-comment { color: #808080; font-style: italic; }
         .code-function { color: #ffc66d; }
         .code-paren { color: #bbb; }
+        .playground-text-display i {
+            display: block;
+            background-color: #f9f9f9;
+            padding: 10px;
+            border-radius: 4px;
+            border-left: 3px solid var(--cat-primary);
+        }
+
 
         /* --- Chatbot Area (Right/Bottom) --- */
         #chatbot-area {
@@ -104,6 +115,7 @@
             overflow-y: auto;
             padding: 15px;
             border-bottom: 1px solid #ccc;
+            background-color: #fafafa;
         }
 
         .message {
@@ -114,7 +126,8 @@
             word-wrap: break-word;
             line-height: 1.5;
             position: relative; /* For potential decorations */
-            animation: fadeIn 0.3s ease-out;
+            animation: fadeIn 0.4s ease-out;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
         }
         .message strong { /* Label */
             display: block;
@@ -160,10 +173,8 @@
         }
         .error-message strong { color: #721c24; }
 
-        .typing-indicator { /* This is now handled by the status bar, but keeping for potential future use */
-            font-style: italic;
-            color: #6c757d;
-            padding: 10px 15px;
+        .typing-indicator { /* Handled by status bar */
+            display: none;
         }
 
         #input-area {
@@ -189,8 +200,11 @@
             max-height: 150px; /* Limit growth */
             overflow-y: auto; /* Allow scrolling if needed */
             line-height: 1.4;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
         }
         #userInput:focus { border-color: var(--cat-primary); box-shadow: 0 0 0 2px rgba(252, 163, 17, 0.3); }
+        #userInput:disabled { background-color: #eee; cursor: not-allowed; }
+
 
         #sendButton {
             background: var(--cat-primary);
@@ -200,10 +214,11 @@
             padding: 0 15px; /* Adjust padding for icon */
             cursor: pointer;
             font-size: 1.2em; /* Make icon slightly larger */
-            transition: background-color 0.3s ease;
+            transition: background-color 0.3s ease, opacity 0.3s ease;
             display: flex;
             align-items: center;
             justify-content: center;
+            min-width: 50px; /* Ensure button has width */
         }
         #sendButton:hover:not(:disabled) { background: #e0930f; /* Darker orange */ }
         #sendButton:disabled { background: #aaa; cursor: not-allowed; opacity: 0.7; }
@@ -251,6 +266,7 @@
              #sendButton { font-size: 1.1em; padding: 0 12px;}
              #playground-content { padding: 15px; }
              .playground-header { font-size: 1em; }
+             #cat-status { font-size: 0.8em; }
          }
 
     </style>
@@ -289,7 +305,9 @@
     </div>
 
     <script>
+    // Wrap all code in DOMContentLoaded to ensure HTML is ready
     document.addEventListener('DOMContentLoaded', () => {
+        console.log("DOM Loaded. Initializing Professor Paws..."); // Basic check
 
         // --- DOM Elements ---
         const chatbox = document.getElementById('chatbox');
@@ -297,7 +315,7 @@
         const sendButton = document.getElementById('sendButton');
         const playgroundContent = document.getElementById('playground-content');
         const catStatusText = document.querySelector('#cat-status .status-text');
-        const catStatusIcon = document.querySelector('#cat-status .status-icon i'); // Assuming FontAwesome
+        const catStatusIcon = document.querySelector('#cat-status .status-icon i');
         const catStatusContainer = document.getElementById('cat-status');
 
         // --- State ---
@@ -312,21 +330,23 @@
 
         // --- Configuration ---
         const Config = {
-            // IMPORTANT: Replace with YOUR actual proxy URL
-            proxyUrl: '/api/proxy', // Example: Cloudflare Pages function route
-            model: "glm-4-flash",   // Or your preferred model (ensure it's good with instructions/JSON)
-            temperature: 0.6,       // Moderate creativity for persona
-            max_tokens: 350,        // Increased slightly for feedback + persona
-            personaSystemPrompt: `You are Professor Paws, a slightly mischievous, easily distracted, but knowledgeable and encouraging cat teaching beginner Python to a student. Your language should be full of cat puns (like meow, purrfect, litter-ally, paw-some, fur-real, claw-ver) and descriptions of cat actions (*stretches*, *yawns*, *bats playfully at the screen*, *tilts head*, *chases tail briefly*). Keep your explanations simple and clear for a complete beginner. When evaluating student input based on criteria provided in square brackets like [Criteria: ...], respond ONLY in the requested JSON format. Do not add any extra text, commentary, or formatting outside the JSON when evaluation is requested. Ensure the JSON is valid. Be encouraging even when the student is wrong. You are talking directly to the student via chat.`,
+            // CRITICAL: This MUST point to your working proxy function (relative path)
+            // Example for GitHub Pages: If your function is deployed elsewhere,
+            // use the full URL. If using Pages Functions, this relative path might work.
+            proxyUrl: '/api/proxy',
+            model: "glm-4-flash",   // Ensure this model is supported by your API key/endpoint
+            temperature: 0.6,
+            max_tokens: 350,
+            personaSystemPrompt: `You are Professor Paws, a slightly mischievous, easily distracted, but knowledgeable and encouraging cat teaching beginner Python to a student. Your language should be full of cat puns (like meow, purrfect, litter-ally, paw-some, fur-real, claw-ver) and descriptions of cat actions (*stretches*, *yawns*, *bats playfully at the screen*, *tilts head*, *chases tail briefly*). Keep your explanations simple and clear for a complete beginner. When evaluating student input based on criteria provided in square brackets like [Criteria: ...], respond ONLY in the requested JSON format. Do not add any extra text, commentary, or formatting outside the JSON block. Ensure the JSON is valid. Be encouraging even when the student is wrong. You are talking directly to the student via chat.`,
             typingDelayMin: 600, // ms
             typingDelayMax: 1800, // ms
-            catInterjectionChance: 0.15 // 15% chance of random cat comment after bot message
+            catInterjectionChance: 0.15
         };
 
         // --- Question Bank ---
-        // Each question needs: id, type, cat_prompt, evaluation_criteria, visual_aid_type, visual_aid_content (optional initial content)
         const QuestionBank = [
-            {
+            // ... (Keep the QuestionBank array from the previous response) ...
+             {
                 id: 'intro',
                 type: 'greeting',
                 cat_prompt: "Mrow! *stretches luxuriously* I am Professor Paws. Ready to learn some Python, or are you just here to offer scratches? *looks hopeful*",
@@ -393,27 +413,33 @@
             {
                 id: 'farewell',
                 type: 'summary',
-                // Using a function allows dynamic score insertion
                 cat_prompt: () => `Paw-some work, human! You got ${State.userScore} out of ${State.totalQuestions} right! That's enough learning for one nap... I mean, lesson. *curls up comfortably* Any final questions before I doze off completely?`,
                 evaluation_criteria: "N/A - Farewell message.",
                 visual_aid_type: 'text_display',
-                visual_aid_content: () => `Lesson Complete! Final Score: ${State.userScore}/${State.totalQuestions}` // Also dynamic
+                visual_aid_content: () => `Lesson Complete! Final Score: ${State.userScore}/${State.totalQuestions}`
             }
-            // TODO: Add more questions covering comments after code, multiple prints, etc.
         ];
-        // Calculate total scoreable questions
         State.totalQuestions = QuestionBank.filter(q => q.type !== 'greeting' && q.type !== 'summary').length;
 
 
         // --- UI Functions ---
         const UI = {
+            // ... (Keep the UI object from the previous response) ...
             displayMessage: (role, text, options = {}) => {
+                // Ensure chatbox exists before proceeding
+                if (!chatbox) {
+                    console.error("Chatbox element not found!");
+                    return null;
+                }
                 const messageDiv = document.createElement('div');
                 messageDiv.classList.add('message', `${role}-message`);
 
                 const strong = document.createElement('strong');
+                let contentContainer = document.createElement('span'); // Container for main text/actions
+
                 if (role === 'user') {
                     strong.textContent = "You:";
+                    contentContainer.textContent = ' ' + text; // Simple text for user
                 } else if (role === 'bot') {
                     strong.textContent = "Professor Paws:";
                     // Apply correctness styling
@@ -422,89 +448,77 @@
                     else if (options.correctness === 'clarification') messageDiv.classList.add('clarification-needed');
 
                     // Process cat actions (*action*) into styled elements
-                    // Split text by potential action tags to handle multiple actions and surrounding text
                     const parts = text.split(/(\*.*?\*)/g); // Split and keep delimiters
-                    const contentFragment = document.createDocumentFragment();
+                    contentContainer.appendChild(document.createTextNode(' ')); // Space after label
                     parts.forEach(part => {
                         if (part.startsWith('*') && part.endsWith('*')) {
                             const italic = document.createElement('i');
                             italic.textContent = part; // Keep the asterisks visually
-                            contentFragment.appendChild(italic);
+                            contentContainer.appendChild(italic);
                         } else if (part) { // Append non-empty text parts
-                            contentFragment.appendChild(document.createTextNode(part));
+                            contentContainer.appendChild(document.createTextNode(part));
                         }
                     });
-                     messageDiv.appendChild(strong);
-                     // Append the processed content fragment (Handles potential HTML injection better than innerHTML)
-                     messageDiv.appendChild(contentFragment);
-
 
                 } else if (role === 'error') {
                     strong.textContent = "System Error:";
-                    messageDiv.classList.add('error-message'); // Use distinct class
-                    text = text || "An unknown error occurred.";
-                     messageDiv.appendChild(strong);
-                    // For errors, simple text append is safer
-                     messageDiv.appendChild(document.createTextNode(' ' + text.split('\n').join('\n')));
+                    messageDiv.classList.add('error-message');
+                    contentContainer.textContent = ' ' + (text || "An unknown error occurred.");
                 } else {
-                     // Fallback for other roles if needed
-                     messageDiv.appendChild(strong);
-                     messageDiv.appendChild(document.createTextNode(' ' + text.split('\n').join('\n')));
+                    // Fallback for other roles if needed
+                    strong.textContent = `${role}:`;
+                    contentContainer.textContent = ' ' + text;
                 }
 
+                messageDiv.appendChild(strong);
+                messageDiv.appendChild(contentContainer); // Append the container with processed text/actions
+
                 chatbox.appendChild(messageDiv);
-                // Slight delay before scrolling to allow animation to start
-                setTimeout(() => {
-                   chatbox.scrollTop = chatbox.scrollHeight;
-                }, 50);
-                 return messageDiv; // Return for potential modification
+                // Scroll down smoothly
+                chatbox.scrollTo({ top: chatbox.scrollHeight, behavior: 'smooth' });
+                return messageDiv;
             },
 
             showTypingIndicator: (show = true) => {
-                 // Now handled entirely by setCatStatus, keep function signature for compatibility
-                 if (show) {
-                    UI.setCatStatus('typing');
-                } else {
-                     // Revert status based on current state when typing stops
-                     UI.setCatStatus(State.isWaitingForResponse ? 'thinking' : 'idle');
-                }
+                 // Handled entirely by setCatStatus
+                 UI.setCatStatus(show ? 'typing' : (State.isWaitingForResponse ? 'thinking' : 'idle'));
             },
 
             updatePlayground: (taskInfo) => {
+                if (!playgroundContent) {
+                     console.error("Playground content element not found!");
+                     return;
+                 }
                  if (!taskInfo) {
                     playgroundContent.innerHTML = "<p>Waiting for Professor Paws...</p>";
                     return;
                 }
 
-                // Resolve dynamic content if visual_aid_content is a function
+                // Resolve dynamic content/prompts
                  let visualContent = typeof taskInfo.visual_aid_content === 'function'
-                    ? taskInfo.visual_aid_content()
-                    : taskInfo.visual_aid_content;
-
-                // Resolve dynamic prompt text if needed (usually done in Controller.nextQuestion)
+                    ? taskInfo.visual_aid_content() : taskInfo.visual_aid_content;
                  let promptText = typeof taskInfo.cat_prompt === 'function'
-                    ? taskInfo.cat_prompt()
-                    : taskInfo.cat_prompt;
+                    ? taskInfo.cat_prompt() : taskInfo.cat_prompt;
 
-                let content = `<h3>Current Task:</h3><p>${promptText.split('\n')[0]}</p>`; // Show first line of prompt as intro
+                let contentHTML = `<h3>Current Task:</h3><p>${promptText.split('\n')[0]}</p>`; // Show first line as intro
 
                  if (taskInfo.visual_aid_type === 'code_editor_display') {
-                     content += `<h4>Code Scratchpad:</h4><pre id="code-display-area">${visualContent || ''}</pre>`;
+                     // Ensure visualContent is a string, default to empty if null/undefined
+                     const codeContent = (typeof visualContent === 'string' ? visualContent : '').replace(/</g, "<").replace(/>/g, ">"); // Basic escape
+                     contentHTML += `<h4>Code Scratchpad:</h4><pre id="code-display-area">${codeContent}</pre>`;
                  } else if (taskInfo.visual_aid_type === 'text_display') {
-                      // Use a div for potentially longer text to allow wrapping
-                     content += `<div class="playground-text-display"><i>${visualContent || ''}</i></div>`;
+                     const textContent = (typeof visualContent === 'string' ? visualContent : '').replace(/</g, "<").replace(/>/g, ">"); // Basic escape
+                     contentHTML += `<div class="playground-text-display"><i>${textContent}</i></div>`;
                  }
-                 // TODO: Add more visual types later (e.g., simple output simulation)
 
-                playgroundContent.innerHTML = content;
+                playgroundContent.innerHTML = contentHTML;
             },
 
             updateCodeDisplay: (code) => {
                  const codeArea = document.getElementById('code-display-area');
                  if (codeArea) {
-                     // Basic highlighting (improved escaping)
                      let escapedCode = code
-                        .replace(/&/g, "&")
+                        .replace(/&/g, "&") // Must be first
                         .replace(/</g, "<")
                         .replace(/>/g, ">")
                         .replace(/"/g, """)
@@ -520,133 +534,133 @@
                  }
              },
 
-            setCatStatus: (status = 'idle') => { // idle, thinking, typing, error
+            setCatStatus: (status = 'idle') => {
+                // Ensure elements exist
+                if (!catStatusText || !catStatusIcon || !catStatusContainer) {
+                    console.error("Cat status elements not found!");
+                    return;
+                }
                 let text = "Professor Paws is napping...";
                 let iconClass = 'fa-paw';
-                let containerClass = 'cat-status-idle';
+                let containerClass = `cat-status-${status}`;
 
                 switch (status) {
                     case 'thinking':
                         text = "Professor Paws is thinking... *tail twitches*";
-                        iconClass = 'fa-brain'; // Or fa-spinner, fa-cat with question mark?
-                        containerClass = 'cat-status-thinking';
+                        iconClass = 'fa-brain';
                         break;
                     case 'typing':
                         text = "Professor Paws is typing furiously...";
                         iconClass = 'fa-keyboard';
-                        containerClass = 'cat-status-typing';
                         break;
                     case 'error':
                         text = "Uh oh, Professor Paws dropped the yarn ball...";
-                        iconClass = 'fa-heart-crack'; // Or fa-exclamation-triangle
-                        containerClass = 'cat-status-error'; // Add specific style if needed
+                        iconClass = 'fa-heart-crack';
                         break;
-                    case 'idle':
+                    case 'idle': // Default handled by initial values
                     default:
-                         // Keep default values
                         break;
                 }
 
                 catStatusText.textContent = text;
-                if (catStatusIcon) catStatusIcon.className = `fas ${iconClass}`; // Update icon if using FontAwesome
-                catStatusContainer.className = `cat-status-${status}`; // Update container class for styling/animation
+                catStatusIcon.className = `fas ${iconClass}`;
+                catStatusContainer.className = containerClass; // Update container class
             },
 
             adjustTextareaHeight: () => {
-                userInput.style.height = 'auto'; // Reset height to shrink if needed
-                // Calculate scroll height but limit to max-height defined in CSS
-                 const maxHeight = parseInt(window.getComputedStyle(userInput).maxHeight, 10);
+                if (!userInput) return;
+                userInput.style.height = 'auto'; // Reset height
+                 const maxHeight = parseInt(window.getComputedStyle(userInput).maxHeight, 10) || 150; // Use 150 as fallback
                  const requiredHeight = userInput.scrollHeight;
                  userInput.style.height = Math.min(requiredHeight, maxHeight) + 'px';
             }
         };
 
+
         // --- API Communication ---
         const API = {
-            fetchChatResponse: async (messages) => {
-                State.isWaitingForResponse = true;
-                UI.setCatStatus('thinking');
-                sendButton.disabled = true;
+            // ... (Keep the API object from the previous response) ...
+             fetchChatResponse: async (messages) => {
+                 console.log("API: Attempting to fetch response..."); // Log call start
+                 State.isWaitingForResponse = true;
+                 UI.setCatStatus('thinking');
+                 if(sendButton) sendButton.disabled = true;
 
-                // Ensure system prompt is the first message
                 const messagesToSend = [
                     { role: "system", content: Config.personaSystemPrompt },
-                    // Filter out any existing system messages from history before adding ours
                     ...messages.filter(m => m.role !== 'system')
                  ];
 
-                UI.displayMessage('system-debug', `Sending to API: ${JSON.stringify(messagesToSend)}`); // Debug only
+                 // Optionally log the payload being sent (remove sensitive data in production)
+                 // console.log("API: Sending payload:", JSON.stringify({ model: Config.model, messages: messagesToSend, temperature: Config.temperature, max_tokens: Config.max_tokens }));
 
-                try {
-                    const response = await fetch(Config.proxyUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            model: Config.model,
-                            messages: messagesToSend,
-                            temperature: Config.temperature,
-                            max_tokens: Config.max_tokens,
-                            // Attempt to force JSON output for evaluation if supported by model/API
-                            // This syntax varies (e.g., tool use, response_format)
-                            // response_format: { "type": "json_object" } // Example for OpenAI compatible APIs
-                        })
-                    });
+                 try {
+                     const response = await fetch(Config.proxyUrl, {
+                         method: 'POST',
+                         headers: { 'Content-Type': 'application/json' },
+                         body: JSON.stringify({
+                             model: Config.model,
+                             messages: messagesToSend,
+                             temperature: Config.temperature,
+                             max_tokens: Config.max_tokens,
+                             // Add response_format if needed/supported by your specific backend/model
+                             // response_format: { "type": "json_object" }
+                         })
+                     });
+                     console.log("API: Received fetch response status:", response.status); // Log status
 
-                    // Simulate typing delay *after* receiving the response status
-                    const typingDuration = Math.random() * (Config.typingDelayMax - Config.typingDelayMin) + Config.typingDelayMin;
-                    UI.showTypingIndicator(true);
-                    await new Promise(resolve => setTimeout(resolve, typingDuration));
+                     const typingDuration = Math.random() * (Config.typingDelayMax - Config.typingDelayMin) + Config.typingDelayMin;
+                     UI.showTypingIndicator(true);
+                     await new Promise(resolve => setTimeout(resolve, typingDuration));
 
-                    if (!response.ok) {
-                        const errorText = await response.text();
-                        console.error(`API Error Response (${response.status}):`, errorText);
-                        // Try to parse error JSON if possible
-                        let detail = errorText;
-                        try {
-                             const errorJson = JSON.parse(errorText);
-                             detail = errorJson.error?.message || errorText;
-                        } catch(e) { /* Ignore parsing error, use raw text */ }
-                        throw new Error(`API Error (${response.status}). ${detail}`);
-                    }
+                     if (!response.ok) {
+                         const errorText = await response.text();
+                         console.error(`API Error Response (${response.status}):`, errorText);
+                         let detail = errorText;
+                         try {
+                              const errorJson = JSON.parse(errorText);
+                              detail = errorJson.error?.message || errorText;
+                         } catch(e) { /* Ignore parsing error */ }
+                         // Throw a more specific error to be caught below
+                         throw new Error(`Request failed (${response.status}). ${detail}`);
+                     }
 
-                    const data = await response.json();
-                    UI.displayMessage('system-debug', `Received from API: ${JSON.stringify(data)}`); // Debug only
+                     const data = await response.json();
+                      console.log("API: Received data:", data); // Log successful data
 
+                     if (data.choices && data.choices.length > 0 && data.choices[0].message && data.choices[0].message.content) {
+                         console.log("API: Extracted content successfully."); // Log success
+                         return data.choices[0].message.content.trim();
+                     } else {
+                          console.error("API: Invalid response structure:", data);
+                         throw new Error("Received an invalid or empty response structure from the API.");
+                     }
 
-                    if (data.choices && data.choices.length > 0 && data.choices[0].message && data.choices[0].message.content) {
-                        return data.choices[0].message.content.trim();
-                    } else {
-                         console.error("Invalid API response structure:", data);
-                        throw new Error("Received an invalid or empty response structure from the API.");
-                    }
-
-                } catch (error) {
-                    console.error('Failed to fetch chat response:', error);
-                    // Display user-friendly error in chat
-                    UI.displayMessage('error', `Meowch! Something went wrong talking to my catnip cloud... (${error.message})`);
-                    UI.setCatStatus('error'); // Indicate error state
-                    return null; // Indicate failure
-                } finally {
-                    State.isWaitingForResponse = false;
-                    sendButton.disabled = false;
-                    UI.showTypingIndicator(false); // Revert status bar
-                    userInput.focus();
-                }
-            }
+                 } catch (error) {
+                     console.error('API: Failed to fetch chat response:', error);
+                     UI.displayMessage('error', `Meowch! Couldn't connect to the thinking cloud... (${error.message})`);
+                     UI.setCatStatus('error');
+                     return null; // Indicate failure
+                 } finally {
+                      console.log("API: fetchChatResponse finished."); // Log completion
+                     State.isWaitingForResponse = false;
+                     if(sendButton) sendButton.disabled = false;
+                     UI.showTypingIndicator(false); // Revert status bar
+                     if(userInput) userInput.focus();
+                 }
+             }
         };
 
 
         // --- Evaluation Logic ---
         const Evaluation = {
+            // ... (Keep the Evaluation object from the previous response) ...
             createEvaluationPrompt: (task, userResponse) => {
-                // Add user response to playground display if it's code related
+                 // Update scratchpad if relevant
                  if (task.type === 'code_write' || task.type === 'code_fix') {
-                    // Show the raw user input in the scratchpad for context
-                     UI.updateCodeDisplay(userResponse);
+                    UI.updateCodeDisplay(userResponse);
                  }
 
-                // Construct the prompt for the LLM, asking for JSON output
-                // Clearly state the criteria within the prompt itself.
                 const prompt = `
 [Professor Paws's Question to Student: "${task.cat_prompt}"]
 [Student's Response: "${userResponse}"]
@@ -659,32 +673,37 @@ Professor Paws, evaluate the student's response based ONLY on the criteria above
   "explanation": "Your brief, encouraging, cat-like feedback/explanation for the student based on the criteria and their response."
 }
 `;
+                console.log("Evaluation: Created prompt for LLM."); // Log prompt creation
                 return prompt;
             },
 
             parseEvaluationResponse: (responseText) => {
+                console.log("Evaluation: Attempting to parse response:", responseText); // Log raw response
                 try {
-                    // Try to extract JSON even if there's surrounding text (less ideal)
-                    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-                    if (!jsonMatch) {
-                         console.error("No JSON block found in LLM response:", responseText);
-                        return null;
+                    // More robust JSON extraction
+                    let potentialJson = responseText;
+                    const jsonStartIndex = responseText.indexOf('{');
+                    const jsonEndIndex = responseText.lastIndexOf('}');
+                    if (jsonStartIndex !== -1 && jsonEndIndex !== -1 && jsonEndIndex > jsonStartIndex) {
+                         potentialJson = responseText.substring(jsonStartIndex, jsonEndIndex + 1);
+                    } else {
+                        console.warn("Evaluation: Could not find clear { ... } block. Attempting parse anyway.");
                     }
 
-                    const jsonString = jsonMatch[0];
-                    const result = JSON.parse(jsonString);
+                    const result = JSON.parse(potentialJson);
+                    console.log("Evaluation: Parsed JSON object:", result); // Log parsed object
 
                     // Validate the structure
                     if (typeof result.is_correct === 'boolean' && typeof result.explanation === 'string') {
+                         console.log("Evaluation: JSON structure is valid."); // Log success
                         return result;
                     } else {
-                        console.error("Parsed JSON missing required fields (is_correct, explanation):", result);
-                        return null;
+                        console.error("Evaluation: Parsed JSON missing required fields (is_correct, explanation):", result);
+                        return null; // Invalid structure
                     }
                 } catch (e) {
-                    console.error("Failed to parse LLM evaluation response as JSON:", e, "\nRaw Response Text:", responseText);
-                    // Parsing failed, return null to indicate evaluation wasn't successful
-                    return null;
+                    console.error("Evaluation: Failed to parse LLM response as JSON:", e, "\nAttempted to parse:", potentialJson || responseText);
+                    return null; // Parsing failure
                 }
             }
         };
@@ -692,194 +711,200 @@ Professor Paws, evaluate the student's response based ONLY on the criteria above
         // --- Core Logic / Controller ---
         const Controller = {
             init: () => {
+                console.log("Controller: Initializing...");
+                // Check if elements exist before adding listeners
+                if (!userInput || !sendButton) {
+                    console.error("Controller Init Error: Input or Send button not found!");
+                    UI.displayMessage('error', "Critical Error: Chat input components missing. Cannot initialize.");
+                    return; // Stop initialization
+                }
+
                 userInput.addEventListener('keypress', Controller.handleKeyPress);
-                userInput.addEventListener('input', UI.adjustTextareaHeight); // Auto-resize textarea
+                userInput.addEventListener('input', UI.adjustTextareaHeight);
                 sendButton.addEventListener('click', Controller.handleSendMessage);
-                // Add initial greeting from bot after a short delay
-                setTimeout(Controller.nextQuestion, 500);
+
+                // Start the conversation flow
+                console.log("Controller: Scheduling first question...");
+                setTimeout(Controller.nextQuestion, 500); // Delay initial greeting slightly
+
                 UI.setCatStatus('idle');
                 userInput.focus();
+                console.log("Controller: Initialization complete.");
             },
 
             handleKeyPress: (event) => {
-                // Send on Enter unless Shift is pressed
                 if (event.key === 'Enter' && !event.shiftKey && !State.isWaitingForResponse) {
-                    event.preventDefault(); // Prevent newline in textarea
+                    console.log("Controller: Enter key pressed.");
+                    event.preventDefault();
                     Controller.handleSendMessage();
                 }
             },
 
             handleSendMessage: async () => {
-                const userText = userInput.value.trim();
-                if (!userText || State.isWaitingForResponse) return;
+                console.log("Controller: handleSendMessage triggered.");
+                if (!userInput) return; // Safety check
 
-                // Display user message immediately
+                const userText = userInput.value.trim();
+                console.log(`Controller: User input: "${userText}", Waiting for response: ${State.isWaitingForResponse}`);
+
+                if (!userText || State.isWaitingForResponse) {
+                    console.log("Controller: Send message aborted (no text or already waiting).");
+                    return;
+                }
+
+                // Display user message and update history FIRST
                 UI.displayMessage('user', userText);
                 State.conversationHistory.push({ role: "user", content: userText });
-                userInput.value = ''; // Clear input
-                UI.adjustTextareaHeight(); // Reset textarea height
+                userInput.value = '';
+                UI.adjustTextareaHeight();
 
                 const currentTask = State.currentTaskInfo;
+                console.log("Controller: Current task:", currentTask ? currentTask.id : "None (General Chat)");
 
-                // --- Determine if it's a general chat or an answer to evaluate ---
                 if (!currentTask || currentTask.type === 'greeting' || currentTask.type === 'summary') {
                     // --- General Chat / End of Quiz ---
+                    console.log("Controller: Handling as general chat or summary.");
                     const botResponse = await API.fetchChatResponse(State.conversationHistory);
-                    if (botResponse) {
+                    if (botResponse !== null) { // Check for null explicitly
+                        console.log("Controller: Received general bot response.");
                         UI.displayMessage('bot', botResponse);
                         State.conversationHistory.push({ role: "assistant", content: botResponse });
+                    } else {
+                         console.log("Controller: API call for general chat failed.");
+                         // Error message already shown by API module
                     }
-                    // If it was the summary/farewell, disable input
+                    // Disable input after summary
                     if(currentTask && currentTask.type === 'summary') {
-                        sendButton.disabled = true;
-                        userInput.disabled = true;
-                        userInput.placeholder = "Professor Paws is napping now...";
+                        console.log("Controller: Disabling input after summary.");
+                        if(sendButton) sendButton.disabled = true;
+                        if(userInput) {
+                            userInput.disabled = true;
+                            userInput.placeholder = "Professor Paws is napping now...";
+                        }
                         UI.setCatStatus('idle');
                     }
 
                 } else {
                     // --- Answer Evaluation ---
+                    console.log("Controller: Handling as answer evaluation for task:", currentTask.id);
                     const evaluationPrompt = Evaluation.createEvaluationPrompt(currentTask, userText);
 
-                    // Send *only* the evaluation prompt as the user message for this turn
-                    // This focuses the LLM on the evaluation task.
-                    // We still keep the original user message in State.conversationHistory
+                    // Create temporary history for the API call with the evaluation prompt
                     const evaluationApiHistory = [...State.conversationHistory];
-                    // Replace the last user message content with the structured evaluation prompt
                     if (evaluationApiHistory.length > 0 && evaluationApiHistory[evaluationApiHistory.length - 1].role === 'user') {
                         evaluationApiHistory[evaluationApiHistory.length - 1].content = evaluationPrompt;
+                         console.log("Controller: Replaced last user message with evaluation prompt for API call.");
                     } else {
-                        // Should not happen if logic is correct, but handle defensively
+                        // Fallback: Add the prompt if history seems off
                         evaluationApiHistory.push({ role: "user", content: evaluationPrompt });
+                         console.warn("Controller: History state unexpected, adding eval prompt anyway.");
                     }
 
 
                     const evaluationResponseText = await API.fetchChatResponse(evaluationApiHistory);
 
-                    if (evaluationResponseText) {
+                    if (evaluationResponseText !== null) {
+                         console.log("Controller: Received evaluation response text from API.");
                         const evaluationResult = Evaluation.parseEvaluationResponse(evaluationResponseText);
 
-                        let botFeedback = "Hmm, I'm a bit confused... *chases imaginary yarn* Could you try explaining that again, perhaps differently?";
-                        let correctness = 'clarification'; // Default if parsing fails
+                        let botFeedback;
+                        let correctness;
 
                         if (evaluationResult) {
-                            // Successfully parsed the evaluation JSON
+                             console.log("Controller: Evaluation JSON parsed successfully:", evaluationResult);
                             botFeedback = evaluationResult.explanation;
                             correctness = evaluationResult.is_correct ? 'correct' : 'incorrect';
-                            // Add persona quips based on correctness
                             if (evaluationResult.is_correct) {
-                                // Only increment score for non-greeting/summary questions
+                                // Check if it's a scoreable question
                                 if (currentTask.type !== 'greeting' && currentTask.type !== 'summary') {
                                     State.userScore++;
+                                    console.log(`Controller: Score updated to ${State.userScore}`);
                                 }
-                                if(Math.random() < 0.4) botFeedback += ` ${Persona.getCatQuip('positive')}`; // Higher chance on correct
+                                if(Math.random() < 0.4) botFeedback += ` ${Persona.getCatQuip('positive')}`;
                             } else {
                                 if(Math.random() < 0.3) botFeedback += ` ${Persona.getCatQuip('negative')}`;
                             }
+                            // Proceed to next question AFTER displaying feedback
+                            UI.displayMessage('bot', botFeedback, { correctness: correctness });
+                            State.conversationHistory.push({ role: "assistant", content: botFeedback }); // Add feedback to history
+                            Controller.nextQuestion(); // Advance the quiz
+
                         } else {
-                            // Handle LLM not returning valid JSON - show raw response for debugging/info
-                            // We already logged the error in parseEvaluationResponse
-                            botFeedback = `Mrow? My thoughts got tangled like yarn! Here's what I was thinking: ${evaluationResponseText}\nLet's try that question again.`;
-                             // Don't advance if evaluation failed
-                            UI.displayMessage('bot', botFeedback, { correctness: 'clarification' });
-                            State.conversationHistory.push({ role: "assistant", content: botFeedback }); // Add confused response
-                            // Optional: Reset scratchpad if needed?
-                            // UI.updateCodeDisplay(""); // Clear code display on failed eval?
-                            return; // Exit without proceeding
+                             console.warn("Controller: Failed to parse evaluation JSON. Asking for clarification.");
+                            // Handle LLM not returning valid JSON - ask user to rephrase/retry
+                            botFeedback = `Mrow? My thoughts got tangled like yarn trying to evaluate that! Perhaps the instructions weren't clear? Let's try this again: ${evaluationResponseText}\n\nCould you rephrase your answer or code for the task: "${currentTask.cat_prompt.split('\n')[0]}"?`;
+                            correctness = 'clarification';
+                             // Display the clarification request, DO NOT advance
+                             UI.displayMessage('bot', botFeedback, { correctness: correctness });
+                             State.conversationHistory.push({ role: "assistant", content: botFeedback }); // Add clarification request to history
+                             // Reset scratchpad? Optional.
+                             // UI.updateCodeDisplay("");
                         }
 
-                        // Display the feedback and add to official history
-                        UI.displayMessage('bot', botFeedback, { correctness: correctness });
-                        State.conversationHistory.push({ role: "assistant", content: botFeedback });
-
-                        // Move to next question only if evaluation was successful (parsed)
-                        Controller.nextQuestion();
-
                     } else {
-                        // API call failed entirely, error message already shown by API.fetchChatResponse
-                        // UI state (button, status) handled in API.fetchChatResponse finally block
+                        console.log("Controller: API call for evaluation failed.");
+                        // API error handling already displayed the error message
                     }
                 }
 
-                 // Random cat interjection? (Only if not waiting)
+                 // Random cat interjection (only if not currently waiting for another response)
                  if (Math.random() < Config.catInterjectionChance && !State.isWaitingForResponse) {
                     setTimeout(() => {
-                         // Check again if still not waiting, in case user sent another msg quickly
-                         if (!State.isWaitingForResponse) {
+                         if (!State.isWaitingForResponse) { // Double check state
+                            console.log("Controller: Adding random cat quip.");
                             const quip = Persona.getCatQuip('random');
-                            const msgDiv = UI.displayMessage('bot', quip);
-                            // Optional: style random quips differently?
+                            UI.displayMessage('bot', quip);
                             State.conversationHistory.push({ role: "assistant", content: quip });
                          }
-                     }, 700); // Slight delay after main response
+                     }, 700);
                 }
             },
 
            nextQuestion: () => {
                 State.currentQuestionIndex++;
+                console.log(`Controller: Advancing to question index ${State.currentQuestionIndex}`);
+
                 if (State.currentQuestionIndex < QuestionBank.length) {
                     const task = QuestionBank[State.currentQuestionIndex];
+                     console.log(`Controller: Loading task id: ${task.id}`);
 
-                    // Resolve dynamic text in prompts (like score) - important for summary
-                    let promptText = typeof task.cat_prompt === 'function'
-                        ? task.cat_prompt() // Execute function to get dynamic text
-                        : task.cat_prompt;
+                    // Resolve dynamic prompts/content
+                    let promptText = typeof task.cat_prompt === 'function' ? task.cat_prompt() : task.cat_prompt;
+                    State.currentTaskInfo = { ...task, cat_prompt: promptText }; // Store processed task
 
-                    // Store the processed task info for the current state
-                    State.currentTaskInfo = { ...task, cat_prompt: promptText };
-
-                    // --- Display the question from the bot ---
-                    // Add slight delay before asking next question (unless it's the very first)
-                    const delay = State.currentQuestionIndex === 0 ? 100 : 1300; // ms
+                    // --- Display the question with delay ---
+                    const delay = State.currentQuestionIndex === 0 ? 100 : 1300; // Shorter delay for first msg
+                     console.log(`Controller: Scheduling display for task ${task.id} with delay ${delay}ms`);
                     setTimeout(() => {
-                        // Ensure we haven't been interrupted by an error or user action
-                        if (!State.isWaitingForResponse) {
-                            UI.updatePlayground(State.currentTaskInfo); // Update visual area *before* asking
-                            UI.displayMessage('bot', State.currentTaskInfo.cat_prompt);
-                            State.conversationHistory.push({ role: "assistant", content: State.currentTaskInfo.cat_prompt });
-                            UI.setCatStatus('idle'); // Ready for user input
-                            userInput.focus();
-                             userInput.disabled = false; // Ensure input is enabled
-                             userInput.placeholder = "Talk to Professor Paws...";
-                        }
+                         console.log(`Controller: setTimeout fired for task ${State.currentTaskInfo?.id}`); // Use optional chaining
+                         // Check state again in case something changed during delay
+                         if (!State.isWaitingForResponse && State.currentQuestionIndex < QuestionBank.length) {
+                             console.log(`Controller: Displaying task ${State.currentTaskInfo.id}`);
+                             UI.updatePlayground(State.currentTaskInfo);
+                             UI.displayMessage('bot', State.currentTaskInfo.cat_prompt);
+                             State.conversationHistory.push({ role: "assistant", content: State.currentTaskInfo.cat_prompt });
+                             UI.setCatStatus('idle');
+                             if(userInput) {
+                                userInput.focus();
+                                userInput.disabled = false; // Ensure enabled
+                                userInput.placeholder = "Talk to Professor Paws...";
+                             }
+                         } else {
+                            console.log("Controller: Question display aborted (state changed during delay). Waiting:", State.isWaitingForResponse);
+                         }
                     }, delay);
 
                 } else {
-                    // End of questions sequence (actual handling in handleSendMessage when type is 'summary')
-                    console.log("End of question bank reached.");
-                    // Final status update if needed, though summary message handles it
-                     UI.setCatStatus('idle');
-                     // Input disabled via summary message handling
+                    console.log("Controller: End of question bank reached.");
+                    // The summary message is handled when its type is 'summary' in handleSendMessage
+                    UI.setCatStatus('idle');
                 }
-            },
-
-            // Helper for debugging - not used in normal flow
-            displayDebugMessage: (text) => {
-                 console.log("DEBUG:", text); // Log to console as well
-                 const debugDiv = document.createElement('div');
-                 debugDiv.style.fontSize = '0.7em';
-                 debugDiv.style.color = '#888';
-                 debugDiv.style.marginTop = '5px';
-                 debugDiv.style.borderTop = '1px dashed #ccc';
-                 debugDiv.textContent = `[DEBUG] ${text}`;
-                 chatbox.appendChild(debugDiv);
-                 chatbox.scrollTop = chatbox.scrollHeight;
             }
         };
-         // Monkey-patch displayMessage to route debug messages (optional)
-         const originalDisplayMessage = UI.displayMessage;
-         UI.displayMessage = (role, text, options = {}) => {
-            if(role === 'system-debug' && window.location.search.includes('debug=true')) { // Only show if debug flag is set
-                 Controller.displayDebugMessage(text);
-            } else if (role !== 'system-debug') {
-                 return originalDisplayMessage(role, text, options);
-            }
-            return null; // Don't display debug messages unless flag is on
-         };
-
 
         // --- Persona Helpers ---
         const Persona = {
+            // ... (Keep the Persona object from the previous response) ...
            catQuips: {
                positive: ["Purrfect!", "Meow-nificent!", "Claw-ver!", "You've got the eye of the tiger!", "Paw-some!", "Litter-ally genius!", "That's the cat's pajamas!", "Fur-real, great job!"],
                negative: ["Hmm, not quite right.", "Needs more cat-nap... I mean, thought.", "Are you kitten me? Try again!", "Mrow... close, but no tuna.", "Let's paws and rethink that.", "That's a bit catastroph-ic, try again!", "Don't get stressed, take a paws."],
@@ -889,12 +914,18 @@ Professor Paws, evaluate the student's response based ONLY on the criteria above
                 const quips = Persona.catQuips[type] || Persona.catQuips.random;
                 return quips[Math.floor(Math.random() * quips.length)];
            }
-           // Could add more formatting functions here if needed
         };
 
 
        // --- Start the application ---
-       Controller.init();
+       // Defensive check: Ensure crucial elements exist before init
+       if(chatbox && userInput && sendButton && playgroundContent && catStatusContainer) {
+            Controller.init();
+       } else {
+           console.error("CRITICAL ERROR: One or more essential DOM elements not found. Cannot start Professor Paws.");
+           // Optionally display an error message to the user in the body
+           document.body.innerHTML = "<h1 style='color: red; padding: 20px;'>Error: Could not initialize chat interface. Essential HTML elements are missing.</h1>";
+       }
 
     }); // End DOMContentLoaded
     </script>
