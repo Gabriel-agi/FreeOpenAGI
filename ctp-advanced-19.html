@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<!-- Language set by JS -->
+<html lang="pt"> <!-- Defaulting to Portuguese -->
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Title set by JS -->
+    <title data-translate="page_title">Módulo 19: Prática Avançada de Escopo!</title>
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* --- Base Styles & Variables (Consistent with previous) --- */
+        :root {
+            --primary-color: #007bff; /* Blue */
+            --secondary-color: #6c757d; /* Grey */
+            --background-light: #f8f9fa;
+            --background-medium: #e9ecef;
+            --background-dark: #343a40;
+            --text-light: #f8f9fa;
+            --text-dark: #212529;
+            --accent-color: #ffc107; /* Yellow */
+            --success-color: #28a745; /* Green */
+            --error-color: #dc3545;   /* Red */
+            --info-color: #17a2b8;    /* Teal */
+            --warning-color: #fd7e14; /* Orange - maybe for Enclosing? */
+            --global-color: #6f42c1;  /* Purple - for Global */
+            --builtin-color: #d63384; /* Pink - for Built-in */
+            --local-color: #0dcaf0;   /* Cyan - for Local */
+            --border-radius: 8px;
+            --transition-speed: 0.3s;
+            --font-body: 'Roboto', sans-serif;
+            --font-title: 'Orbitron', sans-serif;
+            --code-font: 'Courier New', Courier, monospace;
+            --selection-highlight-bg: rgba(0, 123, 255, 0.1);
+            --selection-highlight-border: rgba(0, 123, 255, 0.4);
+            --nav-primary: #6e48aa;
+            --nav-success: #4cc9f0;
+            --nav-dark: #1a1a2e;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; font-size: 16px; }
+        body {
+            font-family: var(--font-body); line-height: 1.7;
+            background-color: var(--background-light); color: var(--text-dark);
+            overflow-x: hidden;
+        }
+
+        /* --- Utility Classes (Consistent) --- */
+        .container { max-width: 960px; margin: 0 auto; padding: 0 15px; }
+        .text-center { text-align: center; }
+        .highlight { color: var(--primary-color); font-weight: bold; }
+        .code-font { font-family: var(--code-font); }
+        .hidden { display: none !important; }
+        .button-group { margin-top: 2rem; display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; }
+
+        /* --- Advanced Animations (Consistent) --- */
+        .fade-in { opacity: 0; transform: translateY(20px); animation: fadeInAnimation 0.8s ease-out forwards; }
+        .fade-in.delay-1 { animation-delay: 0.2s; }
+        .fade-in.delay-2 { animation-delay: 0.4s; }
+        .fade-in.delay-3 { animation-delay: 0.6s; }
+        .fade-in.delay-4 { animation-delay: 0.8s; }
+        @keyframes fadeInAnimation { to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulseHeaderIcon { 0% { transform: scale(1); opacity: 0.1; filter: brightness(1); } 50% { transform: scale(1.05); opacity: 0.25; filter: brightness(1.2); } 100% { transform: scale(1); opacity: 0.1; filter: brightness(1); } }
+        @keyframes successGlow { 0% { box-shadow: 0 0 3px rgba(40, 167, 69, 0.3); transform: scale(1); } 50% { box-shadow: 0 0 12px 5px rgba(40, 167, 69, 0.5); transform: scale(1.01); } 100% { box-shadow: 0 0 3px rgba(40, 167, 69, 0.3); transform: scale(1); } }
+        .success-glow-anim { animation: successGlow 0.9s ease-out; }
+        @keyframes shake { 10%, 90% { transform: translate3d(-2px, 0, 0); } 20%, 80% { transform: translate3d(3px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-5px, 0, 0); } 40%, 60% { transform: translate3d(5px, 0, 0); } }
+        .shake-anim { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes iconAppearCorrect { 0% { transform: scale(0.5) rotate(-15deg); opacity: 0; } 60% { transform: scale(1.2) rotate(5deg); opacity: 1; } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
+        @keyframes iconAppearIncorrect { 0% { transform: scale(0.5) rotate(-15deg); opacity: 0; } 50% { transform: scale(1.2) rotate(10deg); opacity: 1; } 70% { transform: scale(0.9) rotate(-5deg); } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
+        .action-button:active:not(:disabled) { transform: translateY(1px) scale(0.98); filter: brightness(0.95); }
+
+        /* --- Minimal Retractable Nav (Consistent) --- */
+        .minimal-nav-button { position: fixed; top: 15px; right: 15px; z-index: 1001; background-color: rgba(52, 58, 64, 0.75); color: var(--text-light); border: none; border-radius: var(--border-radius); padding: 8px 12px; cursor: pointer; transition: background-color var(--transition-speed), opacity var(--transition-speed), transform var(--transition-speed); font-size: 1.1rem; opacity: 0.6; box-shadow: 0 2px 5px rgba(0,0,0,0.2); line-height: 1; }
+        .minimal-nav-button:hover { background-color: rgba(52, 58, 64, 0.95); opacity: 1; transform: scale(1.05); }
+        .minimal-nav { position: fixed; top: 60px; right: 15px; z-index: 1000; background-color: var(--background-dark); border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.3); padding: 0.8rem; opacity: 0; transform: translateY(-15px) scale(0.95); transform-origin: top right; pointer-events: none; transition: opacity var(--transition-speed) ease, transform var(--transition-speed) ease; min-width: 200px; }
+        body.nav-active .minimal-nav { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+        .minimal-nav ul { list-style: none; margin: 0; padding: 0; }
+        .minimal-nav ul li { margin-bottom: 5px; }
+        .minimal-nav ul li:last-child { margin-bottom: 0; }
+        .minimal-nav ul li a { display: flex; align-items: center; color: var(--text-light); text-decoration: none; padding: 0.6rem 1rem; border-radius: 4px; transition: background-color var(--transition-speed), color var(--transition-speed); white-space: nowrap; font-weight: 400; font-size: 0.95rem; }
+        .minimal-nav ul li a i.fas { margin-right: 10px; width: 1.2em; text-align: center; opacity: 0.8; transition: opacity var(--transition-speed); }
+        .minimal-nav ul li a:hover { background-color: var(--primary-color); color: var(--text-light); }
+        .minimal-nav ul li a:hover i.fas { opacity: 1; }
+        .minimal-nav .language-switcher-item { padding: 0.5rem 1rem; border-top: 1px solid var(--secondary-color); margin-top: 8px; padding-top: 13px; }
+        #languageSelect { width: 100%; background: rgba(255,255,255,0.1); color: white; border: 1px solid var(--nav-success); border-radius: 5px; padding: 6px 30px 6px 12px; cursor: pointer; font-size: 0.9rem; appearance: none; -webkit-appearance: none; -moz-appearance: none; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%234CC9F0%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right 10px center; background-size: 10px auto; transition: background-color 0.3s ease; }
+        #languageSelect:hover { background-color: rgba(255,255,255,0.15); }
+        #languageSelect option { background: var(--nav-dark); color: var(--text-light); }
+
+        /* --- Practice Header (Adapted for Module 19 Advanced) --- */
+        .practice-header { background: linear-gradient(135deg, #4a2f77, #3a1f57); /* Darker Purple */ color: var(--text-light); padding: 3rem 0 4rem; text-align: center; position: relative; overflow: hidden; border-bottom: 5px solid var(--accent-color); }
+        .practice-header h1 { font-family: var(--font-title); font-size: 2.8rem; margin-bottom: 0.5rem; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); animation: fadeInAnimation 1s ease-out; }
+        .practice-header p { font-size: 1.1rem; font-weight: 300; opacity: 0.9; animation: fadeInAnimation 1s ease-out 0.3s forwards; opacity: 0; }
+        .header-icon { position: absolute; font-size: 4rem; color: var(--text-light); animation: pulseHeaderIcon 6s infinite ease-in-out alternate; }
+        .icon1 { top: 15%; left: 10%; animation-duration: 8s; transform: rotate(-15deg); } /* Adjusted */
+        .icon2 { bottom: 10%; right: 15%; animation-duration: 6s; transform: rotate(10deg); } /* Adjusted */
+
+        /* --- Practice Section Styling (Consistent) --- */
+        .practice-section { padding: 3rem 0; background-color: var(--background-medium); border-bottom: 1px solid #d6d8db; }
+        .practice-section:nth-child(odd) { background-color: var(--background-light); }
+        .practice-section:last-of-type { border-bottom: none; }
+        .practice-section h2 { font-family: var(--font-title); font-size: 1.8rem; color: var(--nav-primary); margin-bottom: 1rem; text-align: center; }
+        .practice-section .section-description { text-align: center; margin-bottom: 2.5rem; color: var(--secondary-color); font-size: 1.05rem; max-width: 700px; margin-left: auto; margin-right: auto; }
+
+        /* --- General Interactive Elements (Consistent) --- */
+        .interactive-area { background-color: #fff; padding: 2rem; border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.08); margin-top: 1.5rem; position: relative; transition: box-shadow 0.5s ease-out; }
+        .feedback-message { padding: 0.8rem 1rem; margin-top: 1rem; border-radius: var(--border-radius); font-weight: bold; text-align: center; opacity: 0; max-height: 0; overflow: hidden; transition: opacity var(--transition-speed) ease, max-height var(--transition-speed) ease, margin-top var(--transition-speed) ease; }
+        .feedback-message.visible { opacity: 1; max-height: 150px; margin-top: 1.5rem; }
+        .feedback-message.correct { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .feedback-message.incorrect { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .feedback-message.info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .feedback-message .fas { margin: 0 3px; }
+        .action-button { display: inline-block; padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold; color: var(--text-light); background-color: var(--primary-color); border: none; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), transform var(--transition-speed), filter var(--transition-speed), box-shadow var(--transition-speed); margin-top: 1rem; vertical-align: middle; box-shadow: 0 2px 5px rgba(0,0,0,0.1); text-decoration: none; }
+        .action-button:hover:not(:disabled) { background-color: #0056b3; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+        .action-button:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none; box-shadow: none; opacity: 0.7; }
+        .action-button.success { background-color: var(--success-color); }
+        .action-button.success:hover:not(:disabled) { background-color: #218838; }
+        .action-button.secondary { background-color: var(--secondary-color); }
+        .action-button.secondary:hover:not(:disabled) { background-color: #5a6268; }
+        .code-block { background-color: var(--background-dark); color: var(--text-light); padding: 1.5rem; border-radius: var(--border-radius); font-family: var(--code-font); font-size: 1rem; position: relative; overflow-x: auto; margin: 1rem 0; line-height: 1.6; white-space: pre; }
+        .code-keyword { color: #569cd6; } .code-string { color: #ce9178; } .code-comment { color: #6a9955; } .code-function { color: #dcdcaa; } .code-paren { color: #ffd700; } .code-variable { color: #9cdcfe; } .code-number { color: #b5cea8; } .code-builtin { color: var(--builtin-color); font-weight: bold; }
+        .ct-concept-note { display: block; margin-top: 0.8rem; font-size: 0.9rem; color: var(--secondary-color); font-style: italic; }
+        .ct-concept-note .fas { color: var(--info-color); margin-right: 5px;}
+
+
+        /* --- Activity 1: LEGB Rule Explorer --- */
+        #legb-explorer .scope-target { /* Reusing from basic practice */
+            cursor: pointer; border-bottom: 2px dotted rgba(255, 255, 255, 0.4);
+            transition: background-color var(--transition-speed), border-bottom-color var(--transition-speed), color var(--transition-speed);
+            padding: 0 2px; border-radius: 3px; display: inline-block;
+        }
+        #legb-explorer .scope-target:hover { background-color: rgba(255, 255, 255, 0.15); border-bottom-color: var(--accent-color); }
+
+        /* Specific LEGB styles */
+        .scope-target.identified-local { background-color: rgba(13, 202, 240, 0.15); border-bottom: 2px solid var(--local-color); color: var(--local-color); font-weight: bold; cursor: default;}
+        .scope-target.identified-enclosing { background-color: rgba(253, 126, 20, 0.15); border-bottom: 2px solid var(--warning-color); color: var(--warning-color); font-weight: bold; cursor: default;}
+        .scope-target.identified-global { background-color: rgba(111, 66, 193, 0.15); border-bottom: 2px solid var(--global-color); color: var(--global-color); font-weight: bold; cursor: default;}
+        .scope-target.identified-builtin { background-color: rgba(214, 51, 132, 0.15); border-bottom: 2px solid var(--builtin-color); color: var(--builtin-color); font-weight: bold; cursor: default;}
+
+        .legb-explanation { margin-top: 1rem; padding: 10px 15px; border-radius: 4px; font-size: 0.95rem;}
+        .legb-explanation strong { display: block; margin-bottom: 5px; font-size: 1rem; }
+        .legb-explanation.local { border-left: 4px solid var(--local-color); background-color: rgba(13, 202, 240, 0.05); color: #055160;}
+        .legb-explanation.enclosing { border-left: 4px solid var(--warning-color); background-color: rgba(253, 126, 20, 0.05); color: #663d00;}
+        .legb-explanation.global { border-left: 4px solid var(--global-color); background-color: rgba(111, 66, 193, 0.05); color: #3c1b72;}
+        .legb-explanation.builtin { border-left: 4px solid var(--builtin-color); background-color: rgba(214, 51, 132, 0.05); color: #66073d;}
+
+        #legb-status { margin-top: 1rem; font-style: italic; color: var(--secondary-color); }
+
+        /* --- Activity 2: Nonlocal Challenge --- */
+        #nonlocal-challenge .mission-editor { /* Reuse mission styles */
+            width: 100%; min-height: 150px; background-color: var(--background-dark);
+            color: var(--text-light); border: 1px solid var(--secondary-color);
+            border-radius: var(--border-radius); padding: 1rem; font-family: var(--code-font);
+            font-size: 1rem; line-height: 1.5; resize: vertical; margin-top: 1rem;
+        }
+        #nonlocal-challenge .sim-output-area { /* Reuse simulator styles */
+            margin-top: 1rem; min-height: 50px; background-color: #1a1a1a;
+            border: 1px solid #444; border-radius: var(--border-radius); padding: 1rem;
+            color: var(--accent-color); font-family: var(--code-font); font-size: 1.05rem;
+            white-space: pre-wrap; word-wrap: break-word;
+        }
+        #nonlocal-challenge .sim-output-area .error { color: var(--error-color); }
+         #nonlocal-challenge .expected-output {
+             margin-top: 0.5rem;
+             font-size: 0.9rem;
+             color: var(--secondary-color);
+             background: var(--background-medium);
+             padding: 5px 10px;
+             border-radius: 4px;
+             display: inline-block;
+         }
+
+
+        /* --- Final Section (Consistent) --- */
+        .completion-section { padding: 4rem 0; text-align: center; }
+        .completion-section .icon { font-size: 4rem; color: var(--success-color); margin-bottom: 1rem; display: inline-block; opacity: 0; animation: iconAppearCorrect 1s ease-out 0.5s forwards; }
+        .completion-section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); }
+        .completion-section p { font-size: 1.1rem; margin-top: 1rem; color: var(--secondary-color); }
+
+
+        /* --- Responsive Design (Consistent) --- */
+        @media (max-width: 768px) {
+            html { font-size: 15px; }
+            .practice-header h1 { font-size: 2.2rem; }
+            .practice-section h2 { font-size: 1.6rem; }
+            .interactive-area { padding: 1.5rem; }
+            .button-group { flex-direction: column; align-items: center; }
+            .minimal-nav { min-width: 180px; }
+            .minimal-nav ul li a { padding: 0.6rem 0.8rem; }
+            #languageSelect { font-size: 0.85rem; padding: 5px 25px 5px 10px;}
+        }
+        @media (max-width: 480px) {
+            html { font-size: 14px; }
+            .practice-header h1 { font-size: 1.8rem; }
+            .practice-header p { font-size: 1rem; }
+            .practice-section h2 { font-size: 1.4rem; }
+            .interactive-area { padding: 1rem; }
+            .action-button { font-size: 0.9rem; padding: 0.7rem 1.2rem; width: 90%; max-width: 300px;}
+            .code-block, #nonlocal-challenge .mission-editor, #nonlocal-challenge .sim-output-area { font-size: 0.9rem; }
+            .button-group a.action-button { width: 90%; max-width: 300px; margin-bottom: 0.5rem; }
+            .minimal-nav-button { top: 10px; right: 10px; padding: 6px 10px; font-size: 1rem; }
+            .minimal-nav { top: 48px; right: 10px; min-width: 160px; }
+            .minimal-nav ul li a { padding: 0.5rem 0.7rem; font-size: 0.9rem;}
+            .minimal-nav ul li a i.fas { margin-right: 8px; }
+            #languageSelect { font-size: 0.8rem; padding: 4px 20px 4px 8px;}
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- ========= Minimal Nav Handle ========= -->
+    <button id="minimal-nav-toggle" class="minimal-nav-button" aria-label="Toggle Navigation Menu">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- ========= Minimal Nav Panel (Updated Links) ========= -->
+    <nav id="minimal-nav-panel" class="minimal-nav">
+        <ul>
+            <!-- *** MODIFIED HREFs for Module 19 Advanced *** -->
+            <li><a href="ctp-practice-19.html"><i class="fas fa-pencil-alt fa-fw"></i> <span data-translate="nav_basic_practice">Prática Básica</span></a></li>
+            <li><a href="ctp-video-19.html"><i class="fas fa-video fa-fw"></i> <span data-translate="nav_video">Ver Vídeo Aula</span></a></li>
+            <li><a href="ctp-dashboard.html"><i class="fas fa-list fa-fw"></i> <span data-translate="nav_menu">Menu do Curso</span></a></li>
+            <hr style="border: none; border-top: 1px solid var(--secondary-color); margin: 8px 0;">
+            <li><a href="#legb-explorer"><i class="fas fa-sitemap fa-fw"></i> <span data-translate="nav_legb">Explorador LEGB</span></a></li>
+            <li><a href="#nonlocal-challenge"><i class="fas fa-exchange-alt fa-fw"></i> <span data-translate="nav_nonlocal">Desafio `nonlocal`</span></a></li>
+            <!-- Language Switcher Item -->
+            <li class="language-switcher-item">
+                 <select id="languageSelect" aria-label="Select Language">
+                     <option value="en" data-translate="lang_en">🇬🇧 English</option>
+                     <option value="pt" data-translate="lang_pt">🇧🇷 Português</option>
+                     <option value="zh" data-translate="lang_zh">🇨🇳 中文</option>
+                 </select>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- ========= Header (Adapted for Module 19 Advanced) ========= -->
+    <header class="practice-header">
+        <i class="fas fa-layer-group header-icon icon1"></i> <!-- Layers for scope -->
+        <i class="fas fa-code-branch header-icon icon2"></i> <!-- Branching for scope paths -->
+        <div class="container">
+            <h1 data-translate="header_title">Módulo 19: Prática Avançada de Escopo</h1>
+            <p data-translate="header_subtitle">Vamos aprofundar nossa compreensão da regra LEGB e do `nonlocal`!</p>
+        </div>
+    </header>
+
+    <!-- ========= Main Content ========= -->
+    <main>
+        <!-- ========= Activity 1: LEGB Rule Explorer ========= -->
+        <section id="legb-explorer" class="practice-section">
+             <div class="container">
+                 <h2 class="fade-in"><i class="fas fa-sitemap"></i> <span data-translate="legb_title">Explorador da Regra LEGB</span></h2>
+                 <p class="section-description fade-in delay-1" data-translate="legb_desc">
+                     Python procura variáveis na ordem: <strong style="color: var(--local-color)">L</strong>ocal, <strong style="color: var(--warning-color)">E</strong>nclosing (Funções Envolventes), <strong style="color: var(--global-color)">G</strong>lobal, <strong style="color: var(--builtin-color)">B</strong>uilt-in (Integrado).
+                     Clique em cada variável <strong class="highlight">usada</strong> abaixo para ver onde o Python a encontra!
+                     <span class="ct-concept-note"><i class="fas fa-puzzle-piece"></i><strong>Abstração / Decomposição:</strong> Entender LEGB ajuda a abstrair como o Python gerencia nomes e a decompor o fluxo de busca.</span>
+                 </p>
+                 <div class="interactive-area fade-in delay-2">
+                     <div class="code-block">
+<pre><span class="code-variable">global_scope_var</span> = <span class="code-string">"Eu sou Global"</span>
+
+<span class="code-keyword">def</span> <span class="code-function">outer_function</span>():
+    <span class="code-variable">enclosing_scope_var</span> = <span class="code-string">"Eu sou Enclosing"</span>
+
+    <span class="code-keyword">def</span> <span class="code-function">inner_function</span>():
+        <span class="code-variable">local_scope_var</span> = <span class="code-string">"Eu sou Local"</span>
+        <span class="code-keyword">print</span>(<span class="scope-target code-variable" data-scope="local" data-varname="local_scope_var" title="Clique para identificar">local_scope_var</span>)       <span class="code-comment"># Encontrada onde?</span>
+        <span class="code-keyword">print</span>(<span class="scope-target code-variable" data-scope="enclosing" data-varname="enclosing_scope_var" title="Clique para identificar">enclosing_scope_var</span>) <span class="code-comment"># E esta?</span>
+        <span class="code-keyword">print</span>(<span class="scope-target code-variable" data-scope="global" data-varname="global_scope_var" title="Clique para identificar">global_scope_var</span>)    <span class="code-comment"># E esta?</span>
+        <span class="code-keyword">print</span>(<span class="scope-target code-builtin" data-scope="builtin" data-varname="len" title="Clique para identificar">len</span>(<span class="code-string">"test"</span>))             <span class="code-comment"># E esta função?</span>
+
+    <span class="code-function">inner_function</span>()
+    <span class="code-keyword">print</span>(<span class="scope-target code-variable" data-scope="enclosing" data-varname="enclosing_scope_var" title="Clique para identificar">enclosing_scope_var</span>) <span class="code-comment"># Fora da inner, onde é encontrada?</span>
+
+<span class="code-function">outer_function</span>()
+<span class="code-keyword">print</span>(<span class="scope-target code-variable" data-scope="global" data-varname="global_scope_var" title="Clique para identificar">global_scope_var</span>)    <span class="code-comment"># E esta, fora de tudo?</span></pre>
+                     </div>
+                     <div id="legb-explanations"></div>
+                     <p id="legb-status" data-translate="legb_status_initial">Identifique onde Python encontra cada variável usada!</p>
+                     <div id="legb-feedback" class="feedback-message"></div>
+                     <!-- Hidden explanation templates -->
+                     <div id="explanation-texts-legb" style="display: none;">
+                        <span data-key="local" data-translate="legb_exp_local"><strong>Local (L):</strong> A variável `{var_name}` foi encontrada primeiro no escopo da função mais interna onde é usada.</span>
+                        <span data-key="enclosing" data-translate="legb_exp_enclosing"><strong>Enclosing (E):</strong> Não encontrada localmente, Python subiu um nível e encontrou `{var_name}` no escopo da função externa (envolvente).</span>
+                        <span data-key="global" data-translate="legb_exp_global"><strong>Global (G):</strong> Não encontrada local ou nas funções envolventes, Python encontrou `{var_name}` no escopo global (nível superior do módulo).</span>
+                        <span data-key="builtin" data-translate="legb_exp_builtin"><strong>Built-in (B):</strong> Não encontrada em L, E, ou G, Python encontrou `{var_name}` no escopo integrado, que contém funções e tipos pré-definidos.</span>
+                     </div>
+                 </div>
+             </div>
+        </section>
+
+        <!-- ========= Activity 2: Nonlocal Challenge ========= -->
+        <section id="nonlocal-challenge" class="practice-section">
+             <div class="container">
+                 <h2 class="fade-in"><i class="fas fa-exchange-alt"></i> <span data-translate="nonlocal_title">Desafio `nonlocal`</span></h2>
+                 <p class="section-description fade-in delay-1" data-translate="nonlocal_desc">
+                     A palavra-chave `nonlocal` permite que uma função interna modifique uma variável de uma função externa (mas não global).
+                     Corrija o código abaixo usando `nonlocal` para que a função `inner` modifique `outer_var` e o código imprima `Valor final: 15`.
+                     <span class="ct-concept-note"><i class="fas fa-bug"></i><strong>Depuração:</strong> `nonlocal` é essencial para depurar casos onde você *quer* modificar uma variável de escopo envolvente, evitando criar uma nova local por engano.</span>
+                 </p>
+                 <div class="interactive-area fade-in delay-2">
+                     <label for="nonlocal-editor-input" style="font-weight: bold; display:block; margin-bottom: 8px;" data-translate="nonlocal_editor_label">Editor de Código:</label>
+                     <textarea id="nonlocal-editor-input" class="mission-editor" rows="9">
+def outer():
+    outer_var = 10 # Variável no escopo Enclosing
+
+    def inner():
+        # OBJETIVO: Modificar outer_var para 15
+        # PROBLEMA: Sem 'nonlocal', isto cria uma nova 'outer_var' local.
+        outer_var = 15 # <- Precisa de correção aqui!
+        print(f"Dentro da inner: {outer_var}")
+
+    inner()
+    print(f"Valor final: {outer_var}") # <- Deve imprimir 15
+
+outer()
+                    </textarea>
+                     <div class="text-center">
+                          <button id="run-nonlocal-btn" class="action-button" data-translate="button_run_nonlocal">Executar & Verificar</button>
+                          <span class="expected-output" data-translate="nonlocal_expected_output">Saída Esperada: Dentro da inner: 15<br>Valor final: 15</span>
+                     </div>
+                     <label for="nonlocal-output" style="font-weight: bold; display:block; margin-top: 1.5rem; margin-bottom: 8px;" data-translate="nonlocal_output_label">Saída Simulada:</label>
+                     <div id="nonlocal-output" class="sim-output-area">
+                         <span class="placeholder" data-translate="nonlocal_output_placeholder">A saída aparecerá aqui...</span>
+                     </div>
+                     <div id="nonlocal-feedback" class="feedback-message"></div>
+                 </div>
+             </div>
+        </section>
+
+
+         <!-- ========= Completion Section (Updated Links) ========= -->
+        <section class="completion-section">
+            <div class="container">
+                <div class="icon fade-in">
+                    <i class="fas fa-brain"></i> <i class="fas fa-check-circle"></i> <i class="fas fa-project-diagram"></i>
+                </div>
+                <h2 class="fade-in delay-1" data-translate="completion_title">Prática Avançada de Escopo Concluída!</h2>
+                <p class="fade-in delay-2" data-translate="completion_desc">
+                    Parabéns por dominar a regra LEGB e o `nonlocal`! Entender esses conceitos avançados de escopo é crucial para escrever código Python mais complexo e livre de bugs. <br>
+                    Você está pronto para aplicar esse conhecimento ou revisar o material!
+                </p>
+                <div class="button-group">
+                     <!-- *** MODIFIED HREFs for Module 19 Advanced *** -->
+                    <a href="ctp-practice-19.html" class="action-button secondary fade-in delay-3"><i class="fas fa-arrow-left"></i> <span data-translate="button_back_practice">Voltar à Prática Básica</span></a>
+                    <a href="ctp-video-19.html" class="action-button primary fade-in delay-3"><i class="fas fa-video"></i> <span data-translate="button_watch_video">Ver Vídeo Aula</span></a>
+                    <a href="ctp-dashboard.html" class="action-button secondary fade-in delay-4"><i class="fas fa-list"></i> <span data-translate="button_back_menu">Voltar ao Menu do Curso</span></a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ========= Script ========= -->
+    <script>
+    // --- Translations Object ---
+    const translations = {
+        en: {
+            "page_title": "Module 19: Advanced Scope Practice!",
+            "nav_basic_practice": "Basic Practice", "nav_video": "Watch Video Lesson", "nav_menu": "Course Menu",
+            "nav_legb": "LEGB Explorer", "nav_nonlocal": "`nonlocal` Challenge",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title": "Module 19: Advanced Scope Practice", "header_subtitle": "Let's deepen our understanding of the LEGB rule and `nonlocal`!",
+            // Activity 1: LEGB
+            "legb_title": "LEGB Rule Explorer",
+            "legb_desc": "Python searches for variables in order: <strong style=\"color: var(--local-color)\">L</strong>ocal, <strong style=\"color: var(--warning-color)\">E</strong>nclosing functions, <strong style=\"color: var(--global-color)\">G</strong>lobal, <strong style=\"color: var(--builtin-color)\">B</strong>uilt-in. Click each <strong class=\"highlight\">used</strong> variable below to see where Python finds it! <span class=\"ct-concept-note\"><i class=\"fas fa-puzzle-piece\"></i><strong>Abstraction / Decomposition:</strong> Understanding LEGB helps abstract Python's name management and decompose the search flow.</span>",
+            "legb_status_initial": "Identify where Python finds each used variable!",
+            "legb_status_progress": "Identified {count} of {total} variable lookups.",
+            "legb_status_done": "All variable lookups identified!",
+            "legb_exp_local": "<strong>Local (L):</strong> The variable `{var_name}` was first found in the scope of the innermost function where it's used.",
+            "legb_exp_enclosing": "<strong>Enclosing (E):</strong> Not found locally, Python went up one level and found `{var_name}` in the scope of the outer (enclosing) function.",
+            "legb_exp_global": "<strong>Global (G):</strong> Not found locally or in enclosing functions, Python found `{var_name}` in the global scope (top level of the module).",
+            "legb_exp_builtin": "<strong>Built-in (B):</strong> Not found in L, E, or G, Python found `{var_name}` in the built-in scope, containing predefined functions and types.",
+            "feedback_legb_correct": "Perfect! You've traced the LEGB rule for all variables.",
+            // Activity 2: Nonlocal
+            "nonlocal_title": "`nonlocal` Challenge",
+            "nonlocal_desc": "The `nonlocal` keyword allows an inner function to modify a variable from an outer (but not global) function. Fix the code below using `nonlocal` so that the `inner` function modifies `outer_var` and the code prints `Final value: 15`. <span class=\"ct-concept-note\"><i class=\"fas fa-bug\"></i><strong>Debugging:</strong> `nonlocal` is key for debugging cases where you *want* to modify an enclosing scope variable, preventing accidental creation of a new local one.</span>",
+            "nonlocal_editor_label": "Code Editor:",
+            "button_run_nonlocal": "Run & Verify",
+            "nonlocal_expected_output": "Expected Output: Inside inner: 15<br>Final value: 15",
+            "nonlocal_output_label": "Simulated Output:",
+            "nonlocal_output_placeholder": "Output will appear here...",
+            "feedback_nonlocal_success": "Correct! You used `nonlocal` perfectly to modify the enclosing variable.",
+            "feedback_nonlocal_missing": "Almost! You need to declare `outer_var` as `nonlocal` inside the `inner` function *before* you try to assign to it.",
+            "feedback_nonlocal_wrong_output": "The code runs, but the output isn't quite right. Ensure `inner` modifies `outer_var` to 15 and that the final print shows this.",
+            "feedback_nonlocal_still_local": "It seems you're still creating a local `outer_var` in `inner`. Remember the `nonlocal` keyword!",
+            "feedback_nonlocal_error": "The code produced an error. Check your syntax.",
+             // Completion
+            "completion_title": "Advanced Scope Practice Complete!",
+            "completion_desc": "Congratulations on mastering the LEGB rule and `nonlocal`! Understanding these advanced scope concepts is crucial for writing more complex, bug-free Python code. <br> You're ready to apply this knowledge or review the material!",
+            "button_back_practice": "Back to Basic Practice",
+            "button_watch_video": "Watch Video Lesson",
+            "button_back_menu": "Back to Course Menu"
+        },
+        pt: {
+            "page_title": "Módulo 19: Prática Avançada de Escopo!",
+            "nav_basic_practice": "Prática Básica", "nav_video": "Ver Vídeo Aula", "nav_menu": "Menu do Curso",
+            "nav_legb": "Explorador LEGB", "nav_nonlocal": "Desafio `nonlocal`",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title": "Módulo 19: Prática Avançada de Escopo", "header_subtitle": "Vamos aprofundar nossa compreensão da regra LEGB e do `nonlocal`!",
+             // Activity 1: LEGB
+            "legb_title": "Explorador da Regra LEGB",
+            "legb_desc": "Python procura variáveis na ordem: <strong style=\"color: var(--local-color)\">L</strong>ocal, <strong style=\"color: var(--warning-color)\">E</strong>nclosing (Funções Envolventes), <strong style=\"color: var(--global-color)\">G</strong>lobal, <strong style=\"color: var(--builtin-color)\">B</strong>uilt-in (Integrado). Clique em cada variável <strong class=\"highlight\">usada</strong> abaixo para ver onde o Python a encontra! <span class=\"ct-concept-note\"><i class=\"fas fa-puzzle-piece\"></i><strong>Abstração / Decomposição:</strong> Entender LEGB ajuda a abstrair como o Python gerencia nomes e a decompor o fluxo de busca.</span>",
+            "legb_status_initial": "Identifique onde Python encontra cada variável usada!",
+            "legb_status_progress": "Identificadas {count} de {total} buscas de variáveis.",
+            "legb_status_done": "Todas as buscas de variáveis identificadas!",
+            "legb_exp_local": "<strong>Local (L):</strong> A variável `{var_name}` foi encontrada primeiro no escopo da função mais interna onde é usada.",
+            "legb_exp_enclosing": "<strong>Enclosing (E):</strong> Não encontrada localmente, Python subiu um nível e encontrou `{var_name}` no escopo da função externa (envolvente).",
+            "legb_exp_global": "<strong>Global (G):</strong> Não encontrada local ou nas funções envolventes, Python encontrou `{var_name}` no escopo global (nível superior do módulo).",
+            "legb_exp_builtin": "<strong>Built-in (B):</strong> Não encontrada em L, E, ou G, Python encontrou `{var_name}` no escopo integrado, que contém funções e tipos pré-definidos.",
+            "feedback_legb_correct": "Perfeito! Você rastreou a regra LEGB para todas as variáveis.",
+            // Activity 2: Nonlocal
+            "nonlocal_title": "Desafio `nonlocal`",
+            "nonlocal_desc": "A palavra-chave `nonlocal` permite que uma função interna modifique uma variável de uma função externa (mas não global). Corrija o código abaixo usando `nonlocal` para que a função `inner` modifique `outer_var` e o código imprima `Valor final: 15`. <span class=\"ct-concept-note\"><i class=\"fas fa-bug\"></i><strong>Depuração:</strong> `nonlocal` é essencial para depurar casos onde você *quer* modificar uma variável de escopo envolvente, evitando criar uma nova local por engano.</span>",
+            "nonlocal_editor_label": "Editor de Código:",
+            "button_run_nonlocal": "Executar & Verificar",
+             "nonlocal_expected_output": "Saída Esperada: Dentro da inner: 15<br>Valor final: 15",
+            "nonlocal_output_label": "Saída Simulada:",
+            "nonlocal_output_placeholder": "A saída aparecerá aqui...",
+            "feedback_nonlocal_success": "Correto! Você usou `nonlocal` perfeitamente para modificar a variável envolvente.",
+            "feedback_nonlocal_missing": "Quase lá! Você precisa declarar `outer_var` como `nonlocal` dentro da função `inner` *antes* de tentar atribuir um valor a ela.",
+            "feedback_nonlocal_wrong_output": "O código executa, mas a saída não está correta. Garanta que `inner` modifica `outer_var` para 15 e que a impressão final mostra isso.",
+            "feedback_nonlocal_still_local": "Parece que você ainda está criando uma `outer_var` local em `inner`. Lembre-se da palavra-chave `nonlocal`!",
+            "feedback_nonlocal_error": "O código produziu um erro. Verifique sua sintaxe.",
+             // Completion
+            "completion_title": "Prática Avançada de Escopo Concluída!",
+            "completion_desc": "Parabéns por dominar a regra LEGB e o `nonlocal`! Entender esses conceitos avançados de escopo é crucial para escrever código Python mais complexo e livre de bugs. <br> Você está pronto para aplicar esse conhecimento ou revisar o material!",
+            "button_back_practice": "Voltar à Prática Básica",
+            "button_watch_video": "Ver Vídeo Aula",
+            "button_back_menu": "Voltar ao Menu do Curso"
+        },
+        zh: {
+            "page_title": "模块 19：高级作用域练习！",
+            "nav_basic_practice": "基础练习", "nav_video": "观看视频课程", "nav_menu": "课程菜单",
+            "nav_legb": "LEGB 探索器", "nav_nonlocal": "`nonlocal` 挑战",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title": "模块 19：高级作用域练习", "header_subtitle": "让我们加深对 LEGB 规则和 `nonlocal` 的理解！",
+            // Activity 1: LEGB
+            "legb_title": "LEGB 规则探索器",
+            "legb_desc": "Python 按顺序查找变量：<strong style=\"color: var(--local-color)\">L</strong>ocal (局部)、<strong style=\"color: var(--warning-color)\">E</strong>nclosing functions (嵌套函数)、<strong style=\"color: var(--global-color)\">G</strong>lobal (全局)、<strong style=\"color: var(--builtin-color)\">B</strong>uilt-in (内置)。点击下面每个<strong class=\"highlight\">使用的</strong>变量，看看 Python 在哪里找到它！<span class=\"ct-concept-note\"><i class=\"fas fa-puzzle-piece\"></i><strong>抽象 / 分解：</strong> 理解 LEGB 有助于抽象 Python 的名称管理方式并分解查找流程。</span>",
+            "legb_status_initial": "识别 Python 在哪里找到每个使用的变量！",
+            "legb_status_progress": "已识别 {count} / {total} 个变量查找。",
+            "legb_status_done": "所有变量查找已识别！",
+            "legb_exp_local": "<strong>局部 (L):</strong> 变量 `{var_name}` 首先在使用它的最内层函数的作用域中找到。",
+            "legb_exp_enclosing": "<strong>嵌套 (E):</strong> 在局部未找到，Python 向上一级，在外部（嵌套）函数的作用域中找到了 `{var_name}`。",
+            "legb_exp_global": "<strong>全局 (G):</strong> 在局部或嵌套函数中未找到，Python 在全局作用域（模块顶层）中找到了 `{var_name}`。",
+            "legb_exp_builtin": "<strong>内置 (B):</strong> 在 L、E 或 G 中均未找到，Python 在内置作用域中找到了 `{var_name}`，该作用域包含预定义的函数和类型。",
+            "feedback_legb_correct": "完美！您已为所有变量追踪了 LEGB 规则。",
+            // Activity 2: Nonlocal
+            "nonlocal_title": "`nonlocal` 挑战",
+            "nonlocal_desc": "`nonlocal` 关键字允许内部函数修改外部（但非全局）函数的变量。使用 `nonlocal` 修复下面的代码，使 `inner` 函数修改 `outer_var` 并且代码打印 `最终值: 15`。<span class=\"ct-concept-note\"><i class=\"fas fa-bug\"></i><strong>调试：</strong> 当你*想要*修改嵌套作用域变量时，`nonlocal` 是调试的关键，可以防止意外创建新的局部变量。</span>",
+            "nonlocal_editor_label": "代码编辑器：",
+            "button_run_nonlocal": "运行并验证",
+             "nonlocal_expected_output": "预期输出: 在 inner 内部: 15<br>最终值: 15",
+            "nonlocal_output_label": "模拟输出：",
+            "nonlocal_output_placeholder": "输出将显示在此处...",
+            "feedback_nonlocal_success": "正确！您完美地使用了 `nonlocal` 来修改嵌套变量。",
+            "feedback_nonlocal_missing": "差不多了！您需要在 `inner` 函数内部*尝试赋值之前*将 `outer_var` 声明为 `nonlocal`。",
+            "feedback_nonlocal_wrong_output": "代码可以运行，但输出不太对。确保 `inner` 将 `outer_var` 修改为 15，并且最终的打印显示了这一点。",
+            "feedback_nonlocal_still_local": "看起来您仍然在 `inner` 中创建了一个局部的 `outer_var`。记住 `nonlocal` 关键字！",
+            "feedback_nonlocal_error": "代码产生了错误。请检查您的语法。",
+            // Completion
+            "completion_title": "高级作用域练习完成！",
+            "completion_desc": "恭喜您掌握了 LEGB 规则和 `nonlocal`！理解这些高级作用域概念对于编写更复杂、无错误的 Python 代码至关重要。<br> 您已准备好应用这些知识或复习材料！",
+            "button_back_practice": "返回基础练习",
+            "button_watch_video": "观看视频课程",
+            "button_back_menu": "返回课程菜单"
+        }
+    };
+
+
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // --- Language Management Functions (Consistent) ---
+        function getStoredLanguage() {
+            const storedLang = localStorage.getItem('userLanguage');
+            if (storedLang && translations[storedLang]) return storedLang;
+            const browserLang = navigator.language || navigator.userLanguage;
+            if (browserLang.startsWith('pt')) return 'pt';
+            if (browserLang.startsWith('zh')) return 'zh';
+            return 'en';
+        }
+
+        function setLanguage(lang) {
+            if (!translations[lang]) lang = 'en';
+            localStorage.setItem('userLanguage', lang);
+            document.documentElement.lang = lang;
+            translatePage(lang); // Apply generic translations
+            const langSelect = document.getElementById('languageSelect');
+            if (langSelect) langSelect.value = lang;
+
+            // Re-initialize activities
+            setupLegbExplorerActivity();
+            resetNonlocalChallengeActivity();
+        }
+
+        function getTranslation(key, lang, replacements = {}) {
+            let text = translations[lang]?.[key] ?? translations['en']?.[key] ?? `[${key}]`;
+            for (const placeholder in replacements) {
+                const regex = new RegExp(`\\{${placeholder}\\}`, 'g');
+                text = text.replace(regex, replacements[placeholder]);
+            }
+            return text;
+        }
+
+        function translatePage(lang) {
+             if (!translations[lang]) lang = 'en';
+             document.querySelectorAll('[data-translate]').forEach(el => {
+                 const key = el.getAttribute('data-translate');
+                 const translation = getTranslation(key, lang);
+                 if (el.tagName === 'TITLE') { document.title = translation; }
+                 else if (el.tagName === 'OPTION') { el.textContent = translation; }
+                 else {
+                    // Use innerHTML only if needed (e.g., for <strong> or <br>)
+                     if (/[<>]/.test(translation)) { el.innerHTML = translation; }
+                     else { el.textContent = translation; }
+                 }
+             });
+             document.querySelectorAll('[data-translate-placeholder]').forEach(el => {
+                 const key = el.getAttribute('data-translate-placeholder');
+                 el.setAttribute('placeholder', getTranslation(key, lang));
+             });
+              document.querySelectorAll('[data-translate-title]').forEach(el => {
+                 const key = el.getAttribute('data-translate-title');
+                 el.setAttribute('title', getTranslation(key, lang));
+             });
+             // Update LEGB explanation cache
+             explanationTextsLegb = {};
+             document.querySelectorAll('#explanation-texts-legb span[data-key]').forEach(span => {
+                const key = span.getAttribute('data-key');
+                explanationTextsLegb[key] = getTranslation(`legb_exp_${key}`, lang);
+             });
+        }
+
+        const initialLang = getStoredLanguage();
+
+        // --- Minimal Nav Logic (Consistent) ---
+        const navToggleButton = document.getElementById('minimal-nav-toggle');
+        const navPanel = document.getElementById('minimal-nav-panel');
+        const body = document.body;
+        if (navToggleButton && navPanel) {
+            navToggleButton.addEventListener('click', (event) => { event.stopPropagation(); body.classList.toggle('nav-active'); navToggleButton.setAttribute('aria-expanded', body.classList.contains('nav-active')); });
+            document.addEventListener('click', (event) => { if (body.classList.contains('nav-active') && !navPanel.contains(event.target) && event.target !== navToggleButton && !navToggleButton.contains(event.target)) { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); } });
+            navPanel.querySelectorAll('a').forEach(link => { link.addEventListener('click', () => { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); }); });
+            document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && body.classList.contains('nav-active')) { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); } });
+            navToggleButton.setAttribute('aria-expanded', 'false');
+        }
+
+        // --- Language Switcher Setup (Consistent) ---
+        const langSelect = document.getElementById('languageSelect');
+        if (langSelect) {
+            langSelect.addEventListener('change', (e) => setLanguage(e.target.value));
+        }
+
+        // --- Helper Function for Feedback (Consistent) ---
+        function showFeedback(elementId, messageKey, type = 'info', replacements = {}) {
+            const feedbackEl = document.getElementById(elementId);
+            if (!feedbackEl) { console.error(`Feedback element not found: ${elementId}`); return; }
+            const currentLang = getStoredLanguage();
+            const translatedMessage = getTranslation(messageKey, currentLang, replacements);
+            if (/[<>]/.test(translatedMessage)) { feedbackEl.innerHTML = translatedMessage; } // Check for HTML
+            else { feedbackEl.textContent = translatedMessage; }
+            feedbackEl.className = 'feedback-message';
+            feedbackEl.classList.add('visible', type);
+            const interactiveArea = feedbackEl.closest('.interactive-area');
+            if (!interactiveArea) return;
+            interactiveArea.classList.remove('success-glow-anim', 'shake-anim');
+            void interactiveArea.offsetWidth;
+            if (type === 'correct') { interactiveArea.classList.add('success-glow-anim'); }
+            else if (type === 'incorrect') { interactiveArea.classList.add('shake-anim'); }
+        }
+
+        // --- Activity 1: LEGB Rule Explorer ---
+        const legbExplorerSection = document.getElementById('legb-explorer');
+        let explanationTextsLegb = {}; // Cache for translated explanations
+        let currentLegbListeners = [];
+        let totalLegbTargets = 0;
+
+        function setupLegbExplorerActivity() {
+            if (!legbExplorerSection) return;
+
+            const targets = legbExplorerSection.querySelectorAll('.scope-target');
+            const explanationsDiv = document.getElementById('legb-explanations');
+            const statusP = document.getElementById('legb-status');
+            const feedbackDiv = document.getElementById('legb-feedback');
+            let identifiedCount = 0;
+            totalLegbTargets = targets.length;
+
+            // Remove old listeners
+            currentLegbListeners.forEach(({ element, listener }) => {
+                element.removeEventListener('click', listener);
+            });
+            currentLegbListeners = [];
+
+            // Reset visual state
+            targets.forEach(t => {
+                t.className = 'scope-target'; // Reset classes completely
+                const scope = t.dataset.scope;
+                if (scope === 'builtin') t.classList.add('code-builtin');
+                else t.classList.add('code-variable');
+                t.style.cursor = 'pointer';
+            });
+            explanationsDiv.innerHTML = '';
+            const currentLang = getStoredLanguage();
+            statusP.textContent = getTranslation('legb_status_initial', currentLang, { total: totalLegbTargets });
+            feedbackDiv.classList.remove('visible');
+
+            // Ensure explanation cache is populated (already done in translatePage)
+            if(Object.keys(explanationTextsLegb).length === 0) { translatePage(currentLang); }
+
+            targets.forEach(target => {
+                const clickListener = () => {
+                    // Check if already identified by checking for specific classes
+                    if (target.classList.contains('identified-local') || target.classList.contains('identified-enclosing') ||
+                        target.classList.contains('identified-global') || target.classList.contains('identified-builtin')) {
+                        return;
+                    }
+
+                    const scopeType = target.dataset.scope; // 'local', 'enclosing', 'global', 'builtin'
+                    const varName = target.dataset.varname;
+                    let explanationKey = scopeType;
+                    let identifiedClass = `identified-${scopeType}`;
+
+                    target.classList.add(identifiedClass);
+                    target.style.cursor = 'default';
+                    identifiedCount++;
+
+                    // Add explanation
+                    const explanationTemplate = explanationTextsLegb[explanationKey];
+                    if (explanationTemplate) {
+                        const explanationText = explanationTemplate.replace('{var_name}', varName);
+                        const p = document.createElement('div');
+                        p.classList.add('legb-explanation', scopeType, 'fade-in'); // Add scope type as class for styling
+                        p.innerHTML = explanationText; // Use innerHTML for potential <strong> tags
+                        // Prepend explanation for better flow
+                        explanationsDiv.insertBefore(p, explanationsDiv.firstChild);
+                        p.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    } else {
+                        console.warn("LEGB Explanation text not found for key:", explanationKey);
+                    }
+
+                    // Update status
+                    statusP.textContent = getTranslation('legb_status_progress', currentLang, { count: identifiedCount, total: totalLegbTargets });
+
+                    if (identifiedCount === totalLegbTargets) {
+                        statusP.textContent = getTranslation('legb_status_done', currentLang);
+                        showFeedback('legb-feedback', 'feedback_legb_correct', 'correct');
+                    }
+                };
+                target.addEventListener('click', clickListener);
+                currentLegbListeners.push({ element: target, listener: clickListener });
+            });
+        }
+
+
+        // --- Activity 2: Nonlocal Challenge ---
+        const nonlocalSection = document.getElementById('nonlocal-challenge');
+        if (nonlocalSection) {
+            const editor = document.getElementById('nonlocal-editor-input');
+            const runBtn = document.getElementById('run-nonlocal-btn');
+            const outputArea = document.getElementById('nonlocal-output');
+            const feedbackDiv = document.getElementById('nonlocal-feedback');
+            const initialCodeNonlocal = `
+def outer():
+    outer_var = 10 # Variável no escopo Enclosing
+
+    def inner():
+        # OBJETIVO: Modificar outer_var para 15
+        # PROBLEMA: Sem 'nonlocal', isto cria uma nova 'outer_var' local.
+        outer_var = 15 # <- Precisa de correção aqui!
+        print(f"Dentro da inner: {outer_var}")
+
+    inner()
+    print(f"Valor final: {outer_var}") # <- Deve imprimir 15
+
+outer()
+`.trim();
+
+            function resetNonlocalChallengeActivity() {
+                 editor.value = initialCodeNonlocal;
+                 let placeholder = outputArea.querySelector('.placeholder');
+                 outputArea.innerHTML = '';
+                 if (!placeholder) {
+                     placeholder = document.createElement('span');
+                     placeholder.className = 'placeholder';
+                     placeholder.dataset.translate = 'nonlocal_output_placeholder';
+                 }
+                 placeholder.textContent = getTranslation('nonlocal_output_placeholder', getStoredLanguage());
+                 outputArea.appendChild(placeholder);
+                 feedbackDiv.classList.remove('visible');
+                 runBtn.disabled = false;
+             }
+
+            runBtn.addEventListener('click', () => {
+                const userCode = editor.value;
+                let capturedOutput = [];
+                let error = null;
+                let success = false;
+                const currentLang = getStoredLanguage();
+
+                // --- Simple Simulation ---
+                // Override print to capture output
+                const originalPrint = window.print; // Not really, but concept
+                let fakePrint = (...args) => {
+                    capturedOutput.push(args.map(String).join(' '));
+                };
+
+                try {
+                     // We need to actually *evaluate* the structure to test nonlocal
+                     // This is risky in a real browser env, but for simulation:
+                     let outer_var_simulated; // To track the outer variable
+
+                     // Define outer with captured print
+                     let outerFuncStr = `
+                        outer_var_simulated = 10;
+                        function inner() {
+                            let innerScopeVar; // Track if local is created
+                            ${ userCode.includes('nonlocal outer_var') ? '/* nonlocal applied */' : 'innerScopeVar = outer_var_simulated;' /* Simulate shadowing */ }
+                            if(${userCode.includes('outer_var = 15')}) {
+                                if(${userCode.includes('nonlocal outer_var')}) {
+                                     outer_var_simulated = 15; // Modify the "outer" simulation
+                                     fakePrint("Dentro da inner: " + outer_var_simulated);
+                                } else {
+                                     innerScopeVar = 15; // Modify the "local" simulation
+                                     fakePrint("Dentro da inner: " + innerScopeVar);
+                                }
+                            } else {
+                                 // If assignment is removed, print potentially original outer
+                                 fakePrint("Dentro da inner: " + (${userCode.includes('nonlocal outer_var')} ? outer_var_simulated : innerScopeVar) );
+                            }
+                        };
+                        inner();
+                        fakePrint("Valor final: " + outer_var_simulated);
+                     `;
+                    // This eval is highly simplified and for demo only
+                    eval(outerFuncStr); // DANGER ZONE in real apps
+
+                } catch (e) {
+                    error = `Syntax or Runtime Error: ${e.message}`;
+                    console.error("Nonlocal simulation error:", e);
+                }
+
+                 // --- Check Results ---
+                 outputArea.innerHTML = ''; // Clear previous
+                 const finalOutputString = capturedOutput.join('\n');
+                 const expectedOutputString = "Dentro da inner: 15\nValor final: 15";
+
+                 if (error) {
+                     const errorSpan = document.createElement('span');
+                     errorSpan.className = 'error';
+                     errorSpan.textContent = `> ${error}`;
+                     outputArea.appendChild(errorSpan);
+                     showFeedback('nonlocal-feedback', 'feedback_nonlocal_error', 'incorrect');
+                 } else {
+                     outputArea.textContent = `> ${finalOutputString}`;
+                     if (finalOutputString.trim() === expectedOutputString.trim()) {
+                         success = true;
+                         showFeedback('nonlocal-feedback', 'feedback_nonlocal_success', 'correct');
+                         runBtn.disabled = true;
+                     } else {
+                         // Provide specific hints
+                         if (!userCode.includes('nonlocal outer_var')) {
+                            showFeedback('nonlocal-feedback', 'feedback_nonlocal_missing', 'incorrect');
+                         } else if (capturedOutput.length > 0 && !finalOutputString.includes("Valor final: 15")) {
+                             showFeedback('nonlocal-feedback', 'feedback_nonlocal_wrong_output', 'incorrect');
+                         } else {
+                             // General incorrect feedback if specific hints don't match
+                            showFeedback('nonlocal-feedback', 'feedback_nonlocal_wrong_output', 'incorrect');
+                         }
+                     }
+                 }
+                 outputArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+            });
+             // Initial reset call handled by setLanguage
+        }
+
+
+        // --- Fade-in animations on scroll (Consistent) ---
+        const fadeElements = document.querySelectorAll('.fade-in');
+        const animateOnScroll = () => {
+             const windowHeight = window.innerHeight;
+             fadeElements.forEach(el => {
+                 if (el.style.opacity === '1') return;
+                 const rect = el.getBoundingClientRect();
+                 if (rect.top < windowHeight - 50 && rect.bottom >= 50) {
+                     el.style.opacity = '1';
+                     el.style.transform = 'translateY(0)';
+                 }
+             });
+        };
+        const scrollHandler = () => window.requestAnimationFrame(animateOnScroll);
+        window.addEventListener('scroll', scrollHandler);
+
+        // --- Initial Setup ---
+        setLanguage(initialLang); // Apply language and initialize activities
+        animateOnScroll(); // Trigger initial animation check
+
+    }); // End DOMContentLoaded
+    </script>
+
+</body>
+</html>

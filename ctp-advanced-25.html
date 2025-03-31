@@ -1,0 +1,1314 @@
+<!DOCTYPE html>
+<!-- Language set by JS -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Title set by JS -->
+    <title data-translate="page_title">Module 25: Advanced Exception Handling</title>
+    <!-- Fonts & Icons (Same as Practice) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* --- Base Styles & Variables (Copied from Practice) --- */
+        :root {
+            --primary-color: #007bff; /* Blue */
+            --secondary-color: #6c757d;
+            --background-light: #f8f9fa;
+            --background-medium: #e9ecef;
+            --background-dark: #343a40;
+            --text-light: #f8f9fa;
+            --text-dark: #212529;
+            --accent-color: #ffc107; /* Yellow */
+            --success-color: #28a745; /* Green */
+            --error-color: #dc3545;   /* Red */
+            --info-color: #17a2b8;    /* Teal */
+            --warning-color: #fd7e14; /* Orange */
+            --border-radius: 8px;
+            --transition-speed: 0.3s;
+            --font-body: 'Roboto', sans-serif;
+            --font-title: 'Orbitron', sans-serif;
+            --selection-highlight-bg: rgba(0, 123, 255, 0.1);
+            --selection-highlight-border: rgba(0, 123, 255, 0.4);
+            /* Nav colors */
+            --nav-primary: #6e48aa;
+            --nav-success: #4cc9f0;
+            --nav-dark: #1a1a2e;
+            /* Specific block colors for Build Structure */
+            --try-block-bg: rgba(0, 123, 255, 0.1);
+            --except-block-bg: rgba(220, 53, 69, 0.1);
+            --else-block-bg: rgba(40, 167, 69, 0.1);
+            --finally-block-bg: rgba(108, 117, 125, 0.1);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; font-size: 16px; }
+        body {
+            font-family: var(--font-body); line-height: 1.7;
+            background-color: var(--background-light); color: var(--text-dark);
+            overflow-x: hidden;
+        }
+
+        /* --- Utility & Animation Classes (Copied from Practice) --- */
+        .container { max-width: 960px; margin: 0 auto; padding: 0 15px; }
+        .text-center { text-align: center; }
+        .highlight { color: var(--primary-color); font-weight: bold; }
+        .code-font { font-family: 'Courier New', Courier, monospace; }
+        .hidden { display: none !important; }
+        .button-group { margin-top: 2rem; display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; }
+        .fade-in { opacity: 0; transform: translateY(20px); animation: fadeInAnimation 0.8s ease-out forwards; }
+        .fade-in.delay-1 { animation-delay: 0.2s; } .fade-in.delay-2 { animation-delay: 0.4s; }
+        .fade-in.delay-3 { animation-delay: 0.6s; } .fade-in.delay-4 { animation-delay: 0.8s; }
+        @keyframes fadeInAnimation { to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulseHeaderIcon { 0% { transform: scale(1); opacity: 0.1; filter: brightness(1); } 50% { transform: scale(1.05); opacity: 0.25; filter: brightness(1.2); } 100% { transform: scale(1); opacity: 0.1; filter: brightness(1); } }
+        @keyframes successGlow { /* ... */ 0% { box-shadow: 0 0 3px rgba(40, 167, 69, 0.3); transform: scale(1); } 50% { box-shadow: 0 0 12px 5px rgba(40, 167, 69, 0.5); transform: scale(1.01); } 100% { box-shadow: 0 0 3px rgba(40, 167, 69, 0.3); transform: scale(1); } }
+        .success-glow-anim { animation: successGlow 0.9s ease-out; }
+        @keyframes shake { /* ... */ 10%, 90% { transform: translate3d(-2px, 0, 0); } 20%, 80% { transform: translate3d(3px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-5px, 0, 0); } 40%, 60% { transform: translate3d(5px, 0, 0); } }
+        .shake-anim { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes iconAppearCorrect { /* ... */ 0% { transform: scale(0.5) rotate(-15deg); opacity: 0; } 60% { transform: scale(1.2) rotate(5deg); opacity: 1; } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
+        @keyframes iconAppearIncorrect { /* ... */ 0% { transform: scale(0.5) rotate(-15deg); opacity: 0; } 50% { transform: scale(1.2) rotate(10deg); opacity: 1; } 70% { transform: scale(0.9) rotate(-5deg); } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
+        @keyframes iconAppearMissed { /* ... */ 0% { transform: scale(0.8) rotateY(90deg); opacity: 0; } 100% { transform: scale(1) rotateY(0deg); opacity: 0.8; } }
+        .action-button:active:not(:disabled) { transform: translateY(1px) scale(0.98); filter: brightness(0.95); }
+
+        /* --- Minimal Retractable Nav (Copied from Practice) --- */
+        .minimal-nav-button { position: fixed; top: 15px; right: 15px; z-index: 1001; background-color: rgba(52, 58, 64, 0.75); color: var(--text-light); border: none; border-radius: var(--border-radius); padding: 8px 12px; cursor: pointer; transition: background-color var(--transition-speed), opacity var(--transition-speed), transform var(--transition-speed); font-size: 1.1rem; opacity: 0.6; box-shadow: 0 2px 5px rgba(0,0,0,0.2); line-height: 1; }
+        .minimal-nav-button:hover { background-color: rgba(52, 58, 64, 0.95); opacity: 1; transform: scale(1.05); }
+        .minimal-nav { position: fixed; top: 60px; right: 15px; z-index: 1000; background-color: var(--background-dark); border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.3); padding: 0.8rem; opacity: 0; transform: translateY(-15px) scale(0.95); transform-origin: top right; pointer-events: none; transition: opacity var(--transition-speed) ease, transform var(--transition-speed) ease; min-width: 200px; }
+        body.nav-active .minimal-nav { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+        .minimal-nav ul { list-style: none; margin: 0; padding: 0; } .minimal-nav ul li { margin-bottom: 5px; } .minimal-nav ul li:last-child { margin-bottom: 0; }
+        .minimal-nav ul li a { display: flex; align-items: center; color: var(--text-light); text-decoration: none; padding: 0.6rem 1rem; border-radius: 4px; transition: background-color var(--transition-speed), color var(--transition-speed); white-space: nowrap; font-weight: 400; font-size: 0.95rem; }
+        .minimal-nav ul li a i.fas { margin-right: 10px; width: 1.2em; text-align: center; opacity: 0.8; transition: opacity var(--transition-speed); }
+        .minimal-nav ul li a:hover { background-color: var(--primary-color); color: var(--text-light); } .minimal-nav ul li a:hover i.fas { opacity: 1; }
+        /* Language Switcher Styles */
+        .minimal-nav .language-switcher-item { padding: 0.5rem 1rem; border-top: 1px solid var(--secondary-color); margin-top: 8px; padding-top: 13px; }
+        #languageSelect { width: 100%; background: rgba(255,255,255,0.1); color: white; border: 1px solid var(--nav-success); border-radius: 5px; padding: 6px 30px 6px 12px; cursor: pointer; font-size: 0.9rem; appearance: none; -webkit-appearance: none; -moz-appearance: none; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%234CC9F0%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right 10px center; background-size: 10px auto; transition: background-color 0.3s ease; }
+        #languageSelect:hover { background-color: rgba(255,255,255,0.15); }
+        #languageSelect option { background: var(--nav-dark); color: var(--text-light); }
+
+        /* --- Practice Header (Similar theme to basic practice) --- */
+        .practice-header { background: linear-gradient(135deg, var(--warning-color), #d35400); color: var(--text-light); padding: 3rem 0 4rem; text-align: center; position: relative; overflow: hidden; border-bottom: 5px solid var(--accent-color); }
+        .practice-header h1 { font-family: var(--font-title); font-size: 2.8rem; margin-bottom: 0.5rem; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); animation: fadeInAnimation 1s ease-out; }
+        .practice-header p { font-size: 1.1rem; font-weight: 300; opacity: 0.9; animation: fadeInAnimation 1s ease-out 0.3s forwards; opacity: 0; }
+        .header-icon { position: absolute; font-size: 4rem; color: var(--text-light); animation: pulseHeaderIcon 6s infinite ease-in-out alternate; }
+        .icon1 { top: 20%; left: 15%; animation-duration: 7s; } /* Layers/stack for multiple handlers */
+        .icon2 { bottom: 15%; right: 20%; animation-duration: 5s; } /* Checkmark/finally */
+
+        /* --- Practice Section Styling (Copied from Practice) --- */
+        .practice-section { padding: 3rem 0; background-color: var(--background-medium); border-bottom: 1px solid #d6d8db; }
+        .practice-section:nth-child(odd) { background-color: var(--background-light); }
+        .practice-section:last-of-type { border-bottom: none; }
+        .practice-section h2 { font-family: var(--font-title); font-size: 1.8rem; color: var(--primary-color); margin-bottom: 1rem; text-align: center; }
+        .practice-section .section-description { text-align: center; margin-bottom: 2.5rem; color: var(--secondary-color); font-size: 1.05rem; max-width: 700px; margin-left: auto; margin-right: auto; }
+
+        /* --- General Interactive Elements (Copied from Practice) --- */
+        .interactive-area { background-color: #fff; padding: 2rem; border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.08); margin-top: 1.5rem; position: relative; transition: box-shadow 0.5s ease-out; }
+        .feedback-message { padding: 0.8rem 1rem; margin-top: 1rem; border-radius: var(--border-radius); font-weight: bold; text-align: center; opacity: 0; max-height: 0; overflow: hidden; transition: opacity var(--transition-speed) ease, max-height var(--transition-speed) ease, margin-top var(--transition-speed) ease; }
+        .feedback-message.visible { opacity: 1; max-height: 100px; /* Adjust if needed */ margin-top: 1.5rem; }
+        .feedback-message.correct { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .feedback-message.incorrect { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .feedback-message.info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .feedback-message .fas { margin: 0 3px; }
+        .action-button { display: inline-block; padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold; color: var(--text-light); background-color: var(--primary-color); border: none; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), transform var(--transition-speed), filter var(--transition-speed), box-shadow var(--transition-speed); margin-top: 1rem; vertical-align: middle; box-shadow: 0 2px 5px rgba(0,0,0,0.1); text-decoration: none; }
+        .action-button:hover:not(:disabled) { background-color: #0056b3; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+        .action-button:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none; box-shadow: none; opacity: 0.7; }
+        .action-button.success { background-color: var(--success-color); }
+        .action-button.success:hover:not(:disabled) { background-color: #218838; }
+        .action-button.secondary { background-color: var(--secondary-color); }
+        .action-button.secondary:hover:not(:disabled) { background-color: #5a6268; }
+        /* Code styling */
+        .code-block { background-color: var(--background-dark); color: var(--text-light); padding: 1.5rem; border-radius: var(--border-radius); font-family: var(--code-font); font-size: 1rem; position: relative; overflow-x: auto; margin: 1rem 0; }
+        .code-keyword { color: #569cd6; } /* try, except, else, finally, as */
+        .code-string { color: #ce9178; }
+        .code-comment { color: #6a9955; }
+        .code-function { color: #dcdcaa; }
+        .code-error { color: #f47e84; font-weight: bold; } /* Exception types */
+        .code-exception-var { color: #9cdcfe; font-style: italic;} /* 'e' in 'as e' */
+        .code-colon { color: #ffd700; }
+        .code-indent { display: block; margin-left: 2em; }
+        .code-potential-error { background-color: rgba(220, 53, 69, 0.15); border-left: 3px solid var(--error-color); padding: 0.1em 0.3em; display: inline-block;}
+
+        /* --- Activity 1: Advanced Anatomy --- */
+        #anatomy-advanced .code-part { cursor: pointer; border-bottom: 2px dashed rgba(255, 255, 255, 0.3); transition: background-color var(--transition-speed), border-bottom-color var(--transition-speed); padding: 0 2px; display: inline-block; /* Allow wrapping */ }
+        #anatomy-advanced .code-part:hover { background-color: rgba(255, 255, 255, 0.15); border-bottom-color: var(--accent-color); }
+        #anatomy-advanced .code-part.identified { background-color: rgba(40, 167, 69, 0.3); border-bottom: 2px solid var(--success-color); cursor: default; }
+        .part-explanation { font-size: 0.95rem; color: var(--info-color); border-left: 3px solid var(--info-color); padding: 5px 10px; margin-top: 0.5rem; background-color: rgba(23, 162, 184, 0.05); }
+        #anatomy-adv-status { margin-top: 1rem; font-style: italic; color: var(--secondary-color); }
+
+        /* --- Activity 2: Predict the Flow --- */
+        #predict-flow .outcome-options { display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; margin-top: 1.5rem; }
+        .outcome-option { padding: 0.8rem 1.2rem; border: 2px solid var(--secondary-color); border-radius: var(--border-radius); cursor: pointer; transition: all var(--transition-speed); background-color: #fff; text-align: center; min-width: 180px; font-family: var(--code-font); font-size: 0.95rem;} /* Code font for output */
+        .outcome-option:hover { border-color: var(--primary-color); background-color: var(--background-light); }
+        .outcome-option.selected { border-color: var(--primary-color); background-color: var(--selection-highlight-bg); font-weight: bold; }
+        .outcome-option.correct { border-color: var(--success-color); background-color: rgba(40, 167, 69, 0.1); color: var(--success-color); font-weight: bold;}
+        .outcome-option.incorrect { border-color: var(--error-color); background-color: rgba(220, 53, 69, 0.1); color: var(--error-color); animation: shake 0.4s ease-in-out; }
+        #flow-code-block { margin-bottom: 1rem; }
+        #next-flow-btn { margin-left: 10px; }
+
+        /* --- Activity 3: Refine Handling (Simulator) --- */
+        #refine-handling .sim-editor { width: 100%; min-height: 150px; background-color: var(--background-dark); color: var(--text-light); border: 1px solid var(--secondary-color); border-radius: var(--border-radius); padding: 1rem; font-family: var(--code-font); font-size: 1rem; line-height: 1.5; resize: vertical; margin-top: 1rem; }
+        #refine-handling .sim-guidance { font-style: italic; color: var(--secondary-color); margin-bottom: 1rem; display: block; font-size: 0.95rem; background-color: var(--background-medium); padding: 0.5rem 1rem; border-left: 4px solid var(--info-color); border-radius: 4px;}
+        #refine-handling .sim-output-area { margin-top: 1rem; min-height: 50px; background-color: #1a1a1a; border: 1px solid #444; border-radius: var(--border-radius); padding: 1rem; color: var(--accent-color); font-family: var(--code-font); font-size: 1.05rem; white-space: pre-wrap; word-wrap: break-word; }
+        #refine-handling .sim-output-area .placeholder { color: var(--secondary-color); font-style: italic; font-size: 0.9rem; }
+        #refine-handling .sim-output-area .output-line { display: block; }
+        #refine-handling .sim-output-area .error-output { color: var(--error-color); }
+
+        /* --- Activity 4: Build the Structure --- */
+        #build-structure .structure-area { display: flex; flex-direction: column; gap: 0.5rem; background-color: var(--background-dark); padding: 1rem; border-radius: var(--border-radius); margin-top: 1.5rem; border: 1px solid var(--secondary-color); }
+        .drop-zone-block { border: 2px dashed var(--secondary-color); border-radius: 5px; padding: 10px; min-height: 50px; transition: border-color var(--transition-speed), background-color var(--transition-speed); margin-bottom: 5px; }
+        .drop-zone-block.try-zone { background-color: var(--try-block-bg); border-color: var(--primary-color); }
+        .drop-zone-block.except-zone { background-color: var(--except-block-bg); border-color: var(--error-color); }
+        .drop-zone-block.else-zone { background-color: var(--else-block-bg); border-color: var(--success-color); }
+        .drop-zone-block.finally-zone { background-color: var(--finally-block-bg); border-color: var(--secondary-color); }
+        .drop-zone-block.over { filter: brightness(1.2); border-style: solid; }
+        .drop-zone-placeholder { color: var(--secondary-color); font-style: italic; text-align: center; display: block; }
+        #draggable-structure-pieces { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 1.5rem; padding: 1rem; background-color: var(--background-light); border: 1px dashed var(--secondary-color); border-radius: var(--border-radius); justify-content: center; user-select: none; -webkit-user-select: none; -ms-user-select: none; }
+        .structure-piece { display: inline-block; padding: 8px 12px; color: var(--text-light); border-radius: 4px; cursor: grab; font-family: var(--code-font); font-size: 0.95rem; transition: all var(--transition-speed); border: 1px solid #444; touch-action: none; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .structure-piece.try-piece { background-color: var(--primary-color); }
+        .structure-piece.except-piece { background-color: var(--error-color); }
+        .structure-piece.else-piece { background-color: var(--success-color); }
+        .structure-piece.finally-piece { background-color: var(--secondary-color); }
+        .structure-piece.code-piece { background-color: var(--background-dark); border-color: var(--accent-color); color: var(--text-light); } /* For actual code lines */
+        .structure-piece:active { cursor: grabbing; }
+        .structure-piece.dragging { opacity: 0.6 !important; transform: scale(1.05) rotate(3deg); position: fixed !important; pointer-events: none !important; z-index: 1000 !important; cursor: grabbing !important; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+        .structure-piece.ghosting { opacity: 0.3; }
+        .drop-zone-block .structure-piece { cursor: default; margin: 2px; } /* Pieces inside drop zone */
+
+        /* --- Mini Missions (Advanced - Reuse existing styles) --- */
+         #mini-missions-advanced .mission { padding: 1.5rem; border: 1px solid #d6d8db; border-radius: var(--border-radius); margin-bottom: 1.5rem; background-color: var(--background-light); position: relative; }
+         .mission-status { position: absolute; top: 10px; right: 10px; font-size: 1.5rem; transition: transform 0.3s ease; }
+         .mission-status .fa-check-circle { color: var(--success-color); transform-origin: center; }
+         .mission-status .fa-times-circle { color: var(--error-color); }
+         .mission-status .fa-question-circle { color: var(--secondary-color); }
+         .mission[data-completed="true"] .mission-status .fa-check-circle { animation: iconAppearCorrect 0.6s ease-out; }
+         #mini-missions-advanced .mission-editor { width: 100%; min-height: 140px; /* Slightly taller */ background-color: var(--background-dark); color: var(--text-light); border: 1px solid var(--secondary-color); border-radius: var(--border-radius); padding: 1rem; font-family: var(--code-font); font-size: 1rem; line-height: 1.5; resize: vertical; margin-top: 1rem; }
+         #mini-missions-advanced .mission-output { margin-top: 1rem; min-height: 30px; background-color: #1a1a1a; border: 1px solid #444; border-radius: var(--border-radius); padding: 0.8rem; color: var(--accent-color); font-family: var(--code-font); font-size: 1rem; white-space: pre-wrap; word-wrap: break-word; }
+         #mini-missions-advanced .mission-output .error-output { color: var(--error-color); }
+
+        /* --- Completion Section (Copied from Practice) --- */
+        .completion-section { padding: 4rem 0; text-align: center; }
+        .completion-section .icon { font-size: 4rem; color: var(--success-color); margin-bottom: 1rem; display: inline-block; opacity: 0; animation: iconAppearCorrect 1s ease-out 0.5s forwards; }
+        .completion-section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); }
+        .completion-section p { font-size: 1.1rem; margin-top: 1rem; color: var(--secondary-color); }
+
+        /* --- Responsive Design (Adjusted from Practice) --- */
+        @media (max-width: 768px) {
+            html { font-size: 15px; }
+            .practice-header h1 { font-size: 2.2rem; }
+            .practice-section h2 { font-size: 1.6rem; }
+            .interactive-area { padding: 1.5rem; }
+            .outcome-option { min-width: 150px; font-size: 0.9rem;}
+            .structure-piece { padding: 6px 10px; font-size: 0.9rem; }
+            .button-group { flex-direction: column; align-items: center; }
+            .minimal-nav { min-width: 180px; } .minimal-nav ul li a { padding: 0.6rem 0.8rem; }
+            #languageSelect { font-size: 0.85rem; padding: 5px 25px 5px 10px;}
+        }
+        @media (max-width: 480px) {
+            html { font-size: 14px; }
+            .practice-header h1 { font-size: 1.8rem; } .practice-header p { font-size: 1rem; }
+            .practice-section h2 { font-size: 1.4rem; }
+            .interactive-area { padding: 1rem; }
+            .action-button { font-size: 0.9rem; padding: 0.7rem 1.2rem; width: 90%; max-width: 300px;}
+            #refine-handling .sim-editor, #refine-handling .sim-output-area { font-size: 0.9rem; }
+            #mini-missions-advanced .mission-editor { min-height: 120px; font-size: 0.95rem;}
+            #mini-missions-advanced .mission-output { font-size: 0.95rem;}
+            .outcome-option { width: 90%; max-width: 300px; }
+            #draggable-structure-pieces { padding: 0.8rem; }
+            .structure-piece { padding: 5px 8px; font-size: 0.85rem; }
+            .button-group a.action-button { width: 90%; max-width: 300px; margin-bottom: 0.5rem; }
+            /* Nav adjust */
+             .minimal-nav-button { top: 10px; right: 10px; padding: 6px 10px; font-size: 1rem; }
+             .minimal-nav { top: 48px; right: 10px; min-width: 160px; }
+             .minimal-nav ul li a { padding: 0.5rem 0.7rem; font-size: 0.9rem;}
+             .minimal-nav ul li a i.fas { margin-right: 8px; }
+             #languageSelect { font-size: 0.8rem; padding: 4px 20px 4px 8px;}
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ========= Minimal Nav Handle ========= -->
+    <button id="minimal-nav-toggle" class="minimal-nav-button" aria-label="Toggle Navigation Menu">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- ========= Minimal Nav Panel (with Language Switcher) ========= -->
+    <nav id="minimal-nav-panel" class="minimal-nav">
+        <ul>
+            <!-- ***** UPDATED Links for Advanced Module 25 ***** -->
+            <li><a href="ctp-practice-25.html"><i class="fas fa-pencil-alt fa-fw"></i> <span data-translate="nav_basic_practice">Basic Practice</span></a></li>
+            <li><a href="ctp-video-25.html"><i class="fas fa-video fa-fw"></i> <span data-translate="nav_video">Video Lesson</span></a></li>
+            <li><a href="ctp-dashboard.html"><i class="fas fa-list fa-fw"></i> <span data-translate="nav_menu">Course Menu</span></a></li>
+            <hr style="border: none; border-top: 1px solid var(--secondary-color); margin: 8px 0;">
+            <!-- ***** UPDATED Section Links ***** -->
+            <li><a href="#anatomy-advanced"><i class="fas fa-project-diagram fa-fw"></i> <span data-translate="nav_adv_anatomy">Adv. Anatomy</span></a></li>
+            <li><a href="#predict-flow"><i class="fas fa-stream fa-fw"></i> <span data-translate="nav_predict_flow">Predict Flow</span></a></li>
+            <li><a href="#refine-handling"><i class="fas fa-filter fa-fw"></i> <span data-translate="nav_refine">Refine Handling</span></a></li>
+            <li><a href="#build-structure"><i class="fas fa-cubes fa-fw"></i> <span data-translate="nav_build_structure">Build Structure</span></a></li>
+            <li><a href="#mini-missions-advanced"><i class="fas fa-tasks fa-fw"></i> <span data-translate="nav_adv_missions">Adv. Missions</span></a></li>
+            <!-- Language Switcher Item -->
+            <li class="language-switcher-item">
+                 <select id="languageSelect" aria-label="Select Language">
+                     <option value="en" data-translate="lang_en">🇬🇧 English</option>
+                     <option value="pt" data-translate="lang_pt">🇧🇷 Português</option>
+                     <option value="zh" data-translate="lang_zh">🇨🇳 中文</option>
+                 </select>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- ========= Header ========= -->
+    <header class="practice-header">
+        <!-- Icons representing structure and completion/finally -->
+        <i class="fas fa-layer-group header-icon icon1"></i>
+        <i class="fas fa-check-double header-icon icon2"></i>
+        <div class="container">
+             <!-- ***** UPDATED Title for Advanced Module 25 ***** -->
+            <h1 data-translate="header_title">Module 25: Advanced Exception Handling</h1>
+            <p data-translate="header_subtitle">Handling multiple errors, using `else` and `finally`.</p>
+        </div>
+    </header>
+
+    <!-- ========= Main Content ========= -->
+    <main>
+        <!-- ========= Activity 1: Anatomy of Advanced Handling ========= -->
+        <section id="anatomy-advanced" class="practice-section">
+             <div class="container">
+                 <h2 class="fade-in"><i class="fas fa-project-diagram"></i> <span data-translate="anatomy_adv_title">Anatomy of Full Handling</span></h2>
+                 <p class="section-description fade-in delay-1" data-translate="anatomy_adv_desc">
+                     Now let's look at the full structure including `else` and `finally`. Click each part.
+                 </p>
+                 <div class="interactive-area fade-in delay-2">
+                     <div class="code-block">
+                        <span class="code-part" data-part="try" data-translate-title="tooltip_click_identify" title="Click this part"><span class="code-keyword">try</span></span><span class="code-part" data-part="try-colon" data-translate-title="tooltip_click_identify" title="Click this part"><span class="code-colon">:</span></span>
+                        <span class="code-indent">
+                           <span class="code-part" data-part="try-code" data-translate-title="tooltip_click_identify" title="Click this part"><span data-translate="anatomy_adv_code_try">operation()</span></span>
+                        </span>
+                        <span class="code-part" data-part="except-type1" data-translate-title="tooltip_click_identify" title="Click this part"><span class="code-keyword">except</span> <span class="code-error">ValueError</span> <span class="code-keyword">as</span> <span class="code-exception-var">e</span></span><span class="code-part" data-part="except-colon1" data-translate-title="tooltip_click_identify" title="Click this part"><span class="code-colon">:</span></span>
+                        <span class="code-indent">
+                            <span class="code-part" data-part="handler1" data-translate-title="tooltip_click_identify" title="Click this part"><span class="code-function">print</span>(<span class="code-string" data-translate="anatomy_adv_code_except1">"Value Error Handler"</span>)</span>
+                        </span>
+                         <span class="code-part" data-part="except-type2" data-translate-title="tooltip_click_identify" title="Click this part"><span class="code-keyword">except</span> <span class="code-error">TypeError</span></span><span class="code-part" data-part="except-colon2" data-translate-title="tooltip_click_identify" title="Click this part"><span class="code-colon">:</span></span>
+                         <span class="code-indent">
+                             <span class="code-part" data-part="handler2" data-translate-title="tooltip_click_identify" title="Click this part"><span class="code-function">print</span>(<span class="code-string" data-translate="anatomy_adv_code_except2">"Type Error Handler"</span>)</span>
+                         </span>
+                        <span class="code-part" data-part="else" data-translate-title="tooltip_click_identify" title="Click this part"><span class="code-keyword">else</span></span><span class="code-part" data-part="else-colon" data-translate-title="tooltip_click_identify" title="Click this part"><span class="code-colon">:</span></span>
+                        <span class="code-indent">
+                             <span class="code-part" data-part="else-code" data-translate-title="tooltip_click_identify" title="Click this part"><span class="code-function">print</span>(<span class="code-string" data-translate="anatomy_adv_code_else">"Success! No errors."</span>)</span>
+                        </span>
+                        <span class="code-part" data-part="finally" data-translate-title="tooltip_click_identify" title="Click this part"><span class="code-keyword">finally</span></span><span class="code-part" data-part="finally-colon" data-translate-title="tooltip_click_identify" title="Click this part"><span class="code-colon">:</span></span>
+                        <span class="code-indent">
+                            <span class="code-part" data-part="finally-code" data-translate-title="tooltip_click_identify" title="Click this part"><span class="code-function">print</span>(<span class="code-string" data-translate="anatomy_adv_code_finally">"Cleanup code runs always."</span>)</span>
+                        </span>
+                     </div>
+                     <div id="anatomy-adv-explanations"></div>
+                     <p id="anatomy-adv-status" data-translate="anatomy_adv_status_initial">Identify all 15 parts!</p>
+                     <div id="anatomy-adv-feedback" class="feedback-message"></div>
+                     <!-- Hidden explanation texts -->
+                     <div id="explanation-adv-texts" style="display: none;">
+                        <span data-key="try" data-translate="anatomy_adv_exp_try">`try` block: Contains code that might raise an exception.</span>
+                        <span data-key="try-colon" data-translate="anatomy_adv_exp_try_colon">Colon for `try`: Starts the code block.</span>
+                        <span data-key="try-code" data-translate="anatomy_adv_exp_try_code">Code within `try`: The actual operations being attempted.</span>
+                        <span data-key="except-type1" data-translate="anatomy_adv_exp_except_type1">`except ValueError as e`: Catches only `ValueError` and assigns the error object to `e`.</span>
+                        <span data-key="except-colon1" data-translate="anatomy_adv_exp_except_colon1">Colon for first `except`: Starts the handler block.</span>
+                        <span data-key="handler1" data-translate="anatomy_adv_exp_handler1">First Handler Code: Runs if a `ValueError` occurs.</span>
+                        <span data-key="except-type2" data-translate="anatomy_adv_exp_except_type2">`except TypeError`: Catches only `TypeError`.</span>
+                        <span data-key="except-colon2" data-translate="anatomy_adv_exp_except_colon2">Colon for second `except`: Starts this handler block.</span>
+                        <span data-key="handler2" data-translate="anatomy_adv_exp_handler2">Second Handler Code: Runs if a `TypeError` occurs.</span>
+                        <span data-key="else" data-translate="anatomy_adv_exp_else">`else` block: Optional block that runs ONLY if the `try` block completes WITHOUT errors.</span>
+                        <span data-key="else-colon" data-translate="anatomy_adv_exp_else_colon">Colon for `else`: Starts the 'success' code block.</span>
+                        <span data-key="else-code" data-translate="anatomy_adv_exp_else_code">Code within `else`: Actions to take upon successful execution of `try`.</span>
+                        <span data-key="finally" data-translate="anatomy_adv_exp_finally">`finally` block: Optional block that ALWAYS runs, whether an error occurred or not.</span>
+                        <span data-key="finally-colon" data-translate="anatomy_adv_exp_finally_colon">Colon for `finally`: Starts the cleanup code block.</span>
+                        <span data-key="finally-code" data-translate="anatomy_adv_exp_finally_code">Code within `finally`: Typically used for cleanup actions (e.g., closing files).</span>
+                     </div>
+                 </div>
+             </div>
+        </section>
+
+        <!-- ========= Activity 2: Predict the Flow ========= -->
+        <section id="predict-flow" class="practice-section">
+            <div class="container">
+                <h2 class="fade-in"><i class="fas fa-stream"></i> <span data-translate="predict_flow_title">Predict the Execution Flow</span></h2>
+                <p class="section-description fade-in delay-1" data-translate="predict_flow_desc">
+                    Consider the `else` and `finally` blocks. What sequence of messages will be printed? Choose the correct output.
+                </p>
+                <div class="interactive-area fade-in delay-2">
+                    <div id="flow-code-block" class="code-block">
+                        <!-- Code snippet loaded by JS -->
+                    </div>
+                    <div id="flow-options" class="outcome-options"> <!-- Reusing outcome-options class -->
+                        <!-- Options loaded by JS -->
+                    </div>
+                     <div class="text-center">
+                        <button id="check-flow-btn" class="action-button" data-translate="button_check_answer" disabled>Check Answer</button>
+                        <button id="next-flow-btn" class="action-button secondary hidden" data-translate="button_next_q">Next Question</button>
+                    </div>
+                    <div id="flow-feedback" class="feedback-message"></div>
+                </div>
+            </div>
+        </section>
+
+         <!-- ========= Activity 3: Refine Handling ========= -->
+        <section id="refine-handling" class="practice-section">
+             <div class="container">
+                 <h2 class="fade-in"><i class="fas fa-filter"></i> <span data-translate="refine_title">Refine Generic Handling</span></h2>
+                 <p class="section-description fade-in delay-1" data-translate="refine_desc">
+                     Using a broad `except Exception:` can hide bugs. Refine the code below to catch `ValueError` and `TypeError` specifically, each printing a distinct message. Add an `else` block to print "Conversion successful!" if no error occurs.
+                 </p>
+                 <div class="interactive-area fade-in delay-2">
+                     <div class="sim-guidance" data-translate="refine_guidance">Goal: Replace `except Exception:` with specific handlers for `ValueError`, `TypeError`, and add an `else` block for success.</div>
+                     <label for="refine-editor-input" style="font-weight: bold; display:block; margin-bottom: 8px;" data-translate="refine_editor_label">Code Editor:</label>
+                     <textarea id="refine-editor-input" class="sim-editor code-font" rows="9" data-translate-placeholder="refine_editor_placeholder" placeholder='''# Original potentially problematic code:
+# data = "123" # or data = 123 or data = "abc"
+# try:
+#    number = int(data)
+#    print(number * 2)
+# except Exception:
+#    print("An error occurred.")
+
+# --- Refine below ---
+# try:
+#   ...
+# except ValueError:
+#   print("Invalid number format.")
+# except TypeError:
+#   print("Invalid data type for conversion.")
+# else:
+#   print("Conversion successful!")
+'''></textarea>
+                     <div class="text-center">
+                          <button id="run-refine-btn" class="action-button" data-translate="button_check_refinement">Check Refinement</button>
+                     </div>
+                     <label for="refine-output" style="font-weight: bold; display:block; margin-top: 1.5rem; margin-bottom: 8px;" data-translate="refine_output_label">Conceptual Check:</label>
+                     <div id="refine-output" class="sim-output-area">
+                         <span class="placeholder" data-translate="refine_output_placeholder">Refinement check results appear here...</span>
+                     </div>
+                     <div id="refine-feedback" class="feedback-message"></div>
+                 </div>
+             </div>
+        </section>
+
+         <!-- ========= Activity 4: Build the Structure ========= -->
+        <section id="build-structure" class="practice-section">
+            <div class="container">
+                <h2 class="fade-in"><i class="fas fa-cubes"></i> <span data-translate="build_structure_title">Build the Handling Structure</span></h2>
+                <p class="section-description fade-in delay-1" data-translate="build_structure_desc">
+                    Drag the code blocks from the top into the correct zones below (`try`, `except`, `else`, `finally`) to build a logical error handling structure.
+                </p>
+                <div class="interactive-area fade-in delay-2">
+                    <div id="draggable-structure-pieces" class="draggable-structure-pieces">
+                        <!-- Pieces populated by JS -->
+                    </div>
+                    <div class="structure-area code-font">
+                        <div id="drop-zone-try" class="drop-zone-block try-zone" data-block-type="try">
+                            <span class="drop-zone-placeholder" data-translate="build_structure_drop_try">Drop `try` code here...</span>
+                        </div>
+                        <div id="drop-zone-except1" class="drop-zone-block except-zone" data-block-type="except">
+                             <span class="drop-zone-placeholder" data-translate="build_structure_drop_except">Drop `except` handler here...</span>
+                         </div>
+                         <!-- Add more except zones if needed by the scenario -->
+                        <div id="drop-zone-else" class="drop-zone-block else-zone" data-block-type="else">
+                             <span class="drop-zone-placeholder" data-translate="build_structure_drop_else">Drop `else` code here...</span>
+                         </div>
+                        <div id="drop-zone-finally" class="drop-zone-block finally-zone" data-block-type="finally">
+                             <span class="drop-zone-placeholder" data-translate="build_structure_drop_finally">Drop `finally` code here...</span>
+                         </div>
+                    </div>
+                    <div class="text-center">
+                        <button id="check-structure-btn" class="action-button" data-translate="button_check_structure">Check Structure</button>
+                        <button id="reset-structure-btn" class="action-button secondary" data-translate="button_reset_structure">Reset</button>
+                    </div>
+                    <div id="structure-feedback" class="feedback-message"></div>
+                </div>
+            </div>
+        </section>
+
+         <!-- ========= Activity 5: Advanced Mini Missions ========= -->
+        <section id="mini-missions-advanced" class="practice-section">
+             <div class="container">
+                  <h2 class="fade-in"><i class="fas fa-tasks"></i> <span data-translate="missions_adv_title">Advanced Mini Missions</span></h2>
+                 <p class="section-description fade-in delay-1" data-translate="missions_adv_desc">
+                     Combine your skills! Use multiple handlers, `else`, and `finally`.
+                 </p>
+                 <div class="interactive-area fade-in delay-2">
+                     <!-- Mission 1: Multiple Specific Errors + Finally -->
+                     <div class="mission" id="mission-adv-1" data-completed="false">
+                         <span class="mission-status"><i class="fas fa-question-circle"></i></span>
+                         <h4 data-translate="mission_adv1_title">Mission 1: File Handling Simulation</h4>
+                         <p data-translate="mission_adv1_desc">Simulate opening and reading a file. Use `try`. Catch `FileNotFoundError` (print "File not found.") and `PermissionError` (print "Permission denied."). Use `finally` to always print "File operation finished.".</p>
+                         <textarea class="sim-editor mission-editor" rows="8" data-translate-placeholder="mission_adv1_placeholder" placeholder='''# Simulate file operation
+# We will conceptually test with: normal case, file not found, permission denied.
+# try:
+#   print("Opening file...") # Simulate open
+#   print("Reading data...") # Simulate read (this might trigger error in real code)
+# except FileNotFoundError:
+#   print("File not found.")
+# except PermissionError:
+#   print("Permission denied.")
+# finally:
+#   print("File operation finished.")
+'''></textarea>
+                         <div class="text-center"> <button class="action-button mission-run-btn" data-mission-id="adv-1" data-translate="button_test_mission_adv_1">Test Mission 1</button> </div>
+                         <div class="sim-output-area mission-output"></div>
+                         <div id="mission-feedback-adv-1" class="feedback-message mission-feedback"></div>
+                     </div>
+                     <!-- Mission 2: Value/ZeroDivision + Else -->
+                     <div class="mission" id="mission-adv-2" data-completed="false">
+                          <span class="mission-status"><i class="fas fa-question-circle"></i></span>
+                         <h4 data-translate="mission_adv2_title">Mission 2: Robust Division Calc</h4>
+                         <p data-translate="mission_adv2_desc">Get two inputs (numerator, denominator). Convert both to floats. Catch `ValueError` for invalid inputs (print "Invalid number."). Catch `ZeroDivisionError` (print "Cannot divide by zero."). Use `else` to print the division result ONLY if both conversions and the division are successful.</p>
+                         <textarea class="sim-editor mission-editor" rows="9" data-translate-placeholder="mission_adv2_placeholder" placeholder='''# Simulate getting two inputs
+# try:
+#   num_str = input("Numerator: ") # Simulate
+#   den_str = input("Denominator: ") # Simulate
+#   numerator = float(num_str)
+#   denominator = float(den_str)
+#   result = numerator / denominator
+# except ValueError:
+#   print("Invalid number.")
+# except ZeroDivisionError:
+#   print("Cannot divide by zero.")
+# else:
+#   print(f"Result: {result}")
+'''></textarea>
+                          <div class="text-center"> <button class="action-button mission-run-btn" data-mission-id="adv-2" data-translate="button_test_mission_adv_2">Test Mission 2</button> </div>
+                         <div class="sim-output-area mission-output"></div>
+                         <div id="mission-feedback-adv-2" class="feedback-message mission-feedback"></div>
+                     </div>
+                     <div id="missions-adv-summary-feedback" class="feedback-message" style="margin-top: 2rem;"></div>
+                 </div>
+             </div>
+        </section>
+
+         <!-- ========= Completion Section ========= -->
+        <section class="completion-section">
+            <div class="container">
+                <div class="icon fade-in">
+                    <i class="fas fa-award"></i> <i class="fas fa-shield-alt"></i> <i class="fas fa-star"></i>
+                </div>
+                 <!-- ***** UPDATED Completion Text ***** -->
+                <h2 class="fade-in delay-1" data-translate="completion_adv_title">Advanced Practice Complete!</h2>
+                <p class="fade-in delay-2" data-translate="completion_adv_desc">
+                    Superb work! You've mastered more complex exception handling techniques. <br>
+                    Feel free to review the video lesson or head back to the course menu.
+                </p>
+                <div class="button-group">
+                    <!-- ***** UPDATED Links for Advanced Module 25 ***** -->
+                    <a href="ctp-practice-25.html" class="action-button secondary fade-in delay-3"><i class="fas fa-pencil-alt"></i> <span data-translate="button_basic_practice">Basic Practice</span></a>
+                    <a href="ctp-video-25.html" class="action-button success fade-in delay-3"><i class="fas fa-video"></i> <span data-translate="button_video">View Video Lesson</span></a>
+                    <a href="ctp-dashboard.html" class="action-button secondary fade-in delay-4"><i class="fas fa-list"></i> <span data-translate="button_back_menu">Back to Course Menu</span></a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ========= Script ========= -->
+    <script>
+    // --- Translations Object ---
+    const translations = {
+        en: {
+            "page_title": "Module 25: Advanced Exception Handling",
+            "tooltip_click_identify": "Click to identify this part",
+            // Nav
+            "nav_basic_practice": "Basic Practice", "nav_video": "Video Lesson", "nav_menu": "Course Menu",
+            "nav_adv_anatomy": "Adv. Anatomy", "nav_predict_flow": "Predict Flow", "nav_refine": "Refine Handling", "nav_build_structure": "Build Structure", "nav_adv_missions": "Adv. Missions",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            // Header
+            "header_title": "Module 25: Advanced Exception Handling", "header_subtitle": "Handling multiple errors, using `else` and `finally`.",
+            // Anatomy Advanced
+            "anatomy_adv_title": "Anatomy of Full Handling", "anatomy_adv_desc": "Now let's look at the full structure including `else` and `finally`. Click each part.",
+            "anatomy_adv_code_try": "operation()", "anatomy_adv_code_except1": "\"Value Error Handler\"", "anatomy_adv_code_except2": "\"Type Error Handler\"", "anatomy_adv_code_else": "\"Success! No errors.\"", "anatomy_adv_code_finally": "\"Cleanup code runs always.\"",
+            "anatomy_adv_status_initial": "Identify all 15 parts!", "anatomy_adv_status_progress": "Identified {count} of {total} parts.", "anatomy_adv_status_done": "All parts identified!",
+            "anatomy_adv_exp_try": "`try` block: Contains code that might raise an exception.",
+            "anatomy_adv_exp_try_colon": "Colon for `try`: Starts the code block.",
+            "anatomy_adv_exp_try_code": "Code within `try`: The actual operations being attempted.",
+            "anatomy_adv_exp_except_type1": "`except ValueError as e`: Catches only `ValueError` and assigns the error object to `e`.",
+            "anatomy_adv_exp_except_colon1": "Colon for first `except`: Starts the handler block.",
+            "anatomy_adv_exp_handler1": "First Handler Code: Runs if a `ValueError` occurs.",
+            "anatomy_adv_exp_except_type2": "`except TypeError`: Catches only `TypeError`.",
+            "anatomy_adv_exp_except_colon2": "Colon for second `except`: Starts this handler block.",
+            "anatomy_adv_exp_handler2": "Second Handler Code: Runs if a `TypeError` occurs.",
+            "anatomy_adv_exp_else": "`else` block: Optional block that runs ONLY if the `try` block completes WITHOUT errors.",
+            "anatomy_adv_exp_else_colon": "Colon for `else`: Starts the 'success' code block.",
+            "anatomy_adv_exp_else_code": "Code within `else`: Actions to take upon successful execution of `try`.",
+            "anatomy_adv_exp_finally": "`finally` block: Optional block that ALWAYS runs, whether an error occurred or not.",
+            "anatomy_adv_exp_finally_colon": "Colon for `finally`: Starts the cleanup code block.",
+            "anatomy_adv_exp_finally_code": "Code within `finally`: Typically used for cleanup actions (e.g., closing files).",
+            "feedback_anatomy_adv_correct": "Perfect dissection of the full structure!",
+             // Predict Flow
+             "predict_flow_title": "Predict the Execution Flow", "predict_flow_desc": "Consider the `else` and `finally` blocks. What sequence of messages will be printed? Choose the correct output.",
+             "button_check_answer": "Check Answer", "button_next_q": "Next Question",
+             "flow_code_1": "try:\n  print('A')\nexcept:\n  print('B')\nelse:\n  print('C')\nfinally:\n  print('D')", // No error -> A, C, D
+             "flow_options_1_correct": "A, C, D", "flow_options_1_a": "A, B, D", "flow_options_1_b": "A, D", "flow_options_1_c": "C, D",
+             "flow_code_2": "try:\n  print('X')\n  1 / 0 # Error!\nexcept ZeroDivisionError:\n  print('Y')\nelse:\n  print('Z')\nfinally:\n  print('W')", // Error -> X, Y, W
+             "flow_options_2_a": "X, Z, W", "flow_options_2_correct": "X, Y, W", "flow_options_2_b": "Y, W", "flow_options_2_c": "X, W",
+             "flow_code_3": "try:\n  print('Start')\n  # No error\nexcept ValueError:\n  print('ValErr')\nfinally:\n  print('End')", // No error, no else -> Start, End
+             "flow_options_3_a": "Start", "flow_options_3_b": "End", "flow_options_3_correct": "Start, End", "flow_options_3_d": "Start, ValErr, End",
+              "flow_code_4": "val = 'abc'\ntry:\n  print('Try')\n  int(val)\nexcept ValueError:\n  print('Except')\nelse:\n  print('Else')\nfinally:\n  print('Finally')", // ValueError -> Try, Except, Finally
+              "flow_options_4_correct": "Try, Except, Finally", "flow_options_4_a": "Try, Else, Finally", "flow_options_4_b": "Except, Finally", "flow_options_4_c": "Try, Finally",
+             "feedback_flow_correct": "Correct! You understand the execution flow with else/finally.",
+             "feedback_flow_incorrect": "Not quite. Remember: `else` runs only if `try` succeeds, `finally` always runs.",
+             "feedback_flow_select": "Please select an output sequence first.",
+            // Refine Handling
+            "refine_title": "Refine Generic Handling", "refine_desc": "Using a broad `except Exception:` can hide bugs. Refine the code below to catch `ValueError` and `TypeError` specifically, each printing a distinct message. Add an `else` block to print \"Conversion successful!\" if no error occurs.",
+            "refine_guidance": "Goal: Replace `except Exception:` with specific handlers for `ValueError`, `TypeError`, and add an `else` block for success.",
+            "refine_editor_label": "Code Editor:", "refine_editor_placeholder": "# Original code...\n# try: ... except Exception: ...\n# --- Refine below ---\n# try: ... except ValueError: ... except TypeError: ... else: ...",
+            "button_check_refinement": "Check Refinement", "refine_output_label": "Conceptual Check:", "refine_output_placeholder": "Refinement check results appear here...",
+            "feedback_refine_success": "Excellent! Your code correctly uses specific handlers and an else block.",
+            "feedback_refine_fail_no_value_err": "Missing specific `except ValueError:`.",
+            "feedback_refine_fail_no_type_err": "Missing specific `except TypeError:`.",
+            "feedback_refine_fail_no_else": "Missing `else:` block for success case.",
+            "feedback_refine_fail_still_generic": "Avoid using generic `except Exception:` here.",
+            "feedback_refine_fail_structure": "Check the `try...except...except...else` structure.",
+            "refine_output_success": "> Code structure looks good! Uses specific exceptions and else.",
+            "refine_output_fail": "> Refinement needed. Check specific handlers and else block.",
+             // Build Structure
+             "build_structure_title": "Build the Handling Structure", "build_structure_desc": "Drag the code blocks from the top into the correct zones below (`try`, `except`, `else`, `finally`) to build a logical error handling structure.",
+             "build_structure_piece_try": "try:", "build_structure_piece_risky": "risky_action()",
+             "build_structure_piece_except_v": "except ValueError:", "build_structure_piece_handler_v": "print('Handle Value')",
+             "build_structure_piece_else": "else:", "build_structure_piece_success": "print('Success')",
+             "build_structure_piece_finally": "finally:", "build_structure_piece_cleanup": "print('Cleanup')",
+             "build_structure_drop_try": "Drop `try` code here...", "build_structure_drop_except": "Drop `except` handler here...", "build_structure_drop_else": "Drop `else` code here...", "build_structure_drop_finally": "Drop `finally` code here...",
+             "button_check_structure": "Check Structure", "button_reset_structure": "Reset",
+             "feedback_structure_correct": "Perfect structure!", "feedback_structure_incorrect_order": "Incorrect order. Check `try -> except -> else -> finally` sequence.", "feedback_structure_incorrect_placement": "Code placed in the wrong block type (e.g., success code in finally).", "feedback_structure_missing": "Missing required blocks (try, except, finally are usually essential).",
+            // Mini Missions Advanced
+            "missions_adv_title": "Advanced Mini Missions", "missions_adv_desc": "Combine your skills! Use multiple handlers, `else`, and `finally`.",
+            "mission_adv1_title": "Mission 1: File Handling Simulation", "mission_adv1_desc": "Simulate opening and reading a file. Use `try`. Catch `FileNotFoundError` (print \"File not found.\") and `PermissionError` (print \"Permission denied.\"). Use `finally` to always print \"File operation finished.\".", "mission_adv1_placeholder": "# Simulate file operation...\n# try: ... except FileNotFoundError: ... except PermissionError: ... finally: ...",
+            "button_test_mission_adv_1": "Test Mission 1",
+            "mission_adv2_title": "Mission 2: Robust Division Calc", "mission_adv2_desc": "Get two inputs (numerator, denominator). Convert both to floats. Catch `ValueError` for invalid inputs (print \"Invalid number.\"). Catch `ZeroDivisionError` (print \"Cannot divide by zero.\"). Use `else` to print the division result ONLY if both conversions and the division are successful.", "mission_adv2_placeholder": "# Simulate inputs...\n# try: ... except ValueError: ... except ZeroDivisionError: ... else: ...",
+            "button_test_mission_adv_2": "Test Mission 2",
+            "feedback_mission_adv_success": "Mission Accomplished! Excellent handling.",
+            "feedback_mission_adv_syntax": "Syntax/logic error. Check structure, exception types, and `else`/`finally` usage.",
+            "feedback_mission_adv1_hint": "Need `try`, `except FileNotFoundError:`, `except PermissionError:`, and `finally:`, each with a `print`.",
+            "feedback_mission_adv2_hint": "Need `try` (with float conversions & division), `except ValueError:`, `except ZeroDivisionError:`, and `else:` (with result print).",
+            "feedback_missions_adv_summary_all_done": "All {totalMissions} advanced missions complete! Truly robust coding!", "feedback_missions_adv_summary_progress": "Completed {completedCount} of {totalMissions} advanced missions. Almost there!",
+            // Completion
+            "completion_adv_title": "Advanced Practice Complete!", "completion_adv_desc": "Superb work! You've mastered more complex exception handling techniques. <br> Feel free to review the video lesson or head back to the course menu.",
+            "button_basic_practice": "Basic Practice", "button_video": "View Video Lesson", "button_back_menu": "Back to Course Menu"
+        },
+        pt: {
+            "page_title": "Módulo 25: Tratamento Avançado de Exceções",
+            "tooltip_click_identify": "Clique para identificar esta parte",
+             // Nav
+             "nav_basic_practice": "Prática Básica", "nav_video": "Lição em Vídeo", "nav_menu": "Menu do Curso",
+             "nav_adv_anatomy": "Anatomia Avanç.", "nav_predict_flow": "Prever Fluxo", "nav_refine": "Refinar Tratamento", "nav_build_structure": "Construir Estrutura", "nav_adv_missions": "Missões Avanç.",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            // Header
+            "header_title": "Módulo 25: Tratamento Avançado de Exceções", "header_subtitle": "Tratando múltiplos erros, usando `else` e `finally`.",
+            // Anatomy Advanced
+            "anatomy_adv_title": "Anatomia do Tratamento Completo", "anatomy_adv_desc": "Agora vejamos a estrutura completa incluindo `else` e `finally`. Clique em cada parte.",
+            "anatomy_adv_code_try": "operacao()", "anatomy_adv_code_except1": "\"Handler de Value Error\"", "anatomy_adv_code_except2": "\"Handler de Type Error\"", "anatomy_adv_code_else": "\"Sucesso! Sem erros.\"", "anatomy_adv_code_finally": "\"Código de limpeza roda sempre.\"",
+            "anatomy_adv_status_initial": "Identifique todas as 15 partes!", "anatomy_adv_status_progress": "Identificadas {count} de {total} partes.", "anatomy_adv_status_done": "Todas as partes identificadas!",
+            "anatomy_adv_exp_try": "Bloco `try`: Contém código que pode levantar uma exceção.",
+            "anatomy_adv_exp_try_colon": "Dois pontos para `try`: Inicia o bloco de código.",
+            "anatomy_adv_exp_try_code": "Código dentro do `try`: As operações reais sendo tentadas.",
+            "anatomy_adv_exp_except_type1": "`except ValueError as e`: Captura apenas `ValueError` e atribui o objeto de erro a `e`.",
+            "anatomy_adv_exp_except_colon1": "Dois pontos para o primeiro `except`: Inicia o bloco de tratamento.",
+            "anatomy_adv_exp_handler1": "Primeiro Código de Tratamento: Roda se ocorrer um `ValueError`.",
+            "anatomy_adv_exp_except_type2": "`except TypeError`: Captura apenas `TypeError`.",
+            "anatomy_adv_exp_except_colon2": "Dois pontos para o segundo `except`: Inicia este bloco de tratamento.",
+            "anatomy_adv_exp_handler2": "Segundo Código de Tratamento: Roda se ocorrer um `TypeError`.",
+            "anatomy_adv_exp_else": "Bloco `else`: Bloco opcional que roda SOMENTE se o bloco `try` completar SEM erros.",
+            "anatomy_adv_exp_else_colon": "Dois pontos para `else`: Inicia o bloco de código de 'sucesso'.",
+            "anatomy_adv_exp_else_code": "Código dentro do `else`: Ações a tomar após execução bem-sucedida do `try`.",
+            "anatomy_adv_exp_finally": "Bloco `finally`: Bloco opcional que SEMPRE roda, tenha ocorrido um erro ou não.",
+            "anatomy_adv_exp_finally_colon": "Dois pontos para `finally`: Inicia o bloco de código de limpeza.",
+            "anatomy_adv_exp_finally_code": "Código dentro do `finally`: Tipicamente usado para ações de limpeza (ex: fechar arquivos).",
+            "feedback_anatomy_adv_correct": "Dissecação perfeita da estrutura completa!",
+            // Predict Flow
+             "predict_flow_title": "Preveja o Fluxo de Execução", "predict_flow_desc": "Considere os blocos `else` e `finally`. Que sequência de mensagens será impressa? Escolha a saída correta.",
+             "button_check_answer": "Verificar Resposta", "button_next_q": "Próxima Pergunta",
+             "flow_code_1": "try:\n  print('A')\nexcept:\n  print('B')\nelse:\n  print('C')\nfinally:\n  print('D')", // Sem erro -> A, C, D
+             "flow_options_1_correct": "A, C, D", "flow_options_1_a": "A, B, D", "flow_options_1_b": "A, D", "flow_options_1_c": "C, D",
+             "flow_code_2": "try:\n  print('X')\n  1 / 0 # Erro!\nexcept ZeroDivisionError:\n  print('Y')\nelse:\n  print('Z')\nfinally:\n  print('W')", // Erro -> X, Y, W
+             "flow_options_2_a": "X, Z, W", "flow_options_2_correct": "X, Y, W", "flow_options_2_b": "Y, W", "flow_options_2_c": "X, W",
+             "flow_code_3": "try:\n  print('Início')\n  # Sem erro\nexcept ValueError:\n  print('ValErr')\nfinally:\n  print('Fim')", // Sem erro, sem else -> Início, Fim
+             "flow_options_3_a": "Início", "flow_options_3_b": "Fim", "flow_options_3_correct": "Início, Fim", "flow_options_3_d": "Início, ValErr, Fim",
+             "flow_code_4": "val = 'abc'\ntry:\n  print('Try')\n  int(val)\nexcept ValueError:\n  print('Except')\nelse:\n  print('Else')\nfinally:\n  print('Finally')", // ValueError -> Try, Except, Finally
+             "flow_options_4_correct": "Try, Except, Finally", "flow_options_4_a": "Try, Else, Finally", "flow_options_4_b": "Except, Finally", "flow_options_4_c": "Try, Finally",
+             "feedback_flow_correct": "Correto! Você entende o fluxo de execução com else/finally.",
+             "feedback_flow_incorrect": "Não exatamente. Lembre-se: `else` roda apenas se `try` for bem-sucedido, `finally` sempre roda.",
+             "feedback_flow_select": "Por favor, selecione uma sequência de saída primeiro.",
+             // Refine Handling
+             "refine_title": "Refinar Tratamento Genérico", "refine_desc": "Usar um `except Exception:` amplo pode esconder bugs. Refine o código abaixo para capturar `ValueError` e `TypeError` especificamente, cada um imprimindo uma mensagem distinta. Adicione um bloco `else` para imprimir \"Conversão bem-sucedida!\" se nenhum erro ocorrer.",
+             "refine_guidance": "Objetivo: Substituir `except Exception:` por handlers específicos para `ValueError`, `TypeError`, e adicionar um bloco `else` para sucesso.",
+             "refine_editor_label": "Editor de Código:", "refine_editor_placeholder": "# Código original...\n# try: ... except Exception: ...\n# --- Refinar abaixo ---\n# try: ... except ValueError: ... except TypeError: ... else: ...",
+             "button_check_refinement": "Verificar Refinamento", "refine_output_label": "Verificação Conceitual:", "refine_output_placeholder": "Resultados da verificação aparecerão aqui...",
+             "feedback_refine_success": "Excelente! Seu código usa corretamente handlers específicos e um bloco else.",
+             "feedback_refine_fail_no_value_err": "Faltando `except ValueError:` específico.",
+             "feedback_refine_fail_no_type_err": "Faltando `except TypeError:` específico.",
+             "feedback_refine_fail_no_else": "Faltando bloco `else:` para caso de sucesso.",
+             "feedback_refine_fail_still_generic": "Evite usar `except Exception:` genérico aqui.",
+             "feedback_refine_fail_structure": "Verifique a estrutura `try...except...except...else`.",
+             "refine_output_success": "> Estrutura do código parece boa! Usa exceções específicas e else.",
+             "refine_output_fail": "> Refinamento necessário. Verifique handlers específicos e bloco else.",
+            // Build Structure
+             "build_structure_title": "Construir a Estrutura de Tratamento", "build_structure_desc": "Arraste os blocos de código de cima para as zonas corretas abaixo (`try`, `except`, `else`, `finally`) para construir uma estrutura lógica de tratamento de erros.",
+             "build_structure_piece_try": "try:", "build_structure_piece_risky": "acao_arriscada()",
+             "build_structure_piece_except_v": "except ValueError:", "build_structure_piece_handler_v": "print('Tratar Valor')",
+             "build_structure_piece_else": "else:", "build_structure_piece_success": "print('Sucesso')",
+             "build_structure_piece_finally": "finally:", "build_structure_piece_cleanup": "print('Limpeza')",
+             "build_structure_drop_try": "Solte código `try` aqui...", "build_structure_drop_except": "Solte handler `except` aqui...", "build_structure_drop_else": "Solte código `else` aqui...", "build_structure_drop_finally": "Solte código `finally` aqui...",
+             "button_check_structure": "Verificar Estrutura", "button_reset_structure": "Reiniciar",
+             "feedback_structure_correct": "Estrutura perfeita!", "feedback_structure_incorrect_order": "Ordem incorreta. Verifique a sequência `try -> except -> else -> finally`.", "feedback_structure_incorrect_placement": "Código colocado no tipo de bloco errado (ex: código de sucesso no finally).", "feedback_structure_missing": "Faltando blocos necessários (try, except, finally são geralmente essenciais).",
+             // Mini Missions Advanced
+             "missions_adv_title": "Mini Missões Avançadas", "missions_adv_desc": "Combine suas habilidades! Use múltiplos handlers, `else` e `finally`.",
+             "mission_adv1_title": "Missão 1: Simulação de Manipulação de Arquivo", "mission_adv1_desc": "Simule abrir e ler um arquivo. Use `try`. Capture `FileNotFoundError` (imprima \"Arquivo não encontrado.\") e `PermissionError` (imprima \"Permissão negada.\"). Use `finally` para sempre imprimir \"Operação de arquivo finalizada.\".", "mission_adv1_placeholder": "# Simular operação de arquivo...\n# try: ... except FileNotFoundError: ... except PermissionError: ... finally: ...",
+             "button_test_mission_adv_1": "Testar Missão 1",
+             "mission_adv2_title": "Missão 2: Calc. de Divisão Robusta", "mission_adv2_desc": "Receba duas entradas (numerador, denominador). Converta ambas para float. Capture `ValueError` para entradas inválidas (imprima \"Número inválido.\"). Capture `ZeroDivisionError` (imprima \"Não pode dividir por zero.\"). Use `else` para imprimir o resultado da divisão SOMENTE se ambas as conversões e a divisão forem bem-sucedidas.", "mission_adv2_placeholder": "# Simular entradas...\n# try: ... except ValueError: ... except ZeroDivisionError: ... else: ...",
+             "button_test_mission_adv_2": "Testar Missão 2",
+             "feedback_mission_adv_success": "Missão Cumprida! Tratamento excelente.",
+             "feedback_mission_adv_syntax": "Erro de sintaxe/lógica. Verifique estrutura, tipos de exceção e uso de `else`/`finally`.",
+             "feedback_mission_adv1_hint": "Precisa de `try`, `except FileNotFoundError:`, `except PermissionError:`, e `finally:`, cada um com um `print`.",
+             "feedback_mission_adv2_hint": "Precisa de `try` (com conversões float e divisão), `except ValueError:`, `except ZeroDivisionError:`, e `else:` (com print do resultado).",
+             "feedback_missions_adv_summary_all_done": "Todas as {totalMissions} missões avançadas completas! Codificação verdadeiramente robusta!", "feedback_missions_adv_summary_progress": "Completou {completedCount} de {totalMissions} missões avançadas. Quase lá!",
+             // Completion
+             "completion_adv_title": "Prática Avançada Completa!", "completion_adv_desc": "Trabalho soberbo! Você dominou técnicas mais complexas de tratamento de exceções. <br> Sinta-se à vontade para revisar a lição em vídeo ou voltar ao menu do curso.",
+             "button_basic_practice": "Prática Básica", "button_video": "Ver Lição em Vídeo", "button_back_menu": "Voltar ao Menu do Curso"
+        },
+        zh: {
+            "page_title": "模块 25：高级异常处理",
+            "tooltip_click_identify": "点击识别此部分",
+             // Nav
+             "nav_basic_practice": "基础练习", "nav_video": "视频课程", "nav_menu": "课程菜单",
+             "nav_adv_anatomy": "高级剖析", "nav_predict_flow": "预测流程", "nav_refine": "优化处理", "nav_build_structure": "构建结构", "nav_adv_missions": "高级任务",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            // Header
+            "header_title": "模块 25：高级异常处理", "header_subtitle": "处理多个错误，使用 `else` 和 `finally`。",
+             // Anatomy Advanced
+             "anatomy_adv_title": "完整处理剖析", "anatomy_adv_desc": "现在让我们看看包含 `else` 和 `finally` 的完整结构。点击每个部分。",
+             "anatomy_adv_code_try": "operation()", "anatomy_adv_code_except1": "\"值错误处理器\"", "anatomy_adv_code_except2": "\"类型错误处理器\"", "anatomy_adv_code_else": "\"成功！无错误。\"", "anatomy_adv_code_finally": "\"清理代码总是运行。\"",
+             "anatomy_adv_status_initial": "识别所有 15 个部分！", "anatomy_adv_status_progress": "已识别 {count} / {total} 个部分。", "anatomy_adv_status_done": "所有部分已识别！",
+             "anatomy_adv_exp_try": "`try` 块：包含可能引发异常的代码。",
+             "anatomy_adv_exp_try_colon": "`try` 的冒号：开始代码块。",
+             "anatomy_adv_exp_try_code": "`try` 中的代码：正在尝试的实际操作。",
+             "anatomy_adv_exp_except_type1": "`except ValueError as e`：仅捕获 `ValueError` 并将错误对象赋给 `e`。",
+             "anatomy_adv_exp_except_colon1": "第一个 `except` 的冒号：开始处理程序块。",
+             "anatomy_adv_exp_handler1": "第一个处理程序代码：如果发生 `ValueError` 则运行。",
+             "anatomy_adv_exp_except_type2": "`except TypeError`：仅捕获 `TypeError`。",
+             "anatomy_adv_exp_except_colon2": "第二个 `except` 的冒号：开始此处理程序块。",
+             "anatomy_adv_exp_handler2": "第二个处理程序代码：如果发生 `TypeError` 则运行。",
+             "anatomy_adv_exp_else": "`else` 块：可选块，仅在 `try` 块无错误完成时运行。",
+             "anatomy_adv_exp_else_colon": "`else` 的冒号：开始 '成功' 代码块。",
+             "anatomy_adv_exp_else_code": "`else` 中的代码：`try` 成功执行后要执行的操作。",
+             "anatomy_adv_exp_finally": "`finally` 块：可选块，无论是否发生错误，总是运行。",
+             "anatomy_adv_exp_finally_colon": "`finally` 的冒号：开始清理代码块。",
+             "anatomy_adv_exp_finally_code": "`finally` 中的代码：通常用于清理操作（例如，关闭文件）。",
+             "feedback_anatomy_adv_correct": "完美剖析了完整结构！",
+             // Predict Flow
+              "predict_flow_title": "预测执行流程", "predict_flow_desc": "考虑 `else` 和 `finally` 块。将打印什么消息序列？选择正确的输出。",
+              "button_check_answer": "检查答案", "button_next_q": "下一题",
+              "flow_code_1": "try:\n  print('A')\nexcept:\n  print('B')\nelse:\n  print('C')\nfinally:\n  print('D')", // 无错误 -> A, C, D
+              "flow_options_1_correct": "A, C, D", "flow_options_1_a": "A, B, D", "flow_options_1_b": "A, D", "flow_options_1_c": "C, D",
+              "flow_code_2": "try:\n  print('X')\n  1 / 0 # 错误!\nexcept ZeroDivisionError:\n  print('Y')\nelse:\n  print('Z')\nfinally:\n  print('W')", // 错误 -> X, Y, W
+              "flow_options_2_a": "X, Z, W", "flow_options_2_correct": "X, Y, W", "flow_options_2_b": "Y, W", "flow_options_2_c": "X, W",
+              "flow_code_3": "try:\n  print('开始')\n  # 无错误\nexcept ValueError:\n  print('值错误')\nfinally:\n  print('结束')", // 无错误, 无 else -> 开始, 结束
+              "flow_options_3_a": "开始", "flow_options_3_b": "结束", "flow_options_3_correct": "开始, 结束", "flow_options_3_d": "开始, 值错误, 结束",
+              "flow_code_4": "val = 'abc'\ntry:\n  print('Try')\n  int(val)\nexcept ValueError:\n  print('Except')\nelse:\n  print('Else')\nfinally:\n  print('Finally')", // ValueError -> Try, Except, Finally
+              "flow_options_4_correct": "Try, Except, Finally", "flow_options_4_a": "Try, Else, Finally", "flow_options_4_b": "Except, Finally", "flow_options_4_c": "Try, Finally",
+              "feedback_flow_correct": "正确！你理解了带有 else/finally 的执行流程。",
+              "feedback_flow_incorrect": "不太对。请记住：`else` 仅在 `try` 成功时运行，`finally` 总是运行。",
+              "feedback_flow_select": "请先选择一个输出序列。",
+             // Refine Handling
+              "refine_title": "优化通用处理", "refine_desc": "使用宽泛的 `except Exception:` 可能会隐藏错误。优化下面的代码，以专门捕获 `ValueError` 和 `TypeError`，每个都打印不同的消息。添加一个 `else` 块，在没有错误发生时打印 “转换成功！”。",
+              "refine_guidance": "目标：将 `except Exception:` 替换为 `ValueError`、`TypeError` 的特定处理程序，并为成功添加 `else` 块。",
+              "refine_editor_label": "代码编辑器：", "refine_editor_placeholder": "# 原始代码...\n# try: ... except Exception: ...\n# --- 下面优化 ---\n# try: ... except ValueError: ... except TypeError: ... else: ...",
+              "button_check_refinement": "检查优化", "refine_output_label": "概念检查：", "refine_output_placeholder": "优化检查结果将显示在此处...",
+              "feedback_refine_success": "太棒了！你的代码正确使用了特定的处理程序和一个 else 块。",
+              "feedback_refine_fail_no_value_err": "缺少特定的 `except ValueError:`。",
+              "feedback_refine_fail_no_type_err": "缺少特定的 `except TypeError:`。",
+              "feedback_refine_fail_no_else": "缺少用于成功情况的 `else:` 块。",
+              "feedback_refine_fail_still_generic": "此处避免使用通用的 `except Exception:`。",
+              "feedback_refine_fail_structure": "检查 `try...except...except...else` 结构。",
+              "refine_output_success": "> 代码结构看起来不错！使用了特定的异常和 else。",
+              "refine_output_fail": "> 需要优化。检查特定的处理程序和 else 块。",
+            // Build Structure
+              "build_structure_title": "构建处理结构", "build_structure_desc": "将代码块从顶部拖到下面的正确区域（`try`、`except`、`else`、`finally`），以构建逻辑错误处理结构。",
+              "build_structure_piece_try": "try:", "build_structure_piece_risky": "risky_action()",
+              "build_structure_piece_except_v": "except ValueError:", "build_structure_piece_handler_v": "print('处理值')",
+              "build_structure_piece_else": "else:", "build_structure_piece_success": "print('成功')",
+              "build_structure_piece_finally": "finally:", "build_structure_piece_cleanup": "print('清理')",
+              "build_structure_drop_try": "在此处放置 `try` 代码...", "build_structure_drop_except": "在此处放置 `except` 处理程序...", "build_structure_drop_else": "在此处放置 `else` 代码...", "build_structure_drop_finally": "在此处放置 `finally` 代码...",
+              "button_check_structure": "检查结构", "button_reset_structure": "重置",
+              "feedback_structure_correct": "完美结构！", "feedback_structure_incorrect_order": "顺序不正确。检查 `try -> except -> else -> finally` 序列。", "feedback_structure_incorrect_placement": "代码放错了块类型（例如，成功代码放在 finally 中）。", "feedback_structure_missing": "缺少必需的块（通常 try、except、finally 是必不可少的）。",
+             // Mini Missions Advanced
+             "missions_adv_title": "高级迷你任务", "missions_adv_desc": "结合你的技能！使用多个处理程序、`else` 和 `finally`。",
+             "mission_adv1_title": "任务 1：文件处理模拟", "mission_adv1_desc": "模拟打开和读取文件。使用 `try`。捕获 `FileNotFoundError`（打印 “文件未找到。”）和 `PermissionError`（打印 “权限被拒绝。”）。使用 `finally` 总是打印 “文件操作完成。”。", "mission_adv1_placeholder": "# 模拟文件操作...\n# try: ... except FileNotFoundError: ... except PermissionError: ... finally: ...",
+             "button_test_mission_adv_1": "测试任务 1",
+             "mission_adv2_title": "任务 2：健壮的除法计算器", "mission_adv2_desc": "获取两个输入（分子，分母）。将两者都转换为浮点数。捕获无效输入的 `ValueError`（打印 “无效数字。”）。捕获 `ZeroDivisionError`（打印 “不能除以零。”）。仅当转换和除法都成功时，使用 `else` 打印除法结果。", "mission_adv2_placeholder": "# 模拟输入...\n# try: ... except ValueError: ... except ZeroDivisionError: ... else: ...",
+             "button_test_mission_adv_2": "测试任务 2",
+             "feedback_mission_adv_success": "任务完成！处理得非常好。",
+             "feedback_mission_adv_syntax": "语法/逻辑错误。检查结构、异常类型以及 `else`/`finally` 的使用。",
+             "feedback_mission_adv1_hint": "需要 `try`、`except FileNotFoundError:`、`except PermissionError:` 和 `finally:`，每个都有一个 `print`。",
+             "feedback_mission_adv2_hint": "需要 `try`（带有浮点转换和除法）、`except ValueError:`、`except ZeroDivisionError:` 和 `else:`（带有结果打印）。",
+             "feedback_missions_adv_summary_all_done": "所有 {totalMissions} 个高级任务已完成！真正健壮的编码！", "feedback_missions_adv_summary_progress": "已完成 {completedCount} / {totalMissions} 个高级任务。快完成了！",
+             // Completion
+             "completion_adv_title": "高级练习完成！", "completion_adv_desc": "干得漂亮！你已经掌握了更复杂的异常处理技术。<br> 可以随时复习视频课程或返回课程菜单。",
+             "button_basic_practice": "基础练习", "button_video": "观看视频课程", "button_back_menu": "返回课程菜单"
+        }
+    };
+
+
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // --- Language Management Functions (Copied) ---
+        function getStoredLanguage() { /* ... */
+            const storedLang = localStorage.getItem('userLanguage');
+            if (storedLang && translations[storedLang]) return storedLang;
+            const browserLang = navigator.language || navigator.userLanguage;
+            if (browserLang.startsWith('pt')) return 'pt'; if (browserLang.startsWith('zh')) return 'zh'; return 'en';
+         }
+        function getTranslation(key, lang, replacements = {}) { /* ... */
+            let text = translations[lang]?.[key] ?? translations['en']?.[key] ?? `[${key}]`;
+            for (const placeholder in replacements) { const regex = new RegExp(`\\{${placeholder}\\}`, 'g'); text = text.replace(regex, replacements[placeholder]); } return text;
+        }
+        function translatePage(lang) { /* ... */
+            if (!translations[lang]) lang = 'en';
+            document.querySelectorAll('[data-translate]').forEach(el => { const key = el.getAttribute('data-translate'); const translation = getTranslation(key, lang); if (el.tagName === 'TITLE') { document.title = translation; } else if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {} else if (el.tagName === 'OPTION') { el.textContent = translation; } else { if (translation.includes('<') && translation.includes('>')) { el.innerHTML = translation; } else { el.textContent = translation; } } });
+            document.querySelectorAll('[data-translate-placeholder]').forEach(el => { const key = el.getAttribute('data-translate-placeholder'); const translation = getTranslation(key, lang); el.setAttribute('placeholder', translation); });
+            document.querySelectorAll('[data-translate-title]').forEach(el => { const key = el.getAttribute('data-translate-title'); const translation = getTranslation(key, lang); el.setAttribute('title', translation); });
+        }
+        function setLanguage(lang) { /* ... Slightly adapted for NEW activity resets ... */
+             if (!translations[lang]) lang = 'en';
+             localStorage.setItem('userLanguage', lang);
+             document.documentElement.lang = lang;
+             translatePage(lang); // Apply generic translations
+
+             const langSelect = document.getElementById('languageSelect');
+             if (langSelect) langSelect.value = lang;
+
+              // Re-initialize or update language-dependent interactive content
+              if (anatomyAdvancedSection) setupAdvancedAnatomyActivity();
+              if (predictFlowSection) setupPredictFlowActivity();
+              if (refineHandlingSection) { // Reset placeholder text
+                  const editor = document.getElementById('refine-editor-input');
+                  if (editor) editor.placeholder = getTranslation('refine_editor_placeholder', lang);
+                  // Also reset output/feedback
+                  document.getElementById('refine-output').innerHTML = `<span class="placeholder">${getTranslation('refine_output_placeholder', lang)}</span>`;
+                  document.getElementById('refine-feedback').classList.remove('visible');
+                  document.getElementById('run-refine-btn')?.classList.remove('success');
+              }
+              if (buildStructureSection) setupBuildStructureActivity();
+              if (miniMissionsAdvancedSection && typeof updateAdvancedMissionSummary === 'function') {
+                updateAdvancedMissionSummary(); // Update summary text
+             }
+        }
+
+        // --- Initialize Language ---
+        const initialLang = getStoredLanguage();
+
+        // --- Minimal Nav Logic (Copied) ---
+        const navToggleButton = document.getElementById('minimal-nav-toggle');
+        const navPanel = document.getElementById('minimal-nav-panel');
+        const body = document.body;
+        if (navToggleButton && navPanel) { /* ... same logic ... */
+            navToggleButton.addEventListener('click', (event) => { event.stopPropagation(); body.classList.toggle('nav-active'); navToggleButton.setAttribute('aria-expanded', body.classList.contains('nav-active')); });
+            document.addEventListener('click', (event) => { if (body.classList.contains('nav-active') && !navPanel.contains(event.target) && event.target !== navToggleButton && !navToggleButton.contains(event.target) ) { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); } });
+            navPanel.querySelectorAll('a').forEach(link => { link.addEventListener('click', () => { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); }); });
+            document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && body.classList.contains('nav-active')) { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); } });
+            navToggleButton.setAttribute('aria-expanded', 'false');
+        }
+
+        // --- Language Switcher Setup (Copied) ---
+        const langSelect = document.getElementById('languageSelect');
+        if (langSelect) {
+            langSelect.addEventListener('change', (e) => { setLanguage(e.target.value); });
+        }
+
+        // --- Helper Function for Feedback (Copied) ---
+        function showFeedback(elementId, messageKey, type = 'info', replacements = {}) { /* ... same logic ... */
+            const feedbackEl = document.getElementById(elementId);
+            if (!feedbackEl) { console.error(`Feedback element not found: ${elementId}`); return; }
+            const currentLang = getStoredLanguage(); const translatedMessage = getTranslation(messageKey, currentLang, replacements);
+            if (translatedMessage.includes('<') && translatedMessage.includes('>')) { feedbackEl.innerHTML = translatedMessage; } else { feedbackEl.textContent = translatedMessage; }
+            feedbackEl.className = 'feedback-message'; feedbackEl.classList.add('visible', type);
+            const interactiveArea = feedbackEl.closest('.interactive-area'); if (!interactiveArea) return;
+            interactiveArea.classList.remove('success-glow-anim', 'shake-anim'); void interactiveArea.offsetWidth; // Trigger reflow
+            if (type === 'correct') { interactiveArea.classList.add('success-glow-anim'); } else if (type === 'incorrect') { interactiveArea.classList.add('shake-anim'); }
+        }
+
+
+        // --- Activity 1: Advanced Anatomy ---
+        const anatomyAdvancedSection = document.getElementById('anatomy-advanced');
+        let anatomyAdvPartExplanations = {};
+        const totalAnatomyAdvParts = 15; // Updated count
+        let currentAdvAnatomyListeners = [];
+
+        function setupAdvancedAnatomyActivity() {
+            if (!anatomyAdvancedSection) return;
+            const currentLang = getStoredLanguage();
+            anatomyAdvPartExplanations = {}; // Clear
+
+            // Populate explanations
+            document.querySelectorAll('#explanation-adv-texts span[data-key]').forEach(span => {
+                const key = span.getAttribute('data-key');
+                anatomyAdvPartExplanations[key] = getTranslation(`anatomy_adv_exp_${key}`, currentLang);
+            });
+
+            const parts = anatomyAdvancedSection.querySelectorAll('.code-part');
+            const explanationsDiv = document.getElementById('anatomy-adv-explanations');
+            const statusP = document.getElementById('anatomy-adv-status');
+            const feedbackDiv = document.getElementById('anatomy-adv-feedback');
+            let identifiedCount = 0;
+
+            // Remove old listeners
+             currentAdvAnatomyListeners.forEach(({element, listener}) => element.removeEventListener('click', listener));
+             currentAdvAnatomyListeners = [];
+
+            // Reset visual state
+            parts.forEach(p => p.classList.remove('identified'));
+            explanationsDiv.innerHTML = '';
+            statusP.innerHTML = getTranslation('anatomy_adv_status_initial', currentLang);
+            feedbackDiv.classList.remove('visible');
+
+            parts.forEach(part => {
+                const partType = part.dataset.part;
+                const clickListener = () => {
+                    if (!part.classList.contains('identified') && partType && anatomyAdvPartExplanations[partType]) {
+                        part.classList.add('identified');
+                        identifiedCount++;
+                        const p = document.createElement('p');
+                        p.classList.add('part-explanation');
+                        p.innerHTML = `<i class="fas fa-check-circle" style="color: var(--success-color); margin-right: 5px;"></i> <strong>${part.textContent.trim()}:</strong> ${anatomyAdvPartExplanations[partType]}`;
+                        explanationsDiv.appendChild(p);
+                        statusP.innerHTML = getTranslation('anatomy_adv_status_progress', currentLang, { count: identifiedCount, total: totalAnatomyAdvParts });
+
+                        if (identifiedCount === totalAnatomyAdvParts) {
+                            statusP.innerHTML = getTranslation('anatomy_adv_status_done', currentLang);
+                            showFeedback('anatomy-adv-feedback', 'feedback_anatomy_adv_correct', 'correct');
+                        }
+                    } else if (!anatomyAdvPartExplanations[partType]) {
+                        // console.warn(`Adv Anatomy Explanation missing for part: ${partType}`);
+                    }
+                };
+                part.addEventListener('click', clickListener);
+                currentAdvAnatomyListeners.push({ element: part, listener: clickListener });
+            });
+        }
+
+
+        // --- Activity 2: Predict the Flow ---
+        const predictFlowSection = document.getElementById('predict-flow');
+        if (predictFlowSection) {
+            const codeBlock = document.getElementById('flow-code-block');
+            const optionsContainer = document.getElementById('flow-options');
+            const checkBtn = document.getElementById('check-flow-btn');
+            const nextBtn = document.getElementById('next-flow-btn');
+            const feedbackDiv = document.getElementById('flow-feedback');
+            let currentFlowQuestionIndex = 0;
+            let flowQuestions = [];
+
+            function generateFlowQuestions(lang) {
+                flowQuestions = [
+                    { codeKey: 'flow_code_1', correctOptionKey: 'flow_options_1_correct', options: ['flow_options_1_correct', 'flow_options_1_a', 'flow_options_1_b', 'flow_options_1_c'] },
+                    { codeKey: 'flow_code_2', correctOptionKey: 'flow_options_2_correct', options: ['flow_options_2_a', 'flow_options_2_correct', 'flow_options_2_b', 'flow_options_2_c'] },
+                    { codeKey: 'flow_code_3', correctOptionKey: 'flow_options_3_correct', options: ['flow_options_3_a', 'flow_options_3_b', 'flow_options_3_correct', 'flow_options_3_d'] },
+                    { codeKey: 'flow_code_4', correctOptionKey: 'flow_options_4_correct', options: ['flow_options_4_correct', 'flow_options_4_a', 'flow_options_4_b', 'flow_options_4_c'] }
+                ].map(q => ({
+                    code: getTranslation(q.codeKey, lang),
+                    correctAnswer: getTranslation(q.correctOptionKey, lang),
+                    options: q.options.map(optKey => getTranslation(optKey, lang)).sort(() => Math.random() - 0.5)
+                }));
+            }
+
+            function displayFlowQuestion(index) {
+                const question = flowQuestions[index];
+                if (!question) return;
+                codeBlock.innerHTML = `<pre><code>${question.code}</code></pre>`;
+                optionsContainer.innerHTML = '';
+                question.options.forEach(optText => {
+                    const button = document.createElement('button');
+                    button.classList.add('outcome-option'); // Reuse class
+                    button.textContent = optText.replace(/, /g, '\n'); // Display sequence vertically
+                    button.dataset.answer = optText;
+                    button.dataset.correct = (optText === question.correctAnswer).toString();
+                    button.addEventListener('click', () => {
+                        optionsContainer.querySelectorAll('.outcome-option').forEach(btn => btn.classList.remove('selected'));
+                        button.classList.add('selected');
+                        checkBtn.disabled = false;
+                        feedbackDiv.classList.remove('visible');
+                    });
+                    optionsContainer.appendChild(button);
+                });
+                checkBtn.disabled = true;
+                checkBtn.classList.remove('success', 'hidden');
+                nextBtn.classList.add('hidden');
+                feedbackDiv.classList.remove('visible');
+            }
+
+            checkBtn.addEventListener('click', () => {
+                const selectedOption = optionsContainer.querySelector('.outcome-option.selected');
+                if (!selectedOption) {
+                    showFeedback('flow-feedback', 'feedback_flow_select', 'info');
+                    return;
+                }
+                const isCorrect = selectedOption.dataset.correct === 'true';
+                optionsContainer.querySelectorAll('.outcome-option').forEach(btn => {
+                    btn.disabled = true;
+                    if (btn.dataset.correct === 'true') btn.classList.add('correct');
+                });
+
+                if (isCorrect) {
+                    selectedOption.classList.add('correct');
+                    showFeedback('flow-feedback', 'feedback_flow_correct', 'correct');
+                    nextBtn.classList.remove('hidden');
+                    checkBtn.classList.add('hidden');
+                } else {
+                    selectedOption.classList.add('incorrect');
+                    showFeedback('flow-feedback', 'feedback_flow_incorrect', 'incorrect');
+                    nextBtn.classList.remove('hidden');
+                    checkBtn.classList.add('hidden');
+                }
+            });
+
+            nextBtn.addEventListener('click', () => {
+                currentFlowQuestionIndex = (currentFlowQuestionIndex + 1) % flowQuestions.length;
+                displayFlowQuestion(currentFlowQuestionIndex);
+            });
+
+             function setupPredictFlowActivity() {
+                  generateFlowQuestions(getStoredLanguage());
+                  currentFlowQuestionIndex = 0;
+                  displayFlowQuestion(currentFlowQuestionIndex);
+             }
+        }
+
+        // --- Activity 3: Refine Handling (Simulator Logic) ---
+        const refineHandlingSection = document.getElementById('refine-handling');
+        if (refineHandlingSection) {
+            const editor = document.getElementById('refine-editor-input');
+            const runBtn = document.getElementById('run-refine-btn');
+            const outputArea = document.getElementById('refine-output');
+            const feedbackDiv = document.getElementById('refine-feedback');
+
+            runBtn.addEventListener('click', () => {
+                const code = editor.value;
+                const currentLang = getStoredLanguage();
+                outputArea.innerHTML = '';
+                feedbackDiv.classList.remove('visible');
+
+                // More specific checks
+                const hasTry = /try\s*:/.test(code);
+                const hasExceptValue = /except\s+ValueError\s*:/.test(code);
+                const hasExceptType = /except\s+TypeError\s*:/.test(code);
+                const hasElse = /else\s*:/.test(code);
+                const hasGenericExcept = /except\s+Exception\s*:/.test(code);
+                const tryElseOrder = code.search(/try\s*:/) < code.search(/else\s*:/);
+                const exceptElseOrder = code.search(/except\s+.*:/) < code.search(/else\s*:/);
+
+
+                let success = false;
+                let feedbackKey = 'feedback_refine_fail_structure';
+                let outputKey = 'refine_output_fail';
+
+                if (!hasTry) { feedbackKey = 'feedback_refine_fail_structure'; }
+                else if (!hasExceptValue) { feedbackKey = 'feedback_refine_fail_no_value_err'; }
+                else if (!hasExceptType) { feedbackKey = 'feedback_refine_fail_no_type_err'; }
+                else if (!hasElse) { feedbackKey = 'feedback_refine_fail_no_else'; }
+                else if (hasGenericExcept) { feedbackKey = 'feedback_refine_fail_still_generic'; }
+                else if (!tryElseOrder || !exceptElseOrder) { feedbackKey = 'feedback_refine_fail_structure'; } // Check order
+                else {
+                    success = true;
+                    feedbackKey = 'feedback_refine_success';
+                    outputKey = 'refine_output_success';
+                }
+
+                outputArea.innerHTML = `<span class="output-line">${getTranslation(outputKey, currentLang)}</span>`;
+                showFeedback('refine-feedback', feedbackKey, success ? 'correct' : 'incorrect');
+                runBtn.classList.toggle('success', success);
+                runBtn.disabled = success;
+            });
+        }
+
+
+        // --- Activity 4: Build the Structure ---
+        const buildStructureSection = document.getElementById('build-structure');
+        if (buildStructureSection) {
+            const piecesContainer = document.getElementById('draggable-structure-pieces');
+            const dropZoneTry = document.getElementById('drop-zone-try');
+            const dropZoneExcept1 = document.getElementById('drop-zone-except1');
+            const dropZoneElse = document.getElementById('drop-zone-else');
+            const dropZoneFinally = document.getElementById('drop-zone-finally');
+            const allDropZones = [dropZoneTry, dropZoneExcept1, dropZoneElse, dropZoneFinally];
+            const checkBtn = document.getElementById('check-structure-btn');
+            const resetBtn = document.getElementById('reset-structure-btn');
+            const feedbackDiv = document.getElementById('structure-feedback');
+
+            let draggedElement = null; let touchDragElement = null; let originalPiece = null; let startX, startY, offsetX, offsetY;
+
+            const initialStructurePiecesData = [
+                { key: 'build_structure_piece_try', type: 'try-piece', text: 'try:' },
+                { key: 'build_structure_piece_risky', type: 'code-piece', text: 'risky_action()', correctZone: 'try'},
+                { key: 'build_structure_piece_except_v', type: 'except-piece', text: 'except ValueError:' },
+                { key: 'build_structure_piece_handler_v', type: 'code-piece', text: "print('Handle Value')", correctZone: 'except'},
+                { key: 'build_structure_piece_else', type: 'else-piece', text: 'else:'},
+                { key: 'build_structure_piece_success', type: 'code-piece', text: "print('Success')", correctZone: 'else'},
+                { key: 'build_structure_piece_finally', type: 'finally-piece', text: 'finally:'},
+                { key: 'build_structure_piece_cleanup', type: 'code-piece', text: "print('Cleanup')", correctZone: 'finally'}
+            ];
+
+            function createStructurePieceElement(pieceData, currentLang) {
+                const piece = document.createElement('div');
+                piece.classList.add('structure-piece', 'code-font', pieceData.type);
+                piece.draggable = true;
+                const displayText = getTranslation(pieceData.key, currentLang);
+                piece.textContent = displayText;
+                piece.dataset.key = pieceData.key;
+                piece.dataset.type = pieceData.type;
+                 if (pieceData.correctZone) piece.dataset.correctZone = pieceData.correctZone;
+
+                addStructureDragListeners(piece);
+                addStructureTouchListeners(piece);
+                return piece;
+             }
+
+             function populateStructurePieces() {
+                  const currentLang = getStoredLanguage();
+                  piecesContainer.innerHTML = '';
+                  const shuffledPieces = [...initialStructurePiecesData].sort(() => Math.random() - 0.5);
+                  shuffledPieces.forEach(pData => {
+                      piecesContainer.appendChild(createStructurePieceElement(pData, currentLang));
+                  });
+              }
+
+            // Drag and Drop Logic (Similar to Module 0 Build-a-Print, adapted for structure)
+             function addStructureDragListeners(element) { /* ... similar dragstart, dragend ... */
+                 element.addEventListener('dragstart', (e) => {
+                     if (e.target.closest('.drop-zone-block')) { e.preventDefault(); return; } // Don't drag from drop zone
+                     draggedElement = element; element.classList.add('ghosting');
+                     e.dataTransfer.effectAllowed = 'move'; try { e.dataTransfer.setData('text/plain', element.dataset.key); } catch (err) {}
+                 });
+                 element.addEventListener('dragend', () => {
+                     if (draggedElement) draggedElement.classList.remove('ghosting');
+                     draggedElement = null; allDropZones.forEach(dz => dz.classList.remove('over'));
+                 });
+              }
+              function structureHandleTouchStart(e) { /* ... similar touchstart ... */
+                 if (touchDragElement || e.target.closest('.drop-zone-block')) return;
+                 originalPiece = e.target.closest('.structure-piece');
+                 if (!originalPiece || !piecesContainer.contains(originalPiece)) return;
+                 const touch = e.targetTouches[0]; startX = touch.clientX; startY = touch.clientY;
+                 const rect = originalPiece.getBoundingClientRect(); offsetX = startX - rect.left; offsetY = startY - rect.top;
+                 touchDragElement = originalPiece.cloneNode(true); touchDragElement.classList.add('dragging');
+                 touchDragElement.style.position = 'fixed'; touchDragElement.style.left = `${startX - offsetX}px`; touchDragElement.style.top = `${startY - offsetY}px`;
+                 touchDragElement.style.width = `${rect.width}px`; touchDragElement.style.height = `${rect.height}px`;
+                 document.body.appendChild(touchDragElement);
+                 originalPiece.classList.add('ghosting'); e.preventDefault();
+               }
+               function structureHandleTouchMove(e) { /* ... similar touchmove, check against allDropZones ... */
+                  if (!touchDragElement) return; e.preventDefault();
+                  const touch = e.targetTouches[0]; const currentX = touch.clientX; const currentY = touch.clientY;
+                  touchDragElement.style.left = `${currentX - offsetX}px`; touchDragElement.style.top = `${currentY - offsetY}px`;
+                  touchDragElement.style.display = 'none'; const elemBelow = document.elementFromPoint(currentX, currentY); touchDragElement.style.display = '';
+                  allDropZones.forEach(dz => dz.classList.remove('over')); // Clear previous overs
+                  const overZone = allDropZones.find(dz => dz === elemBelow || dz.contains(elemBelow));
+                  if (overZone) overZone.classList.add('over');
+                }
+                function structureHandleTouchEnd(e) { /* ... similar touchend, check against allDropZones ... */
+                   if (!touchDragElement || !originalPiece) return;
+                   const touch = e.changedTouches[0]; const finalX = touch.clientX; const finalY = touch.clientY;
+                   touchDragElement.style.display = 'none'; const elemBelow = document.elementFromPoint(finalX, finalY); touchDragElement.style.display = '';
+                   const dropTargetZone = allDropZones.find(dz => dz === elemBelow || dz.contains(elemBelow));
+
+                   if (dropTargetZone) {
+                       dropTargetZone.querySelector('.drop-zone-placeholder')?.remove();
+                       const droppedPiece = originalPiece.cloneNode(true); droppedPiece.classList.remove('ghosting'); droppedPiece.draggable = false;
+                       droppedPiece.style.cursor = 'default';
+                       droppedPiece.removeEventListener('touchstart', structureHandleTouchStart); droppedPiece.removeEventListener('touchmove', structureHandleTouchMove); droppedPiece.removeEventListener('touchend', structureHandleTouchEnd);
+                       dropTargetZone.appendChild(droppedPiece); originalPiece.remove();
+                   } else { originalPiece.classList.remove('ghosting'); }
+
+                   if (touchDragElement.parentNode === document.body) { document.body.removeChild(touchDragElement); }
+                   allDropZones.forEach(dz => dz.classList.remove('over'));
+                   touchDragElement = null; originalPiece = null;
+                }
+               function addStructureTouchListeners(element) { /* ... add listeners ... */
+                    element.addEventListener('touchstart', structureHandleTouchStart, { passive: false });
+                    element.addEventListener('touchmove', structureHandleTouchMove, { passive: false });
+                    element.addEventListener('touchend', structureHandleTouchEnd);
+                }
+
+            allDropZones.forEach(zone => {
+                zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('over'); });
+                zone.addEventListener('dragleave', () => { zone.classList.remove('over'); });
+                zone.addEventListener('drop', (e) => {
+                    e.preventDefault(); zone.classList.remove('over');
+                    if (draggedElement && piecesContainer.contains(draggedElement)) {
+                        zone.querySelector('.drop-zone-placeholder')?.remove();
+                        const droppedPiece = draggedElement; droppedPiece.classList.remove('ghosting'); droppedPiece.draggable = false;
+                        droppedPiece.style.cursor = 'default';
+                        zone.appendChild(droppedPiece); draggedElement = null;
+                    }
+                 });
+             });
+
+            checkBtn.addEventListener('click', () => {
+                 let isCorrect = true;
+                 let feedbackKey = 'feedback_structure_correct';
+
+                 // Check placement of code pieces within zones
+                 allDropZones.forEach(zone => {
+                     const blockType = zone.dataset.blockType;
+                     zone.querySelectorAll('.structure-piece[data-correct-zone]').forEach(piece => {
+                         if (piece.dataset.correctZone !== blockType) {
+                             isCorrect = false;
+                             feedbackKey = 'feedback_structure_incorrect_placement';
+                         }
+                     });
+                 });
+
+                 // Basic structural check (Presence - can be made more robust)
+                 if (!dropZoneTry.querySelector('.try-piece') || !dropZoneTry.querySelector('.code-piece')) { isCorrect = false; feedbackKey = 'feedback_structure_missing'; }
+                 if (!dropZoneExcept1.querySelector('.except-piece') || !dropZoneExcept1.querySelector('.code-piece')) { isCorrect = false; feedbackKey = 'feedback_structure_missing'; }
+                 // Optional checks for else/finally content if needed
+                 if (dropZoneElse.children.length > 0 && (!dropZoneElse.querySelector('.else-piece') || !dropZoneElse.querySelector('.code-piece'))) { isCorrect = false; feedbackKey = 'feedback_structure_incorrect_placement';}
+                 if (dropZoneFinally.children.length > 0 && (!dropZoneFinally.querySelector('.finally-piece') || !dropZoneFinally.querySelector('.code-piece'))) { isCorrect = false; feedbackKey = 'feedback_structure_incorrect_placement';}
+
+
+                 if (isCorrect) {
+                     showFeedback('structure-feedback', feedbackKey, 'correct');
+                     checkBtn.classList.add('success'); checkBtn.disabled = true; resetBtn.disabled = true;
+                 } else {
+                     showFeedback('structure-feedback', feedbackKey, 'incorrect');
+                     checkBtn.classList.remove('success');
+                 }
+            });
+
+            function setupBuildStructureActivity() {
+                 populateStructurePieces();
+                 allDropZones.forEach(zone => {
+                    zone.innerHTML = ''; // Clear content
+                     const placeholder = document.createElement('span');
+                     placeholder.classList.add('drop-zone-placeholder');
+                     const placeholderKey = `build_structure_drop_${zone.dataset.blockType}`;
+                     placeholder.dataset.translate = placeholderKey;
+                     placeholder.textContent = getTranslation(placeholderKey, getStoredLanguage());
+                     zone.appendChild(placeholder);
+                 });
+                 feedbackDiv.classList.remove('visible');
+                 checkBtn.classList.remove('success');
+                 checkBtn.disabled = false;
+                 resetBtn.disabled = false;
+            }
+            resetBtn.addEventListener('click', setupBuildStructureActivity);
+        }
+
+
+        // --- Activity 5: Advanced Mini Missions ---
+        const miniMissionsAdvancedSection = document.getElementById('mini-missions-advanced');
+        let updateAdvancedMissionSummary; // Define function scope
+        if (miniMissionsAdvancedSection) {
+             const missionRunButtons = miniMissionsAdvancedSection.querySelectorAll('.mission-run-btn');
+             const summaryFeedback = document.getElementById('missions-adv-summary-feedback');
+             const totalMissions = miniMissionsAdvancedSection.querySelectorAll('.mission').length;
+             let completedMissionsCount = 0;
+
+             updateAdvancedMissionSummary = function() { // Assign function
+                  completedMissionsCount = miniMissionsAdvancedSection.querySelectorAll('.mission[data-completed="true"]').length;
+                  const currentLang = getStoredLanguage();
+                  if (completedMissionsCount === totalMissions) {
+                      showFeedback('missions-adv-summary-feedback', 'feedback_missions_adv_summary_all_done', 'correct', { totalMissions: totalMissions });
+                  } else if (completedMissionsCount > 0) {
+                      showFeedback('missions-adv-summary-feedback', 'feedback_missions_adv_summary_progress', 'info', { completedCount: completedMissionsCount, totalMissions: totalMissions });
+                  } else {
+                      summaryFeedback.classList.remove('visible');
+                  }
+             }
+
+             missionRunButtons.forEach(button => {
+                 button.addEventListener('click', () => {
+                     const missionId = button.dataset.missionId; // e.g., "adv-1"
+                     const missionDiv = document.getElementById(`mission-${missionId}`);
+                     if (!missionDiv) return;
+                     const editor = missionDiv.querySelector('.mission-editor');
+                     const outputArea = missionDiv.querySelector('.mission-output');
+                     const feedbackDivId = `mission-feedback-${missionId}`;
+                     const feedbackDiv = document.getElementById(feedbackDivId);
+                     if (!feedbackDiv) { console.error(`Feedback div ${feedbackDivId} not found`); return; }
+                     const statusIcon = missionDiv.querySelector('.mission-status i');
+                     const code = editor.value.trim();
+                     outputArea.innerHTML = '';
+                     let success = false;
+                     let feedbackMessageKey = 'feedback_mission_adv_syntax';
+                     let specificHintKey = '';
+
+                      /* Simple Validation Logic (Keywords and Structure) */
+                      try {
+                          const hasTry = /try\s*:/.test(code);
+                          const hasFinally = /finally\s*:/.test(code);
+                          const hasElse = /else\s*:/.test(code);
+                          const hasPrint = code.includes('print(');
+
+                          if (missionId === 'adv-1') { // File Handling Sim
+                              const hasExceptFNF = /except\s+FileNotFoundError\s*:/.test(code);
+                              const hasExceptPerm = /except\s+PermissionError\s*:/.test(code);
+                              if (hasTry && hasExceptFNF && hasExceptPerm && hasFinally && hasPrint) {
+                                   success = true;
+                                   // Simulate outcomes
+                                   outputArea.innerHTML = `<span class="output-line">> Test OK: Opening file... Reading data... File operation finished.</span><span class="output-line">> Test FNF: Opening file... File not found. File operation finished.</span><span class="output-line">> Test Perm: Opening file... Permission denied. File operation finished.</span>`;
+                              } else { specificHintKey = 'feedback_mission_adv1_hint'; }
+                          } else if (missionId === 'adv-2') { // Robust Division
+                               const hasExceptValue = /except\s+ValueError\s*:/.test(code);
+                               const hasExceptZeroDiv = /except\s+ZeroDivisionError\s*:/.test(code);
+                               const hasFloat = code.includes('float(');
+                               const hasDivision = /\s*\/\s*/.test(code); // Check for / operator
+                               if (hasTry && hasExceptValue && hasExceptZeroDiv && hasElse && hasFloat && hasDivision && hasPrint) {
+                                    success = true;
+                                    // Simulate outcomes
+                                    outputArea.innerHTML = `<span class="output-line">> Test OK (10 / 2): Result: 5.0</span><span class="output-line">> Test ValErr (abc / 2): Invalid number.</span><span class="output-line">> Test ZeroDiv (10 / 0): Cannot divide by zero.</span>`;
+                               } else { specificHintKey = 'feedback_mission_adv2_hint'; }
+                          }
+                      } catch (error) { console.error("Advanced Mission validation error:", error); }
+                      /* End Validation */
+
+                      if (success) {
+                          feedbackMessageKey = 'feedback_mission_adv_success';
+                          statusIcon.className = 'fas fa-check-circle';
+                          missionDiv.dataset.completed = 'true';
+                      } else {
+                          feedbackMessageKey = specificHintKey || feedbackMessageKey;
+                          statusIcon.className = 'fas fa-times-circle';
+                          missionDiv.dataset.completed = 'false';
+                          outputArea.innerHTML = `<span class="output-line error-output">> Conceptual test failed. Check hints and code structure.</span>`;
+                      }
+                      showFeedback(feedbackDivId, feedbackMessageKey, success ? 'correct' : 'incorrect');
+                      updateAdvancedMissionSummary();
+                 });
+             });
+             updateAdvancedMissionSummary(); // Initial call
+         }
+
+
+        // --- Fade-in animations on scroll (Copied) ---
+        const fadeElements = document.querySelectorAll('.fade-in');
+        const animateOnScroll = () => { /* ... */
+             const windowHeight = window.innerHeight;
+             fadeElements.forEach(el => {
+                  if (el.style.opacity === '' || el.style.opacity === '0') {
+                     const rect = el.getBoundingClientRect();
+                     if (rect.top < windowHeight - 50 && rect.bottom >= 50) { el.style.opacity = '1'; el.style.transform = 'translateY(0)'; }
+                  }
+             });
+        };
+        const scrollHandler = () => window.requestAnimationFrame(animateOnScroll);
+        window.addEventListener('scroll', scrollHandler);
+
+
+        // --- Initial Language Application and Activity Setups ---
+        setLanguage(initialLang); // Apply language FIRST
+        animateOnScroll(); // Trigger initial animation check
+
+        // Explicitly call setups for activities *after* language is set
+        if (typeof setupAdvancedAnatomyActivity === 'function') setupAdvancedAnatomyActivity();
+        if (typeof setupPredictFlowActivity === 'function') setupPredictFlowActivity();
+        if (typeof setupBuildStructureActivity === 'function') setupBuildStructureActivity();
+        // Refine Handling and Missions are largely reset within setLanguage or have simple states
+
+    }); // End DOMContentLoaded
+    </script>
+
+</body>
+</html>

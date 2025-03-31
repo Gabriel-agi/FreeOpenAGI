@@ -1,0 +1,1127 @@
+<!DOCTYPE html>
+<!-- Language set by JS -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Title set by JS -->
+    <title data-translate="page_title">Module 28: Algorithms - Sorting</title>
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* --- Base Styles & Variables (Mostly copied from Module 0) --- */
+        :root {
+            --primary-color: #007bff; /* Blue */
+            --secondary-color: #6c757d; /* Grey */
+            --background-light: #f8f9fa;
+            --background-medium: #e9ecef;
+            --background-dark: #343a40;
+            --text-light: #f8f9fa;
+            --text-dark: #212529;
+            --accent-color: #ffc107; /* Yellow */
+            --success-color: #28a745; /* Green */
+            --error-color: #dc3545;   /* Red */
+            --info-color: #17a2b8;    /* Teal */
+            --sort-compare-color: #ffc107; /* Yellow Accent for comparisons */
+            --sort-swap-color: #dc3545;     /* Red Accent for swaps */
+            --sort-min-color: #17a2b8;     /* Teal Accent for minimum found */
+            --sort-sorted-color: #28a745; /* Green for sorted elements */
+            --border-radius: 8px;
+            --transition-speed: 0.3s;
+            --font-body: 'Roboto', sans-serif;
+            --font-title: 'Orbitron', sans-serif;
+            --selection-highlight-bg: rgba(0, 123, 255, 0.1);
+            --selection-highlight-border: rgba(0, 123, 255, 0.4);
+            --nav-primary: #6e48aa;
+            --nav-success: #4cc9f0;
+            --nav-dark: #1a1a2e;
+            --bar-base-color: #6c757d; /* Base color for sort bars */
+            --bar-width: clamp(15px, 5vw, 40px); /* Responsive bar width */
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; font-size: 16px; }
+        body {
+            font-family: var(--font-body); line-height: 1.7;
+            background-color: var(--background-light); color: var(--text-dark);
+            overflow-x: hidden;
+        }
+
+        /* --- Utility Classes (Copied) --- */
+        .container { max-width: 960px; margin: 0 auto; padding: 0 15px; }
+        .text-center { text-align: center; }
+        .highlight { color: var(--primary-color); font-weight: bold; }
+        .code-font { font-family: 'Courier New', Courier, monospace; }
+        .hidden { display: none !important; }
+        .button-group { margin-top: 2rem; display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; }
+
+        /* --- Advanced Animations (Copied & potentially adapted) --- */
+        .fade-in { opacity: 0; transform: translateY(20px); animation: fadeInAnimation 0.8s ease-out forwards; }
+        .fade-in.delay-1 { animation-delay: 0.2s; } .fade-in.delay-2 { animation-delay: 0.4s; } .fade-in.delay-3 { animation-delay: 0.6s; } .fade-in.delay-4 { animation-delay: 0.8s; }
+        @keyframes fadeInAnimation { to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulseHeaderIcon { 0% { transform: scale(1); opacity: 0.1; } 50% { transform: scale(1.05); opacity: 0.25; } 100% { transform: scale(1); opacity: 0.1; } }
+        @keyframes successGlow { 0% { box-shadow: 0 0 3px rgba(40, 167, 69, 0.3); } 50% { box-shadow: 0 0 12px 5px rgba(40, 167, 69, 0.5); } 100% { box-shadow: 0 0 3px rgba(40, 167, 69, 0.3); } }
+        .success-glow-anim { animation: successGlow 0.9s ease-out; }
+        @keyframes shake { 10%, 90% { transform: translate3d(-2px, 0, 0); } 20%, 80% { transform: translate3d(3px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-5px, 0, 0); } 40%, 60% { transform: translate3d(5px, 0, 0); } }
+        .shake-anim { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes iconAppearCorrect { 0% { transform: scale(0.5) rotate(-15deg); opacity: 0; } 60% { transform: scale(1.2) rotate(5deg); opacity: 1; } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
+        @keyframes iconAppearIncorrect { 0% { transform: scale(0.5) rotate(-15deg); opacity: 0; } 50% { transform: scale(1.2) rotate(10deg); opacity: 1; } 70% { transform: scale(0.9) rotate(-5deg); } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
+        .action-button:active:not(:disabled) { transform: translateY(1px) scale(0.98); filter: brightness(0.95); }
+
+        /* --- Minimal Retractable Nav (Copied) --- */
+        .minimal-nav-button { position: fixed; top: 15px; right: 15px; z-index: 1001; background-color: rgba(52, 58, 64, 0.75); color: var(--text-light); border: none; border-radius: var(--border-radius); padding: 8px 12px; cursor: pointer; transition: background-color var(--transition-speed), opacity var(--transition-speed), transform var(--transition-speed); font-size: 1.1rem; opacity: 0.6; box-shadow: 0 2px 5px rgba(0,0,0,0.2); line-height: 1; }
+        .minimal-nav-button:hover { background-color: rgba(52, 58, 64, 0.95); opacity: 1; transform: scale(1.05); }
+        .minimal-nav { position: fixed; top: 60px; right: 15px; z-index: 1000; background-color: var(--background-dark); border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.3); padding: 0.8rem; opacity: 0; transform: translateY(-15px) scale(0.95); transform-origin: top right; pointer-events: none; transition: opacity var(--transition-speed) ease, transform var(--transition-speed) ease; min-width: 200px; }
+        body.nav-active .minimal-nav { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+        .minimal-nav ul { list-style: none; margin: 0; padding: 0; } .minimal-nav ul li { margin-bottom: 5px; } .minimal-nav ul li:last-child { margin-bottom: 0; }
+        .minimal-nav ul li a { display: flex; align-items: center; color: var(--text-light); text-decoration: none; padding: 0.6rem 1rem; border-radius: 4px; transition: background-color var(--transition-speed), color var(--transition-speed); white-space: nowrap; font-weight: 400; font-size: 0.95rem; }
+        .minimal-nav ul li a i.fas { margin-right: 10px; width: 1.2em; text-align: center; opacity: 0.8; transition: opacity var(--transition-speed); }
+        .minimal-nav ul li a:hover { background-color: var(--primary-color); color: var(--text-light); } .minimal-nav ul li a:hover i.fas { opacity: 1; }
+        .minimal-nav .language-switcher-item { padding: 0.5rem 1rem; border-top: 1px solid var(--secondary-color); margin-top: 8px; padding-top: 13px; }
+        #languageSelect { width: 100%; background: rgba(255,255,255,0.1); color: white; border: 1px solid var(--nav-success); border-radius: 5px; padding: 6px 30px 6px 12px; cursor: pointer; font-size: 0.9rem; appearance: none; -webkit-appearance: none; -moz-appearance: none; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%234CC9F0%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right 10px center; background-size: 10px auto; transition: background-color 0.3s ease; }
+        #languageSelect:hover { background-color: rgba(255,255,255,0.15); }
+        #languageSelect option { background: var(--nav-dark); color: var(--text-light); }
+
+        /* --- Practice Header (Adapted for Module 28) --- */
+        .practice-header { background: linear-gradient(135deg, var(--primary-color), #004085); color: var(--text-light); padding: 3rem 0 4rem; text-align: center; position: relative; overflow: hidden; border-bottom: 5px solid var(--accent-color); }
+        .practice-header h1 { font-family: var(--font-title); font-size: 2.8rem; margin-bottom: 0.5rem; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); animation: fadeInAnimation 1s ease-out; }
+        .practice-header p { font-size: 1.1rem; font-weight: 300; opacity: 0.9; animation: fadeInAnimation 1s ease-out 0.3s forwards; opacity: 0; }
+        .header-icon { position: absolute; font-size: 4rem; color: var(--text-light); animation: pulseHeaderIcon 6s infinite ease-in-out alternate; }
+        .icon1 { top: 20%; left: 15%; animation-duration: 7s; transform: rotate(-15deg);} /* Sort icon */
+        .icon2 { bottom: 15%; right: 20%; animation-duration: 5s; transform: rotate(10deg);} /* Brain/Compare icon */
+
+        /* --- Practice Section Styling (Copied) --- */
+        .practice-section { padding: 3rem 0; background-color: var(--background-medium); border-bottom: 1px solid #d6d8db; }
+        .practice-section:nth-child(odd) { background-color: var(--background-light); }
+        .practice-section:last-of-type { border-bottom: none; }
+        .practice-section h2 { font-family: var(--font-title); font-size: 1.8rem; color: var(--primary-color); margin-bottom: 1rem; text-align: center; }
+        .practice-section .section-description { text-align: center; margin-bottom: 2.5rem; color: var(--secondary-color); font-size: 1.05rem; max-width: 700px; margin-left: auto; margin-right: auto; }
+
+        /* --- General Interactive Elements (Copied) --- */
+        .interactive-area { background-color: #fff; padding: 2rem; border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.08); margin-top: 1.5rem; position: relative; transition: box-shadow 0.5s ease-out; }
+        .feedback-message { padding: 0.8rem 1rem; margin-top: 1rem; border-radius: var(--border-radius); font-weight: bold; text-align: center; opacity: 0; max-height: 0; overflow: hidden; transition: opacity var(--transition-speed) ease, max-height var(--transition-speed) ease, margin-top var(--transition-speed) ease; }
+        .feedback-message.visible { opacity: 1; max-height: 100px; margin-top: 1.5rem; }
+        .feedback-message.correct { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .feedback-message.incorrect { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .feedback-message.info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .feedback-message .fas { margin: 0 3px; }
+        .action-button { display: inline-block; padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold; color: var(--text-light); background-color: var(--primary-color); border: none; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), transform var(--transition-speed), filter var(--transition-speed), box-shadow var(--transition-speed); margin-top: 1rem; vertical-align: middle; box-shadow: 0 2px 5px rgba(0,0,0,0.1); text-decoration: none; }
+        .action-button:hover:not(:disabled) { background-color: #0056b3; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+        .action-button:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none; box-shadow: none; opacity: 0.7; }
+        .action-button.success { background-color: var(--success-color); } .action-button.success:hover:not(:disabled) { background-color: #218838; }
+        .action-button.secondary { background-color: var(--secondary-color); } .action-button.secondary:hover:not(:disabled) { background-color: #5a6268; }
+        .code-block { background-color: var(--background-dark); color: var(--text-light); padding: 1.5rem; border-radius: var(--border-radius); font-family: var(--code-font); font-size: 1rem; position: relative; overflow-x: auto; margin: 1rem 0; }
+        .code-keyword { color: #569cd6; } .code-string { color: #ce9178; } .code-comment { color: #6a9955; } .code-function { color: #dcdcaa; } .code-variable { color: #9cdcfe; } .code-operator { color: #d4d4d4; } .code-number { color: #b5cea8; }
+
+        /* --- NEW: Sorting Visualizer Styles --- */
+        .sort-visualizer-container {
+            display: flex;
+            justify-content: center;
+            align-items: flex-end; /* Align bars at the bottom */
+            min-height: 200px;
+            padding: 20px 10px;
+            background-color: var(--background-medium);
+            border: 1px solid #ccc;
+            border-radius: var(--border-radius);
+            margin-bottom: 1rem;
+            gap: 3px; /* Spacing between bars */
+            overflow: hidden; /* Prevent bars poking out */
+            position: relative;
+        }
+        .sort-bar {
+            width: var(--bar-width);
+            background-color: var(--bar-base-color);
+            border: 1px solid #555;
+            border-bottom: none;
+            border-radius: 4px 4px 0 0;
+            transition: height 0.3s ease, background-color 0.3s ease, transform 0.3s ease; /* Smooth transitions */
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end; /* Number at bottom */
+            padding-bottom: 2px;
+        }
+        .sort-bar::after { /* Display number on bar */
+            content: attr(data-value);
+            position: absolute;
+            bottom: 5px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: clamp(10px, 2.5vw, 14px); /* Responsive font size */
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+            white-space: nowrap;
+        }
+         /* States for bars */
+        .sort-bar.comparing { background-color: var(--sort-compare-color); transform: scaleY(1.03); }
+        .sort-bar.swapping { background-color: var(--sort-swap-color); transform: scale(1.05); z-index: 1; }
+        .sort-bar.minimum { background-color: var(--sort-min-color); }
+        .sort-bar.sorted { background-color: var(--sort-sorted-color); }
+
+        .sort-controls { text-align: center; margin-bottom: 1rem; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;}
+        .sort-status { margin-top: 1rem; text-align: center; font-style: italic; color: var(--secondary-color); min-height: 1.5em;}
+        .sort-status span { font-weight: bold; margin: 0 10px; color: var(--text-dark); font-style: normal;}
+        .sort-status .comparisons { color: var(--sort-compare-color); }
+        .sort-status .swaps { color: var(--sort-swap-color); }
+
+        /* --- Activity 3: Comparison Challenge Styles --- */
+        .comparison-list-container { display: flex; justify-content: space-around; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;}
+        .list-preview { border: 2px dashed var(--secondary-color); border-radius: var(--border-radius); padding: 1rem; text-align: center; background-color: var(--background-light); flex-basis: 45%; min-width: 150px; }
+        .list-preview h4 { margin-bottom: 0.5rem; color: var(--primary-color); }
+        .list-preview .numbers { font-family: var(--code-font); font-size: 1.1rem; word-spacing: 0.5em; color: var(--text-dark);}
+        .comparison-buttons { display: flex; justify-content: center; gap: 1rem; }
+
+        /* --- Activity 4: Code Logic Styles --- */
+        #code-logic .code-block { position: relative; }
+        .drop-target {
+            display: inline-block; border: 2px dashed var(--secondary-color);
+            background-color: rgba(255, 255, 255, 0.05); min-width: 80px; height: 1.5em;
+            border-radius: 4px; margin: 0 5px; vertical-align: middle;
+            transition: background-color var(--transition-speed), border-color var(--transition-speed);
+            text-align: center; line-height: 1.2em; color: var(--secondary-color);
+            padding: 0 5px;
+            font-style: italic; font-size: 0.9em;
+        }
+        .drop-target.over { background-color: rgba(255, 193, 7, 0.2); border-color: var(--accent-color); }
+        .logic-pieces { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 1.5rem; padding: 1rem; background-color: var(--background-light); border: 1px dashed var(--secondary-color); border-radius: var(--border-radius); justify-content: center; user-select: none; -webkit-user-select: none; -ms-user-select: none; }
+        .logic-piece { display: inline-block; padding: 6px 10px; background-color: var(--info-color); color: var(--text-light); border-radius: 4px; cursor: grab; font-family: var(--code-font); font-size: 0.95rem; transition: background-color var(--transition-speed), transform var(--transition-speed), opacity 0.1s ease, box-shadow var(--transition-speed); border: 1px solid #117a8b; touch-action: none; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .logic-piece:active { cursor: grabbing; }
+        .logic-piece.dragging { opacity: 0.6 !important; transform: scale(1.05) rotate(3deg); position: fixed !important; pointer-events: none !important; z-index: 1000 !important; cursor: grabbing !important; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+        .logic-piece.ghosting { opacity: 0.3; }
+        .drop-target .logic-piece { cursor: default; margin: -1px 0; background-color: var(--success-color); border-color: #218838; font-style: normal; font-size: 1em;}
+
+        /* --- Activity 5: Mini Mission (Code Simulator adaptation) --- */
+        #mini-mission-swap .sim-editor { width: 100%; min-height: 80px; background-color: var(--background-dark); color: var(--text-light); border: 1px solid var(--secondary-color); border-radius: var(--border-radius); padding: 1rem; font-family: var(--code-font); font-size: 1rem; line-height: 1.5; resize: vertical; margin-top: 1rem; }
+        #mini-mission-swap .sim-output-area { margin-top: 1rem; min-height: 30px; background-color: #1a1a1a; border: 1px solid #444; border-radius: var(--border-radius); padding: 0.8rem; color: var(--accent-color); font-family: var(--code-font); font-size: 1rem; white-space: pre-wrap; word-wrap: break-word; }
+        #mini-mission-swap .sim-output-area .placeholder { color: var(--secondary-color); font-style: italic; font-size: 0.9rem; }
+
+        /* --- Responsive Design (Copied & potentially adapted) --- */
+        @media (max-width: 768px) {
+            html { font-size: 15px; }
+            .practice-header h1 { font-size: 2.2rem; }
+            .practice-section h2 { font-size: 1.6rem; }
+            .interactive-area { padding: 1.5rem; }
+            .sort-visualizer-container { min-height: 150px; }
+            .sort-bar { width: clamp(12px, 4vw, 30px); }
+            .button-group { flex-direction: column; align-items: center; }
+            .minimal-nav { min-width: 180px; }
+            .minimal-nav ul li a { padding: 0.6rem 0.8rem; }
+            #languageSelect { font-size: 0.85rem; padding: 5px 25px 5px 10px;}
+        }
+        @media (max-width: 480px) {
+            html { font-size: 14px; }
+            .practice-header h1 { font-size: 1.8rem; }
+            .practice-header p { font-size: 1rem; }
+            .practice-section h2 { font-size: 1.4rem; }
+            .interactive-area { padding: 1rem; }
+            .action-button { font-size: 0.9rem; padding: 0.7rem 1.2rem; width: 90%; max-width: 300px;}
+            .sort-visualizer-container { min-height: 120px; gap: 2px;}
+            .sort-bar { width: clamp(10px, 5vw, 25px); }
+            .sort-bar::after { font-size: 9px; bottom: 2px; }
+            .sort-status { font-size: 0.9rem; }
+            .comparison-list-container { flex-direction: column; align-items: center;}
+            .list-preview { flex-basis: 80%; margin-bottom: 1rem; }
+            .comparison-buttons { flex-direction: column; align-items: center;}
+            .logic-pieces { padding: 0.8rem; }
+            .logic-piece { padding: 5px 8px; font-size: 0.9rem;}
+            .drop-target { min-width: 60px; }
+            #mini-mission-swap .sim-editor { font-size: 0.95rem;}
+            .button-group a.action-button { width: 90%; max-width: 300px; margin-bottom: 0.5rem; }
+            .minimal-nav-button { top: 10px; right: 10px; padding: 6px 10px; font-size: 1rem; }
+             .minimal-nav { top: 48px; right: 10px; min-width: 160px; }
+             .minimal-nav ul li a { padding: 0.5rem 0.7rem; font-size: 0.9rem;}
+             .minimal-nav ul li a i.fas { margin-right: 8px; }
+             #languageSelect { font-size: 0.8rem; padding: 4px 20px 4px 8px;}
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ========= Minimal Nav Handle ========= -->
+    <button id="minimal-nav-toggle" class="minimal-nav-button" aria-label="Toggle Navigation Menu">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- ========= Minimal Nav Panel (with Language Switcher) ========= -->
+    <nav id="minimal-nav-panel" class="minimal-nav">
+        <ul>
+            <!-- UPDATE HREF for Module 28 -->
+            <li><a href="ctp-theory-28.html"><i class="fas fa-book-open fa-fw"></i> <span data-translate="nav_theory">View Theory</span></a></li>
+            <li><a href="ctp-advanced-28.html"><i class="fas fa-flask fa-fw"></i> <span data-translate="nav_advanced">Advanced Practice</span></a></li>
+            <li><a href="ctp-dashboard.html"><i class="fas fa-list fa-fw"></i> <span data-translate="nav_menu">Course Menu</span></a></li>
+            <hr style="border: none; border-top: 1px solid var(--secondary-color); margin: 8px 0;">
+            <!-- Internal Nav Links for Module 28 Activities -->
+            <li><a href="#bubble-sort"><i class="fas fa-water fa-fw"></i> <span data-translate="nav_bubble">Bubble Sort</span></a></li>
+            <li><a href="#selection-sort"><i class="fas fa-crosshairs fa-fw"></i> <span data-translate="nav_selection">Selection Sort</span></a></li>
+            <li><a href="#comparison-challenge"><i class="fas fa-balance-scale fa-fw"></i> <span data-translate="nav_compare">Comparison</span></a></li>
+            <li><a href="#code-logic"><i class="fas fa-puzzle-piece fa-fw"></i> <span data-translate="nav_logic">Code Logic</span></a></li>
+            <li><a href="#mini-mission"><i class="fas fa-tasks fa-fw"></i> <span data-translate="nav_mission">Mini Mission</span></a></li>
+            <!-- Language Switcher Item -->
+            <li class="language-switcher-item">
+                 <select id="languageSelect" aria-label="Select Language">
+                     <option value="en" data-translate="lang_en">🇬🇧 English</option>
+                     <option value="pt" data-translate="lang_pt">🇧🇷 Português</option>
+                     <option value="zh" data-translate="lang_zh">🇨🇳 中文</option>
+                 </select>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- ========= Header (Adapted for Module 28) ========= -->
+    <header class="practice-header">
+        <!-- Changed Icons -->
+        <i class="fas fa-sort-amount-down header-icon icon1"></i>
+        <i class="fas fa-arrows-alt-h header-icon icon2"></i>
+        <div class="container">
+            <h1 data-translate="header_title">Module 28: Sorting Algorithms</h1>
+            <p data-translate="header_subtitle">Let's visualize how computers put things in order!</p>
+        </div>
+    </header>
+
+    <!-- ========= Main Content ========= -->
+    <main>
+        <!-- ========= Activity 1: Bubble Sort Visualizer ========= -->
+        <section id="bubble-sort" class="practice-section">
+             <div class="container">
+                 <h2 class="fade-in"><i class="fas fa-water"></i> <span data-translate="bubble_title">Bubble Sort Visualizer</span></h2>
+                 <p class="section-description fade-in delay-1" data-translate="bubble_desc">
+                     Watch how Bubble Sort works! It repeatedly steps through the list, compares adjacent elements and swaps them if they are in the wrong order.
+                 </p>
+                 <div class="interactive-area fade-in delay-2">
+                    <div id="bubble-visualizer" class="sort-visualizer-container">
+                        <!-- Bars generated by JS -->
+                    </div>
+                    <div id="bubble-status" class="sort-status">
+                        <span data-translate="status_comparisons">Comparisons:</span> <span id="bubble-comparisons" class="comparisons">0</span>
+                        <span data-translate="status_swaps">Swaps:</span> <span id="bubble-swaps" class="swaps">0</span>
+                        <br><span id="bubble-step-info" data-translate="status_ready">Ready.</span>
+                    </div>
+                     <div class="sort-controls">
+                         <button id="bubble-reset-btn" class="action-button secondary"><i class="fas fa-undo"></i> <span data-translate="button_reset">Reset</span></button>
+                         <button id="bubble-step-btn" class="action-button"><i class="fas fa-step-forward"></i> <span data-translate="button_next_step">Next Step</span></button>
+                         <button id="bubble-play-btn" class="action-button success"><i class="fas fa-play"></i> <span data-translate="button_auto_play">Auto Play</span></button>
+                     </div>
+                     <div id="bubble-feedback" class="feedback-message"></div>
+                 </div>
+             </div>
+        </section>
+
+        <!-- ========= Activity 2: Selection Sort Visualizer ========= -->
+        <section id="selection-sort" class="practice-section">
+             <div class="container">
+                 <h2 class="fade-in"><i class="fas fa-crosshairs"></i> <span data-translate="selection_title">Selection Sort Visualizer</span></h2>
+                 <p class="section-description fade-in delay-1" data-translate="selection_desc">
+                     Now see Selection Sort! It divides the list into sorted and unsorted parts, finds the smallest element in the unsorted part, and swaps it with the first unsorted element.
+                 </p>
+                 <div class="interactive-area fade-in delay-2">
+                     <div id="selection-visualizer" class="sort-visualizer-container">
+                         <!-- Bars generated by JS -->
+                     </div>
+                     <div id="selection-status" class="sort-status">
+                         <span data-translate="status_comparisons">Comparisons:</span> <span id="selection-comparisons" class="comparisons">0</span>
+                         <span data-translate="status_swaps">Swaps:</span> <span id="selection-swaps" class="swaps">0</span>
+                         <br><span id="selection-step-info" data-translate="status_ready">Ready.</span>
+                     </div>
+                     <div class="sort-controls">
+                          <button id="selection-reset-btn" class="action-button secondary"><i class="fas fa-undo"></i> <span data-translate="button_reset">Reset</span></button>
+                          <button id="selection-step-btn" class="action-button"><i class="fas fa-step-forward"></i> <span data-translate="button_next_step">Next Step</span></button>
+                          <button id="selection-play-btn" class="action-button success"><i class="fas fa-play"></i> <span data-translate="button_auto_play">Auto Play</span></button>
+                     </div>
+                     <div id="selection-feedback" class="feedback-message"></div>
+                 </div>
+             </div>
+        </section>
+
+         <!-- ========= Activity 3: Comparison Challenge ========= -->
+        <section id="comparison-challenge" class="practice-section">
+             <div class="container">
+                 <h2 class="fade-in"><i class="fas fa-balance-scale"></i> <span data-translate="compare_title">Comparison Challenge</span></h2>
+                 <p class="section-description fade-in delay-1" data-translate="compare_desc">
+                     Think about how many comparisons each sort makes. Which of these lists do you think will require <strong>more comparisons</strong> using <strong>Bubble Sort</strong>?
+                 </p>
+                 <div class="interactive-area fade-in delay-2">
+                    <div class="comparison-list-container">
+                        <div class="list-preview">
+                             <h4 data-translate="compare_list_a">List A (Nearly Sorted)</h4>
+                             <div id="list-a-preview" class="numbers">1 3 2 4 5 6</div>
+                        </div>
+                        <div class="list-preview">
+                            <h4 data-translate="compare_list_b">List B (Reverse Order)</h4>
+                            <div id="list-b-preview" class="numbers">6 5 4 3 2 1</div>
+                        </div>
+                    </div>
+                     <div class="comparison-buttons">
+                         <button id="compare-choose-a-btn" class="action-button" data-choice="A"><span data-translate="button_choose_a">Choose List A</span></button>
+                         <button id="compare-choose-b-btn" class="action-button" data-choice="B"><span data-translate="button_choose_b">Choose List B</span></button>
+                     </div>
+                     <div id="compare-feedback" class="feedback-message"></div>
+                 </div>
+             </div>
+        </section>
+
+         <!-- ========= Activity 4: Code Logic (Bubble Sort Inner Loop) ========= -->
+        <section id="code-logic" class="practice-section">
+            <div class="container">
+                <h2 class="fade-in"><i class="fas fa-puzzle-piece"></i> <span data-translate="logic_title">Code Logic: The Comparison</span></h2>
+                <p class="section-description fade-in delay-1" data-translate="logic_desc">
+                    Algorithms are sequences of steps. Let's focus on the core comparison in Bubble Sort's inner loop. Drag the correct code piece to complete the `if` statement that checks if a swap is needed (for ascending order).
+                </p>
+                <div class="interactive-area fade-in delay-2">
+                    <div class="code-block">
+                        <span class="code-keyword">if</span> <span class="code-variable">list</span>[<span class="code-variable">j</span>] <div id="logic-drop-target" class="drop-target" data-translate="logic_drop_placeholder">drop here</div> <span class="code-variable">list</span>[<span class="code-variable">j</span> + <span class="code-number">1</span>]:<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="code-comment"># Swap elements...</span>
+                    </div>
+                    <div id="logic-pieces-container" class="logic-pieces">
+                        <!-- Logic pieces generated by JS -->
+                    </div>
+                     <div class="text-center">
+                         <button id="check-logic-btn" class="action-button" data-translate="button_check_logic">Check Logic</button>
+                         <button id="reset-logic-btn" class="action-button secondary" data-translate="button_reset_logic">Reset</button>
+                     </div>
+                     <div id="logic-feedback" class="feedback-message"></div>
+                     <!-- Hidden elements for storing translated logic pieces -->
+                     <div id="logic-piece-texts" style="display: none;">
+                         <span data-key="greater_than" data-correct="true">&gt;</span>
+                         <span data-key="less_than" data-correct="false">&lt;</span>
+                         <span data-key="equals" data-correct="false">==</span>
+                     </div>
+                </div>
+            </div>
+        </section>
+
+         <!-- ========= Activity 5: Mini Mission - Swap ========= -->
+        <section id="mini-mission" class="practice-section">
+             <div class="container">
+                  <h2 class="fade-in"><i class="fas fa-tasks"></i> <span data-translate="mission_title">Mini Mission: Swap 'em!</span></h2>
+                 <p class="section-description fade-in delay-1" data-translate="mission_desc">
+                     A fundamental step in many sorting algorithms is swapping two elements. In the editor below, write the Python code to swap the values of variables `a` and `b` using a temporary variable `temp`.
+                 </p>
+                 <div id="mini-mission-swap" class="interactive-area fade-in delay-2">
+                     <label for="swap-editor-input" style="font-weight: bold; display:block; margin-bottom: 8px;" data-translate="mission_editor_label">Code Editor (Assume `a=5`, `b=10` initially):</label>
+                     <textarea id="swap-editor-input" class="sim-editor" rows="4" data-translate-placeholder="mission_placeholder" placeholder="# Use a temp variable\ntemp = ...\na = ...\nb = ..."></textarea>
+                     <div class="text-center">
+                          <button id="run-swap-btn" class="action-button" data-translate="button_run_mission">Run Mission Code</button>
+                     </div>
+                     <label style="font-weight: bold; display:block; margin-top: 1.5rem; margin-bottom: 8px;" data-translate="mission_output_label">Simulated Result (Final values of a and b):</label>
+                     <div id="swap-output" class="sim-output-area">
+                         <span class="placeholder" data-translate="mission_output_placeholder">Output will show final a and b...</span>
+                     </div>
+                     <div id="swap-feedback" class="feedback-message"></div>
+                 </div>
+             </div>
+        </section>
+
+         <!-- ========= Completion Section ========= -->
+        <section class="completion-section">
+            <div class="container">
+                <div class="icon fade-in" style="animation: iconAppearCorrect 1s ease-out 0.5s forwards;">
+                    <!-- Changed Icon -->
+                    <i class="fas fa-medal"></i>
+                </div>
+                <h2 class="fade-in delay-1" data-translate="completion_title">Module 28 Practice Complete!</h2>
+                <p class="fade-in delay-2" data-translate="completion_desc">
+                    Great job visualizing and interacting with sorting algorithms! You've explored Bubble Sort, Selection Sort, and the importance of comparisons and swaps. <br>
+                    Ready for more? Try the <strong>Advanced Practice</strong> for Module 28!
+                </p>
+                <div class="button-group">
+                    <!-- UPDATE HREF for Module 28 -->
+                    <a href="ctp-theory-28.html" class="action-button secondary fade-in delay-3"><i class="fas fa-book-open"></i> <span data-translate="button_view_theory">View Theory Again</span></a>
+                    <a href="ctp-advanced-28.html" class="action-button success fade-in delay-3"><i class="fas fa-arrow-right"></i> <span data-translate="button_start_advanced">Start Advanced Practice</span></a>
+                    <a href="ctp-dashboard.html" class="action-button secondary fade-in delay-4"><i class="fas fa-list"></i> <span data-translate="button_back_menu">Back to Course Menu</span></a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ========= Script ========= -->
+    <script>
+    // --- Translations Object (Module 28) ---
+    const translations = {
+        en: {
+            "page_title": "Module 28: Algorithms - Sorting",
+            "nav_theory": "View Theory", "nav_advanced": "Advanced Practice", "nav_menu": "Course Menu",
+            "nav_bubble": "Bubble Sort", "nav_selection": "Selection Sort", "nav_compare": "Comparison", "nav_logic": "Code Logic", "nav_mission": "Mini Mission",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title": "Module 28: Sorting Algorithms", "header_subtitle": "Let's visualize how computers put things in order!",
+            "bubble_title": "Bubble Sort Visualizer", "bubble_desc": "Watch how Bubble Sort works! It repeatedly steps through the list, compares adjacent elements and swaps them if they are in the wrong order.",
+            "selection_title": "Selection Sort Visualizer", "selection_desc": "Now see Selection Sort! It divides the list into sorted and unsorted parts, finds the smallest element in the unsorted part, and swaps it with the first unsorted element.",
+            "status_comparisons": "Comparisons:", "status_swaps": "Swaps:", "status_ready": "Ready.", "status_sorting": "Sorting...", "status_finished": "Finished!", "status_comparing": "Comparing {val1} and {val2}", "status_swapping": "Swapping {val1} and {val2}", "status_found_min": "Found minimum: {val}", "status_placing_min": "Placing minimum {val}",
+            "button_reset": "Reset", "button_next_step": "Next Step", "button_auto_play": "Auto Play", "button_pause": "Pause",
+            "feedback_vis_finished": "Sorting complete!", "feedback_vis_paused": "Auto play paused.",
+            "compare_title": "Comparison Challenge", "compare_desc": "Think about how many comparisons each sort makes. Which of these lists do you think will require <strong>more comparisons</strong> using <strong>Bubble Sort</strong>?",
+            "compare_list_a": "List A (Nearly Sorted)", "compare_list_b": "List B (Reverse Order)",
+            "button_choose_a": "Choose List A", "button_choose_b": "Choose List B",
+            "feedback_compare_correct_b": "Correct! Bubble Sort performs poorly on reverse-sorted lists, requiring many comparisons.", "feedback_compare_incorrect_a": "Not quite. While already sorted elements help, Bubble Sort still checks every adjacent pair in each pass.",
+            "logic_title": "Code Logic: The Comparison", "logic_desc": "Algorithms are sequences of steps. Let's focus on the core comparison in Bubble Sort's inner loop. Drag the correct code piece to complete the `if` statement that checks if a swap is needed (for ascending order).",
+            "logic_drop_placeholder": "drop here",
+            "logic_piece_greater_than": ">", "logic_piece_less_than": "<", "logic_piece_equals": "==", // For logic piece text
+            "button_check_logic": "Check Logic", "button_reset_logic": "Reset",
+            "feedback_logic_correct": "Exactly! `>` checks if the left element is greater, meaning it needs swapping for ascending order.", "feedback_logic_incorrect": "Incorrect. Think about which comparison triggers a swap when sorting smallest to largest.", "feedback_logic_empty": "Drag a logic piece into the slot first.",
+            "mission_title": "Mini Mission: Swap 'em!", "mission_desc": "A fundamental step in many sorting algorithms is swapping two elements. In the editor below, write the Python code to swap the values of variables `a` and `b` using a temporary variable `temp`.",
+            "mission_editor_label": "Code Editor (Assume `a=5`, `b=10` initially):", "mission_placeholder": "# Use a temp variable\ntemp = ...\na = ...\nb = ...",
+            "button_run_mission": "Run Mission Code", "mission_output_label": "Simulated Result (Final values of a and b):", "mission_output_placeholder": "Output will show final a and b...",
+            "feedback_mission_success": "Swap successful! a is now 10, b is now 5.", "feedback_mission_incomplete": "Looks like the swap isn't complete. Make sure you use `temp`, `a`, and `b` correctly.", "feedback_mission_no_temp": "Did you use the `temp` variable to hold one of the original values?", "feedback_mission_syntax": "Check your Python syntax for assignment.",
+            "completion_title": "Module 28 Practice Complete!", "completion_desc": "Great job visualizing and interacting with sorting algorithms! You've explored Bubble Sort, Selection Sort, and the importance of comparisons and swaps. <br> Ready for more? Try the <strong>Advanced Practice</strong> for Module 28!",
+            "button_view_theory": "View Theory Again", "button_start_advanced": "Start Advanced Practice", "button_back_menu": "Back to Course Menu"
+        },
+        pt: {
+            "page_title": "Módulo 28: Algoritmos - Ordenação",
+            "nav_theory": "Ver Teoria", "nav_advanced": "Prática Avançada", "nav_menu": "Menu do Curso",
+            "nav_bubble": "Bubble Sort", "nav_selection": "Selection Sort", "nav_compare": "Comparação", "nav_logic": "Lógica do Código", "nav_mission": "Mini Missão",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title": "Módulo 28: Algoritmos de Ordenação", "header_subtitle": "Vamos visualizar como os computadores colocam as coisas em ordem!",
+            "bubble_title": "Visualizador Bubble Sort", "bubble_desc": "Veja como o Bubble Sort funciona! Ele passa repetidamente pela lista, compara elementos adjacentes e os troca se estiverem na ordem errada.",
+            "selection_title": "Visualizador Selection Sort", "selection_desc": "Agora veja o Selection Sort! Ele divide a lista em partes ordenada e não ordenada, encontra o menor elemento na parte não ordenada e o troca com o primeiro elemento não ordenado.",
+            "status_comparisons": "Comparações:", "status_swaps": "Trocas:", "status_ready": "Pronto.", "status_sorting": "Ordenando...", "status_finished": "Concluído!", "status_comparing": "Comparando {val1} e {val2}", "status_swapping": "Trocando {val1} e {val2}", "status_found_min": "Mínimo encontrado: {val}", "status_placing_min": "Posicionando mínimo {val}",
+            "button_reset": "Resetar", "button_next_step": "Próximo Passo", "button_auto_play": "Auto Play", "button_pause": "Pausar",
+            "feedback_vis_finished": "Ordenação completa!", "feedback_vis_paused": "Auto play pausado.",
+            "compare_title": "Desafio da Comparação", "compare_desc": "Pense em quantas comparações cada ordenação faz. Qual dessas listas você acha que exigirá <strong>mais comparações</strong> usando <strong>Bubble Sort</strong>?",
+            "compare_list_a": "Lista A (Quase Ordenada)", "compare_list_b": "Lista B (Ordem Inversa)",
+            "button_choose_a": "Escolher Lista A", "button_choose_b": "Escolher Lista B",
+            "feedback_compare_correct_b": "Correto! O Bubble Sort tem desempenho ruim em listas ordenadas inversamente, exigindo muitas comparações.", "feedback_compare_incorrect_a": "Não exatamente. Embora elementos já ordenados ajudem, o Bubble Sort ainda verifica cada par adjacente em cada passada.",
+            "logic_title": "Lógica do Código: A Comparação", "logic_desc": "Algoritmos são sequências de passos. Vamos focar na comparação principal no loop interno do Bubble Sort. Arraste a peça de código correta para completar a instrução `if` que verifica se uma troca é necessária (para ordem crescente).",
+            "logic_drop_placeholder": "solte aqui",
+            "logic_piece_greater_than": ">", "logic_piece_less_than": "<", "logic_piece_equals": "==",
+            "button_check_logic": "Verificar Lógica", "button_reset_logic": "Resetar",
+            "feedback_logic_correct": "Exato! `>` verifica se o elemento esquerdo é maior, indicando que precisa ser trocado para ordem crescente.", "feedback_logic_incorrect": "Incorreto. Pense sobre qual comparação aciona uma troca ao ordenar do menor para o maior.", "feedback_logic_empty": "Arraste uma peça lógica para o espaço primeiro.",
+            "mission_title": "Mini Missão: Troque eles!", "mission_desc": "Um passo fundamental em muitos algoritmos de ordenação é trocar dois elementos. No editor abaixo, escreva o código Python para trocar os valores das variáveis `a` e `b` usando uma variável temporária `temp`.",
+            "mission_editor_label": "Editor de Código (Assuma `a=5`, `b=10` inicialmente):", "mission_placeholder": "# Use uma variável temp\ntemp = ...\na = ...\nb = ...",
+            "button_run_mission": "Executar Código da Missão", "mission_output_label": "Resultado Simulado (Valores finais de a e b):", "mission_output_placeholder": "A saída mostrará a e b finais...",
+            "feedback_mission_success": "Troca bem-sucedida! a agora é 10, b agora é 5.", "feedback_mission_incomplete": "Parece que a troca não está completa. Certifique-se de usar `temp`, `a` e `b` corretamente.", "feedback_mission_no_temp": "Você usou a variável `temp` para guardar um dos valores originais?", "feedback_mission_syntax": "Verifique sua sintaxe Python para atribuição.",
+            "completion_title": "Prática do Módulo 28 Completa!", "completion_desc": "Ótimo trabalho visualizando e interagindo com algoritmos de ordenação! Você explorou Bubble Sort, Selection Sort e a importância das comparações e trocas. <br> Pronto para mais? Tente a <strong>Prática Avançada</strong> do Módulo 28!",
+            "button_view_theory": "Ver Teoria Novamente", "button_start_advanced": "Iniciar Prática Avançada", "button_back_menu": "Voltar ao Menu do Curso"
+        },
+        zh: {
+            "page_title": "模块 28：算法 - 排序",
+            "nav_theory": "查看理论", "nav_advanced": "高级练习", "nav_menu": "课程菜单",
+            "nav_bubble": "冒泡排序", "nav_selection": "选择排序", "nav_compare": "比较", "nav_logic": "代码逻辑", "nav_mission": "迷你任务",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title": "模块 28：排序算法", "header_subtitle": "让我们可视化计算机如何将事物排序！",
+            "bubble_title": "冒泡排序可视化工具", "bubble_desc": "观察冒泡排序的工作原理！它重复遍历列表，比较相邻元素，如果顺序错误则交换它们。",
+            "selection_title": "选择排序可视化工具", "selection_desc": "现在看看选择排序！它将列表分为已排序和未排序部分，在未排序部分找到最小的元素，并将其与第一个未排序的元素交换。",
+            "status_comparisons": "比较次数：", "status_swaps": "交换次数：", "status_ready": "准备就绪。", "status_sorting": "排序中...", "status_finished": "完成！", "status_comparing": "正在比较 {val1} 和 {val2}", "status_swapping": "正在交换 {val1} 和 {val2}", "status_found_min": "找到最小值：{val}", "status_placing_min": "放置最小值 {val}",
+            "button_reset": "重置", "button_next_step": "下一步", "button_auto_play": "自动播放", "button_pause": "暂停",
+            "feedback_vis_finished": "排序完成！", "feedback_vis_paused": "自动播放已暂停。",
+            "compare_title": "比较挑战", "compare_desc": "思考每种排序进行多少次比较。您认为使用<strong>冒泡排序</strong>时，以下哪个列表需要<strong>更多比较</strong>？",
+            "compare_list_a": "列表 A (接近有序)", "compare_list_b": "列表 B (逆序)",
+            "button_choose_a": "选择列表 A", "button_choose_b": "选择列表 B",
+            "feedback_compare_correct_b": "正确！冒泡排序在逆序列表上表现不佳，需要进行大量比较。", "feedback_compare_incorrect_a": "不完全对。虽然已排序的元素有帮助，但冒泡排序在每一轮中仍会检查所有相邻对。",
+            "logic_title": "代码逻辑：比较", "logic_desc": "算法是一系列步骤。让我们关注冒泡排序内循环中的核心比较。拖动正确的代码片段以完成 `if` 语句，该语句检查是否需要交换（按升序排列）。",
+            "logic_drop_placeholder": "拖放到此",
+            "logic_piece_greater_than": ">", "logic_piece_less_than": "<", "logic_piece_equals": "==",
+            "button_check_logic": "检查逻辑", "button_reset_logic": "重置",
+            "feedback_logic_correct": "完全正确！`>` 检查左侧元素是否更大，这意味着需要交换以实现升序排序。", "feedback_logic_incorrect": "不正确。想一想，在从小到大排序时，哪个比较会触发交换。", "feedback_logic_empty": "请先将逻辑片段拖入插槽。",
+            "mission_title": "迷你任务：交换它们！", "mission_desc": "许多排序算法中的一个基本步骤是交换两个元素。在下面的编辑器中，编写 Python 代码，使用临时变量 `temp` 来交换变量 `a` 和 `b` 的值。",
+            "mission_editor_label": "代码编辑器（假设初始 `a=5`, `b=10`）：", "mission_placeholder": "# 使用临时变量\ntemp = ...\na = ...\nb = ...",
+            "button_run_mission": "运行任务代码", "mission_output_label": "模拟结果（a 和 b 的最终值）：", "mission_output_placeholder": "输出将显示最终的 a 和 b...",
+            "feedback_mission_success": "交换成功！a 现在是 10，b 现在是 5。", "feedback_mission_incomplete": "看起来交换未完成。请确保正确使用了 `temp`、`a` 和 `b`。", "feedback_mission_no_temp": "您是否使用 `temp` 变量来保存原始值之一？", "feedback_mission_syntax": "检查您的 Python 赋值语法。",
+            "completion_title": "模块 28 练习完成！", "completion_desc": "很棒！您可视化并与排序算法进行了互动！您探索了冒泡排序、选择排序以及比较和交换的重要性。<br> 准备好进行更多挑战了吗？试试模块 28 的<strong>高级练习</strong>！",
+            "button_view_theory": "再次查看理论", "button_start_advanced": "开始高级练习", "button_back_menu": "返回课程菜单"
+        }
+    };
+
+
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // --- Language Management (Copied from Module 0) ---
+        let currentLang = 'en'; // Default
+
+        function getStoredLanguage() { /* ... same as Module 0 ... */
+            const storedLang = localStorage.getItem('userLanguage');
+            if (storedLang && translations[storedLang]) return storedLang;
+            const browserLang = navigator.language || navigator.userLanguage;
+            if (browserLang.startsWith('pt')) return 'pt';
+            if (browserLang.startsWith('zh')) return 'zh';
+            return 'en';
+        }
+
+        function setLanguage(lang) { /* ... mostly same as Module 0 ... */
+            if (!translations[lang]) lang = 'en'; // Fallback
+            currentLang = lang; // Update global currentLang
+            localStorage.setItem('userLanguage', lang);
+            document.documentElement.lang = lang;
+            translatePage(lang); // Apply generic translations first
+
+            const langSelect = document.getElementById('languageSelect');
+            if (langSelect) langSelect.value = lang;
+
+             // Re-initialize or update language-dependent interactive content
+             resetBubbleSortVisualizer(); // Reset visualizer with potentially new text
+             resetSelectionSortVisualizer();
+             resetComparisonChallenge(); // Reset challenge state
+             setupLogicActivity(); // Reset drag/drop with new piece text
+             resetMiniMissionSwap(); // Reset mission state
+        }
+
+        function getTranslation(key, lang, replacements = {}) { /* ... same as Module 0 ... */
+            let text = translations[lang]?.[key] ?? translations['en']?.[key] ?? `[${key}]`;
+            for (const placeholder in replacements) {
+                const regex = new RegExp(`\\{${placeholder}\\}`, 'g');
+                text = text.replace(regex, replacements[placeholder]);
+            }
+            return text;
+        }
+
+        function translatePage(lang) { /* ... same as Module 0 ... */
+            if (!translations[lang]) lang = 'en';
+            document.querySelectorAll('[data-translate]').forEach(el => {
+                 const key = el.getAttribute('data-translate');
+                 const translation = getTranslation(key, lang);
+                 if (el.tagName === 'TITLE') { document.title = translation; }
+                 else if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') { /* Skip */ }
+                 else if (el.tagName === 'OPTION') { el.textContent = translation; }
+                 else {
+                    if (translation.includes('<') && translation.includes('>')) { el.innerHTML = translation; }
+                    else { el.textContent = translation; }
+                 }
+             });
+             document.querySelectorAll('[data-translate-placeholder]').forEach(el => {
+                 const key = el.getAttribute('data-translate-placeholder');
+                 el.setAttribute('placeholder', getTranslation(key, lang));
+             });
+             document.querySelectorAll('[data-translate-title]').forEach(el => {
+                const key = el.getAttribute('data-translate-title');
+                el.setAttribute('title', getTranslation(key, lang));
+            });
+        }
+
+        // --- Minimal Nav Logic (Copied) ---
+        const navToggleButton = document.getElementById('minimal-nav-toggle');
+        const navPanel = document.getElementById('minimal-nav-panel');
+        const body = document.body;
+        if (navToggleButton && navPanel) { /* ... same as Module 0 ... */
+            navToggleButton.addEventListener('click', (event) => { event.stopPropagation(); body.classList.toggle('nav-active'); navToggleButton.setAttribute('aria-expanded', body.classList.contains('nav-active')); });
+            document.addEventListener('click', (event) => { if (body.classList.contains('nav-active') && !navPanel.contains(event.target) && event.target !== navToggleButton && !navToggleButton.contains(event.target)) { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); } });
+            navPanel.querySelectorAll('a').forEach(link => { link.addEventListener('click', () => { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); }); });
+            document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && body.classList.contains('nav-active')) { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); } });
+            navToggleButton.setAttribute('aria-expanded', 'false');
+        }
+
+        // --- Language Switcher Setup (Copied) ---
+        const langSelect = document.getElementById('languageSelect');
+        if (langSelect) { langSelect.addEventListener('change', (e) => setLanguage(e.target.value)); }
+
+        // --- Helper Function for Feedback (Copied) ---
+        function showFeedback(elementId, messageKey, type = 'info', replacements = {}) { /* ... same as Module 0 ... */
+             const feedbackEl = document.getElementById(elementId);
+             if (!feedbackEl) { console.error(`Feedback element not found: ${elementId}`); return; }
+             const translatedMessage = getTranslation(messageKey, currentLang, replacements);
+              if (translatedMessage.includes('<') && translatedMessage.includes('>')) { feedbackEl.innerHTML = translatedMessage; }
+              else { feedbackEl.textContent = translatedMessage; }
+             feedbackEl.className = 'feedback-message'; feedbackEl.classList.add('visible', type);
+             const interactiveArea = feedbackEl.closest('.interactive-area');
+             if (!interactiveArea) return;
+             interactiveArea.classList.remove('success-glow-anim', 'shake-anim');
+             void interactiveArea.offsetWidth;
+             if (type === 'correct') { interactiveArea.classList.add('success-glow-anim'); }
+             else if (type === 'incorrect') { interactiveArea.classList.add('shake-anim'); }
+        }
+        function hideFeedback(elementId) {
+            const feedbackEl = document.getElementById(elementId);
+            if (feedbackEl) feedbackEl.classList.remove('visible');
+        }
+
+        // --- Sorting Visualizer Logic ---
+        function createBars(containerId, array) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            container.innerHTML = '';
+            const maxValue = Math.max(...array);
+            array.forEach((value, index) => {
+                const bar = document.createElement('div');
+                bar.classList.add('sort-bar');
+                bar.style.height = `${Math.max(5, (value / maxValue) * 95)}%`; // Min height 5%, max 95%
+                bar.dataset.value = value;
+                bar.dataset.index = index;
+                container.appendChild(bar);
+            });
+        }
+
+        function updateBars(containerId, state) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            const bars = container.querySelectorAll('.sort-bar');
+            const maxValue = Math.max(...state.array.map(Number)); // Ensure numbers
+
+            bars.forEach((bar, index) => {
+                const value = state.array[index];
+                bar.style.height = `${Math.max(5, (value / maxValue) * 95)}%`;
+                bar.dataset.value = value;
+                bar.classList.remove('comparing', 'swapping', 'minimum', 'sorted');
+
+                if (state.comparing?.includes(index)) bar.classList.add('comparing');
+                if (state.swapping?.includes(index)) bar.classList.add('swapping');
+                if (state.minimumIndex === index) bar.classList.add('minimum');
+                if (state.sortedIndices?.includes(index)) bar.classList.add('sorted');
+            });
+        }
+
+        function updateStatus(statusId, compId, swapId, infoId, state) {
+             document.getElementById(compId).textContent = state.comparisons;
+             document.getElementById(swapId).textContent = state.swaps;
+             const infoEl = document.getElementById(infoId);
+             let statusKey = state.statusKey || 'status_ready';
+             infoEl.textContent = getTranslation(statusKey, currentLang, state.statusParams || {});
+        }
+
+        // --- Generic Sort Runner ---
+        class SortRunner {
+            constructor(algoGenerator, visualizerId, statusElements, initialArray, feedbackId) {
+                this.algoGenerator = algoGenerator;
+                this.visualizerId = visualizerId;
+                this.statusElements = statusElements; // { statusId, compId, swapId, infoId }
+                this.initialArray = [...initialArray];
+                this.feedbackId = feedbackId;
+                this.iterator = null;
+                this.currentState = null;
+                this.isPlaying = false;
+                this.timeoutId = null;
+                this.delay = 300; // ms
+                this.reset();
+            }
+
+            reset() {
+                this.stop();
+                this.currentState = { array: [...this.initialArray], comparisons: 0, swaps: 0, statusKey: 'status_ready', statusParams: {}, sortedIndices: [] };
+                this.iterator = this.algoGenerator([...this.initialArray]); // Pass a copy
+                createBars(this.visualizerId, this.currentState.array);
+                updateStatus(this.statusElements.statusId, this.statusElements.compId, this.statusElements.swapId, this.statusElements.infoId, this.currentState);
+                hideFeedback(this.feedbackId);
+            }
+
+            step() {
+                if (!this.iterator) return false; // Already done or not initialized
+                const result = this.iterator.next();
+                if (result.done) {
+                    this.currentState.statusKey = 'status_finished';
+                    this.currentState.statusParams = {};
+                    this.currentState.comparing = [];
+                    this.currentState.swapping = [];
+                    this.currentState.minimumIndex = -1; // Reset min highlight if used
+                    this.currentState.sortedIndices = this.currentState.array.map((_, i) => i); // Mark all as sorted
+                    updateBars(this.visualizerId, this.currentState);
+                    updateStatus(this.statusElements.statusId, this.statusElements.compId, this.statusElements.swapId, this.statusElements.infoId, this.currentState);
+                    showFeedback(this.feedbackId, 'feedback_vis_finished', 'success');
+                    this.iterator = null; // Mark as finished
+                    this.isPlaying = false; // Stop playing
+                    return false; // Indicates finished
+                } else {
+                    this.currentState = { ...this.currentState, ...result.value }; // Merge new state
+                    updateBars(this.visualizerId, this.currentState);
+                    updateStatus(this.statusElements.statusId, this.statusElements.compId, this.statusElements.swapId, this.statusElements.infoId, this.currentState);
+                    return true; // Indicates more steps available
+                }
+            }
+
+            play() {
+                if (this.isPlaying || !this.iterator) return;
+                this.isPlaying = true;
+                const autoStep = () => {
+                    if (!this.isPlaying) return;
+                    const hasMoreSteps = this.step();
+                    if (hasMoreSteps) {
+                        this.timeoutId = setTimeout(autoStep, this.delay);
+                    } else {
+                        this.isPlaying = false;
+                        // Update button text/icon if needed
+                        const playBtn = document.getElementById(this.visualizerId.split('-')[0] + '-play-btn'); // e.g., bubble-play-btn
+                        if(playBtn) {
+                            playBtn.innerHTML = `<i class="fas fa-play"></i> ${getTranslation('button_auto_play', currentLang)}`;
+                        }
+                    }
+                };
+                this.timeoutId = setTimeout(autoStep, this.delay / 2); // Start slightly faster
+            }
+
+            stop() {
+                this.isPlaying = false;
+                if (this.timeoutId) {
+                    clearTimeout(this.timeoutId);
+                    this.timeoutId = null;
+                }
+                // Optionally show paused feedback
+                 if (this.iterator) { // Only show paused if not finished
+                      hideFeedback(this.feedbackId); // Clear previous feedback
+                    //   showFeedback(this.feedbackId, 'feedback_vis_paused', 'info'); // Maybe too noisy
+                 }
+            }
+        }
+
+        // --- Bubble Sort Algorithm Generator ---
+        function* bubbleSortGenerator(arr) {
+            let n = arr.length;
+            let comparisons = 0;
+            let swaps = 0;
+            let swapped;
+            let sortedBoundary = n; // Elements after this are sorted
+
+            do {
+                swapped = false;
+                const currentSortedIndices = Array.from({ length: n - sortedBoundary }, (_, i) => sortedBoundary + i);
+
+                for (let i = 0; i < sortedBoundary - 1; i++) {
+                    comparisons++;
+                    yield { array: [...arr], comparisons, swaps, comparing: [i, i + 1], statusKey: 'status_comparing', statusParams: { val1: arr[i], val2: arr[i+1] }, sortedIndices: currentSortedIndices };
+
+                    if (arr[i] > arr[i + 1]) {
+                        swaps++;
+                        yield { array: [...arr], comparisons, swaps, swapping: [i, i + 1], statusKey: 'status_swapping', statusParams: { val1: arr[i], val2: arr[i+1] }, sortedIndices: currentSortedIndices };
+                        [arr[i], arr[i + 1]] = [arr[i + 1], arr[i]]; // Swap
+                        swapped = true;
+                        yield { array: [...arr], comparisons, swaps, swapping: [i, i + 1], statusKey: 'status_swapping', statusParams: { val1: arr[i], val2: arr[i+1] }, sortedIndices: currentSortedIndices }; // Show swapped state briefly
+                    }
+                     // Yield state after comparison/swap attempt, before moving to next pair
+                     yield { array: [...arr], comparisons, swaps, comparing: [], swapping: [], statusKey: 'status_sorting', statusParams: {}, sortedIndices: currentSortedIndices };
+                }
+                 sortedBoundary--; // Last element of the pass is now sorted
+            } while (swapped && sortedBoundary > 1);
+
+            // Final state is handled by the runner when iterator is done
+            return arr;
+        }
+
+         // --- Selection Sort Algorithm Generator ---
+         function* selectionSortGenerator(arr) {
+            let n = arr.length;
+            let comparisons = 0;
+            let swaps = 0;
+            let sortedIndices = [];
+
+            for (let i = 0; i < n - 1; i++) {
+                let minIndex = i;
+                yield { array: [...arr], comparisons, swaps, minimumIndex: minIndex, comparing: [], statusKey: 'status_sorting', sortedIndices: [...sortedIndices] }; // Highlight starting point for min search
+
+                for (let j = i + 1; j < n; j++) {
+                    comparisons++;
+                     yield { array: [...arr], comparisons, swaps, minimumIndex: minIndex, comparing: [minIndex, j], statusKey: 'status_comparing', statusParams: { val1: arr[minIndex], val2: arr[j] }, sortedIndices: [...sortedIndices] };
+                    if (arr[j] < arr[minIndex]) {
+                        minIndex = j;
+                        // Yield state showing new minimum found
+                        yield { array: [...arr], comparisons, swaps, minimumIndex: minIndex, comparing: [], statusKey: 'status_found_min', statusParams: { val: arr[minIndex] }, sortedIndices: [...sortedIndices] };
+                    }
+                      // Yield state after comparison, before moving to next j
+                      yield { array: [...arr], comparisons, swaps, minimumIndex: minIndex, comparing: [], statusKey: 'status_sorting', sortedIndices: [...sortedIndices] };
+                }
+
+                if (minIndex !== i) {
+                    swaps++;
+                    yield { array: [...arr], comparisons, swaps, swapping: [i, minIndex], minimumIndex: -1, statusKey: 'status_placing_min', statusParams: { val: arr[minIndex] }, sortedIndices: [...sortedIndices] };
+                    [arr[i], arr[minIndex]] = [arr[minIndex], arr[i]]; // Swap
+                     yield { array: [...arr], comparisons, swaps, swapping: [i, minIndex], minimumIndex: -1, statusKey: 'status_placing_min', statusParams: { val: arr[i] }, sortedIndices: [...sortedIndices] }; // Show swapped state briefly
+                }
+                 sortedIndices.push(i); // Mark index i as sorted
+                 // Yield state after potential swap and marking as sorted
+                 yield { array: [...arr], comparisons, swaps, swapping: [], minimumIndex: -1, comparing: [], statusKey: 'status_sorting', sortedIndices: [...sortedIndices] };
+            }
+             sortedIndices.push(n-1); // Last element is also sorted
+             yield { array: [...arr], comparisons, swaps, swapping: [], minimumIndex: -1, comparing: [], statusKey: 'status_sorting', sortedIndices: [...sortedIndices] };
+
+            return arr;
+        }
+
+        // --- Visualizer Setup ---
+        const initialSortArray = [7, 3, 9, 2, 5, 1, 8, 4, 6];
+        let bubbleRunner = null;
+        let selectionRunner = null;
+
+        function setupBubbleSortVisualizer() {
+            bubbleRunner = new SortRunner(
+                bubbleSortGenerator,
+                'bubble-visualizer',
+                { statusId: 'bubble-status', compId: 'bubble-comparisons', swapId: 'bubble-swaps', infoId: 'bubble-step-info' },
+                initialSortArray,
+                'bubble-feedback'
+            );
+            const stepBtn = document.getElementById('bubble-step-btn');
+            const playBtn = document.getElementById('bubble-play-btn');
+            const resetBtn = document.getElementById('bubble-reset-btn');
+            stepBtn.onclick = () => { bubbleRunner.stop(); bubbleRunner.step(); playBtn.innerHTML = `<i class="fas fa-play"></i> ${getTranslation('button_auto_play', currentLang)}`; };
+            playBtn.onclick = () => {
+                 if (bubbleRunner.isPlaying) {
+                     bubbleRunner.stop();
+                     playBtn.innerHTML = `<i class="fas fa-play"></i> ${getTranslation('button_auto_play', currentLang)}`;
+                 } else {
+                     bubbleRunner.play();
+                     playBtn.innerHTML = `<i class="fas fa-pause"></i> ${getTranslation('button_pause', currentLang)}`;
+                 }
+            };
+             resetBtn.onclick = () => {
+                resetBubbleSortVisualizer();
+                playBtn.innerHTML = `<i class="fas fa-play"></i> ${getTranslation('button_auto_play', currentLang)}`;
+            };
+        }
+         function resetBubbleSortVisualizer() {
+             if (bubbleRunner) bubbleRunner.reset();
+             else setupBubbleSortVisualizer(); // Initial setup if not exists
+         }
+
+         function setupSelectionSortVisualizer() {
+            selectionRunner = new SortRunner(
+                selectionSortGenerator,
+                'selection-visualizer',
+                { statusId: 'selection-status', compId: 'selection-comparisons', swapId: 'selection-swaps', infoId: 'selection-step-info' },
+                initialSortArray,
+                'selection-feedback'
+            );
+            const stepBtn = document.getElementById('selection-step-btn');
+            const playBtn = document.getElementById('selection-play-btn');
+            const resetBtn = document.getElementById('selection-reset-btn');
+            stepBtn.onclick = () => { selectionRunner.stop(); selectionRunner.step(); playBtn.innerHTML = `<i class="fas fa-play"></i> ${getTranslation('button_auto_play', currentLang)}`; };
+            playBtn.onclick = () => {
+                 if (selectionRunner.isPlaying) {
+                     selectionRunner.stop();
+                     playBtn.innerHTML = `<i class="fas fa-play"></i> ${getTranslation('button_auto_play', currentLang)}`;
+                 } else {
+                     selectionRunner.play();
+                     playBtn.innerHTML = `<i class="fas fa-pause"></i> ${getTranslation('button_pause', currentLang)}`;
+                 }
+            };
+             resetBtn.onclick = () => {
+                 resetSelectionSortVisualizer();
+                 playBtn.innerHTML = `<i class="fas fa-play"></i> ${getTranslation('button_auto_play', currentLang)}`;
+             };
+        }
+         function resetSelectionSortVisualizer() {
+             if (selectionRunner) selectionRunner.reset();
+             else setupSelectionSortVisualizer(); // Initial setup if not exists
+         }
+
+        // --- Activity 3: Comparison Challenge ---
+        const compareBtnA = document.getElementById('compare-choose-a-btn');
+        const compareBtnB = document.getElementById('compare-choose-b-btn');
+        const compareFeedback = document.getElementById('compare-feedback');
+
+        function checkComparison(choice) {
+            hideFeedback('compare-feedback'); // Clear previous
+            compareBtnA.disabled = true;
+            compareBtnB.disabled = true;
+             // Bubble sort requires more comparisons on reverse sorted (List B)
+            if (choice === 'B') {
+                showFeedback('compare-feedback', 'feedback_compare_correct_b', 'correct');
+                compareBtnB.classList.add('success');
+            } else {
+                showFeedback('compare-feedback', 'feedback_compare_incorrect_a', 'incorrect');
+                compareBtnA.classList.add('secondary'); // Just mark it, not necessarily 'wrong' looking
+            }
+        }
+        function resetComparisonChallenge() {
+             hideFeedback('compare-feedback');
+             compareBtnA.disabled = false;
+             compareBtnB.disabled = false;
+             compareBtnA.classList.remove('success', 'secondary');
+             compareBtnB.classList.remove('success', 'secondary');
+        }
+        compareBtnA.addEventListener('click', () => checkComparison('A'));
+        compareBtnB.addEventListener('click', () => checkComparison('B'));
+
+        // --- Activity 4: Code Logic Drag/Drop ---
+        const logicPiecesContainer = document.getElementById('logic-pieces-container');
+        const logicDropTarget = document.getElementById('logic-drop-target');
+        const checkLogicBtn = document.getElementById('check-logic-btn');
+        const resetLogicBtn = document.getElementById('reset-logic-btn');
+        let draggedLogicPiece = null;
+
+        function createLogicPiece(pieceData, lang) {
+            const piece = document.createElement('span');
+            piece.classList.add('logic-piece', 'code-font');
+            piece.draggable = true;
+            piece.textContent = getTranslation(pieceData.key, lang);
+            piece.dataset.key = pieceData.key;
+            piece.dataset.correct = pieceData.correct;
+            addLogicDragListeners(piece);
+            return piece;
+        }
+
+        function setupLogicActivity() {
+            const currentLang = getStoredLanguage();
+            const piecesData = Array.from(document.querySelectorAll('#logic-piece-texts span')).map(span => ({
+                key: span.dataset.key,
+                correct: span.dataset.correct === 'true'
+            }));
+
+            logicPiecesContainer.innerHTML = '';
+            piecesData.sort(() => Math.random() - 0.5).forEach(pData => {
+                logicPiecesContainer.appendChild(createLogicPiece(pData, currentLang));
+            });
+
+            logicDropTarget.innerHTML = '';
+            logicDropTarget.textContent = getTranslation('logic_drop_placeholder', currentLang); // Set placeholder text
+            logicDropTarget.classList.remove('over');
+            checkLogicBtn.disabled = false;
+            checkLogicBtn.classList.remove('success');
+            hideFeedback('logic-feedback');
+        }
+
+        function addLogicDragListeners(element) {
+            element.addEventListener('dragstart', (e) => {
+                 if (e.target.closest('.drop-target')) { e.preventDefault(); return; } // Prevent dragging from target
+                draggedLogicPiece = element;
+                element.classList.add('ghosting');
+                e.dataTransfer.effectAllowed = 'move';
+                 try { e.dataTransfer.setData('text/plain', element.dataset.key); } catch (err) {}
+            });
+            element.addEventListener('dragend', () => {
+                 if (draggedLogicPiece) {
+                     draggedLogicPiece.classList.remove('ghosting');
+                     draggedLogicPiece = null;
+                 }
+                 logicDropTarget.classList.remove('over');
+            });
+        }
+
+        logicDropTarget.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            if (logicDropTarget.children.length === 0) { // Only allow drop if empty
+                logicDropTarget.classList.add('over');
+            }
+        });
+        logicDropTarget.addEventListener('dragleave', () => logicDropTarget.classList.remove('over'));
+        logicDropTarget.addEventListener('drop', (e) => {
+            e.preventDefault();
+            logicDropTarget.classList.remove('over');
+            if (draggedLogicPiece && logicDropTarget.children.length === 0) {
+                const droppedPiece = draggedLogicPiece;
+                droppedPiece.classList.remove('ghosting');
+                droppedPiece.draggable = false; // Can't drag from target
+                droppedPiece.style.cursor = 'default';
+                logicDropTarget.textContent = ''; // Clear placeholder
+                logicDropTarget.appendChild(droppedPiece);
+                draggedLogicPiece = null;
+            } else if (draggedLogicPiece) {
+                // If target not empty, just remove ghosting from source
+                draggedLogicPiece.classList.remove('ghosting');
+                draggedLogicPiece = null;
+            }
+        });
+
+        checkLogicBtn.addEventListener('click', () => {
+            const droppedPiece = logicDropTarget.querySelector('.logic-piece');
+            if (!droppedPiece) {
+                showFeedback('logic-feedback', 'feedback_logic_empty', 'info');
+                return;
+            }
+            const isCorrect = droppedPiece.dataset.correct === 'true';
+            if (isCorrect) {
+                showFeedback('logic-feedback', 'feedback_logic_correct', 'correct');
+                checkLogicBtn.classList.add('success');
+                checkLogicBtn.disabled = true;
+            } else {
+                showFeedback('logic-feedback', 'feedback_logic_incorrect', 'incorrect');
+                 // Optionally move piece back to container on wrong answer
+                 // logicPiecesContainer.appendChild(droppedPiece);
+                 // logicDropTarget.textContent = getTranslation('logic_drop_placeholder', currentLang);
+            }
+        });
+
+        resetLogicBtn.addEventListener('click', setupLogicActivity);
+
+        // --- Activity 5: Mini Mission Swap ---
+        const swapEditor = document.getElementById('swap-editor-input');
+        const swapOutput = document.getElementById('swap-output');
+        const runSwapBtn = document.getElementById('run-swap-btn');
+        const swapFeedback = document.getElementById('swap-feedback');
+        const swapOutputPlaceholderKey = 'mission_output_placeholder';
+
+        function resetMiniMissionSwap() {
+             swapEditor.value = '';
+             swapOutput.innerHTML = `<span class="placeholder">${getTranslation(swapOutputPlaceholderKey, currentLang)}</span>`;
+             hideFeedback('swap-feedback');
+             runSwapBtn.disabled = false;
+        }
+
+        runSwapBtn.addEventListener('click', () => {
+             const code = swapEditor.value.trim();
+             let a = 5; // Initial values
+             let b = 10;
+             let temp; // Declare temp
+             let outputText = '';
+             let success = false;
+             let feedbackKey = 'feedback_mission_syntax';
+             let feedbackType = 'incorrect';
+
+             // Basic simulation - VERY simplified, just looks for the pattern
+             const lines = code.split('\n').map(l => l.trim()).filter(l => l && !l.startsWith('#'));
+             const usesTemp = lines.some(l => l.includes('temp'));
+             const assignsToTemp = lines.some(l => l.startsWith('temp ='));
+             const assignsToA = lines.some(l => l.startsWith('a ='));
+             const assignsToB = lines.some(l => l.startsWith('b ='));
+
+             // Attempt a pseudo-execution (vulnerable to errors, but ok for simple case)
+             try {
+                 // Try to mimic the swap logic - order matters!
+                 if (lines.length >= 3 && usesTemp && assignsToTemp && assignsToA && assignsToB) {
+                     // Very crude check for the standard pattern
+                     if (lines[0].match(/^temp\s*=\s*a\s*;?$/) && lines[1].match(/^a\s*=\s*b\s*;?$/) && lines[2].match(/^b\s*=\s*temp\s*;?$/)) {
+                         temp = a; a = b; b = temp; success = true;
+                     } else if (lines[0].match(/^temp\s*=\s*b\s*;?$/) && lines[1].match(/^b\s*=\s*a\s*;?$/) && lines[2].match(/^a\s*=\s*temp\s*;?$/)) {
+                         temp = b; b = a; a = temp; success = true;
+                     } else {
+                         feedbackKey = 'feedback_mission_incomplete'; // Correct variables but wrong order/logic
+                     }
+                 } else if (!usesTemp || !assignsToTemp) {
+                     feedbackKey = 'feedback_mission_no_temp';
+                 } else {
+                      feedbackKey = 'feedback_mission_incomplete';
+                 }
+             } catch (e) {
+                 console.error("Swap simulation error:", e);
+                 feedbackKey = 'feedback_mission_syntax'; // Default to syntax error
+             }
+
+
+             if (success && a === 10 && b === 5) {
+                 outputText = `> a = ${a}, b = ${b}`;
+                 feedbackKey = 'feedback_mission_success';
+                 feedbackType = 'correct';
+                 runSwapBtn.disabled = true; // Mark as complete
+             } else {
+                 // Keep feedbackKey determined above
+                 outputText = `<span class="placeholder">${getTranslation(swapOutputPlaceholderKey, currentLang)}</span>`;
+             }
+
+             swapOutput.innerHTML = outputText;
+             showFeedback('swap-feedback', feedbackKey, feedbackType);
+        });
+
+        // --- Fade-in animations on scroll (Copied) ---
+        const fadeElements = document.querySelectorAll('.fade-in');
+        const animateOnScroll = () => { /* ... same as Module 0 ... */
+            const windowHeight = window.innerHeight;
+            fadeElements.forEach(el => {
+                if (el.style.opacity === '1') return;
+                const rect = el.getBoundingClientRect();
+                if (rect.top < windowHeight - 80 && rect.bottom >= 50) {
+                     el.style.opacity = '1';
+                     el.style.transform = 'translateY(0)';
+                 }
+             });
+        };
+        const scrollHandler = () => window.requestAnimationFrame(animateOnScroll);
+        window.addEventListener('scroll', scrollHandler);
+
+
+        // --- Initial Setup ---
+        const initialLang = getStoredLanguage();
+        setLanguage(initialLang); // Apply language FIRST
+        animateOnScroll(); // Trigger initial animation check
+
+        // Initial setup for activities (already called within setLanguage, but safe to call again if needed)
+        resetBubbleSortVisualizer();
+        resetSelectionSortVisualizer();
+        resetComparisonChallenge();
+        setupLogicActivity();
+        resetMiniMissionSwap();
+
+
+    }); // End DOMContentLoaded
+    </script>
+
+</body>
+</html>

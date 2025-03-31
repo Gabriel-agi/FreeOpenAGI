@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<!-- Language set by JS -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Title set by JS -->
+    <title data-translate="page_title">Module 30: Advanced Recursion Practice</title>
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* --- Base Styles & Variables (Copied from Practice) --- */
+        :root {
+            --primary-color: #007bff; /* Blue */
+            --secondary-color: #6c757d; /* Grey */
+            --background-light: #f8f9fa;
+            --background-medium: #e9ecef;
+            --background-dark: #343a40;
+            --text-light: #f8f9fa;
+            --text-dark: #212529;
+            --accent-color: #ffc107; /* Yellow */
+            --success-color: #28a745; /* Green */
+            --error-color: #dc3545;   /* Red */
+            --info-color: #17a2b8;    /* Teal */
+            --recursion-highlight-bg: rgba(23, 162, 184, 0.15); /* Teal highlight */
+            --recursion-highlight-border: rgba(23, 162, 184, 0.5);
+            --basecase-highlight-bg: rgba(255, 193, 7, 0.15); /* Yellow highlight */
+            --basecase-highlight-border: rgba(255, 193, 7, 0.5);
+            --border-radius: 8px;
+            --transition-speed: 0.3s;
+            --font-body: 'Roboto', sans-serif;
+            --font-title: 'Orbitron', sans-serif;
+            --selection-highlight-bg: rgba(0, 123, 255, 0.1);
+            --selection-highlight-border: rgba(0, 123, 255, 0.4);
+            /* Colors matching news.html for consistency in switcher potentially */
+            --nav-primary: #6e48aa;
+            --nav-success: #4cc9f0;
+            --nav-dark: #1a1a2e;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; font-size: 16px; }
+        body {
+            font-family: var(--font-body); line-height: 1.7;
+            background-color: var(--background-light); color: var(--text-dark);
+            overflow-x: hidden;
+        }
+
+        /* --- Utility Classes (Copied from Practice) --- */
+        .container { max-width: 960px; margin: 0 auto; padding: 0 15px; }
+        .text-center { text-align: center; }
+        .highlight { color: var(--primary-color); font-weight: bold; }
+        .code-font { font-family: 'Courier New', Courier, monospace; }
+        .hidden { display: none !important; }
+        .button-group { margin-top: 2rem; display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; }
+
+        /* --- Advanced Animations (Copied from Practice) --- */
+        .fade-in { opacity: 0; transform: translateY(20px); animation: fadeInAnimation 0.8s ease-out forwards; }
+        .fade-in.delay-1 { animation-delay: 0.2s; }
+        .fade-in.delay-2 { animation-delay: 0.4s; }
+        .fade-in.delay-3 { animation-delay: 0.6s; }
+        .fade-in.delay-4 { animation-delay: 0.8s; }
+        @keyframes fadeInAnimation { to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulseHeaderIcon { 0% { transform: scale(1); opacity: 0.1; filter: brightness(1); } 50% { transform: scale(1.05); opacity: 0.25; filter: brightness(1.2); } 100% { transform: scale(1); opacity: 0.1; filter: brightness(1); } }
+        @keyframes successGlow { 0% { box-shadow: 0 0 3px rgba(40, 167, 69, 0.3); transform: scale(1); } 50% { box-shadow: 0 0 12px 5px rgba(40, 167, 69, 0.5); transform: scale(1.01); } 100% { box-shadow: 0 0 3px rgba(40, 167, 69, 0.3); transform: scale(1); } }
+        .success-glow-anim { animation: successGlow 0.9s ease-out; }
+        @keyframes shake { 10%, 90% { transform: translate3d(-2px, 0, 0); } 20%, 80% { transform: translate3d(3px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-5px, 0, 0); } 40%, 60% { transform: translate3d(5px, 0, 0); } }
+        .shake-anim { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes iconAppearCorrect { 0% { transform: scale(0.5) rotate(-15deg); opacity: 0; } 60% { transform: scale(1.2) rotate(5deg); opacity: 1; } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
+        @keyframes iconAppearIncorrect { 0% { transform: scale(0.5) rotate(-15deg); opacity: 0; } 50% { transform: scale(1.2) rotate(10deg); opacity: 1; } 70% { transform: scale(0.9) rotate(-5deg); } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
+        @keyframes iconAppearMissed { 0% { transform: scale(0.8) rotateY(90deg); opacity: 0; } 100% { transform: scale(1) rotateY(0deg); opacity: 0.8; } }
+        .action-button:active:not(:disabled) { transform: translateY(1px) scale(0.98); filter: brightness(0.95); }
+
+        /* --- Minimal Retractable Nav (Copied from Practice) --- */
+        .minimal-nav-button { position: fixed; top: 15px; right: 15px; z-index: 1001; background-color: rgba(52, 58, 64, 0.75); color: var(--text-light); border: none; border-radius: var(--border-radius); padding: 8px 12px; cursor: pointer; transition: background-color var(--transition-speed), opacity var(--transition-speed), transform var(--transition-speed); font-size: 1.1rem; opacity: 0.6; box-shadow: 0 2px 5px rgba(0,0,0,0.2); line-height: 1;}
+        .minimal-nav-button:hover { background-color: rgba(52, 58, 64, 0.95); opacity: 1; transform: scale(1.05); }
+        .minimal-nav { position: fixed; top: 60px; right: 15px; z-index: 1000; background-color: var(--background-dark); border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.3); padding: 0.8rem; opacity: 0; transform: translateY(-15px) scale(0.95); transform-origin: top right; pointer-events: none; transition: opacity var(--transition-speed) ease, transform var(--transition-speed) ease; min-width: 200px;}
+        body.nav-active .minimal-nav { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto;}
+        .minimal-nav ul { list-style: none; margin: 0; padding: 0;}
+        .minimal-nav ul li { margin-bottom: 5px; }
+        .minimal-nav ul li:last-child { margin-bottom: 0;}
+        .minimal-nav ul li a { display: flex; align-items: center; color: var(--text-light); text-decoration: none; padding: 0.6rem 1rem; border-radius: 4px; transition: background-color var(--transition-speed), color var(--transition-speed); white-space: nowrap; font-weight: 400; font-size: 0.95rem;}
+        .minimal-nav ul li a i.fas { margin-right: 10px; width: 1.2em; text-align: center; opacity: 0.8; transition: opacity var(--transition-speed);}
+        .minimal-nav ul li a:hover { background-color: var(--primary-color); color: var(--text-light);}
+        .minimal-nav ul li a:hover i.fas { opacity: 1;}
+        .minimal-nav .language-switcher-item { padding: 0.5rem 1rem; border-top: 1px solid var(--secondary-color); margin-top: 8px; padding-top: 13px;}
+        #languageSelect { width: 100%; background: rgba(255,255,255,0.1); color: white; border: 1px solid var(--nav-success); border-radius: 5px; padding: 6px 30px 6px 12px; cursor: pointer; font-size: 0.9rem; appearance: none; -webkit-appearance: none; -moz-appearance: none; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%234CC9F0%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right 10px center; background-size: 10px auto; transition: background-color 0.3s ease;}
+        #languageSelect:hover { background-color: rgba(255,255,255,0.15);}
+        #languageSelect option { background: var(--nav-dark); color: var(--text-light);}
+
+        /* --- Practice Header (Adjust for Advanced Theme) --- */
+        .practice-header { background: linear-gradient(135deg, #6e48aa, #4d3276); /* Darker Purple gradient */ color: var(--text-light); padding: 3rem 0 4rem; text-align: center; position: relative; overflow: hidden; border-bottom: 5px solid var(--accent-color); }
+        .practice-header h1 { font-family: var(--font-title); font-size: 2.8rem; margin-bottom: 0.5rem; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); animation: fadeInAnimation 1s ease-out; }
+        .practice-header p { font-size: 1.1rem; font-weight: 300; opacity: 0.9; animation: fadeInAnimation 1s ease-out 0.3s forwards; opacity: 0; }
+        .header-icon { position: absolute; font-size: 4rem; color: var(--text-light); animation: pulseHeaderIcon 6s infinite ease-in-out alternate; }
+        /* Use slightly different icons maybe? */
+        .icon1 { top: 20%; left: 15%; animation-duration: 7s; } /* Brain or network icon? */
+        .icon2 { bottom: 15%; right: 20%; animation-duration: 5s; } /* Recursion or gears icon? */
+
+        /* --- Practice Section Styling (Copied from Practice) --- */
+        .practice-section { padding: 3rem 0; background-color: var(--background-medium); border-bottom: 1px solid #d6d8db; }
+        .practice-section:nth-child(odd) { background-color: var(--background-light); }
+        .practice-section:last-of-type { border-bottom: none; }
+        .practice-section h2 { font-family: var(--font-title); font-size: 1.8rem; color: var(--primary-color); margin-bottom: 1rem; text-align: center; }
+        .practice-section .section-description { text-align: center; margin-bottom: 2.5rem; color: var(--secondary-color); font-size: 1.05rem; max-width: 700px; margin-left: auto; margin-right: auto; }
+
+        /* --- General Interactive Elements (Copied from Practice) --- */
+        .interactive-area { background-color: #fff; padding: 2rem; border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.08); margin-top: 1.5rem; position: relative; transition: box-shadow 0.5s ease-out; }
+        .feedback-message { padding: 0.8rem 1rem; margin-top: 1rem; border-radius: var(--border-radius); font-weight: bold; text-align: center; opacity: 0; max-height: 0; overflow: hidden; transition: opacity var(--transition-speed) ease, max-height var(--transition-speed) ease, margin-top var(--transition-speed) ease; }
+        .feedback-message.visible { opacity: 1; max-height: 100px; margin-top: 1.5rem; }
+        .feedback-message.correct { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .feedback-message.incorrect { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .feedback-message.info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .feedback-message .fas { margin: 0 3px; }
+        .action-button { display: inline-block; padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold; color: var(--text-light); background-color: var(--primary-color); border: none; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), transform var(--transition-speed), filter var(--transition-speed), box-shadow var(--transition-speed); margin-top: 1rem; vertical-align: middle; box-shadow: 0 2px 5px rgba(0,0,0,0.1); text-decoration: none;}
+        .action-button:hover:not(:disabled) { background-color: #0056b3; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+        .action-button:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none; box-shadow: none; opacity: 0.7; }
+        .action-button.success { background-color: var(--success-color); }
+        .action-button.success:hover:not(:disabled) { background-color: #218838; }
+        .action-button.secondary { background-color: var(--secondary-color); }
+        .action-button.secondary:hover:not(:disabled) { background-color: #5a6268; }
+        /* Code styling */
+        .code-block { background-color: var(--background-dark); color: var(--text-light); padding: 1.5rem; border-radius: var(--border-radius); font-family: var(--code-font); font-size: 1rem; position: relative; overflow-x: auto; margin: 1rem 0; }
+        .code-keyword { color: #569cd6; } .code-string { color: #ce9178; } .code-comment { color: #6a9955; } .code-function { color: #dcdcaa; } .code-variable { color: #9cdcfe; } .code-number { color: #b5cea8; } .code-operator { color: #d4d4d4; } .code-control { color: #c586c0;} .code-builtin { color: #4ec9b0; } .code-paren { color: #ffd700; }
+
+        /* --- Activity 1: Predict the Output --- */
+        #predict-output .code-block { margin-bottom: 1.5rem; }
+        #predict-output label { font-weight: bold; display: block; margin-bottom: 0.5rem; }
+        #prediction-input {
+            width: 100%; padding: 0.75rem; border: 1px solid #ced4da; border-radius: var(--border-radius); font-family: var(--font-body); font-size: 1rem;
+            transition: border-color var(--transition-speed), box-shadow var(--transition-speed);
+        }
+        #prediction-input:focus { border-color: var(--primary-color); box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25); outline: none; }
+
+        /* --- Activity 2: Spot the Recursive Call --- */
+        /* Reuse styles from Practice 'Spot the Base Case', adjust selection color */
+         .code-line-container { display: flex; align-items: center; margin-bottom: 8px; position: relative; }
+         .feedback-icon-placeholder { width: 30px; height: 24px; margin-right: 10px; display: inline-flex; align-items: center; justify-content: center; transition: opacity var(--transition-speed); opacity: 0; font-size: 1.2rem; }
+         .feedback-icon-placeholder.visible { opacity: 1; }
+         #spot-recursive-call .code-line-check { flex-grow: 1; background-color: var(--background-dark); color: var(--text-light); padding: 10px 15px; border-radius: 5px; cursor: pointer; transition: background-color var(--transition-speed), transform var(--transition-speed), border-left-color var(--transition-speed); font-family: var(--code-font); border-left: 4px solid transparent; user-select: none; -webkit-user-select: none; }
+         #spot-recursive-call .code-line-check:hover { background-color: #495057; transform: translateX(3px); }
+         #spot-recursive-call .code-line-check.selected-visual { background-color: var(--recursion-highlight-bg); border-left-color: var(--recursion-highlight-border); color: var(--text-dark); } /* Teal selection */
+         #spot-recursive-call .code-line-check.checked-state { cursor: default; }
+         .feedback-icon-placeholder .fa-check { color: var(--success-color); animation: iconAppearCorrect 0.5s ease-out forwards; }
+         .feedback-icon-placeholder .fa-times { color: var(--error-color); animation: iconAppearIncorrect 0.6s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards; }
+         .feedback-icon-placeholder .fa-eye { color: var(--info-color); animation: iconAppearMissed 0.4s ease-in forwards; opacity: 0; } /* Use info/teal for missed recursive calls */
+         #reset-recursive-call-btn { margin-left: 10px; }
+
+        /* --- Activity 3: Advanced Simulator --- */
+        /* Reuse styles from Practice Simulator, update IDs if needed */
+        #advanced-simulator .sim-editor { width: 100%; min-height: 120px; background-color: var(--background-dark); color: var(--text-light); border: 1px solid var(--secondary-color); border-radius: var(--border-radius); padding: 1rem; font-family: var(--code-font); font-size: 1rem; line-height: 1.5; resize: vertical; }
+        #advanced-simulator .sim-output-area { margin-top: 1rem; min-height: 50px; background-color: #1a1a1a; border: 1px solid #444; border-radius: var(--border-radius); padding: 1rem; color: var(--accent-color); font-family: var(--code-font); font-size: 1.05rem; white-space: pre-wrap; word-wrap: break-word; }
+        #advanced-simulator .sim-output-area .placeholder { color: var(--secondary-color); font-style: italic; font-size: 0.9rem; }
+        #advanced-simulator .sim-output-area .output-line { display: block; }
+
+        /* --- Activity 4: Advanced Mini Missions --- */
+        /* Reuse styles from Practice Mini Missions */
+        #advanced-mini-missions .mission { padding: 1.5rem; border: 1px solid #d6d8db; border-radius: var(--border-radius); margin-bottom: 1.5rem; background-color: var(--background-light); position: relative; }
+        .mission-status { position: absolute; top: 10px; right: 10px; font-size: 1.5rem; transition: transform 0.3s ease; }
+        .mission-status .fa-check-circle { color: var(--success-color); transform-origin: center; }
+        .mission-status .fa-times-circle { color: var(--error-color); }
+        .mission-status .fa-question-circle { color: var(--secondary-color); }
+        .mission[data-completed="true"] .mission-status .fa-check-circle { animation: iconAppearCorrect 0.6s ease-out; }
+        #advanced-mini-missions .mission-editor { width: 100%; min-height: 160px; /* Slightly larger again */ background-color: var(--background-dark); color: var(--text-light); border: 1px solid var(--secondary-color); border-radius: var(--border-radius); padding: 1rem; font-family: var(--code-font); font-size: 1rem; line-height: 1.5; resize: vertical; margin-top: 1rem; }
+        #advanced-mini-missions .mission-output { margin-top: 1rem; min-height: 50px; background-color: #1a1a1a; border: 1px solid #444; border-radius: var(--border-radius); padding: 0.8rem; color: var(--accent-color); font-family: var(--code-font); font-size: 1rem; white-space: pre-wrap; word-wrap: break-word; }
+
+
+        /* --- Final Section (Copied from Practice) --- */
+        .completion-section { padding: 4rem 0; text-align: center; }
+        .completion-section .icon { font-size: 4rem; color: var(--success-color); margin-bottom: 1rem; display: inline-block; opacity: 0; animation: iconAppearCorrect 1s ease-out 0.5s forwards; }
+        .completion-section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); }
+        .completion-section p { font-size: 1.1rem; margin-top: 1rem; color: var(--secondary-color); }
+
+        /* --- Responsive Design (Copied from Practice, should still work) --- */
+        @media (max-width: 768px) {
+            html { font-size: 15px; }
+            .practice-header h1 { font-size: 2.2rem; }
+            .practice-section h2 { font-size: 1.6rem; }
+            .interactive-area { padding: 1.5rem; }
+            .feedback-icon-placeholder { width: 25px; margin-right: 8px; font-size: 1.1rem;}
+            .button-group { flex-direction: column; align-items: center; }
+            .minimal-nav { min-width: 180px; }
+            .minimal-nav ul li a { padding: 0.6rem 0.8rem; }
+            #languageSelect { font-size: 0.85rem; padding: 5px 25px 5px 10px;}
+        }
+        @media (max-width: 480px) {
+            html { font-size: 14px; }
+            .practice-header h1 { font-size: 1.8rem; }
+            .practice-header p { font-size: 1rem; }
+            .practice-section h2 { font-size: 1.4rem; }
+            .interactive-area { padding: 1rem; }
+            .action-button { font-size: 0.9rem; padding: 0.7rem 1.2rem; width: 90%; max-width: 300px;}
+            #advanced-simulator .sim-editor, #advanced-simulator .sim-output-area { font-size: 0.9rem; }
+            #spot-recursive-call .code-line-check { padding: 8px 12px; font-size: 0.9rem;}
+            #advanced-mini-missions .mission-editor { min-height: 140px; font-size: 0.95rem;}
+            #advanced-mini-missions .mission-output { font-size: 0.95rem;}
+            .feedback-icon-placeholder { width: 20px; margin-right: 5px; font-size: 1rem;}
+            .button-group a.action-button { width: 90%; max-width: 300px; margin-bottom: 0.5rem; }
+            .minimal-nav-button { top: 10px; right: 10px; padding: 6px 10px; font-size: 1rem; }
+            .minimal-nav { top: 48px; right: 10px; min-width: 160px; }
+            .minimal-nav ul li a { padding: 0.5rem 0.7rem; font-size: 0.9rem;}
+            .minimal-nav ul li a i.fas { margin-right: 8px; }
+            #languageSelect { font-size: 0.8rem; padding: 4px 20px 4px 8px;}
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ========= Minimal Nav Handle ========= -->
+    <button id="minimal-nav-toggle" class="minimal-nav-button" aria-label="Toggle Navigation Menu">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- ========= Minimal Nav Panel (with Language Switcher) ========= -->
+    <nav id="minimal-nav-panel" class="minimal-nav">
+        <ul>
+             <!-- *** MODIFIED: Links for Advanced Module 30 *** -->
+            <li><a href="ctp-practice-30.html"><i class="fas fa-pencil-alt fa-fw"></i> <span data-translate="nav_practice">Basic Practice</span></a></li>
+            <li><a href="ctp-video-30.html"><i class="fas fa-video fa-fw"></i> <span data-translate="nav_video">Watch Video Lesson</span></a></li>
+            <li><a href="ctp-dashboard.html"><i class="fas fa-list fa-fw"></i> <span data-translate="nav_menu">Course Menu</span></a></li>
+            <hr style="border: none; border-top: 1px solid var(--secondary-color); margin: 8px 0;">
+             <!-- *** MODIFIED: Links for Module 30 Advanced Sections *** -->
+            <li><a href="#predict-output"><i class="fas fa-tasks fa-fw"></i> <span data-translate="nav_predict">Predict Output</span></a></li>
+            <li><a href="#spot-recursive-call"><i class="fas fa-search-location fa-fw"></i> <span data-translate="nav_spot_recursive">Spot Recursive Call</span></a></li>
+            <li><a href="#advanced-simulator"><i class="fas fa-laptop-code fa-fw"></i> <span data-translate="nav_simulator">Advanced Simulator</span></a></li>
+            <li><a href="#advanced-mini-missions"><i class="fas fa-rocket fa-fw"></i> <span data-translate="nav_missions">Advanced Missions</span></a></li>
+            <!-- Language Switcher Item -->
+            <li class="language-switcher-item">
+                 <select id="languageSelect" aria-label="Select Language">
+                     <option value="en" data-translate="lang_en">🇬🇧 English</option>
+                     <option value="pt" data-translate="lang_pt">🇧🇷 Português</option>
+                     <option value="zh" data-translate="lang_zh">🇨🇳 中文</option>
+                 </select>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- ========= Header ========= -->
+    <header class="practice-header">
+         <!-- Keep recursion icons or choose new ones like brain/gears -->
+        <i class="fas fa-brain header-icon icon1"></i>
+        <i class="fas fa-cogs header-icon icon2"></i>
+        <div class="container">
+             <!-- *** MODIFIED: Title for Advanced Module 30 *** -->
+            <h1 data-translate="header_title">Module 30: Advanced Recursion</h1>
+            <p data-translate="header_subtitle">Deepen your understanding of recursive thinking.</p>
+        </div>
+    </header>
+
+    <!-- ========= Main Content ========= -->
+    <main>
+        <!-- ========= Activity 1: Predict the Output ========= -->
+        <section id="predict-output" class="practice-section">
+             <div class="container">
+                 <h2 class="fade-in"><i class="fas fa-tasks"></i> <span data-translate="predict_title">Predict the Output</span></h2>
+                 <p class="section-description fade-in delay-1" data-translate="predict_desc">
+                     Read the recursive function below. What will be the exact output (including the final return value printed) when `print(factorial(3))` is called? Type your prediction.
+                 </p>
+                 <div class="interactive-area fade-in delay-2">
+                     <div class="code-block">
+<pre><code><span class="code-keyword">def</span> <span class="code-function">factorial</span><span class="code-paren">(</span><span class="code-variable">n</span><span class="code-paren">)</span><span class="code-operator">:</span>
+    <span class="code-comment"># Base case</span>
+    <span class="code-control">if</span> <span class="code-variable">n</span> <span class="code-operator">&lt;=</span> <span class="code-number">1</span><span class="code-operator">:</span>
+        <span class="code-control">return</span> <span class="code-number">1</span>
+    <span class="code-comment"># Recursive step</span>
+    <span class="code-control">else</span><span class="code-operator">:</span>
+        <span class="code-control">return</span> <span class="code-variable">n</span> <span class="code-operator">*</span> <span class="code-function">factorial</span><span class="code-paren">(</span><span class="code-variable">n</span> <span class="code-operator">-</span> <span class="code-number">1</span><span class="code-paren">)</span>
+
+<span class="code-comment"># What does this print?</span>
+<span class="code-builtin">print</span><span class="code-paren">(</span><span class="code-function">factorial</span><span class="code-paren">(</span><span class="code-number">3</span><span class="code-paren">)</span><span class="code-paren">)</span></code></pre>
+                     </div>
+                     <label for="prediction-input" data-translate="predict_label">Your Prediction:</label>
+                     <input type="text" id="prediction-input" data-translate-placeholder="predict_placeholder" placeholder="e.g., 6 or 3 2 1 Blastoff!">
+                     <div class="text-center">
+                         <button id="check-prediction-btn" class="action-button" data-translate="button_check_prediction">Check Prediction</button>
+                     </div>
+                     <div id="prediction-feedback" class="feedback-message"></div>
+                 </div>
+             </div>
+        </section>
+
+        <!-- ========= Activity 2: Spot the Recursive Call ========= -->
+        <section id="spot-recursive-call" class="practice-section">
+            <div class="container">
+                <h2 class="fade-in"><i class="fas fa-search-location"></i> <span data-translate="spot_rec_call_title">Spot the Recursive Call</span></h2>
+                <p class="section-description fade-in delay-1" data-translate="spot_rec_call_desc">
+                    The essence of recursion is the function calling itself. Click on the line(s) below that contain a recursive call. Then click "Check Selection".
+                </p>
+                <div class="interactive-area fade-in delay-2">
+                    <div id="recursive-call-lines">
+                        <!-- Lines will be generated by JS -->
+                    </div>
+                     <div class="text-center">
+                         <button id="check-recursive-call-btn" class="action-button" data-translate="button_check_rec_call">Check Selection</button>
+                         <button id="reset-recursive-call-btn" class="action-button secondary hidden" data-translate="button_try_again">Try Again</button>
+                     </div>
+                     <div id="recursive-call-feedback" class="feedback-message"></div>
+                </div>
+            </div>
+        </section>
+
+         <!-- ========= Activity 3: Advanced Simulator ========= -->
+        <section id="advanced-simulator" class="practice-section">
+             <div class="container">
+                 <h2 class="fade-in"><i class="fas fa-laptop-code"></i> <span data-translate="adv_simulator_title">Advanced Simulator: Power Function</span></h2>
+                 <p class="section-description fade-in delay-1" data-translate="adv_simulator_desc">
+                     Write a recursive function `power(base, exp)` that calculates `base` raised to the power of `exp` (where `exp >= 0`). Remember the base case! Then, print the result of `power(2, 4)`.
+                 </p>
+                 <div class="interactive-area fade-in delay-2">
+                     <label for="adv-sim-editor-input" style="font-weight: bold; display:block; margin-bottom: 8px;" data-translate="adv_simulator_editor_label">Code Editor:</label>
+                     <textarea id="adv-sim-editor-input" class="sim-editor" rows="8" data-translate-placeholder="adv_simulator_editor_placeholder" placeholder="def power(base, exp):\n    # Base case: if exp is 0, return 1\n    # Recursive step: return base * power(base, exp - 1)\n\n# Test the function\nresult = power(2, 4)\nprint(result)"></textarea>
+                     <div class="text-center">
+                          <button id="run-adv-sim-btn" class="action-button" data-translate="button_run_sim">Run Simulation</button>
+                     </div>
+                     <label for="adv-sim-output" style="font-weight: bold; display:block; margin-top: 1.5rem; margin-bottom: 8px;" data-translate="adv_simulator_output_label">Simulated Output:</label>
+                     <div id="adv-sim-output" class="sim-output-area">
+                         <span class="placeholder" data-translate="adv_simulator_output_placeholder">Output will appear here...</span>
+                     </div>
+                     <div id="adv-sim-feedback" class="feedback-message"></div>
+                 </div>
+             </div>
+        </section>
+
+         <!-- ========= Activity 4: Advanced Mini Missions ========= -->
+        <section id="advanced-mini-missions" class="practice-section">
+             <div class="container">
+                 <h2 class="fade-in"><i class="fas fa-rocket"></i> <span data-translate="adv_missions_title">Advanced Mini Missions!</span></h2>
+                 <p class="section-description fade-in delay-1" data-translate="adv_missions_desc">
+                     Tackle these more complex recursive challenges!
+                 </p>
+                 <div class="interactive-area fade-in delay-2">
+                     <!-- Mission 1: Sum List -->
+                     <div class="mission" id="mission-1" data-completed="false">
+                         <span class="mission-status"><i class="fas fa-question-circle"></i></span>
+                         <h4 data-translate="adv_mission1_title">Mission 1: Recursive List Sum</h4>
+                         <p data-translate="adv_mission1_desc">Write a recursive function `sum_list(data)` that takes a list of numbers `data` and returns their sum. Hint: Sum the first element with the recursive sum of the rest of the list (`data[1:]`). Base case: empty list.</p>
+                         <textarea class="sim-editor mission-editor" rows="7" data-translate-placeholder="adv_mission1_placeholder" placeholder="def sum_list(data):\n    # Base case: if list is empty, return 0\n    # Recursive step: return data[0] + sum_list(data[1:])\n\nmy_list = [1, 5, 3, 7]\nprint(sum_list(my_list)) # Should print 16"></textarea>
+                         <div class="text-center"> <button class="action-button mission-run-btn" data-mission-id="1" data-translate="button_test_mission_1">Test Mission 1</button> </div>
+                         <div class="sim-output-area mission-output"></div>
+                         <div id="mission-feedback-1" class="feedback-message mission-feedback"></div>
+                     </div>
+                     <!-- Mission 2: Fibonacci -->
+                     <div class="mission" id="mission-2" data-completed="false">
+                          <span class="mission-status"><i class="fas fa-question-circle"></i></span>
+                         <h4 data-translate="adv_mission2_title">Mission 2: Fibonacci Sequence</h4>
+                         <p data-translate="adv_mission2_desc">Write a recursive function `fibonacci(n)` that returns the nth Fibonacci number (0, 1, 1, 2, 3, 5, 8...). Base cases: `fibonacci(0) = 0`, `fibonacci(1) = 1`. Recursive step involves *two* calls. Print the result of `fibonacci(6)`.</p>
+                         <textarea class="sim-editor mission-editor" rows="7" data-translate-placeholder="adv_mission2_placeholder" placeholder="def fibonacci(n):\n    # Base case 1: if n == 0, return 0\n    # Base case 2: if n == 1, return 1\n    # Recursive step: return fibonacci(n-1) + fibonacci(n-2)\n\nprint(fibonacci(6)) # Should print 8"></textarea>
+                          <div class="text-center"> <button class="action-button mission-run-btn" data-mission-id="2" data-translate="button_test_mission_2">Test Mission 2</button> </div>
+                         <div class="sim-output-area mission-output"></div>
+                         <div id="mission-feedback-2" class="feedback-message mission-feedback"></div>
+                     </div>
+                     <!-- Mission 3: Reverse String -->
+                     <div class="mission" id="mission-3" data-completed="false">
+                          <span class="mission-status"><i class="fas fa-question-circle"></i></span>
+                         <h4 data-translate="adv_mission3_title">Mission 3: Reverse String Recursively</h4>
+                         <p data-translate="adv_mission3_desc">Write a recursive function `reverse_string(s)` that returns the reversed version of string `s`. Hint: Return the reversed rest of the string (`s[1:]`) concatenated with the first character (`s[0]`). Base case: empty string.</p>
+                         <textarea class="sim-editor mission-editor" rows="7" data-translate-placeholder="adv_mission3_placeholder" placeholder="def reverse_string(s):\n    # Base case: if string is empty, return ''\n    # Recursive step: return reverse_string(s[1:]) + s[0]\n\nprint(reverse_string('hello')) # Should print 'olleh'"></textarea>
+                          <div class="text-center"> <button class="action-button mission-run-btn" data-mission-id="3" data-translate="button_test_mission_3">Test Mission 3</button> </div>
+                         <div class="sim-output-area mission-output"></div>
+                         <div id="mission-feedback-3" class="feedback-message mission-feedback"></div>
+                     </div>
+                     <div id="missions-summary-feedback" class="feedback-message" style="margin-top: 2rem;"></div>
+                 </div>
+             </div>
+        </section>
+
+         <!-- ========= Completion Section ========= -->
+        <section class="completion-section">
+            <div class="container">
+                <div class="icon fade-in" style="animation: iconAppearCorrect 1s ease-out 0.5s forwards;">
+                     <!-- Keep completion icons -->
+                    <i class="fas fa-star"></i> <i class="fas fa-brain"></i> <i class="fas fa-star"></i>
+                </div>
+                 <!-- *** MODIFIED: Text/Links for Advanced Module 30 Completion *** -->
+                <h2 class="fade-in delay-1" data-translate="completion_title">Module 30 Advanced Practice Complete!</h2>
+                <p class="fade-in delay-2" data-translate="completion_desc">
+                    Excellent work tackling these recursive challenges! You're building strong problem-solving skills.
+                </p>
+                <div class="button-group">
+                    <a href="ctp-practice-30.html" class="action-button secondary fade-in delay-3"><i class="fas fa-pencil-alt"></i> <span data-translate="button_view_practice">Revisit Basic Practice</span></a>
+                    <a href="ctp-video-30.html" class="action-button secondary fade-in delay-3"><i class="fas fa-video"></i> <span data-translate="button_view_video">Watch Video Lesson</span></a>
+                    <a href="ctp-dashboard.html" class="action-button success fade-in delay-4"><i class="fas fa-list"></i> <span data-translate="button_back_menu">Back to Course Menu</span></a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ========= Script ========= -->
+    <script>
+    // --- Translations Object ---
+    // *** ADDED/MODIFIED Keys and Translations for Advanced Module 30 ***
+    const translations = {
+        en: {
+            // --- General & Nav ---
+            "page_title": "Module 30: Advanced Recursion Practice",
+            "tooltip_click_identify": "Click to identify this part", // Reused
+            "nav_practice": "Basic Practice", "nav_video": "Watch Video Lesson", "nav_menu": "Course Menu", // New Nav links
+            "nav_predict": "Predict Output", "nav_spot_recursive": "Spot Recursive Call", "nav_simulator": "Advanced Simulator", "nav_missions": "Advanced Missions", // New section links
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文", // Reused
+            "header_title": "Module 30: Advanced Recursion", "header_subtitle": "Deepen your understanding of recursive thinking.", // Updated header
+            "button_try_again": "Try Again", // Reused
+            // --- Activity 1: Predict Output ---
+            "predict_title": "Predict the Output", "predict_desc": "Read the recursive function below. What will be the exact output (including the final return value printed) when `print(factorial(3))` is called? Type your prediction.",
+            "predict_label": "Your Prediction:", "predict_placeholder": "e.g., 6",
+            "button_check_prediction": "Check Prediction",
+            "feedback_predict_correct": "Exactly! `factorial(3)` calculates 3 * 2 * 1 = 6.",
+            "feedback_predict_incorrect": "Not quite. Trace the calls: factorial(3) -> 3 * factorial(2) -> 3 * (2 * factorial(1)) -> 3 * (2 * 1) = 6.",
+            "feedback_predict_empty": "Please enter your prediction.",
+            // --- Activity 2: Spot Recursive Call ---
+            "spot_rec_call_title": "Spot the Recursive Call", "spot_rec_call_desc": "The essence of recursion is the function calling itself. Click on the line(s) below that contain a recursive call. Then click \"Check Selection\".",
+            "spot_rec_code_line_1": "def countdown(n):", // Example 1
+            "spot_rec_code_line_2": "    if n <= 0:",
+            "spot_rec_code_line_3": "        print('Blastoff!')",
+            "spot_rec_code_line_4": "    else:",
+            "spot_rec_code_line_5": "        print(n)",
+            "spot_rec_code_line_6": "        countdown(n - 1) # <-- Recursive Call Here", // Is Recursive
+            "spot_rec_code_line_7": "def fib(n):", // Example 2 (Fibonacci)
+            "spot_rec_code_line_8": "    if n <= 1:",
+            "spot_rec_code_line_9": "        return n",
+            "spot_rec_code_line_10": "    else:",
+            "spot_rec_code_line_11": "        return fib(n - 1) + fib(n - 2) # <-- Two Recursive Calls Here", // Is Recursive
+            "spot_rec_code_line_12": "def iterative_sum(nums):", // Example 3 (Iterative)
+            "spot_rec_code_line_13": "    total = 0",
+            "spot_rec_code_line_14": "    for x in nums:",
+            "spot_rec_code_line_15": "        total += x",
+            "spot_rec_code_line_16": "    return total",
+            "button_check_rec_call": "Check Selection",
+            "feedback_spot_rec_correct": "Excellent! You identified all {totalRecursiveCalls} recursive calls. <i class=\"fas fa-thumbs-up\"></i>", // Adjusted key
+            "feedback_spot_rec_incorrect": "Not quite. {hints}. Look for the function calling its own name.", // Adjusted key
+            "feedback_spot_rec_hint_incorrect": "{count} incorrect selection(s) marked with <i class=\"fas fa-times\"></i>",
+            "feedback_spot_rec_hint_missed": "{count} missed recursive call(s) marked with <i class=\"fas fa-eye\"></i>", // Adjusted key
+            "feedback_spot_rec_hints_joiner": ", and ", // Reused key name, text context changes
+            // --- Activity 3: Advanced Simulator ---
+            "adv_simulator_title": "Advanced Simulator: Power Function", "adv_simulator_desc": "Write a recursive function `power(base, exp)` that calculates `base` raised to the power of `exp` (where `exp >= 0`). Remember the base case! Then, print the result of `power(2, 4)`.",
+            "adv_simulator_editor_label": "Code Editor:", "adv_simulator_editor_placeholder": "def power(base, exp):\n    # Base case: if exp is 0, return 1\n    # Recursive step: return base * power(base, exp - 1)\n\n# Test the function\nresult = power(2, 4)\nprint(result)",
+            "button_run_sim": "Run Simulation", // Reused key
+            "adv_simulator_output_label": "Simulated Output:", "adv_simulator_output_placeholder": "Output will appear here...", // Reused keys
+            "feedback_sim_success": "Simulation successful!", // Reused key
+            "feedback_sim_power_success": "Power function successful! Output matches 16.", // Specific success
+            "feedback_sim_empty": "Editor is empty.", // Reused key
+            "feedback_sim_no_def": "Need a function definition (`def power(base, exp):`).", // Specific context
+            "feedback_sim_no_call": "Need to call the function and print the result (e.g., `print(power(2, 4))`).", // Specific context
+            "feedback_sim_runtime_error": "Simulation error (e.g., infinite recursion?). Check base case (exp == 0).", // Specific context
+            "feedback_sim_output_mismatch": "Output doesn't match expected result (16). Check logic.", // Specific context
+            "feedback_sim_syntax": "Check Python syntax.", // Reused key
+            // --- Activity 4: Advanced Mini Missions ---
+            "adv_missions_title": "Advanced Mini Missions!", "adv_missions_desc": "Tackle these more complex recursive challenges!",
+            "adv_mission1_title": "Mission 1: Recursive List Sum", "adv_mission1_desc": "Write a recursive function `sum_list(data)` that takes a list of numbers `data` and returns their sum. Hint: Sum the first element with the recursive sum of the rest of the list (`data[1:]`). Base case: empty list.", "adv_mission1_placeholder": "def sum_list(data):\n    # Base case: if not data (list is empty), return 0\n    # Recursive step: return data[0] + sum_list(data[1:])\n\nmy_list = [1, 5, 3, 7]\nprint(sum_list(my_list)) # Expect 16",
+            "button_test_mission_1": "Test Mission 1", // Reused key pattern
+            "adv_mission2_title": "Mission 2: Fibonacci Sequence", "adv_mission2_desc": "Write a recursive function `fibonacci(n)` that returns the nth Fibonacci number (0, 1, 1, 2, 3, 5, 8...). Base cases: `fibonacci(0) = 0`, `fibonacci(1) = 1`. Recursive step involves *two* calls. Print the result of `fibonacci(6)`.", "adv_mission2_placeholder": "def fibonacci(n):\n    # Base case 1: if n == 0, return 0\n    # Base case 2: if n == 1, return 1\n    # Recursive step: return fibonacci(n-1) + fibonacci(n-2)\n\nprint(fibonacci(6)) # Expect 8",
+            "button_test_mission_2": "Test Mission 2",
+            "adv_mission3_title": "Mission 3: Reverse String Recursively", "adv_mission3_desc": "Write a recursive function `reverse_string(s)` that returns the reversed version of string `s`. Hint: Return the reversed rest of the string (`s[1:]`) concatenated with the first character (`s[0]`). Base case: empty string.", "adv_mission3_placeholder": "def reverse_string(s):\n    # Base case: if s == '', return ''\n    # Recursive step: return reverse_string(s[1:]) + s[0]\n\nprint(reverse_string('hello')) # Expect 'olleh'",
+            "button_test_mission_3": "Test Mission 3",
+            "feedback_mission_success": "Mission Accomplished!", // Reused key
+            "feedback_mission_syntax_error": "Syntax/logic error in your code.", // Reused key
+            "feedback_mission1_hint": "Check base case (empty list -> 0) and recursive step (data[0] + sum_list(data[1:])). Ensure call prints result for [1, 5, 3, 7].", // Specific hints
+            "feedback_mission2_hint": "Need two base cases (n=0 -> 0, n=1 -> 1). Recursive step: fibonacci(n-1) + fibonacci(n-2). Ensure call prints fibonacci(6).",
+            "feedback_mission3_hint": "Base case (empty string -> ''). Recursive step: reverse_string(s[1:]) + s[0]. Ensure call prints result for 'hello'.",
+            "feedback_mission_generic_hint": "Check function definition, base case(s), recursive step(s), and the final print call.", // Reused key
+            "feedback_missions_summary_all_done": "All {totalMissions} advanced missions complete! Recursive Pro!", // Updated summary
+            "feedback_missions_summary_progress": "Completed {completedCount} of {totalMissions} advanced missions. Almost there!", // Updated summary
+            // --- Completion ---
+            "completion_title": "Module 30 Advanced Practice Complete!", "completion_desc": "Excellent work tackling these recursive challenges! You're building strong problem-solving skills.",
+            "button_view_practice": "Revisit Basic Practice", "button_view_video": "Watch Video Lesson", "button_back_menu": "Back to Course Menu" // New button texts
+        },
+        pt: {
+            // --- General & Nav ---
+            "page_title": "Módulo 30: Prática Avançada de Recursão",
+            "tooltip_click_identify": "Clique para identificar esta parte",
+            "nav_practice": "Prática Básica", "nav_video": "Ver Videoaula", "nav_menu": "Menu do Curso",
+            "nav_predict": "Prever Saída", "nav_spot_recursive": "Achar Chamada Recursiva", "nav_simulator": "Simulador Avançado", "nav_missions": "Missões Avançadas",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title": "Módulo 30: Recursão Avançada", "header_subtitle": "Aprofunde sua compreensão do pensamento recursivo.",
+            "button_try_again": "Tentar Novamente",
+            // --- Activity 1: Predict Output ---
+            "predict_title": "Prever a Saída", "predict_desc": "Leia a função recursiva abaixo. Qual será a saída exata (incluindo o valor final retornado impresso) quando `print(factorial(3))` for chamado? Digite sua previsão.",
+            "predict_label": "Sua Previsão:", "predict_placeholder": "ex: 6",
+            "button_check_prediction": "Verificar Previsão",
+            "feedback_predict_correct": "Exatamente! `factorial(3)` calcula 3 * 2 * 1 = 6.",
+            "feedback_predict_incorrect": "Não exatamente. Rastreie as chamadas: factorial(3) -> 3 * factorial(2) -> 3 * (2 * factorial(1)) -> 3 * (2 * 1) = 6.",
+            "feedback_predict_empty": "Por favor, insira sua previsão.",
+            // --- Activity 2: Spot Recursive Call ---
+            "spot_rec_call_title": "Ache a Chamada Recursiva", "spot_rec_call_desc": "A essência da recursão é a função chamando a si mesma. Clique na(s) linha(s) abaixo que contêm uma chamada recursiva. Depois clique em \"Verificar Seleção\".",
+            "spot_rec_code_line_1": "def contagem_regressiva(n):", // Ex 1 PT
+            "spot_rec_code_line_2": "    if n <= 0:",
+            "spot_rec_code_line_3": "        print('Decolar!')", // PT
+            "spot_rec_code_line_4": "    else:",
+            "spot_rec_code_line_5": "        print(n)",
+            "spot_rec_code_line_6": "        contagem_regressiva(n - 1) # <-- Chamada Recursiva Aqui", // Is Recursive PT
+            "spot_rec_code_line_7": "def fib(n):", // Ex 2 PT
+            "spot_rec_code_line_8": "    if n <= 1:",
+            "spot_rec_code_line_9": "        return n",
+            "spot_rec_code_line_10": "    else:",
+            "spot_rec_code_line_11": "        return fib(n - 1) + fib(n - 2) # <-- Duas Chamadas Recursivas Aqui", // Is Recursive PT
+            "spot_rec_code_line_12": "def soma_iterativa(nums):", // Ex 3 PT
+            "spot_rec_code_line_13": "    total = 0",
+            "spot_rec_code_line_14": "    for x in nums:",
+            "spot_rec_code_line_15": "        total += x",
+            "spot_rec_code_line_16": "    return total",
+            "button_check_rec_call": "Verificar Seleção",
+            "feedback_spot_rec_correct": "Excelente! Você identificou todas as {totalRecursiveCalls} chamadas recursivas. <i class=\"fas fa-thumbs-up\"></i>",
+            "feedback_spot_rec_incorrect": "Não exatamente. {hints}. Procure pela função chamando seu próprio nome.",
+            "feedback_spot_rec_hint_incorrect": "{count} seleção(ões) incorreta(s) marcada(s) com <i class=\"fas fa-times\"></i>",
+            "feedback_spot_rec_hint_missed": "{count} chamada(s) recursiva(s) não encontrada(s) marcada(s) com <i class=\"fas fa-eye\"></i>",
+            "feedback_spot_rec_hints_joiner": ", e ",
+            // --- Activity 3: Advanced Simulator ---
+            "adv_simulator_title": "Simulador Avançado: Função Potência", "adv_simulator_desc": "Escreva uma função recursiva `power(base, exp)` que calcule `base` elevado à potência `exp` (onde `exp >= 0`). Lembre-se do caso base! Depois, imprima o resultado de `power(2, 4)`.",
+            "adv_simulator_editor_label": "Editor de Código:", "adv_simulator_editor_placeholder": "def power(base, exp):\n    # Caso base: se exp é 0, retorne 1\n    # Passo recursivo: retorne base * power(base, exp - 1)\n\n# Teste a função\nresultado = power(2, 4)\nprint(resultado)",
+            "button_run_sim": "Executar Simulação",
+            "adv_simulator_output_label": "Saída Simulada:", "adv_simulator_output_placeholder": "A saída aparecerá aqui...",
+            "feedback_sim_success": "Simulação bem-sucedida!",
+            "feedback_sim_power_success": "Função potência bem-sucedida! Saída confere com 16.",
+            "feedback_sim_empty": "Editor está vazio.",
+            "feedback_sim_no_def": "Precisa de uma definição de função (`def power(base, exp):`).",
+            "feedback_sim_no_call": "Precisa chamar a função e imprimir o resultado (ex: `print(power(2, 4))`).",
+            "feedback_sim_runtime_error": "Erro na simulação (ex: recursão infinita?). Verifique o caso base (exp == 0).",
+            "feedback_sim_output_mismatch": "Saída não confere com o resultado esperado (16). Verifique a lógica.",
+            "feedback_sim_syntax": "Verifique a sintaxe Python.",
+            // --- Activity 4: Advanced Mini Missions ---
+            "adv_missions_title": "Mini Missões Avançadas!", "adv_missions_desc": "Encare estes desafios recursivos mais complexos!",
+            "adv_mission1_title": "Missão 1: Soma de Lista Recursiva", "adv_mission1_desc": "Escreva uma função recursiva `sum_list(data)` que receba uma lista de números `data` e retorne sua soma. Dica: Some o primeiro elemento com a soma recursiva do resto da lista (`data[1:]`). Caso base: lista vazia.", "adv_mission1_placeholder": "def sum_list(data):\n    # Caso base: se data está vazia (not data), retorne 0\n    # Passo recursivo: retorne data[0] + sum_list(data[1:])\n\nminha_lista = [1, 5, 3, 7]\nprint(sum_list(minha_lista)) # Deve imprimir 16",
+            "button_test_mission_1": "Testar Missão 1",
+            "adv_mission2_title": "Missão 2: Sequência de Fibonacci", "adv_mission2_desc": "Escreva uma função recursiva `fibonacci(n)` que retorne o n-ésimo número de Fibonacci (0, 1, 1, 2, 3, 5, 8...). Casos base: `fibonacci(0) = 0`, `fibonacci(1) = 1`. O passo recursivo envolve *duas* chamadas. Imprima o resultado de `fibonacci(6)`.", "adv_mission2_placeholder": "def fibonacci(n):\n    # Caso base 1: se n == 0, retorne 0\n    # Caso base 2: se n == 1, retorne 1\n    # Passo recursivo: retorne fibonacci(n-1) + fibonacci(n-2)\n\nprint(fibonacci(6)) # Deve imprimir 8",
+            "button_test_mission_2": "Testar Missão 2",
+            "adv_mission3_title": "Missão 3: Inverter String Recursivamente", "adv_mission3_desc": "Escreva uma função recursiva `reverse_string(s)` que retorne a versão invertida da string `s`. Dica: Retorne o resto invertido da string (`s[1:]`) concatenado com o primeiro caractere (`s[0]`). Caso base: string vazia.", "adv_mission3_placeholder": "def reverse_string(s):\n    # Caso base: se s == '', retorne ''\n    # Passo recursivo: retorne reverse_string(s[1:]) + s[0]\n\nprint(reverse_string('hello')) # Deve imprimir 'olleh'",
+            "button_test_mission_3": "Testar Missão 3",
+            "feedback_mission_success": "Missão Cumprida!",
+            "feedback_mission_syntax_error": "Erro de sintaxe/lógica no seu código.",
+            "feedback_mission1_hint": "Verifique caso base (lista vazia -> 0) e passo recursivo (data[0] + sum_list(data[1:])). Garanta que a chamada imprime o resultado para [1, 5, 3, 7].",
+            "feedback_mission2_hint": "Precisa de dois casos base (n=0 -> 0, n=1 -> 1). Passo recursivo: fibonacci(n-1) + fibonacci(n-2). Garanta que a chamada imprime fibonacci(6).",
+            "feedback_mission3_hint": "Caso base (string vazia -> ''). Passo recursivo: reverse_string(s[1:]) + s[0]. Garanta que a chamada imprime o resultado para 'hello'.",
+            "feedback_mission_generic_hint": "Verifique definição da função, caso(s) base, passo(s) recursivo(s), e a chamada final de print.",
+            "feedback_missions_summary_all_done": "Todas as {totalMissions} missões avançadas completas! Profissional em Recursão!",
+            "feedback_missions_summary_progress": "Completou {completedCount} de {totalMissions} missões avançadas. Quase lá!",
+            // --- Completion ---
+            "completion_title": "Prática Avançada do Módulo 30 Completa!", "completion_desc": "Excelente trabalho enfrentando esses desafios recursivos! Você está construindo fortes habilidades de resolução de problemas.",
+            "button_view_practice": "Revisitar Prática Básica", "button_view_video": "Ver Videoaula", "button_back_menu": "Voltar ao Menu do Curso"
+        },
+        zh: {
+            // --- General & Nav ---
+            "page_title": "模块 30：高级递归练习",
+            "tooltip_click_identify": "点击识别此部分",
+            "nav_practice": "基础练习", "nav_video": "观看视频课程", "nav_menu": "课程菜单",
+            "nav_predict": "预测输出", "nav_spot_recursive": "找出递归调用", "nav_simulator": "高级模拟器", "nav_missions": "高级任务",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title": "模块 30：高级递归", "header_subtitle": "加深你对递归思维的理解。",
+            "button_try_again": "再试一次",
+            // --- Activity 1: Predict Output ---
+            "predict_title": "预测输出", "predict_desc": "阅读下面的递归函数。当调用 `print(factorial(3))` 时，确切的输出（包括打印出的最终返回值）会是什么？输入你的预测。",
+            "predict_label": "你的预测：", "predict_placeholder": "例如：6",
+            "button_check_prediction": "检查预测",
+            "feedback_predict_correct": "完全正确！`factorial(3)` 计算 3 * 2 * 1 = 6。",
+            "feedback_predict_incorrect": "不太对。追踪调用过程：factorial(3) -> 3 * factorial(2) -> 3 * (2 * factorial(1)) -> 3 * (2 * 1) = 6。",
+            "feedback_predict_empty": "请输入你的预测。",
+            // --- Activity 2: Spot Recursive Call ---
+            "spot_rec_call_title": "找出递归调用", "spot_rec_call_desc": "递归的本质是函数调用自身。点击下面包含递归调用的行。然后点击“检查选择”。",
+            "spot_rec_code_line_1": "def countdown(n):", // Ex 1 ZH
+            "spot_rec_code_line_2": "    if n <= 0:",
+            "spot_rec_code_line_3": "        print('发射！')", // ZH
+            "spot_rec_code_line_4": "    else:",
+            "spot_rec_code_line_5": "        print(n)",
+            "spot_rec_code_line_6": "        countdown(n - 1) # <-- 递归调用在此", // Is Recursive ZH
+            "spot_rec_code_line_7": "def fib(n):", // Ex 2 ZH
+            "spot_rec_code_line_8": "    if n <= 1:",
+            "spot_rec_code_line_9": "        return n",
+            "spot_rec_code_line_10": "    else:",
+            "spot_rec_code_line_11": "        return fib(n - 1) + fib(n - 2) # <-- 两个递归调用在此", // Is Recursive ZH
+            "spot_rec_code_line_12": "def iterative_sum(nums):", // Ex 3 ZH
+            "spot_rec_code_line_13": "    total = 0",
+            "spot_rec_code_line_14": "    for x in nums:",
+            "spot_rec_code_line_15": "        total += x",
+            "spot_rec_code_line_16": "    return total",
+            "button_check_rec_call": "检查选择",
+            "feedback_spot_rec_correct": "太棒了！你找出了所有 {totalRecursiveCalls} 个递归调用。 <i class=\"fas fa-thumbs-up\"></i>",
+            "feedback_spot_rec_incorrect": "不太对。{hints}。查找函数调用自身名称的地方。",
+            "feedback_spot_rec_hint_incorrect": "{count} 个错误选择，已用 <i class=\"fas fa-times\"></i> 标记",
+            "feedback_spot_rec_hint_missed": "{count} 个遗漏的递归调用，已用 <i class=\"fas fa-eye\"></i> 标记",
+            "feedback_spot_rec_hints_joiner": "，并且 ",
+             // --- Activity 3: Advanced Simulator ---
+            "adv_simulator_title": "高级模拟器：幂函数", "adv_simulator_desc": "编写一个递归函数 `power(base, exp)`，计算 `base` 的 `exp` 次幂（其中 `exp >= 0`）。记住基本情况！然后，打印 `power(2, 4)` 的结果。",
+            "adv_simulator_editor_label": "代码编辑器：", "adv_simulator_editor_placeholder": "def power(base, exp):\n    # 基本情况：如果 exp 为 0，返回 1\n    # 递归步骤：返回 base * power(base, exp - 1)\n\n# 测试函数\nresult = power(2, 4)\nprint(result)",
+            "button_run_sim": "运行模拟",
+            "adv_simulator_output_label": "模拟输出：", "adv_simulator_output_placeholder": "输出将显示在此处...",
+            "feedback_sim_success": "模拟成功！",
+            "feedback_sim_power_success": "幂函数成功！输出匹配 16。",
+            "feedback_sim_empty": "编辑器是空的。",
+            "feedback_sim_no_def": "需要函数定义 (`def power(base, exp):`)。",
+            "feedback_sim_no_call": "需要调用函数并打印结果 (例如 `print(power(2, 4))`)。",
+            "feedback_sim_runtime_error": "模拟出错（例如，无限递归？）。检查基本情况 (exp == 0)。",
+            "feedback_sim_output_mismatch": "输出与预期结果 (16) 不符。检查逻辑。",
+            "feedback_sim_syntax": "检查 Python 语法。",
+             // --- Activity 4: Advanced Mini Missions ---
+            "adv_missions_title": "高级迷你任务！", "adv_missions_desc": "应对这些更复杂的递归挑战！",
+            "adv_mission1_title": "任务 1：递归列表求和", "adv_mission1_desc": "编写一个递归函数 `sum_list(data)`，它接受一个数字列表 `data` 并返回它们的总和。提示：将第一个元素与列表其余部分 (`data[1:]`) 的递归和相加。基本情况：空列表。", "adv_mission1_placeholder": "def sum_list(data):\n    # 基本情况：如果列表为空 (not data)，返回 0\n    # 递归步骤：返回 data[0] + sum_list(data[1:])\n\nmy_list = [1, 5, 3, 7]\nprint(sum_list(my_list)) # 预期输出 16",
+            "button_test_mission_1": "测试任务 1",
+            "adv_mission2_title": "任务 2：斐波那契数列", "adv_mission2_desc": "编写一个递归函数 `fibonacci(n)`，返回第 n 个斐波那契数 (0, 1, 1, 2, 3, 5, 8...)。基本情况：`fibonacci(0) = 0`, `fibonacci(1) = 1`。递归步骤涉及*两次*调用。打印 `fibonacci(6)` 的结果。", "adv_mission2_placeholder": "def fibonacci(n):\n    # 基本情况 1: 如果 n == 0, 返回 0\n    # 基本情况 2: 如果 n == 1, 返回 1\n    # 递归步骤: 返回 fibonacci(n-1) + fibonacci(n-2)\n\nprint(fibonacci(6)) # 预期输出 8",
+            "button_test_mission_2": "测试任务 2",
+            "adv_mission3_title": "任务 3：递归反转字符串", "adv_mission3_desc": "编写一个递归函数 `reverse_string(s)`，返回字符串 `s` 的反转版本。提示：返回字符串其余部分 (`s[1:]`) 的反转结果连接上第一个字符 (`s[0]`)。基本情况：空字符串。", "adv_mission3_placeholder": "def reverse_string(s):\n    # 基本情况: 如果 s == '', 返回 ''\n    # 递归步骤: 返回 reverse_string(s[1:]) + s[0]\n\nprint(reverse_string('hello')) # 预期输出 'olleh'",
+            "button_test_mission_3": "测试任务 3",
+            "feedback_mission_success": "任务完成！",
+            "feedback_mission_syntax_error": "代码中存在语法/逻辑错误。",
+            "feedback_mission1_hint": "检查基本情况（空列表 -> 0）和递归步骤（data[0] + sum_list(data[1:])）。确保调用打印了 [1, 5, 3, 7] 的结果。",
+            "feedback_mission2_hint": "需要两个基本情况（n=0 -> 0, n=1 -> 1）。递归步骤：fibonacci(n-1) + fibonacci(n-2)。确保调用打印了 fibonacci(6)。",
+            "feedback_mission3_hint": "基本情况（空字符串 -> ''）。递归步骤：reverse_string(s[1:]) + s[0]。确保调用打印了 'hello' 的结果。",
+            "feedback_mission_generic_hint": "检查函数定义、基本情况、递归步骤以及最终的 print 调用。",
+            "feedback_missions_summary_all_done": "所有 {totalMissions} 个高级任务已完成！递归专家！",
+            "feedback_missions_summary_progress": "已完成 {completedCount} / {totalMissions} 个高级任务。就快完成了！",
+            // --- Completion ---
+            "completion_title": "模块 30 高级练习完成！", "completion_desc": "应对这些递归挑战做得非常出色！你正在培养强大的解决问题的能力。",
+            "button_view_practice": "重温基础练习", "button_view_video": "观看视频课程", "button_back_menu": "返回课程菜单"
+        }
+    };
+
+
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // --- Language Management Functions (Keep from Practice) ---
+        function getStoredLanguage() { /* ... same as practice ... */
+            const storedLang = localStorage.getItem('userLanguage');
+            if (storedLang && translations[storedLang]) return storedLang;
+            const browserLang = navigator.language || navigator.userLanguage;
+            if (browserLang.startsWith('pt')) return 'pt';
+            if (browserLang.startsWith('zh')) return 'zh';
+            return 'en';
+         }
+        function setLanguage(lang) { /* ... same as practice, calls new setup functions ... */
+            if (!translations[lang]) lang = 'en';
+            localStorage.setItem('userLanguage', lang);
+            document.documentElement.lang = lang;
+            translatePage(lang); // Apply generic translations
+
+            const langSelect = document.getElementById('languageSelect');
+            if (langSelect) langSelect.value = lang;
+
+            // --- Re-initialize/Update Activities ---
+            // Prediction text updated by translatePage
+            if (document.getElementById('spot-recursive-call')) {
+                setupRecursiveCallSpotting(); // New setup function
+            }
+            // Simulators/Missions text updated by translatePage
+            if (document.getElementById('advanced-mini-missions') && typeof updateAdvMissionSummary === 'function') {
+               updateAdvMissionSummary(); // Use new summary function
+            }
+        }
+        function getTranslation(key, lang, replacements = {}) { /* ... same as practice ... */
+            let text = translations[lang]?.[key] ?? translations['en']?.[key] ?? `[${key}]`;
+            for (const placeholder in replacements) {
+                const regex = new RegExp(`\\{${placeholder}\\}`, 'g');
+                text = text.replace(regex, replacements[placeholder]);
+            }
+            return text;
+        }
+        function translatePage(lang) { /* ... same as practice ... */
+             if (!translations[lang]) lang = 'en';
+             document.querySelectorAll('[data-translate]').forEach(el => {
+                 const key = el.getAttribute('data-translate');
+                 const translation = getTranslation(key, lang);
+                 if (el.tagName === 'TITLE') { document.title = translation; }
+                 else if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') { /* Handled by placeholder */ }
+                 else if (el.tagName === 'OPTION') { el.textContent = translation; }
+                 else {
+                      if (translation.includes('<') && translation.includes('>')) { el.innerHTML = translation; }
+                      else { el.textContent = translation; }
+                  }
+             });
+             document.querySelectorAll('[data-translate-placeholder]').forEach(el => {
+                 const key = el.getAttribute('data-translate-placeholder');
+                 const translation = getTranslation(key, lang);
+                 el.setAttribute('placeholder', translation);
+             });
+              document.querySelectorAll('[data-translate-title]').forEach(el => {
+                  const key = el.getAttribute('data-translate-title');
+                  const translation = getTranslation(key, lang);
+                  el.setAttribute('title', translation);
+              });
+        }
+
+        // --- Initialize Language ---
+        const initialLang = getStoredLanguage();
+        // setLanguage called later
+
+        // --- Minimal Nav Logic (Keep from Practice) ---
+        const navToggleButton = document.getElementById('minimal-nav-toggle');
+        const navPanel = document.getElementById('minimal-nav-panel');
+        const body = document.body;
+        if (navToggleButton && navPanel) { /* ... same as practice ... */
+            navToggleButton.addEventListener('click', (event) => { event.stopPropagation(); body.classList.toggle('nav-active'); navToggleButton.setAttribute('aria-expanded', body.classList.contains('nav-active')); });
+            document.addEventListener('click', (event) => { if (body.classList.contains('nav-active') && !navPanel.contains(event.target) && event.target !== navToggleButton && !navToggleButton.contains(event.target)) { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); } });
+            navPanel.querySelectorAll('a').forEach(link => { link.addEventListener('click', () => { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); }); });
+            document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && body.classList.contains('nav-active')) { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); } });
+            navToggleButton.setAttribute('aria-expanded', 'false');
+        }
+
+        // --- Language Switcher Setup (Keep from Practice) ---
+        const langSelect = document.getElementById('languageSelect');
+        if (langSelect) { langSelect.addEventListener('change', (e) => { setLanguage(e.target.value); }); }
+
+        // --- Helper Function for Feedback (Keep from Practice) ---
+        function showFeedback(elementId, messageKey, type = 'info', replacements = {}) { /* ... same as practice ... */
+            const feedbackEl = document.getElementById(elementId);
+            if (!feedbackEl) { console.error(`Feedback element not found: ${elementId}`); return; }
+            const currentLang = getStoredLanguage();
+            const translatedMessage = getTranslation(messageKey, currentLang, replacements);
+            if (translatedMessage.includes('<') && translatedMessage.includes('>')) { feedbackEl.innerHTML = translatedMessage; }
+            else { feedbackEl.textContent = translatedMessage; }
+            feedbackEl.className = 'feedback-message'; // Reset classes first
+            feedbackEl.classList.add('visible', type);
+            const interactiveArea = feedbackEl.closest('.interactive-area');
+            if (!interactiveArea) return;
+            interactiveArea.classList.remove('success-glow-anim', 'shake-anim');
+            void interactiveArea.offsetWidth; // Trigger reflow
+            if (type === 'correct') { interactiveArea.classList.add('success-glow-anim'); }
+            else if (type === 'incorrect') { interactiveArea.classList.add('shake-anim'); }
+        }
+
+
+        // --- Activity 1: Predict the Output ---
+        const predictSection = document.getElementById('predict-output');
+        if (predictSection) {
+            const input = document.getElementById('prediction-input');
+            const checkBtn = document.getElementById('check-prediction-btn');
+            const feedbackDiv = document.getElementById('prediction-feedback');
+            const correctAnswer = "6"; // Expected output for print(factorial(3))
+
+            checkBtn.addEventListener('click', () => {
+                const userAnswer = input.value.trim();
+                if (userAnswer === "") {
+                    showFeedback('prediction-feedback', 'feedback_predict_empty', 'info');
+                } else if (userAnswer === correctAnswer) {
+                    showFeedback('prediction-feedback', 'feedback_predict_correct', 'correct');
+                     checkBtn.disabled = true; // Disable after correct answer
+                     checkBtn.classList.add('success');
+                     input.disabled = true;
+                } else {
+                    showFeedback('prediction-feedback', 'feedback_predict_incorrect', 'incorrect');
+                }
+            });
+
+             // Allow Enter key to submit prediction
+             input.addEventListener('keypress', (e) => {
+                 if (e.key === 'Enter') {
+                     e.preventDefault(); // Prevent potential form submission
+                     checkBtn.click();
+                 }
+             });
+        }
+
+        // --- Activity 2: Spot the Recursive Call (Adapted from Practice Spot Base Case) ---
+        const spotRecursiveCallSection = document.getElementById('spot-recursive-call');
+        if (spotRecursiveCallSection) {
+            const linesContainer = document.getElementById('recursive-call-lines');
+            const checkBtn = document.getElementById('check-recursive-call-btn');
+            const resetBtn = document.getElementById('reset-recursive-call-btn');
+            const feedbackDiv = document.getElementById('recursive-call-feedback');
+
+            // Define lines and whether they contain a recursive call
+            const recursiveCallCodeLinesData = [
+                // Example 1 (Countdown)
+                { key: 'spot_rec_code_line_1', isRecursiveCall: false }, { key: 'spot_rec_code_line_2', isRecursiveCall: false },
+                { key: 'spot_rec_code_line_3', isRecursiveCall: false }, { key: 'spot_rec_code_line_4', isRecursiveCall: false },
+                { key: 'spot_rec_code_line_5', isRecursiveCall: false }, { key: 'spot_rec_code_line_6', isRecursiveCall: true }, // countdown()
+                 // Example 2 (Fibonacci)
+                { key: 'spot_rec_code_line_7', isRecursiveCall: false }, { key: 'spot_rec_code_line_8', isRecursiveCall: false },
+                { key: 'spot_rec_code_line_9', isRecursiveCall: false }, { key: 'spot_rec_code_line_10', isRecursiveCall: false },
+                { key: 'spot_rec_code_line_11', isRecursiveCall: true }, // fib() + fib()
+                 // Example 3 (Iterative)
+                { key: 'spot_rec_code_line_12', isRecursiveCall: false }, { key: 'spot_rec_code_line_13', isRecursiveCall: false },
+                { key: 'spot_rec_code_line_14', isRecursiveCall: false }, { key: 'spot_rec_code_line_15', isRecursiveCall: false },
+                { key: 'spot_rec_code_line_16', isRecursiveCall: false }
+            ];
+            let currentRecCallLineListeners = [];
+
+            function createRecursiveCallLineElement(lineData, currentLang) { // New function name
+                 const container = document.createElement('div');
+                 container.classList.add('code-line-container');
+                 const iconPlaceholder = document.createElement('span');
+                 iconPlaceholder.classList.add('feedback-icon-placeholder');
+                 const codeLine = document.createElement('div');
+                 codeLine.classList.add('code-line-check');
+                 codeLine.dataset.isRecursiveCall = lineData.isRecursiveCall.toString(); // New data attribute
+                 codeLine.innerHTML = getTranslation(lineData.key, currentLang)
+                                    .replace(/^( +)/gm, m => '&nbsp;'.repeat(m.length)) // Preserve indent
+                                    .replace(/#.*(<--.*)/, '<span class="code-comment">#$1</span>'); // Style comment hint
+                 container.appendChild(iconPlaceholder);
+                 container.appendChild(codeLine);
+                 return container;
+            }
+
+            function setupRecursiveCallSpotting() { // New function name
+                 const currentLang = getStoredLanguage();
+                 currentRecCallLineListeners.forEach(({element, listener}) => element.removeEventListener('click', listener));
+                 currentRecCallLineListeners = [];
+
+                 linesContainer.innerHTML = '';
+                 recursiveCallCodeLinesData.forEach(lineData => {
+                     const lineElementContainer = createRecursiveCallLineElement(lineData, currentLang); // Use new creator
+                     linesContainer.appendChild(lineElementContainer);
+                     const lineCheckDiv = lineElementContainer.querySelector('.code-line-check');
+                     const lineClickListener = () => {
+                         if (lineCheckDiv.classList.contains('checked-state')) return;
+                         lineCheckDiv.classList.toggle('selected-visual');
+                     };
+                     lineCheckDiv.addEventListener('click', lineClickListener);
+                     currentRecCallLineListeners.push({ element: lineCheckDiv, listener: lineClickListener });
+                 });
+                 feedbackDiv.classList.remove('visible', 'correct', 'incorrect', 'info');
+                 resetBtn.classList.add('hidden');
+                 checkBtn.disabled = false;
+                 checkBtn.classList.remove('success');
+            }
+
+            checkBtn.addEventListener('click', () => {
+                 let correctSelections = 0; let incorrectSelections = 0; let missedRecursiveCalls = 0;
+                 const lineContainers = linesContainer.querySelectorAll('.code-line-container');
+                 const totalRecursiveCalls = recursiveCallCodeLinesData.filter(l => l.isRecursiveCall).length; // New count
+                 let isCorrectOverall = false;
+                 const currentLang = getStoredLanguage();
+
+                 lineContainers.forEach(container => {
+                    const lineCheck = container.querySelector('.code-line-check');
+                    const iconPlaceholder = container.querySelector('.feedback-icon-placeholder');
+                    const isRecursive = lineCheck.dataset.isRecursiveCall === 'true'; // Check new attribute
+                    const isSelected = lineCheck.classList.contains('selected-visual');
+
+                    iconPlaceholder.innerHTML = ''; iconPlaceholder.classList.remove('visible');
+                    lineCheck.classList.add('checked-state');
+
+                    let iconClass = '';
+                    if (isSelected && isRecursive) { iconClass = 'fas fa-check'; correctSelections++; iconPlaceholder.classList.add('visible'); }
+                    else if (isSelected && !isRecursive) { iconClass = 'fas fa-times'; incorrectSelections++; iconPlaceholder.classList.add('visible'); }
+                    else if (!isSelected && isRecursive) { iconClass = 'fas fa-eye'; missedRecursiveCalls++; iconPlaceholder.classList.add('visible'); } // Use eye for missed
+
+                    if (iconClass) { const icon = document.createElement('i'); icon.className = iconClass; iconPlaceholder.appendChild(icon); }
+                 });
+
+                 let feedbackMsgKey = ''; let feedbackReplacements = {};
+                 if (incorrectSelections === 0 && missedRecursiveCalls === 0 && correctSelections === totalRecursiveCalls) {
+                     isCorrectOverall = true;
+                     feedbackMsgKey = 'feedback_spot_rec_correct'; // Use new feedback key
+                     feedbackReplacements = { totalRecursiveCalls: totalRecursiveCalls };
+                     showFeedback('recursive-call-feedback', feedbackMsgKey, 'correct', feedbackReplacements); // Use new feedback ID
+                     checkBtn.classList.add('success');
+                 } else {
+                     let hints = [];
+                     if (incorrectSelections > 0) hints.push(getTranslation('feedback_spot_rec_hint_incorrect', currentLang, { count: incorrectSelections })); // Use new key
+                     if (missedRecursiveCalls > 0) hints.push(getTranslation('feedback_spot_rec_hint_missed', currentLang, { count: missedRecursiveCalls })); // Use new key
+                     feedbackMsgKey = 'feedback_spot_rec_incorrect'; // Use new feedback key
+                     feedbackReplacements = { hints: hints.join(getTranslation('feedback_spot_rec_hints_joiner', currentLang)) };
+                     showFeedback('recursive-call-feedback', feedbackMsgKey, 'incorrect', feedbackReplacements); // Use new feedback ID
+                     checkBtn.classList.remove('success');
+                 }
+
+                 if (isCorrectOverall) { resetBtn.classList.add('hidden'); checkBtn.disabled = true; }
+                 else { resetBtn.classList.remove('hidden'); checkBtn.disabled = true; }
+            });
+
+            resetBtn.addEventListener('click', setupRecursiveCallSpotting); // Use new setup
+            // setupRecursiveCallSpotting(); // Call moved to end
+        }
+
+        // --- Activity 3: Advanced Simulator (Power Function) ---
+        const advSimSection = document.getElementById('advanced-simulator');
+        if(advSimSection) {
+            const editor = document.getElementById('adv-sim-editor-input');
+            const outputArea = document.getElementById('adv-sim-output');
+            const runBtn = document.getElementById('run-adv-sim-btn');
+            const feedbackDiv = document.getElementById('adv-sim-feedback');
+
+            runBtn.addEventListener('click', () => {
+                 const code = editor.value;
+                 let placeholder = outputArea.querySelector('.placeholder');
+                 outputArea.innerHTML = ''; // Clear previous output
+                 if (!placeholder) {
+                     placeholder = document.createElement('span');
+                     placeholder.className = 'placeholder';
+                     placeholder.dataset.translate = 'adv_simulator_output_placeholder'; // Use specific key if needed
+                 }
+                 placeholder.textContent = getTranslation(placeholder.dataset.translate || 'adv_simulator_output_placeholder', getStoredLanguage());
+                 feedbackDiv.classList.remove('visible', 'correct', 'incorrect', 'info');
+
+                 if (code.trim() === '') {
+                     outputArea.appendChild(placeholder);
+                     showFeedback('adv-sim-feedback', 'feedback_sim_empty', 'info'); return;
+                 }
+                 if (!code.includes('def power') || !code.includes(':')) {
+                     outputArea.appendChild(placeholder);
+                     showFeedback('adv-sim-feedback', 'feedback_sim_no_def', 'incorrect'); return;
+                 }
+                 // Check for the specific call and print
+                  if (!code.match(/power\s*\(\s*2\s*,\s*4\s*\)/) || !code.includes('print(')) {
+                     outputArea.appendChild(placeholder);
+                     showFeedback('adv-sim-feedback', 'feedback_sim_no_call', 'incorrect'); return;
+                  }
+
+                 // --- Basic Simulation for power(2, 4) ---
+                 // Checks structure and expected output pattern
+                 let simulatedOutput = '';
+                 try {
+                    // Crude checks for structure
+                     const hasDef = code.includes('def power(base, exp):');
+                     const hasBaseCase = (code.includes('if exp == 0:') || code.includes('if exp <= 0:')) && code.includes('return 1');
+                     const hasRecursiveCall = code.includes('return base * power(base, exp - 1)');
+                     const hasCallAndPrint = code.match(/print\s*\(\s*power\s*\(\s*2\s*,\s*4\s*\)\s*\)/) || (code.includes('result = power(2, 4)') && code.includes('print(result)'));
+
+                     if (hasDef && hasBaseCase && hasRecursiveCall && hasCallAndPrint) {
+                         // Simulate the expected output for power(2, 4) -> 16
+                         simulatedOutput = "> 16";
+                         outputArea.textContent = simulatedOutput;
+                         showFeedback('adv-sim-feedback', 'feedback_sim_power_success', 'correct');
+                     } else {
+                         // Structure seems wrong
+                         outputArea.appendChild(placeholder);
+                         showFeedback('adv-sim-feedback', 'feedback_sim_output_mismatch', 'incorrect');
+                     }
+                 } catch (e) {
+                     console.error("Simulation error:", e);
+                     outputArea.appendChild(placeholder);
+                     showFeedback('adv-sim-feedback', 'feedback_sim_runtime_error', 'incorrect');
+                 }
+            });
+        }
+
+        // --- Activity 4: Advanced Mini Missions ---
+        const advMissionsSection = document.getElementById('advanced-mini-missions');
+        let updateAdvMissionSummary; // New summary function name
+        if (advMissionsSection) {
+            const missionRunButtons = advMissionsSection.querySelectorAll('.mission-run-btn');
+            const summaryFeedback = document.getElementById('missions-summary-feedback');
+            const totalMissions = advMissionsSection.querySelectorAll('.mission').length;
+            let completedMissionsCount = 0;
+
+            updateAdvMissionSummary = function() { // Assign new function
+                 completedMissionsCount = advMissionsSection.querySelectorAll('.mission[data-completed="true"]').length;
+                 const currentLang = getStoredLanguage();
+                 if (completedMissionsCount === totalMissions) {
+                     showFeedback('missions-summary-feedback', 'feedback_missions_summary_all_done', 'correct', { totalMissions: totalMissions });
+                 } else if (completedMissionsCount > 0) {
+                     showFeedback('missions-summary-feedback', 'feedback_missions_summary_progress', 'info', { completedCount: completedMissionsCount, totalMissions: totalMissions });
+                 } else {
+                     summaryFeedback.classList.remove('visible', 'correct', 'incorrect', 'info');
+                 }
+            }
+
+            missionRunButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const missionId = button.dataset.missionId;
+                    const missionDiv = document.getElementById(`mission-${missionId}`); // Assumes mission IDs are mission-1, mission-2 etc in HTML
+                    if (!missionDiv) return;
+                    const editor = missionDiv.querySelector('.mission-editor');
+                    const outputArea = missionDiv.querySelector('.mission-output');
+                    const feedbackDivId = `mission-feedback-${missionId}`;
+                    const feedbackDiv = document.getElementById(feedbackDivId);
+                    const statusIcon = missionDiv.querySelector('.mission-status i');
+                    const code = editor.value;
+                    outputArea.innerHTML = ''; // Clear output
+                    let success = false;
+                    let feedbackMessageKey = 'feedback_mission_syntax_error';
+                    let feedbackType = 'incorrect';
+                    let specificHintKey = `feedback_mission${missionId}_hint`; // Use new keys
+
+                    // --- Simplified Validation Logic for Advanced Missions ---
+                    try {
+                         outputArea.innerHTML = '';
+                         let simulatedOutput = '';
+                         let expectedOutput = '';
+
+                         if (missionId === '1') { // sum_list([1, 5, 3, 7]) -> 16
+                             expectedOutput = "> 16";
+                             const hasDef = code.includes('def sum_list(data):');
+                             const hasBase = code.includes('if not data:') && code.includes('return 0');
+                             const hasRec = code.includes('return data[0] + sum_list(data[1:])');
+                             const hasCall = code.match(/sum_list\s*\(\s*\[\s*1\s*,\s*5\s*,\s*3\s*,\s*7\s*\]\s*\)/);
+                             const hasPrint = code.includes('print(');
+                             if(hasDef && hasBase && hasRec && hasCall && hasPrint) { success = true; simulatedOutput = expectedOutput; }
+                         } else if (missionId === '2') { // fibonacci(6) -> 8
+                             expectedOutput = "> 8";
+                              const hasDef = code.includes('def fibonacci(n):');
+                              const hasBase0 = code.includes('if n == 0:') && code.includes('return 0');
+                              const hasBase1 = code.includes('if n == 1:') && code.includes('return 1');
+                              const hasRec = code.includes('return fibonacci(n - 1) + fibonacci(n - 2)');
+                              const hasCall = code.match(/fibonacci\s*\(\s*6\s*\)/);
+                              const hasPrint = code.includes('print(');
+                             // Allow base cases combined with or/<=
+                             const hasCombinedBase = code.includes('if n <= 1:') && code.includes('return n');
+                             if(hasDef && ( (hasBase0 && hasBase1) || hasCombinedBase ) && hasRec && hasCall && hasPrint) { success = true; simulatedOutput = expectedOutput; }
+                         } else if (missionId === '3') { // reverse_string('hello') -> 'olleh'
+                             expectedOutput = "> olleh";
+                             const hasDef = code.includes('def reverse_string(s):');
+                             const hasBase = (code.includes("if s == '':") || code.includes('if not s:')) && (code.includes("return ''") || code.includes("return s"));
+                             const hasRec = code.includes('return reverse_string(s[1:]) + s[0]');
+                              const hasCall = code.match(/reverse_string\s*\(\s*['"]hello['"]\s*\)/);
+                             const hasPrint = code.includes('print(');
+                              if(hasDef && hasBase && hasRec && hasCall && hasPrint) { success = true; simulatedOutput = expectedOutput; }
+                         }
+
+                         // Display simulated output
+                         if(simulatedOutput) {
+                             outputArea.textContent = simulatedOutput;
+                         } else if (!success) {
+                              const placeholder = document.createElement('span');
+                              placeholder.className = 'placeholder';
+                              placeholder.textContent = getTranslation(outputArea.dataset.translatePlaceholder || 'adv_simulator_output_placeholder', getStoredLanguage());
+                              outputArea.appendChild(placeholder);
+                         }
+
+                    } catch (error) {
+                         console.error("Mission validation error:", error);
+                         const placeholder = document.createElement('span');
+                         placeholder.className = 'placeholder';
+                         placeholder.textContent = getTranslation(outputArea.dataset.translatePlaceholder || 'adv_simulator_output_placeholder', getStoredLanguage());
+                         outputArea.appendChild(placeholder);
+                    }
+                    // --- End Validation Logic ---
+
+                    if (success) {
+                        feedbackMessageKey = 'feedback_mission_success';
+                        feedbackType = 'correct';
+                        statusIcon.className = 'fas fa-check-circle';
+                        missionDiv.dataset.completed = 'true';
+                    } else {
+                        feedbackMessageKey = specificHintKey || feedbackMessageKey;
+                        feedbackType = 'incorrect';
+                        statusIcon.className = 'fas fa-times-circle';
+                        missionDiv.dataset.completed = 'false';
+                    }
+                    showFeedback(feedbackDivId, feedbackMessageKey, feedbackType);
+                    updateAdvMissionSummary(); // Call new summary update
+                });
+            });
+            updateAdvMissionSummary(); // Initial call
+        }
+
+
+        // --- Fade-in animations on scroll (Keep from Practice) ---
+        const fadeElements = document.querySelectorAll('.fade-in');
+        const animateOnScroll = () => { /* ... same as practice ... */
+             const windowHeight = window.innerHeight;
+             fadeElements.forEach(el => {
+                 if (el.style.opacity === '1') return;
+                 const rect = el.getBoundingClientRect();
+                 if (rect.top < windowHeight - 80 && rect.bottom >= 50) {
+                     el.style.opacity = '1';
+                     el.style.transform = 'translateY(0)';
+                 }
+             });
+        };
+        const scrollHandler = () => window.requestAnimationFrame(animateOnScroll);
+        window.addEventListener('scroll', scrollHandler);
+
+        // --- Initial Language Application and Activity Setups ---
+        setLanguage(initialLang); // Apply language FIRST
+        animateOnScroll(); // Trigger initial animation check AFTER setting language
+
+        // Call initial setups for activities *after* language is set
+        setupRecursiveCallSpotting(); // Setup for the spotting activity
+        // Prediction, Simulator, Missions handled via setLanguage/placeholders/summary update
+
+    }); // End DOMContentLoaded
+    </script>
+
+</body>
+</html>
