@@ -1,1 +1,1428 @@
+<!DOCTYPE html>
+<!-- Language set by JS -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Title set by JS -->
+    <title data-translate="page_title_adv">Module 7: Advanced - Multi-way Decisions</title>
+    <!-- Fonts & Icons (Same as standard practice) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
+    <style>
+        /* --- Base Styles & Variables --- */
+        :root {
+            --primary-color: #007bff; /* Blue */
+            --secondary-color: #6c757d; /* Grey */
+            --background-light: #f8f9fa;
+            --background-medium: #e9ecef;
+            --background-dark: #343a40; /* Dark Grey */
+            --text-light: #f8f9fa;
+            --text-dark: #212529;
+            --accent-color: #ffc107; /* Yellow */
+            --success-color: #28a745; /* Green */
+            --error-color: #dc3545;   /* Red */
+            --info-color: #17a2b8;    /* Teal */
+            --logic-color-if: #17a2b8;    /* Teal (for 'if' emphasis) */
+            --logic-color-elif: #ffc107;  /* Yellow (for 'elif' emphasis) */
+            --logic-color-else: #fd7e14;  /* Orange (for 'else' emphasis) */
+            --condition-color: #6f42c1; /* Purple (for conditions) */
+            --border-radius: 8px;
+            --transition-speed: 0.3s;
+            --font-body: 'Roboto', sans-serif;
+            --font-title: 'Orbitron', sans-serif;
+            --selection-highlight-bg: rgba(0, 123, 255, 0.1);
+            --selection-highlight-border: rgba(0, 123, 255, 0.4);
+            /* Colors matching potential nav consistency */
+            --nav-primary: #6e48aa;
+            --nav-success: #4cc9f0;
+            --nav-dark: #1a1a2e;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; font-size: 16px; }
+        body {
+            font-family: var(--font-body); line-height: 1.7;
+            background-color: var(--background-light); color: var(--text-dark);
+            overflow-x: hidden;
+        }
+
+        /* --- Utility Classes (Same as standard practice) --- */
+        .container { max-width: 960px; margin: 0 auto; padding: 0 15px; }
+        .text-center { text-align: center; }
+        .highlight { color: var(--primary-color); font-weight: bold; }
+        .code-font { font-family: 'Courier New', Courier, monospace; }
+        .hidden { display: none !important; }
+        .button-group {
+            margin-top: 2rem; display: flex; flex-wrap: wrap;
+            justify-content: center; gap: 1rem;
+        }
+        .indent { margin-left: 2em; } /* Simple indentation helper */
+
+        /* --- Advanced Animations (Same as standard practice) --- */
+        .fade-in { opacity: 0; transform: translateY(20px); animation: fadeInAnimation 0.8s ease-out forwards; }
+        .fade-in.delay-1 { animation-delay: 0.2s; }
+        .fade-in.delay-2 { animation-delay: 0.4s; }
+        .fade-in.delay-3 { animation-delay: 0.6s; }
+        .fade-in.delay-4 { animation-delay: 0.8s; }
+        @keyframes fadeInAnimation { to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulseHeaderIcon { 0% { transform: scale(1); opacity: 0.1; filter: brightness(1); } 50% { transform: scale(1.05); opacity: 0.25; filter: brightness(1.2); } 100% { transform: scale(1); opacity: 0.1; filter: brightness(1); } }
+        @keyframes successGlow { 0% { box-shadow: 0 0 3px rgba(40, 167, 69, 0.3); transform: scale(1); } 50% { box-shadow: 0 0 12px 5px rgba(40, 167, 69, 0.5); transform: scale(1.01); } 100% { box-shadow: 0 0 3px rgba(40, 167, 69, 0.3); transform: scale(1); } }
+        .success-glow-anim { animation: successGlow 0.9s ease-out; }
+        @keyframes shake { 10%, 90% { transform: translate3d(-2px, 0, 0); } 20%, 80% { transform: translate3d(3px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-5px, 0, 0); } 40%, 60% { transform: translate3d(5px, 0, 0); } }
+        .shake-anim { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes iconAppearCorrect { 0% { transform: scale(0.5) rotate(-15deg); opacity: 0; } 60% { transform: scale(1.2) rotate(5deg); opacity: 1; } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
+        @keyframes iconAppearIncorrect { 0% { transform: scale(0.5) rotate(-15deg); opacity: 0; } 50% { transform: scale(1.2) rotate(10deg); opacity: 1; } 70% { transform: scale(0.9) rotate(-5deg); } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
+        @keyframes iconAppearMissed { 0% { transform: scale(0.8) rotateY(90deg); opacity: 0; } 100% { transform: scale(1) rotateY(0deg); opacity: 0.8; } }
+        .action-button:active:not(:disabled) { transform: translateY(1px) scale(0.98); filter: brightness(0.95); }
+
+        /* --- Minimal Retractable Nav (Same as standard practice) --- */
+        .minimal-nav-button { position: fixed; top: 15px; right: 15px; z-index: 1001; background-color: rgba(52, 58, 64, 0.75); color: var(--text-light); border: none; border-radius: var(--border-radius); padding: 8px 12px; cursor: pointer; transition: background-color var(--transition-speed), opacity var(--transition-speed), transform var(--transition-speed); font-size: 1.1rem; opacity: 0.6; box-shadow: 0 2px 5px rgba(0,0,0,0.2); line-height: 1; }
+        .minimal-nav-button:hover { background-color: rgba(52, 58, 64, 0.95); opacity: 1; transform: scale(1.05); }
+        .minimal-nav { position: fixed; top: 60px; right: 15px; z-index: 1000; background-color: var(--background-dark); border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.3); padding: 0.8rem; opacity: 0; transform: translateY(-15px) scale(0.95); transform-origin: top right; pointer-events: none; transition: opacity var(--transition-speed) ease, transform var(--transition-speed) ease; min-width: 200px; }
+        body.nav-active .minimal-nav { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+        .minimal-nav ul { list-style: none; margin: 0; padding: 0; }
+        .minimal-nav ul li { margin-bottom: 5px; }
+        .minimal-nav ul li:last-child { margin-bottom: 0; }
+        .minimal-nav ul li a { display: flex; align-items: center; color: var(--text-light); text-decoration: none; padding: 0.6rem 1rem; border-radius: 4px; transition: background-color var(--transition-speed), color var(--transition-speed); white-space: nowrap; font-weight: 400; font-size: 0.95rem; }
+        .minimal-nav ul li a i.fas { margin-right: 10px; width: 1.2em; text-align: center; opacity: 0.8; transition: opacity var(--transition-speed); }
+        .minimal-nav ul li a:hover { background-color: var(--primary-color); color: var(--text-light); }
+        .minimal-nav ul li a:hover i.fas { opacity: 1; }
+        .minimal-nav .language-switcher-item { padding: 0.5rem 1rem; border-top: 1px solid var(--secondary-color); margin-top: 8px; padding-top: 13px; }
+        #languageSelect { width: 100%; background: rgba(255,255,255,0.1); color: white; border: 1px solid var(--nav-success); border-radius: 5px; padding: 6px 30px 6px 12px; cursor: pointer; font-size: 0.9rem; appearance: none; -webkit-appearance: none; -moz-appearance: none; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%234CC9F0%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right 10px center; background-size: 10px auto; transition: background-color 0.3s ease; }
+        #languageSelect:hover { background-color: rgba(255,255,255,0.15); }
+        #languageSelect option { background: var(--nav-dark); color: var(--text-light); }
+        /* --- End Minimal Retractable Nav --- */
+
+        /* --- Practice Header (Same style, updated text) --- */
+        .practice-header { background: linear-gradient(135deg, var(--primary-color), #0056b3); color: var(--text-light); padding: 3rem 0 4rem; text-align: center; position: relative; overflow: hidden; border-bottom: 5px solid var(--accent-color); }
+        .practice-header h1 { font-family: var(--font-title); font-size: 2.8rem; margin-bottom: 0.5rem; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); animation: fadeInAnimation 1s ease-out; }
+        .practice-header p { font-size: 1.1rem; font-weight: 300; opacity: 0.9; animation: fadeInAnimation 1s ease-out 0.3s forwards; opacity: 0; }
+        /* Adjusted header icons */
+        .header-icon { position: absolute; font-size: 4rem; color: var(--text-light); animation: pulseHeaderIcon 6s infinite ease-in-out alternate; }
+        .icon1 { top: 20%; left: 15%; animation-duration: 7s; content: "\f126"; /* fa-code-branch */ font-family: "Font Awesome 6 Free"; font-weight: 900;}
+        .icon2 { bottom: 15%; right: 20%; animation-duration: 5s; content: "\f543"; /* fa-brain */ font-family: "Font Awesome 6 Free"; font-weight: 900; }
+
+        /* --- Practice Section Styling (Same as standard practice) --- */
+        .practice-section { padding: 3rem 0; background-color: var(--background-medium); border-bottom: 1px solid #d6d8db; }
+        .practice-section:nth-child(odd) { background-color: var(--background-light); }
+        .practice-section:last-of-type { border-bottom: none; }
+        .practice-section h2 { font-family: var(--font-title); font-size: 1.8rem; color: var(--primary-color); margin-bottom: 1rem; text-align: center; }
+        .practice-section .section-description { text-align: center; margin-bottom: 2.5rem; color: var(--secondary-color); font-size: 1.05rem; max-width: 700px; margin-left: auto; margin-right: auto; }
+
+        /* --- General Interactive Elements (Same as standard practice) --- */
+        .interactive-area { background-color: #fff; padding: 2rem; border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.08); margin-top: 1.5rem; position: relative; transition: box-shadow 0.5s ease-out; }
+        .feedback-message { padding: 0.8rem 1rem; margin-top: 1rem; border-radius: var(--border-radius); font-weight: bold; text-align: center; opacity: 0; max-height: 0; overflow: hidden; transition: opacity var(--transition-speed) ease, max-height var(--transition-speed) ease, margin-top var(--transition-speed) ease; }
+        .feedback-message.visible { opacity: 1; max-height: 100px; /* Adjust if needed for longer messages */ margin-top: 1.5rem; }
+        .feedback-message.correct { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .feedback-message.incorrect { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .feedback-message.info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .feedback-message .fas { margin: 0 3px; }
+        .action-button { display: inline-block; padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold; color: var(--text-light); background-color: var(--primary-color); border: none; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), transform var(--transition-speed), filter var(--transition-speed), box-shadow var(--transition-speed); margin-top: 1rem; vertical-align: middle; box-shadow: 0 2px 5px rgba(0,0,0,0.1); text-decoration: none; }
+        .action-button:hover:not(:disabled) { background-color: #0056b3; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+        .action-button:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none; box-shadow: none; opacity: 0.7; }
+        .action-button.success { background-color: var(--success-color); }
+        .action-button.success:hover:not(:disabled) { background-color: #218838; }
+        .action-button.secondary { background-color: var(--secondary-color); }
+        .action-button.secondary:hover:not(:disabled) { background-color: #5a6268; }
+        /* Code styling */
+        .code-block { background-color: var(--background-dark); color: var(--text-light); padding: 1.5rem; border-radius: var(--border-radius); font-family: var(--code-font); font-size: 1rem; position: relative; overflow-x: auto; margin: 1rem 0; line-height: 1.6; }
+        .code-keyword { color: #569cd6; font-weight: bold; }
+        .code-keyword.elif { color: var(--logic-color-elif); } /* Specific color for elif */
+        .code-keyword.else { color: var(--logic-color-else); } /* Specific color for else */
+        .code-string { color: #ce9178; }
+        .code-comment { color: #6a9955; font-style: italic; }
+        .code-function { color: #dcdcaa; }
+        .code-paren { color: #ffd700; }
+        .code-number { color: #b5cea8; }
+        .code-operator { color: #d4d4d4; }
+        .code-condition { color: var(--condition-color); font-weight: bold; }
+        .code-if-branch { border-left: 3px solid var(--logic-color-if); padding-left: 10px; margin-left: 2px; background: rgba(23, 162, 184, 0.05); }
+        .code-elif-branch { border-left: 3px solid var(--logic-color-elif); padding-left: 10px; margin-left: 2px; background: rgba(255, 193, 7, 0.05); } /* Style for elif block */
+        .code-else-branch { border-left: 3px solid var(--logic-color-else); padding-left: 10px; margin-left: 2px; background: rgba(253, 126, 20, 0.05); }
+
+        /* --- Activity 1 (Adv): Anatomy of if/elif/else --- */
+        #anatomy-elif .code-part { cursor: pointer; border-bottom: 2px dashed rgba(255, 255, 255, 0.3); transition: background-color var(--transition-speed), border-bottom-color var(--transition-speed); padding: 0 2px; display: inline-block; }
+        #anatomy-elif .code-part:hover { background-color: rgba(255, 255, 255, 0.15); border-bottom-color: var(--accent-color); }
+        #anatomy-elif .code-part.identified { background-color: rgba(40, 167, 69, 0.3); border-bottom: 2px solid var(--success-color); cursor: default; }
+        #anatomy-elif .part-explanation { font-size: 0.95rem; border-left: 3px solid var(--info-color); padding: 5px 10px; margin-top: 0.5rem; background-color: rgba(23, 162, 184, 0.05); }
+        #anatomy-elif .part-explanation .fas { color: var(--success-color); margin-right: 5px;}
+        #anatomy-elif-status { margin-top: 1rem; font-style: italic; color: var(--secondary-color); }
+
+        /* --- Activity 2 (Adv): Predict the Path (elif) --- */
+        #predict-elif .code-block { margin-bottom: 1.5rem; }
+        #predict-elif .variable-display { margin-bottom: 1.5rem; font-size: 1.1rem; text-align: center; }
+        #predict-elif .prediction-buttons { display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; margin-top: 1rem; } /* Allow wrap */
+        .predict-btn-adv { padding: 0.8rem 1.5rem; font-size: 1rem; } /* Adjusted class name */
+        .predict-btn-adv.if-branch { background-color: var(--logic-color-if); }
+        .predict-btn-adv.if-branch:hover:not(:disabled) { background-color: #138496; }
+        .predict-btn-adv.elif-branch { background-color: var(--logic-color-elif); color: var(--text-dark); border: 1px solid #cc9a06;} /* Elif specific */
+        .predict-btn-adv.elif-branch:hover:not(:disabled) { background-color: #e0a800; }
+        .predict-btn-adv.else-branch { background-color: var(--logic-color-else); }
+        .predict-btn-adv.else-branch:hover:not(:disabled) { background-color: #e06200; }
+        #predict-elif-feedback .fas { animation: iconAppearCorrect 0.5s ease-out; }
+
+        /* --- Activity 3 (Adv): Build-an-elif --- */
+        #build-an-elif .draggable-pieces { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 1.5rem; padding: 1rem; background-color: var(--background-light); border: 1px dashed var(--secondary-color); border-radius: var(--border-radius); justify-content: center; user-select: none; -webkit-user-select: none; -ms-user-select: none; }
+        .piece { display: inline-block; padding: 8px 12px; background-color: var(--primary-color); color: var(--text-light); border-radius: 4px; cursor: grab; font-family: var(--code-font); font-size: 1rem; transition: background-color var(--transition-speed), transform var(--transition-speed), opacity 0.1s ease, box-shadow var(--transition-speed); border: 1px solid #0056b3; touch-action: none; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .piece:active { cursor: grabbing; }
+        .piece.dragging { opacity: 0.6 !important; transform: scale(1.05) rotate(3deg); position: fixed !important; pointer-events: none !important; z-index: 1000 !important; cursor: grabbing !important; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+        .piece.ghosting { opacity: 0.3; }
+        /* Specific piece colors */
+        .piece[data-type="keyword-if"] { background-color: var(--logic-color-if); border-color: #138496;}
+        .piece[data-type="keyword-elif"] { background-color: var(--logic-color-elif); border-color: #e0a800; color: var(--text-dark);} /* Elif color */
+        .piece[data-type="keyword-else"] { background-color: var(--logic-color-else); border-color: #e06200;}
+        .piece[data-type="condition"] { background-color: var(--condition-color); border-color: #5a379e; }
+        .piece[data-type="string"] { background-color: #b17a62; border-color:#9d6c56; }
+        .piece[data-type="colon"] { background-color: var(--secondary-color); border-color:#5a6268; }
+        .piece[data-type="print"] { background-color: #868e96; border-color:#6c757d; }
+        .piece[data-type="indent"] { background-color: transparent; border: 1px dashed #ccc; color: #aaa; font-style: italic; cursor: default; padding: 8px 5px; width: 2em; text-align: center; opacity: 0.7;} /* Visual only */
+
+        #build-elif-drop-zone { min-height: 150px; /* Taller for more lines */ background-color: var(--background-dark); border: 3px dashed var(--secondary-color); border-radius: var(--border-radius); padding: 15px; display: flex; flex-direction: column; align-items: flex-start; gap: 5px; transition: border-color var(--transition-speed), background-color var(--transition-speed), box-shadow var(--transition-speed); font-family: var(--code-font); }
+        #build-elif-drop-zone.over { border-color: var(--accent-color); background-color: #495057; box-shadow: inset 0 0 10px rgba(255,193,7,0.2); }
+        #build-elif-drop-zone .piece { cursor: default; margin: 0; touch-action: auto; box-shadow: none; margin-bottom: 5px; }
+        #build-elif-drop-zone .drop-line { display: flex; align-items: center; gap: 5px; width: 100%; }
+        #build-elif-drop-zone-placeholder { color: var(--secondary-color); font-style: italic; width: 100%; text-align: center; align-self: center;}
+
+        /* --- Activity 4 (Adv): Code Simulator (Multi-way Decision) --- */
+        #code-simulator-multiway .sim-editor { width: 100%; min-height: 180px; /* Taller */ background-color: var(--background-dark); color: var(--text-light); border: 1px solid var(--secondary-color); border-radius: var(--border-radius); padding: 1rem; font-family: var(--code-font); font-size: 1rem; line-height: 1.5; resize: vertical; }
+        #code-simulator-multiway .sim-output-area { margin-top: 1rem; min-height: 50px; background-color: #1a1a1a; border: 1px solid #444; border-radius: var(--border-radius); padding: 1rem; color: var(--accent-color); font-family: var(--code-font); font-size: 1.05rem; white-space: pre-wrap; word-wrap: break-word; }
+        #code-simulator-multiway .sim-output-area .placeholder { color: var(--secondary-color); font-style: italic; font-size: 0.9rem; }
+        #code-simulator-multiway .sim-output-area .output-line { display: block; }
+        #code-simulator-multiway .test-case-area { margin-top: 1rem; padding: 0.8rem; background-color: var(--background-medium); border-radius: var(--border-radius); font-size: 0.95rem; }
+
+        /* --- Activity 5 (Adv): Mini Missions (Advanced Decisions) --- */
+        #mini-missions-advanced .mission { padding: 1.5rem; border: 1px solid #d6d8db; border-radius: var(--border-radius); margin-bottom: 1.5rem; background-color: var(--background-light); position: relative; }
+        .mission-status-adv { position: absolute; top: 10px; right: 10px; font-size: 1.5rem; transition: transform 0.3s ease; }
+        .mission-status-adv .fa-check-circle { color: var(--success-color); transform-origin: center; }
+        .mission-status-adv .fa-times-circle { color: var(--error-color); }
+        .mission-status-adv .fa-question-circle { color: var(--secondary-color); }
+        .mission[data-completed="true"] .mission-status-adv .fa-check-circle { animation: iconAppearCorrect 0.6s ease-out; }
+        #mini-missions-advanced .mission-editor { width: 100%; min-height: 140px; /* Taller */ background-color: var(--background-dark); color: var(--text-light); border: 1px solid var(--secondary-color); border-radius: var(--border-radius); padding: 1rem; font-family: var(--code-font); font-size: 1rem; line-height: 1.5; resize: vertical; margin-top: 1rem; }
+        #mini-missions-advanced .mission-output { margin-top: 1rem; min-height: 30px; background-color: #1a1a1a; border: 1px solid #444; border-radius: var(--border-radius); padding: 0.8rem; color: var(--accent-color); font-family: var(--code-font); font-size: 1rem; white-space: pre-wrap; word-wrap: break-word; }
+
+        /* --- Final Section (Same as standard practice) --- */
+        .completion-section { padding: 4rem 0; text-align: center; }
+        .completion-section .icon { font-size: 4rem; color: var(--success-color); margin-bottom: 1rem; display: inline-block; opacity: 0; animation: iconAppearCorrect 1s ease-out 0.5s forwards; }
+        .completion-section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); }
+        .completion-section p { font-size: 1.1rem; margin-top: 1rem; color: var(--secondary-color); }
+
+        /* --- Responsive Design (Same as standard practice, should cover new content) --- */
+        @media (max-width: 768px) {
+            html { font-size: 15px; }
+            .practice-header h1 { font-size: 2.2rem; }
+            .practice-section h2 { font-size: 1.6rem; }
+            .interactive-area { padding: 1.5rem; }
+            #build-an-elif .draggable-pieces { padding: 0.8rem; } /* Updated ID */
+            .piece { padding: 6px 10px; font-size: 0.95rem; }
+            #build-elif-drop-zone { min-height: 120px; padding: 10px; } /* Updated ID */
+            .predict-btn-adv { padding: 0.7rem 1.2rem; font-size: 0.95rem; } /* Update class */
+            .button-group { flex-direction: column; align-items: center; }
+             /* Adjust nav panel if needed */
+            .minimal-nav { min-width: 180px; }
+            .minimal-nav ul li a { padding: 0.6rem 0.8rem; }
+            #languageSelect { font-size: 0.85rem; padding: 5px 25px 5px 10px;}
+        }
+        @media (max-width: 480px) {
+            html { font-size: 14px; }
+            .practice-header h1 { font-size: 1.8rem; }
+            .practice-header p { font-size: 1rem; }
+            .practice-section h2 { font-size: 1.4rem; }
+            .interactive-area { padding: 1rem; }
+            .action-button, .predict-btn-adv { font-size: 0.9rem; padding: 0.7rem 1.2rem; width: 90%; max-width: 300px;} /* Update class */
+            #code-simulator-multiway .sim-editor, #code-simulator-multiway .sim-output-area { font-size: 0.9rem; } /* Updated ID */
+            #mini-missions-advanced .mission-editor, #mini-missions-advanced .mission-output { font-size: 0.9rem;} /* Updated ID */
+            #build-an-elif .draggable-pieces { justify-content: space-around; } /* Updated ID */
+            .piece { font-size: 0.9rem; }
+            #predict-elif .prediction-buttons { flex-direction: column; gap: 0.8rem; align-items: center;} /* Updated ID */
+            .button-group a.action-button { width: 90%; max-width: 300px; margin-bottom: 0.5rem; }
+            /* Adjust Nav */
+             .minimal-nav-button { top: 10px; right: 10px; padding: 6px 10px; font-size: 1rem; }
+             .minimal-nav { top: 48px; right: 10px; min-width: 160px; }
+             .minimal-nav ul li a { padding: 0.5rem 0.7rem; font-size: 0.9rem;}
+             .minimal-nav ul li a i.fas { margin-right: 8px; }
+             #languageSelect { font-size: 0.8rem; padding: 4px 20px 4px 8px;}
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ========= Minimal Nav Handle ========= -->
+    <button id="minimal-nav-toggle" class="minimal-nav-button" aria-label="Toggle Navigation Menu">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- ========= Minimal Nav Panel (with Language Switcher) - ADVANCED VERSION LINKS ========= -->
+    <nav id="minimal-nav-panel" class="minimal-nav">
+        <ul>
+            <!-- *** UPDATED HREFS FOR ADVANCED MODULE 7 *** -->
+            <li><a href="ctp-practice-7.html"><i class="fas fa-arrow-left fa-fw"></i> <span data-translate="nav_practice_prev">View Practice</span></a></li>
+            <li><a href="ctp-video-7.html"><i class="fas fa-video fa-fw"></i> <span data-translate="nav_video">Video Lesson</span></a></li>
+            <li><a href="ctp-dashboard.html"><i class="fas fa-list fa-fw"></i> <span data-translate="nav_menu">Course Menu</span></a></li>
+            <hr style="border: none; border-top: 1px solid var(--secondary-color); margin: 8px 0;">
+            <!-- *** UPDATED SECTION LINKS FOR ADVANCED MODULE 7 *** -->
+            <li><a href="#anatomy-elif"><i class="fas fa-microscope fa-fw"></i> <span data-translate="nav_anatomy_adv">Anatomy (elif)</span></a></li>
+            <li><a href="#predict-elif"><i class="fas fa-map-signs fa-fw"></i> <span data-translate="nav_predict_adv">Predict Path (elif)</span></a></li>
+            <li><a href="#build-an-elif"><i class="fas fa-puzzle-piece fa-fw"></i> <span data-translate="nav_build_adv">Build (elif)</span></a></li>
+            <li><a href="#code-simulator-multiway"><i class="fas fa-keyboard fa-fw"></i> <span data-translate="nav_simulator_adv">Simulator (Multi-way)</span></a></li>
+            <li><a href="#mini-missions-advanced"><i class="fas fa-rocket fa-fw"></i> <span data-translate="nav_missions_adv">Missions (Advanced)</span></a></li>
+            <!-- Language Switcher Item -->
+            <li class="language-switcher-item">
+                 <select id="languageSelect" aria-label="Select Language">
+                     <option value="en" data-translate="lang_en">🇬🇧 English</option>
+                     <option value="pt" data-translate="lang_pt">🇧🇷 Português</option>
+                     <option value="zh" data-translate="lang_zh">🇨🇳 中文</option>
+                 </select>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- ========= Header - ADVANCED VERSION ========= -->
+    <header class="practice-header">
+        <i class="fas header-icon icon1"></i>
+        <i class="fas header-icon icon2"></i>
+        <div class="container">
+            <!-- *** UPDATED HEADER TEXT FOR ADVANCED MODULE 7 *** -->
+            <h1 data-translate="header_title_adv">Module 7: Advanced Practice - More Choices</h1>
+            <p data-translate="header_subtitle_adv">Let's explore `elif` for multiple conditions and more complex decision making.</p>
+        </div>
+    </header>
+
+    <!-- ========= Main Content ========= -->
+    <main>
+        <!-- ========= Activity 1 (Adv): Anatomy of if/elif/else ========= -->
+        <section id="anatomy-elif" class="practice-section">
+             <div class="container">
+                 <h2 class="fade-in"><i class="fas fa-microscope"></i> <span data-translate="anatomy_adv_title">Anatomy of `if/elif/else`</span></h2>
+                 <p class="section-description fade-in delay-1" data-translate="anatomy_adv_desc">
+                     When you need more than two options, `elif` (else if) comes to the rescue. Click the parts to see their roles.
+                 </p>
+                 <div class="interactive-area fade-in delay-2">
+                     <div class="code-block">
+                         <span class="code-part" data-part="if-keyword" data-translate-title="tooltip_click_identify" title="Click to identify this part"><span class="code-keyword">if</span></span><!--
+                      --> <span class="code-part" data-part="condition1" data-translate-title="tooltip_click_identify" title="Click to identify this part"><span class="code-condition">grade</span> <span class="code-operator">&gt;=</span> <span class="code-number">90</span></span><!--
+                      --><span><span class="code-paren">:</span></span><br>
+                         <div class="indent code-if-branch">
+                            <span class="code-part" data-part="if-body" data-translate-title="tooltip_click_identify" title="Click to identify this part"><span class="code-function">print</span>(<span class="code-string" data-translate="anatomy_adv_code_string_a">"Grade: A"</span>)</span> <!-- *** TRANSLATABLE *** -->
+                         </div>
+                         <span class="code-part" data-part="elif-keyword" data-translate-title="tooltip_click_identify" title="Click to identify this part"><span class="code-keyword elif">elif</span></span><!--
+                      --> <span class="code-part" data-part="condition2" data-translate-title="tooltip_click_identify" title="Click to identify this part"><span class="code-condition">grade</span> <span class="code-operator">&gt;=</span> <span class="code-number">80</span></span><!--
+                      --><span><span class="code-paren">:</span></span><br>
+                         <div class="indent code-elif-branch">
+                             <span class="code-part" data-part="elif-body" data-translate-title="tooltip_click_identify" title="Click to identify this part"><span class="code-function">print</span>(<span class="code-string" data-translate="anatomy_adv_code_string_b">"Grade: B"</span>)</span> <!-- *** TRANSLATABLE *** -->
+                         </div>
+                         <span class="code-part" data-part="else-keyword" data-translate-title="tooltip_click_identify" title="Click to identify this part"><span class="code-keyword else">else</span></span><!--
+                      --><span><span class="code-paren">:</span></span><br>
+                         <div class="indent code-else-branch">
+                             <span class="code-part" data-part="else-body" data-translate-title="tooltip_click_identify" title="Click to identify this part"><span class="code-function">print</span>(<span class="code-string" data-translate="anatomy_adv_code_string_c">"Grade: C or below"</span>)</span> <!-- *** TRANSLATABLE *** -->
+                         </div>
+                     </div>
+                     <div id="anatomy-elif-explanations"></div>
+                     <p id="anatomy-elif-status" data-translate="anatomy_adv_status_initial">Identify all 7 parts!</p>
+                     <div id="anatomy-elif-feedback" class="feedback-message"></div>
+                     <!-- Hidden elements for storing translated explanation parts -->
+                     <div id="explanation-adv-texts" style="display: none;">
+                        <span data-key="if-keyword" data-translate="anatomy_adv_exp_if_keyword">The `if` keyword: Starts the first check.</span>
+                        <span data-key="condition1" data-translate="anatomy_adv_exp_condition1">The first condition (`grade >= 90`): Checked first. If True, its block runs, and the rest are skipped.</span>
+                        <span data-key="if-body" data-translate="anatomy_adv_exp_if_body">The `if` block body: Runs only if the first condition is True.</span>
+                        <span data-key="elif-keyword" data-translate="anatomy_adv_exp_elif_keyword">The `elif` keyword: Stands for "else if". Checked only if the preceding `if` (or `elif`) was False.</span>
+                        <span data-key="condition2" data-translate="anatomy_adv_exp_condition2">The second condition (`grade >= 80`): Checked only if the first condition was False.</span>
+                        <span data-key="elif-body" data-translate="anatomy_adv_exp_elif_body">The `elif` block body: Runs only if its condition is True (and preceding ones were False).</span>
+                        <span data-key="else-keyword" data-translate="anatomy_adv_exp_else_keyword">The `else` keyword: The final fallback.</span>
+                        <span data-key="else-body" data-translate="anatomy_adv_exp_else_body">The `else` block body: Runs only if ALL preceding `if` and `elif` conditions were False.</span>
+                     </div>
+                 </div>
+             </div>
+        </section>
+
+        <!-- ========= Activity 2 (Adv): Predict the Path (elif) ========= -->
+        <section id="predict-elif" class="practice-section">
+             <div class="container">
+                 <h2 class="fade-in"><i class="fas fa-map-signs"></i> <span data-translate="predict_adv_title">Predict the Correct Path</span></h2>
+                 <p class="section-description fade-in delay-1" data-translate="predict_adv_desc">
+                     With `elif`, only ONE block will run – the first one whose condition is True. Which block runs for the given `value`?
+                 </p>
+                 <div class="interactive-area fade-in delay-2">
+                     <div class="variable-display">
+                         <span data-translate="predict_adv_variable_label">Variable value:</span> <code id="predict-adv-variable-value" class="code-font" style="background: var(--background-medium); padding: 2px 6px; border-radius: 4px;">value = -5</code>
+                     </div>
+                     <div class="code-block">
+                        <span class="code-keyword">if</span> <span class="code-condition">value</span> <span class="code-operator">&gt;</span> <span class="code-number">0</span><span><span class="code-paren">:</span></span><br>
+                        <div class="indent code-if-branch">
+                            <span class="code-function">print</span>(<span class="code-string" data-translate="predict_adv_code_pos">"Positive"</span>) <!-- *** TRANSLATABLE *** -->
+                        </div>
+                        <span class="code-keyword elif">elif</span> <span class="code-condition">value</span> <span class="code-operator">==</span> <span class="code-number">0</span><span><span class="code-paren">:</span></span><br>
+                        <div class="indent code-elif-branch">
+                            <span class="code-function">print</span>(<span class="code-string" data-translate="predict_adv_code_zero">"Zero"</span>) <!-- *** TRANSLATABLE *** -->
+                        </div>
+                        <span class="code-keyword else">else</span><span><span class="code-paren">:</span></span><br>
+                        <div class="indent code-else-branch">
+                            <span class="code-function">print</span>(<span class="code-string" data-translate="predict_adv_code_neg">"Negative"</span>) <!-- *** TRANSLATABLE *** -->
+                        </div>
+                     </div>
+                     <div class="prediction-buttons text-center">
+                        <button id="predict-adv-if-btn" class="action-button predict-btn-adv if-branch" data-prediction="if"><i class="fas fa-plus-circle"></i> <span data-translate="button_predict_adv_if">`if` block (Positive)</span></button>
+                        <button id="predict-adv-elif-btn" class="action-button predict-btn-adv elif-branch" data-prediction="elif"><i class="fas fa-equals"></i> <span data-translate="button_predict_adv_elif">`elif` block (Zero)</span></button>
+                        <button id="predict-adv-else-btn" class="action-button predict-btn-adv else-branch" data-prediction="else"><i class="fas fa-minus-circle"></i> <span data-translate="button_predict_adv_else">`else` block (Negative)</span></button>
+                     </div>
+                     <div id="predict-elif-feedback" class="feedback-message"></div>
+                     <!-- Hidden data for logic -->
+                     <div id="predict-adv-logic" data-variable-name="value" data-variable-value="-5"
+                          data-condition-if="value > 0" data-condition-elif="value == 0"></div>
+                 </div>
+             </div>
+        </section>
+
+        <!-- ========= Activity 3 (Adv): Build-an-elif ========= -->
+        <section id="build-an-elif" class="practice-section">
+             <div class="container">
+                 <h2 class="fade-in"><i class="fas fa-puzzle-piece"></i> <span data-translate="build_adv_title">Build with `elif`</span></h2>
+                 <p class="section-description fade-in delay-1" data-translate="build_adv_desc">
+                     Drag the pieces to check a `score`: print "Gold" if >= 95, "Silver" if >= 90, or "Bronze" otherwise. Remember the order: `if`, then `elif`, then `else`.
+                 </p>
+                 <div class="interactive-area fade-in delay-2">
+                     <div id="draggable-adv-pieces" class="draggable-pieces">
+                         <!-- Pieces populated by JS -->
+                     </div>
+                     <div id="build-elif-drop-zone" class="code-font">
+                         <span id="build-elif-drop-zone-placeholder" data-translate="build_adv_drop_placeholder">Drop pieces here for the if/elif/else structure...</span>
+                     </div>
+                     <div class="text-center">
+                         <button id="check-build-elif-btn" class="action-button" data-translate="button_check_build">Check My Code</button>
+                         <button id="reset-build-elif-btn" class="action-button secondary" data-translate="button_reset_build">Reset</button>
+                     </div>
+                     <div id="build-elif-feedback" class="feedback-message"></div>
+                 </div>
+             </div>
+        </section>
+
+         <!-- ========= Activity 4 (Adv): Code Simulator (Multi-way Decision) ========= -->
+        <section id="code-simulator-multiway" class="practice-section">
+             <div class="container">
+                 <h2 class="fade-in"><i class="fas fa-keyboard"></i> <span data-translate="simulator_adv_title">Your Turn: Multi-way Logic</span></h2>
+                 <p class="section-description fade-in delay-1" data-translate="simulator_adv_desc">
+                     Write an `if`/`elif`/`else` statement. Given a variable `temp`, print "Freezing" if below 0, "Cold" if 0 to 10 (inclusive), or "Moderate" otherwise.
+                 </p>
+                 <div class="interactive-area fade-in delay-2">
+                     <label for="sim-adv-editor-input" style="font-weight: bold; display:block; margin-bottom: 8px;" data-translate="simulator_adv_editor_label">Code Editor:</label>
+                     <textarea id="sim-adv-editor-input" class="sim-editor" rows="8" data-translate-placeholder="simulator_adv_editor_placeholder" placeholder='temp = 5 # Sample value (we will test others)\n\n# Your if/elif/else code here\n# Example structure:\n# if temp < 0:\n#     print("Freezing")\n# elif temp <= 10: # Checks if 0 <= temp <= 10\n#     print("Cold")\n# else:\n#     print("Moderate")'></textarea>
+                     <div class="text-center">
+                          <button id="run-sim-adv-btn" class="action-button" data-translate="button_run_sim">Run Simulation</button>
+                     </div>
+                     <label style="font-weight: bold; display:block; margin-top: 1.5rem; margin-bottom: 8px;" data-translate="simulator_adv_output_label">Simulated Output (with test case temp=5):</label>
+                     <div id="sim-adv-output" class="sim-output-area">
+                         <span class="placeholder" data-translate="simulator_output_placeholder">Output will appear here...</span>
+                     </div>
+                     <div id="sim-adv-feedback" class="feedback-message"></div>
+                 </div>
+             </div>
+        </section>
+
+         <!-- ========= Activity 5 (Adv): Mini Missions (Advanced Decisions) ========= -->
+        <section id="mini-missions-advanced" class="practice-section">
+             <div class="container">
+                  <h2 class="fade-in"><i class="fas fa-rocket"></i> <span data-translate="missions_adv_title">Advanced Mini Missions</span></h2>
+                 <p class="section-description fade-in delay-1" data-translate="missions_adv_desc">
+                     Time for slightly trickier challenges involving `elif`, `and`, or nested logic.
+                 </p>
+                 <div class="interactive-area fade-in delay-2">
+                     <!-- Mission Adv 1: Number Ranges -->
+                     <div class="mission" id="mission-adv-1" data-completed="false">
+                         <span class="mission-status-adv"><i class="fas fa-question-circle"></i></span>
+                         <h4 data-translate="mission_adv1_title">Mission 1: Number Ranges</h4>
+                         <p data-translate="mission_adv1_desc">Given `x`, print "Small" if less than 10, "Medium" if 10 to 50 (inclusive), or "Large" if over 50. Use `if`/`elif`/`else`.</p>
+                         <textarea class="sim-editor mission-editor" rows="6" data-translate-placeholder="mission_adv1_placeholder" placeholder='x = 25 # Sample value\n\n# Your if/elif/else code here'></textarea>
+                         <div class="text-center"> <button class="action-button mission-run-adv-btn" data-mission-id="1" data-translate="button_test_mission_adv_1">Test Mission 1</button> </div>
+                         <div class="sim-output-area mission-output"></div>
+                         <div id="mission-adv-feedback-1" class="feedback-message mission-feedback"></div>
+                     </div>
+                     <!-- Mission Adv 2: Login Logic (and) -->
+                     <div class="mission" id="mission-adv-2" data-completed="false">
+                          <span class="mission-status-adv"><i class="fas fa-question-circle"></i></span>
+                         <h4 data-translate="mission_adv2_title">Mission 2: Simple Login</h4>
+                         <p data-translate="mission_adv2_desc">Given `username` and `password`, print "Login Success" only if `username` is "admin" AND `password` is "pass123". Otherwise, print "Login Failed". (Hint: Use `and` in the `if` condition).</p>
+                         <textarea class="sim-editor mission-editor" rows="6" data-translate-placeholder="mission_adv2_placeholder" placeholder='username = "admin"\npassword = "wrong"\n\n# Your if/else code using and here'></textarea>
+                          <div class="text-center"> <button class="action-button mission-run-adv-btn" data-mission-id="2" data-translate="button_test_mission_adv_2">Test Mission 2</button> </div>
+                         <div class="sim-output-area mission-output"></div>
+                         <div id="mission-adv-feedback-2" class="feedback-message mission-feedback"></div>
+                     </div>
+                     <!-- Mission Adv 3: Nested Check -->
+                     <div class="mission" id="mission-adv-3" data-completed="false">
+                          <span class="mission-status-adv"><i class="fas fa-question-circle"></i></span>
+                         <h4 data-translate="mission_adv3_title">Mission 3: Nested Check</h4>
+                         <p data-translate="mission_adv3_desc">Given `num`, first check if it's positive. If it is, then check if it's even or odd (print "Positive Even" or "Positive Odd"). If it's not positive, print "Not Positive". (Hint: `if` inside an `if`).</p>
+                         <textarea class="sim-editor mission-editor" rows="7" data-translate-placeholder="mission_adv3_placeholder" placeholder='num = 10 # Sample value\n\n# Your nested if/else code here\n# if num > 0:\n#    # Inner check for even/odd\n# else:\n#    print("Not Positive")'></textarea>
+                          <div class="text-center"> <button class="action-button mission-run-adv-btn" data-mission-id="3" data-translate="button_test_mission_adv_3">Test Mission 3</button> </div>
+                         <div class="sim-output-area mission-output"></div>
+                         <div id="mission-adv-feedback-3" class="feedback-message mission-feedback"></div>
+                     </div>
+                     <div id="missions-adv-summary-feedback" class="feedback-message" style="margin-top: 2rem;"></div>
+                 </div>
+             </div>
+        </section>
+
+         <!-- ========= Completion Section - ADVANCED VERSION ========= -->
+        <section class="completion-section">
+            <div class="container">
+                <div class="icon fade-in" style="animation: iconAppearCorrect 1s ease-out 0.5s forwards;">
+                    <!-- Using multi-branch icon -->
+                    <i class="fas fa-sitemap"></i> <i class="fas fa-check-double"></i>
+                </div>
+                <h2 class="fade-in delay-1" data-translate="completion_adv_title">Module 7 Advanced Practice Complete!</h2>
+                <p class="fade-in delay-2" data-translate="completion_adv_desc">
+                    Excellent! You've tackled `elif` and more complex decision structures.<br>
+                    Feel free to review the <strong>Practice</strong> again, watch the <strong>Video Lesson</strong>, or proceed to the next module!
+                </p>
+                <div class="button-group">
+                    <!-- *** UPDATED HREFS FOR ADVANCED MODULE 7 COMPLETION *** -->
+                    <a href="ctp-practice-7.html" class="action-button secondary fade-in delay-3"><i class="fas fa-arrow-left"></i> <span data-translate="button_view_practice">View Practice Again</span></a>
+                    <a href="ctp-video-7.html" class="action-button success fade-in delay-3"><i class="fas fa-video"></i> <span data-translate="button_start_video">Start Video Lesson</span></a>
+                    <a href="ctp-dashboard.html" class="action-button secondary fade-in delay-4"><i class="fas fa-list"></i> <span data-translate="button_back_menu">Back to Course Menu</span></a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ========= Script - ADVANCED VERSION ADAPTATIONS ========= -->
+    <script>
+    // --- Translations Object - EXTENDED for Module 7 Advanced ---
+    const translations = {
+        en: {
+            "page_title_adv": "Module 7: Advanced - Multi-way Decisions", // ADV
+            "tooltip_click_identify": "Click to identify this part",
+            // Nav ADV
+            "nav_practice_prev": "View Practice", "nav_video": "Video Lesson", "nav_menu": "Course Menu",
+            "nav_anatomy_adv": "Anatomy (elif)", "nav_predict_adv": "Predict Path (elif)", "nav_build_adv": "Build (elif)", "nav_simulator_adv": "Simulator (Multi-way)", "nav_missions_adv": "Missions (Advanced)",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title_adv": "Module 7: Advanced Practice - More Choices", // ADV
+            "header_subtitle_adv": "Let's explore `elif` for multiple conditions and more complex decision making.", // ADV
+            // Anatomy ADV (elif)
+            "anatomy_adv_title": "Anatomy of `if/elif/else`", "anatomy_adv_desc": "When you need more than two options, `elif` (else if) comes to the rescue. Click the parts to see their roles.",
+            "anatomy_adv_status_initial": "Identify all 7 parts!", "anatomy_adv_status_progress": "Identified {count} of {total} parts.", "anatomy_adv_status_done": "All parts identified!",
+            "anatomy_adv_exp_if_keyword": "The `if` keyword: Starts the first check.",
+            "anatomy_adv_exp_condition1": "The first condition (`grade >= 90`): Checked first. If True, its block runs, and the rest are skipped.",
+            "anatomy_adv_exp_if_body": "The `if` block body: Runs only if the first condition is True.",
+            "anatomy_adv_exp_elif_keyword": "The `elif` keyword: Stands for \"else if\". Checked only if the preceding `if` (or `elif`) was False.",
+            "anatomy_adv_exp_condition2": "The second condition (`grade >= 80`): Checked only if the first condition was False.",
+            "anatomy_adv_exp_elif_body": "The `elif` block body: Runs only if its condition is True (and preceding ones were False).",
+            "anatomy_adv_exp_else_keyword": "The `else` keyword: The final fallback.",
+            "anatomy_adv_exp_else_body": "The `else` block body: Runs only if ALL preceding `if` and `elif` conditions were False.",
+            "anatomy_adv_code_string_a": "\"Grade: A\"", "anatomy_adv_code_string_b": "\"Grade: B\"", "anatomy_adv_code_string_c": "\"Grade: C or below\"",
+            "feedback_anatomy_adv_correct": "Perfect! You understand the if/elif/else flow!",
+            // Predict Path ADV (elif)
+            "predict_adv_title": "Predict the Correct Path", "predict_adv_desc": "With `elif`, only ONE block will run – the first one whose condition is True. Which block runs for the given `value`?",
+            "predict_adv_variable_label": "Variable value:",
+            "predict_adv_code_pos": "\"Positive\"", "predict_adv_code_zero": "\"Zero\"", "predict_adv_code_neg": "\"Negative\"",
+            "button_predict_adv_if": "`if` block (Positive)", "button_predict_adv_elif": "`elif` block (Zero)", "button_predict_adv_else": "`else` block (Negative)",
+            "feedback_predict_adv_correct_if": "Correct! Since `{variableValue}` makes `{conditionIf}` True, the `if` block runs.",
+            "feedback_predict_adv_correct_elif": "Correct! Since `{variableValue}` makes `{conditionIf}` False but `{conditionElif}` True, the `elif` block runs.",
+            "feedback_predict_adv_correct_else": "Correct! Since `{variableValue}` makes both `{conditionIf}` and `{conditionElif}` False, the `else` block runs.",
+            "feedback_predict_adv_incorrect": "Not quite. Check the conditions: `{conditionIf}` is {truthIf}, `{conditionElif}` is {truthElif}. So, the `{correctBlock}` block should run.",
+            "feedback_predict_true": "True", "feedback_predict_false": "False",
+            "feedback_predict_if_block": "if", "feedback_predict_elif_block": "elif", "feedback_predict_else_block": "else",
+            // Build-an-elif ADV
+            "build_adv_title": "Build with `elif`", "build_adv_desc": "Drag the pieces to check a `score`: print \"Gold\" if >= 95, \"Silver\" if >= 90, or \"Bronze\" otherwise. Remember the order: `if`, then `elif`, then `else`.",
+            "build_adv_drop_placeholder": "Drop pieces here for the if/elif/else structure...",
+            "build_piece_if": "if", "build_piece_elif": "elif", "build_piece_else": "else", // Added elif
+            "build_piece_cond_gold": "score >= 95", "build_piece_cond_silver": "score >= 90", // New conditions
+            "build_piece_colon": ":", "build_piece_print": "print()",
+            "build_piece_string_gold": "\"Gold\"", "build_piece_string_silver": "\"Silver\"", "build_piece_string_bronze": "\"Bronze\"", // New strings
+            "button_check_build": "Check My Code", "button_reset_build": "Reset",
+            "feedback_build_adv_correct": "Excellent! Correct if/elif/else structure.",
+            "feedback_build_adv_almost": "Close! Check the order (if/elif/else), conditions, colons, or print statements.",
+            "feedback_build_adv_incorrect": "Incorrect structure. Review the if/elif/else flow and required pieces.",
+            "feedback_build_adv_missing_elif": "Missing the `elif` keyword or its condition/colon/print.",
+            "feedback_build_adv_order": "Check the order: `if` must come first, `else` last.",
+            // Simulator ADV (Multi-way)
+            "simulator_adv_title": "Your Turn: Multi-way Logic", "simulator_adv_desc": "Write an `if`/`elif`/`else` statement. Given a variable `temp`, print \"Freezing\" if below 0, \"Cold\" if 0 to 10 (inclusive), or \"Moderate\" otherwise.",
+            "simulator_adv_editor_label": "Code Editor:", "simulator_adv_editor_placeholder": 'temp = 5 # Sample value (we will test others)\n\n# Your if/elif/else code here\n# Example structure:\n# if temp < 0:\n#     print("Freezing")\n# elif temp <= 10: # Checks if 0 <= temp <= 10\n#     print("Cold")\n# else:\n#     print("Moderate")',
+            "button_run_sim": "Run Simulation", "simulator_adv_output_label": "Simulated Output (with test case temp=5):", "simulator_output_placeholder": "Output will appear here...",
+            "feedback_sim_adv_success": "Simulation successful! Your code correctly prints '{output}' for temp = {testValue}.",
+            "feedback_sim_adv_wrong_output": "Code ran, but printed '{output}'. Expected '{expectedOutput}' for temp = {testValue}. Check your conditions or print statements.",
+            "feedback_sim_adv_error": "Syntax Error: Check your if/elif/else structure, colons, indentation.",
+            "feedback_sim_adv_no_elif": "Missing `elif` statement, needed for the middle condition.",
+            "feedback_sim_adv_condition_logic": "Check the logic of your conditions (e.g., `temp < 0`, `temp <= 10`).",
+            "feedback_sim_empty": "Editor is empty.",
+            // Mini Missions ADV
+            "missions_adv_title": "Advanced Mini Missions", "missions_adv_desc": "Time for slightly trickier challenges involving `elif`, `and`, or nested logic.",
+            "mission_adv1_title": "Mission 1: Number Ranges", "mission_adv1_desc": "Given `x`, print \"Small\" if less than 10, \"Medium\" if 10 to 50 (inclusive), or \"Large\" if over 50. Use `if`/`elif`/`else`.", "mission_adv1_placeholder": 'x = 25 # Sample value\n\n# Your if/elif/else code here',
+            "button_test_mission_adv_1": "Test Mission 1",
+            "mission_adv2_title": "Mission 2: Simple Login", "mission_adv2_desc": "Given `username` and `password`, print \"Login Success\" only if `username` is \"admin\" AND `password` is \"pass123\". Otherwise, print \"Login Failed\". (Hint: Use `and` in the `if` condition).", "mission_adv2_placeholder": 'username = "admin"\npassword = "wrong"\n\n# Your if/else code using and here',
+            "button_test_mission_adv_2": "Test Mission 2",
+            "mission_adv3_title": "Mission 3: Nested Check", "mission_adv3_desc": "Given `num`, first check if it's positive. If it is, then check if it's even or odd (print \"Positive Even\" or \"Positive Odd\"). If it's not positive, print \"Not Positive\". (Hint: `if` inside an `if`).", "mission_adv3_placeholder": 'num = 10 # Sample value\n\n# Your nested if/else code here\n# if num > 0:\n#    # Inner check for even/odd\n# else:\n#    print("Not Positive")',
+            "button_test_mission_adv_3": "Test Mission 3",
+            "feedback_mission_success": "Mission Accomplished! Passed tests.", "feedback_mission_syntax_error": "Syntax Error. Check colons, indentation, `and` keyword, or nesting.",
+            "feedback_mission_fail_test": "Logic Error. Failed test case (e.g., Input: {input}, Expected: '{expected}', Got: '{got}'). Check condition/prints/logic (`and`, nesting).",
+            "feedback_mission_adv1_hint": "Use `if x < 10`, `elif x <= 50`, `else`.",
+            "feedback_mission_adv2_hint": "Condition should be `username == \"admin\" and password == \"pass123\"`.",
+            "feedback_mission_adv3_hint": "Outer `if num > 0:`. Inner `if num % 2 == 0:`.",
+            "feedback_missions_summary_all_done": "All {totalMissions} advanced missions complete! Great decision-making!", "feedback_missions_summary_progress": "Completed {completedCount} of {totalMissions} advanced missions. Keep going!",
+            // Completion ADV
+            "completion_adv_title": "Module 7 Advanced Practice Complete!", "completion_adv_desc": "Excellent! You've tackled `elif` and more complex decision structures.<br> Feel free to review the <strong>Practice</strong> again, watch the <strong>Video Lesson</strong>, or proceed to the next module!",
+            "button_view_practice": "View Practice Again", "button_start_video": "Start Video Lesson", "button_back_menu": "Back to Course Menu"
+        },
+        pt: {
+            "page_title_adv": "Módulo 7: Avançado - Decisões Múltiplas", // ADV
+            "tooltip_click_identify": "Clique para identificar esta parte",
+            // Nav ADV
+            "nav_practice_prev": "Ver Prática", "nav_video": "Lição em Vídeo", "nav_menu": "Menu do Curso",
+            "nav_anatomy_adv": "Anatomia (elif)", "nav_predict_adv": "Prever Caminho (elif)", "nav_build_adv": "Construir (elif)", "nav_simulator_adv": "Simulador (Múltiplo)", "nav_missions_adv": "Missões (Avançado)",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title_adv": "Módulo 7: Prática Avançada - Mais Escolhas", // ADV
+            "header_subtitle_adv": "Vamos explorar `elif` para múltiplas condições e tomada de decisão mais complexa.", // ADV
+            // Anatomy ADV (elif)
+            "anatomy_adv_title": "Anatomia de `if/elif/else`", "anatomy_adv_desc": "Quando você precisa de mais de duas opções, `elif` (else if) vem para o resgate. Clique nas partes para ver suas funções.",
+            "anatomy_adv_status_initial": "Identifique todas as 7 partes!", "anatomy_adv_status_progress": "Identificadas {count} de {total} partes.", "anatomy_adv_status_done": "Todas as partes identificadas!",
+            "anatomy_adv_exp_if_keyword": "A palavra-chave `if`: Inicia a primeira verificação.",
+            "anatomy_adv_exp_condition1": "A primeira condição (`grade >= 90`): Verificada primeiro. Se Verdadeira, seu bloco executa e o resto é pulado.",
+            "anatomy_adv_exp_if_body": "O corpo do bloco `if`: Executa apenas se a primeira condição for Verdadeira.",
+            "anatomy_adv_exp_elif_keyword": "A palavra-chave `elif`: Significa \"else if\". Verificada apenas se o `if` (ou `elif`) anterior foi Falso.",
+            "anatomy_adv_exp_condition2": "A segunda condição (`grade >= 80`): Verificada apenas se a primeira condição foi Falsa.",
+            "anatomy_adv_exp_elif_body": "O corpo do bloco `elif`: Executa apenas se sua condição for Verdadeira (e as anteriores foram Falsas).",
+            "anatomy_adv_exp_else_keyword": "A palavra-chave `else`: O último recurso.",
+            "anatomy_adv_exp_else_body": "O corpo do bloco `else`: Executa apenas se TODAS as condições `if` e `elif` anteriores foram Falsas.",
+            "anatomy_adv_code_string_a": "\"Nota: A\"", "anatomy_adv_code_string_b": "\"Nota: B\"", "anatomy_adv_code_string_c": "\"Nota: C ou inferior\"",
+            "feedback_anatomy_adv_correct": "Perfeito! Você entendeu o fluxo if/elif/else!",
+            // Predict Path ADV (elif)
+            "predict_adv_title": "Prever o Caminho Correto", "predict_adv_desc": "Com `elif`, apenas UM bloco será executado – o primeiro cuja condição for Verdadeira. Qual bloco executa para o `value` fornecido?",
+            "predict_adv_variable_label": "Valor da variável:",
+            "predict_adv_code_pos": "\"Positivo\"", "predict_adv_code_zero": "\"Zero\"", "predict_adv_code_neg": "\"Negativo\"",
+            "button_predict_adv_if": "Bloco `if` (Positivo)", "button_predict_adv_elif": "Bloco `elif` (Zero)", "button_predict_adv_else": "Bloco `else` (Negativo)",
+            "feedback_predict_adv_correct_if": "Correto! Como `{variableValue}` torna `{conditionIf}` Verdadeira, o bloco `if` executa.",
+            "feedback_predict_adv_correct_elif": "Correto! Como `{variableValue}` torna `{conditionIf}` Falsa mas `{conditionElif}` Verdadeira, o bloco `elif` executa.",
+            "feedback_predict_adv_correct_else": "Correto! Como `{variableValue}` torna tanto `{conditionIf}` quanto `{conditionElif}` Falsas, o bloco `else` executa.",
+            "feedback_predict_adv_incorrect": "Não exatamente. Verifique as condições: `{conditionIf}` é {truthIf}, `{conditionElif}` é {truthElif}. Então, o bloco `{correctBlock}` deveria executar.",
+            "feedback_predict_true": "Verdadeira", "feedback_predict_false": "Falsa",
+            "feedback_predict_if_block": "if", "feedback_predict_elif_block": "elif", "feedback_predict_else_block": "else",
+            // Build-an-elif ADV
+            "build_adv_title": "Construir com `elif`", "build_adv_desc": "Arraste as peças para verificar um `score`: imprima \"Ouro\" se >= 95, \"Prata\" se >= 90, ou \"Bronze\" caso contrário. Lembre-se da ordem: `if`, depois `elif`, depois `else`.",
+            "build_adv_drop_placeholder": "Solte as peças aqui para a estrutura if/elif/else...",
+            "build_piece_if": "if", "build_piece_elif": "elif", "build_piece_else": "else",
+            "build_piece_cond_gold": "score >= 95", "build_piece_cond_silver": "score >= 90",
+            "build_piece_colon": ":", "build_piece_print": "print()",
+            "build_piece_string_gold": "\"Ouro\"", "build_piece_string_silver": "\"Prata\"", "build_piece_string_bronze": "\"Bronze\"",
+            "button_check_build": "Verificar Meu Código", "button_reset_build": "Reiniciar",
+            "feedback_build_adv_correct": "Excelente! Estrutura if/elif/else correta.",
+            "feedback_build_adv_almost": "Quase lá! Verifique a ordem (if/elif/else), condições, dois-pontos ou declarações print.",
+            "feedback_build_adv_incorrect": "Estrutura incorreta. Revise o fluxo if/elif/else e as peças necessárias.",
+            "feedback_build_adv_missing_elif": "Faltando a palavra-chave `elif` ou sua condição/dois-pontos/print.",
+            "feedback_build_adv_order": "Verifique a ordem: `if` deve vir primeiro, `else` por último.",
+            // Simulator ADV (Multi-way)
+            "simulator_adv_title": "Sua Vez: Lógica Múltipla", "simulator_adv_desc": "Escreva uma declaração `if`/`elif`/`else`. Dada uma variável `temp`, imprima \"Congelando\" se abaixo de 0, \"Frio\" se 0 a 10 (inclusive), ou \"Moderado\" caso contrário.",
+            "simulator_adv_editor_label": "Editor de Código:", "simulator_adv_editor_placeholder": 'temp = 5 # Valor de exemplo (testaremos outros)\n\n# Seu código if/elif/else aqui\n# Exemplo de estrutura:\n# if temp < 0:\n#     print("Congelando")\n# elif temp <= 10: # Verifica se 0 <= temp <= 10\n#     print("Frio")\n# else:\n#     print("Moderado")',
+            "button_run_sim": "Executar Simulação", "simulator_adv_output_label": "Saída Simulada (com caso de teste temp=5):", "simulator_output_placeholder": "A saída aparecerá aqui...",
+            "feedback_sim_adv_success": "Simulação bem-sucedida! Seu código imprime corretamente '{output}' para temp = {testValue}.",
+            "feedback_sim_adv_wrong_output": "Código executou, mas imprimiu '{output}'. Esperado '{expectedOutput}' para temp = {testValue}. Verifique suas condições ou prints.",
+            "feedback_sim_adv_error": "Erro de Sintaxe: Verifique sua estrutura if/elif/else, dois-pontos, indentação.",
+            "feedback_sim_adv_no_elif": "Faltando declaração `elif`, necessária para a condição intermediária.",
+            "feedback_sim_adv_condition_logic": "Verifique a lógica das suas condições (ex: `temp < 0`, `temp <= 10`).",
+            "feedback_sim_empty": "O editor está vazio.",
+            // Mini Missions ADV
+            "missions_adv_title": "Mini Missões Avançadas", "missions_adv_desc": "Hora de desafios um pouco mais complicados envolvendo `elif`, `and`, ou lógica aninhada.",
+            "mission_adv1_title": "Missão 1: Faixas Numéricas", "mission_adv1_desc": "Dado `x`, imprima \"Pequeno\" se menor que 10, \"Médio\" se 10 a 50 (inclusive), ou \"Grande\" se maior que 50. Use `if`/`elif`/`else`.", "mission_adv1_placeholder": 'x = 25 # Valor de exemplo\n\n# Seu código if/elif/else aqui',
+            "button_test_mission_adv_1": "Testar Missão 1",
+            "mission_adv2_title": "Missão 2: Login Simples", "mission_adv2_desc": "Dados `username` e `password`, imprima \"Login Sucesso\" apenas se `username` for \"admin\" E `password` for \"pass123\". Caso contrário, imprima \"Login Falhou\". (Dica: Use `and` na condição `if`).", "mission_adv2_placeholder": 'username = "admin"\npassword = "wrong"\n\n# Seu código if/else usando and aqui',
+            "button_test_mission_adv_2": "Testar Missão 2",
+            "mission_adv3_title": "Missão 3: Verificação Aninhada", "mission_adv3_desc": "Dado `num`, primeiro verifique se é positivo. Se for, verifique se é par ou ímpar (imprima \"Positivo Par\" ou \"Positivo Ímpar\"). Se não for positivo, imprima \"Não Positivo\". (Dica: `if` dentro de um `if`).", "mission_adv3_placeholder": 'num = 10 # Valor de exemplo\n\n# Seu código if/else aninhado aqui\n# if num > 0:\n#    # Verificação interna par/ímpar\n# else:\n#    print("Não Positivo")',
+            "button_test_mission_adv_3": "Testar Missão 3",
+            "feedback_mission_success": "Missão Cumprida! Passou nos testes.", "feedback_mission_syntax_error": "Erro de Sintaxe. Verifique dois-pontos, indentação, palavra-chave `and` ou aninhamento.",
+            "feedback_mission_fail_test": "Erro de Lógica. Falhou no caso de teste (ex: Entrada: {input}, Esperado: '{expected}', Obtido: '{got}'). Verifique condição/prints/lógica (`and`, aninhamento).",
+            "feedback_mission_adv1_hint": "Use `if x < 10`, `elif x <= 50`, `else`.",
+            "feedback_mission_adv2_hint": "Condição deve ser `username == \"admin\" and password == \"pass123\"`.",
+            "feedback_mission_adv3_hint": "`if num > 0:` externo. `if num % 2 == 0:` interno.",
+            "feedback_missions_summary_all_done": "Todas as {totalMissions} missões avançadas completas! Ótima tomada de decisão!", "feedback_missions_summary_progress": "Completou {completedCount} de {totalMissions} missões avançadas. Continue!",
+             // Completion ADV
+            "completion_adv_title": "Prática Avançada do Módulo 7 Completa!", "completion_adv_desc": "Excelente! Você enfrentou `elif` e estruturas de decisão mais complexas.<br> Sinta-se à vontade para revisar a <strong>Prática</strong> novamente, assistir à <strong>Lição em Vídeo</strong> ou prosseguir para o próximo módulo!",
+            "button_view_practice": "Ver Prática Novamente", "button_start_video": "Iniciar Lição em Vídeo", "button_back_menu": "Voltar ao Menu do Curso"
+        },
+        zh: {
+            "page_title_adv": "模块 7：高级 - 多路决策", // ADV
+            "tooltip_click_identify": "点击识别此部分",
+            // Nav ADV
+            "nav_practice_prev": "查看练习", "nav_video": "视频课程", "nav_menu": "课程菜单",
+            "nav_anatomy_adv": "剖析 (elif)", "nav_predict_adv": "预测路径 (elif)", "nav_build_adv": "构建 (elif)", "nav_simulator_adv": "模拟器 (多路)", "nav_missions_adv": "任务 (高级)",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title_adv": "模块 7：高级练习 - 更多选择", // ADV
+            "header_subtitle_adv": "让我们探索 `elif` 用于多个条件和更复杂的决策制定。", // ADV
+            // Anatomy ADV (elif)
+            "anatomy_adv_title": "剖析 `if/elif/else`", "anatomy_adv_desc": "当你需要两个以上选项时，`elif` (else if) 就派上用场了。点击各个部分了解它们的作用。",
+            "anatomy_adv_status_initial": "识别所有 7 个部分！", "anatomy_adv_status_progress": "已识别 {count} / {total} 个部分。", "anatomy_adv_status_done": "所有部分已识别！",
+            "anatomy_adv_exp_if_keyword": "`if` 关键字：开始第一个检查。",
+            "anatomy_adv_exp_condition1": "第一个条件 (`grade >= 90`)：首先检查。如果为 True，则运行其代码块，并跳过其余部分。",
+            "anatomy_adv_exp_if_body": "`if` 块主体：仅在第一个条件为 True 时运行。",
+            "anatomy_adv_exp_elif_keyword": "`elif` 关键字：代表 “else if”。仅在前一个 `if` (或 `elif`) 为 False 时检查。",
+            "anatomy_adv_exp_condition2": "第二个条件 (`grade >= 80`)：仅在第一个条件为 False 时检查。",
+            "anatomy_adv_exp_elif_body": "`elif` 块主体：仅在其条件为 True (且前面的条件为 False) 时运行。",
+            "anatomy_adv_exp_else_keyword": "`else` 关键字：最后的备选方案。",
+            "anatomy_adv_exp_else_body": "`else` 块主体：仅在前面所有 `if` 和 `elif` 条件都为 False 时运行。",
+            "anatomy_adv_code_string_a": "\"等级：A\"", "anatomy_adv_code_string_b": "\"等级：B\"", "anatomy_adv_code_string_c": "\"等级：C 或以下\"",
+            "feedback_anatomy_adv_correct": "完美！你理解了 if/elif/else 的流程！",
+            // Predict Path ADV (elif)
+            "predict_adv_title": "预测正确路径", "predict_adv_desc": "使用 `elif` 时，只有一个代码块会运行——即第一个条件为 True 的块。对于给定的 `value`，哪个块会运行？",
+            "predict_adv_variable_label": "变量值：",
+            "predict_adv_code_pos": "\"正数\"", "predict_adv_code_zero": "\"零\"", "predict_adv_code_neg": "\"负数\"",
+            "button_predict_adv_if": "`if` 块 (正数)", "button_predict_adv_elif": "`elif` 块 (零)", "button_predict_adv_else": "`else` 块 (负数)",
+            "feedback_predict_adv_correct_if": "正确！因为 `{variableValue}` 使得 `{conditionIf}` 为 True，所以 `if` 块运行。",
+            "feedback_predict_adv_correct_elif": "正确！因为 `{variableValue}` 使得 `{conditionIf}` 为 False 但 `{conditionElif}` 为 True，所以 `elif` 块运行。",
+            "feedback_predict_adv_correct_else": "正确！因为 `{variableValue}` 使得 `{conditionIf}` 和 `{conditionElif}` 都为 False，所以 `else` 块运行。",
+            "feedback_predict_adv_incorrect": "不太对。检查条件：`{conditionIf}` 是 {truthIf}，`{conditionElif}` 是 {truthElif}。所以，应该运行 `{correctBlock}` 块。",
+            "feedback_predict_true": "True", "feedback_predict_false": "False",
+            "feedback_predict_if_block": "if", "feedback_predict_elif_block": "elif", "feedback_predict_else_block": "else",
+             // Build-an-elif ADV
+            "build_adv_title": "使用 `elif` 构建", "build_adv_desc": "拖动碎片来检查 `score`：如果 >= 95 则打印 \"Gold\"，如果 >= 90 则打印 \"Silver\"，否则打印 \"Bronze\"。记住顺序：`if`，然后 `elif`，然后 `else`。",
+            "build_adv_drop_placeholder": "将碎片拖放到此处以构建 if/elif/else 结构...",
+            "build_piece_if": "if", "build_piece_elif": "elif", "build_piece_else": "else",
+            "build_piece_cond_gold": "score >= 95", "build_piece_cond_silver": "score >= 90",
+            "build_piece_colon": ":", "build_piece_print": "print()",
+            "build_piece_string_gold": "\"Gold\"", "build_piece_string_silver": "\"Silver\"", "build_piece_string_bronze": "\"Bronze\"",
+            "button_check_build": "检查我的代码", "button_reset_build": "重置",
+            "feedback_build_adv_correct": "太棒了！正确的 if/elif/else 结构。",
+            "feedback_build_adv_almost": "接近了！检查顺序 (if/elif/else)、条件、冒号或 print 语句。",
+            "feedback_build_adv_incorrect": "结构不正确。回顾 if/elif/else 的流程和所需的碎片。",
+            "feedback_build_adv_missing_elif": "缺少 `elif` 关键字或其条件/冒号/print。",
+            "feedback_build_adv_order": "检查顺序：`if` 必须在最前面，`else` 在最后。",
+            // Simulator ADV (Multi-way)
+            "simulator_adv_title": "轮到你了：多路逻辑", "simulator_adv_desc": "编写一个 `if`/`elif`/`else` 语句。给定一个变量 `temp`，如果低于 0 则打印 \"Freezing\"，如果在 0 到 10 之间（含）则打印 \"Cold\"，否则打印 \"Moderate\"。",
+            "simulator_adv_editor_label": "代码编辑器：", "simulator_adv_editor_placeholder": 'temp = 5 # 示例值（我们会测试其他值）\n\n# 在此编写你的 if/elif/else 代码\n# 示例结构：\n# if temp < 0:\n#     print("Freezing")\n# elif temp <= 10: # 检查 0 <= temp <= 10\n#     print("Cold")\n# else:\n#     print("Moderate")',
+            "button_run_sim": "运行模拟", "simulator_adv_output_label": "模拟输出（测试用例 temp=5）：", "simulator_output_placeholder": "输出将显示在此处...",
+            "feedback_sim_adv_success": "模拟成功！你的代码对于 temp = {testValue} 正确打印了 '{output}'。",
+            "feedback_sim_adv_wrong_output": "代码运行了，但打印了 '{output}'。对于 temp = {testValue}，期望输出是 '{expectedOutput}'。检查你的条件或 print 语句。",
+            "feedback_sim_adv_error": "语法错误：检查你的 if/elif/else 结构、冒号、缩进。",
+            "feedback_sim_adv_no_elif": "缺少 `elif` 语句，中间条件需要它。",
+            "feedback_sim_adv_condition_logic": "检查你的条件逻辑（例如 `temp < 0`, `temp <= 10`）。",
+            "feedback_sim_empty": "编辑器是空的。",
+            // Mini Missions ADV
+            "missions_adv_title": "高级迷你任务", "missions_adv_desc": "是时候进行一些涉及 `elif`、`and` 或嵌套逻辑的更棘手的挑战了。",
+            "mission_adv1_title": "任务 1：数字范围", "mission_adv1_desc": "给定 `x`，如果小于 10 则打印 \"Small\"，如果在 10 到 50 之间（含）则打印 \"Medium\"，如果大于 50 则打印 \"Large\"。使用 `if`/`elif`/`else`。", "mission_adv1_placeholder": 'x = 25 # 示例值\n\n# 在此编写你的 if/elif/else 代码',
+            "button_test_mission_adv_1": "测试任务 1",
+            "mission_adv2_title": "任务 2：简单登录", "mission_adv2_desc": "给定 `username` 和 `password`，仅当 `username` 是 \"admin\" 并且 `password` 是 \"pass123\" 时打印 \"Login Success\"。否则，打印 \"Login Failed\"。（提示：在 `if` 条件中使用 `and`）。", "mission_adv2_placeholder": 'username = "admin"\npassword = "wrong"\n\n# 在此使用 and 编写你的 if/else 代码',
+            "button_test_mission_adv_2": "测试任务 2",
+            "mission_adv3_title": "任务 3：嵌套检查", "mission_adv3_desc": "给定 `num`，首先检查它是否为正数。如果是，则检查它是偶数还是奇数（打印 \"Positive Even\" 或 \"Positive Odd\"）。如果不是正数，则打印 \"Not Positive\"。（提示：`if` 嵌套在 `if` 中）。", "mission_adv3_placeholder": 'num = 10 # 示例值\n\n# 在此编写你的嵌套 if/else 代码\n# if num > 0:\n#    # 内部检查奇偶\n# else:\n#    print("Not Positive")',
+            "button_test_mission_adv_3": "测试任务 3",
+            "feedback_mission_success": "任务完成！通过测试。", "feedback_mission_syntax_error": "语法错误。检查冒号、缩进、`and` 关键字或嵌套。",
+            "feedback_mission_fail_test": "逻辑错误。未通过测试用例（例如，输入：{input}，期望：'{expected}'，得到：'{got}'）。检查条件/打印/逻辑（`and`，嵌套）。",
+            "feedback_mission_adv1_hint": "使用 `if x < 10`、`elif x <= 50`、`else`。",
+            "feedback_mission_adv2_hint": "条件应为 `username == \"admin\" and password == \"pass123\"`。",
+            "feedback_mission_adv3_hint": "外部 `if num > 0:`。内部 `if num % 2 == 0:`。",
+            "feedback_missions_summary_all_done": "所有 {totalMissions} 个高级任务已完成！出色的决策能力！", "feedback_missions_summary_progress": "已完成 {completedCount} / {totalMissions} 个高级任务。继续努力！",
+            // Completion ADV
+            "completion_adv_title": "模块 7 高级练习完成！", "completion_adv_desc": "非常好！你已经掌握了 `elif` 和更复杂的决策结构。<br> 随时可以再次查看<strong>练习</strong>，观看<strong>视频课程</strong>，或继续下一个模块！",
+            "button_view_practice": "再次查看练习", "button_start_video": "开始视频课程", "button_back_menu": "返回课程菜单"
+        }
+    };
+
+
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // --- Language Management Functions (Same as standard practice) ---
+        function getStoredLanguage() {
+            const storedLang = localStorage.getItem('userLanguage');
+            if (storedLang && translations[storedLang]) return storedLang;
+            const browserLang = navigator.language || navigator.userLanguage;
+            if (browserLang.startsWith('pt')) return 'pt';
+            if (browserLang.startsWith('zh')) return 'zh';
+            return 'en';
+        }
+
+        function setLanguage(lang) {
+            if (!translations[lang]) lang = 'en';
+            localStorage.setItem('userLanguage', lang);
+            document.documentElement.lang = lang;
+            translatePage(lang);
+
+            const langSelect = document.getElementById('languageSelect');
+            if (langSelect) langSelect.value = lang;
+
+            // Re-initialize or update language-dependent interactive content for Module 7 ADVANCED
+            if (anatomyElifSection) setupElifAnatomy(); // ADV
+            if (predictElifSection) setupPredictElifActivity(); // ADV
+            if (buildAnElifSection) setupBuildElifListeners(); // ADV (repopulates pieces)
+            if (missionsAdvancedSection && typeof updateMissionAdvancedSummary === 'function') { // ADV
+                updateMissionAdvancedSummary();
+            }
+        }
+
+        function getTranslation(key, lang, replacements = {}) {
+            let text = translations[lang]?.[key] ?? translations['en']?.[key] ?? `[${key}]`;
+            for (const placeholder in replacements) {
+                const regex = new RegExp(`\\{${placeholder}\\}`, 'g');
+                text = text.replace(regex, replacements[placeholder]);
+            }
+            return text;
+        }
+
+        function translatePage(lang) {
+             if (!translations[lang]) lang = 'en';
+             document.querySelectorAll('[data-translate]').forEach(el => {
+                 const key = el.getAttribute('data-translate');
+                 const translation = getTranslation(key, lang);
+                  if (el.tagName === 'TITLE') { document.title = translation; }
+                  else if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') { /* Placeholders handled below */ }
+                  else if (el.tagName === 'OPTION') { el.textContent = translation; }
+                  else {
+                      // Basic check for HTML content
+                      if (translation.includes('<') && translation.includes('>')) { el.innerHTML = translation; }
+                      else { el.textContent = translation; }
+                  }
+             });
+             document.querySelectorAll('[data-translate-placeholder]').forEach(el => {
+                 const key = el.getAttribute('data-translate-placeholder');
+                 el.setAttribute('placeholder', getTranslation(key, lang));
+             });
+             document.querySelectorAll('[data-translate-title]').forEach(el => {
+                 const key = el.getAttribute('data-translate-title');
+                 el.setAttribute('title', getTranslation(key, lang));
+             });
+         }
+
+        const initialLang = getStoredLanguage();
+
+        // --- Minimal Nav Logic (Same as standard practice) ---
+        const navToggleButton = document.getElementById('minimal-nav-toggle');
+        const navPanel = document.getElementById('minimal-nav-panel');
+        const body = document.body;
+        if (navToggleButton && navPanel) {
+            navToggleButton.addEventListener('click', (event) => { event.stopPropagation(); body.classList.toggle('nav-active'); navToggleButton.setAttribute('aria-expanded', body.classList.contains('nav-active')); });
+            document.addEventListener('click', (event) => { if (body.classList.contains('nav-active') && !navPanel.contains(event.target) && event.target !== navToggleButton && !navToggleButton.contains(event.target) ) { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); } });
+            navPanel.querySelectorAll('a').forEach(link => { link.addEventListener('click', () => { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); }); });
+            document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && body.classList.contains('nav-active')) { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); } });
+            navToggleButton.setAttribute('aria-expanded', 'false');
+        }
+
+        // --- Language Switcher Setup (Same as standard practice) ---
+        const langSelect = document.getElementById('languageSelect');
+        if (langSelect) {
+            langSelect.addEventListener('change', (e) => setLanguage(e.target.value));
+        }
+
+        // --- Helper Function for Feedback (Same as standard practice) ---
+        function showFeedback(elementId, messageKey, type = 'info', replacements = {}) {
+            const feedbackEl = document.getElementById(elementId);
+            if (!feedbackEl) { console.error(`Feedback element not found: ${elementId}`); return; }
+            const currentLang = getStoredLanguage();
+            const translatedMessage = getTranslation(messageKey, currentLang, replacements);
+             if (translatedMessage.includes('<') && translatedMessage.includes('>')) { feedbackEl.innerHTML = translatedMessage; }
+             else { feedbackEl.textContent = translatedMessage; }
+            feedbackEl.className = 'feedback-message'; // Reset classes
+            feedbackEl.classList.add('visible', type);
+            const interactiveArea = feedbackEl.closest('.interactive-area');
+            if (!interactiveArea) return;
+            interactiveArea.classList.remove('success-glow-anim', 'shake-anim');
+            void interactiveArea.offsetWidth; // Trigger reflow
+            if (type === 'correct') { interactiveArea.classList.add('success-glow-anim'); }
+            else if (type === 'incorrect') { interactiveArea.classList.add('shake-anim'); }
+        }
+
+        // --- Activity 1 (Adv): Anatomy of if/elif/else ---
+        const anatomyElifSection = document.getElementById('anatomy-elif'); // ADV ID
+        let elifPartExplanations = {};
+        const totalElifAnatomyParts = 7; // if, cond1, if-body, elif, cond2, elif-body, else, else-body (oops, 8 parts actually, need to fix count and structure)
+        // Rechecking the structure: if, cond1, if-body, elif, cond2, elif-body, else, else-body = 8 parts
+        const totalCorrectElifAnatomyParts = 8; // Let's fix the count
+        let currentElifAnatomyListeners = []; // ADV Listeners
+
+        function setupElifAnatomy() { // ADV Function
+            if (!anatomyElifSection) return;
+            const currentLang = getStoredLanguage();
+            elifPartExplanations = {}; // Clear previous
+            // Use the ADV explanation texts
+            document.querySelectorAll('#explanation-adv-texts span[data-key]').forEach(span => {
+                const key = span.getAttribute('data-key');
+                elifPartExplanations[key] = getTranslation(`anatomy_adv_exp_${key}`, currentLang); // ADV Prefix
+            });
+
+            const parts = anatomyElifSection.querySelectorAll('.code-part');
+            const explanationsDiv = document.getElementById('anatomy-elif-explanations'); // ADV ID
+            const statusP = document.getElementById('anatomy-elif-status'); // ADV ID
+            const feedbackDiv = document.getElementById('anatomy-elif-feedback'); // ADV ID
+            let identifiedCount = 0;
+
+            // Remove old listeners
+             currentElifAnatomyListeners.forEach(({element, listener}) => element.removeEventListener('click', listener));
+             currentElifAnatomyListeners = [];
+
+            // Reset visual state
+            parts.forEach(p => p.classList.remove('identified'));
+            explanationsDiv.innerHTML = '';
+            // Update status text using the corrected total count
+            statusP.innerHTML = getTranslation('anatomy_adv_status_initial', currentLang, { total: totalCorrectElifAnatomyParts }); // ADV Key, correct count
+            feedbackDiv.classList.remove('visible', 'correct', 'incorrect', 'info');
+
+            parts.forEach(part => {
+                const clickListener = () => {
+                    const partType = part.dataset.part;
+                    if (!part.classList.contains('identified') && partType && elifPartExplanations[partType]) {
+                        part.classList.add('identified');
+                        identifiedCount++;
+                        const p = document.createElement('p');
+                        p.classList.add('part-explanation');
+                        const icon = document.createElement('i'); icon.className = 'fas fa-check-circle';
+                        const strong = document.createElement('strong');
+                         const displayedTextElement = part.querySelector('span[class^="code-"], div[class^="code-"]');
+                         strong.textContent = (displayedTextElement ? displayedTextElement.textContent.trim().split('\n')[0] : part.textContent.trim().split('\n')[0]) + ': ';
+                        p.appendChild(icon); p.appendChild(strong);
+                        p.appendChild(document.createTextNode(elifPartExplanations[partType]));
+                        explanationsDiv.appendChild(p);
+
+                        statusP.innerHTML = getTranslation('anatomy_adv_status_progress', currentLang, { count: identifiedCount, total: totalCorrectElifAnatomyParts }); // ADV Key, correct count
+
+                        if (identifiedCount === totalCorrectElifAnatomyParts) { // Use corrected count
+                            statusP.innerHTML = getTranslation('anatomy_adv_status_done', currentLang); // ADV Key
+                            showFeedback('anatomy-elif-feedback', 'feedback_anatomy_adv_correct', 'correct'); // ADV Key
+                        }
+                    } else if (!elifPartExplanations[partType]) {
+                        console.warn(`Explanation missing or part type invalid: ${partType}`);
+                    }
+                };
+                part.addEventListener('click', clickListener);
+                currentElifAnatomyListeners.push({ element: part, listener: clickListener });
+            });
+        }
+
+
+        // --- Activity 2 (Adv): Predict the Path (elif) ---
+        const predictElifSection = document.getElementById('predict-elif'); // ADV ID
+        if (predictElifSection) {
+            const ifBtn = document.getElementById('predict-adv-if-btn'); // ADV IDs
+            const elifBtn = document.getElementById('predict-adv-elif-btn');
+            const elseBtn = document.getElementById('predict-adv-else-btn');
+            const feedbackDiv = document.getElementById('predict-elif-feedback'); // ADV ID
+            const logicData = document.getElementById('predict-adv-logic'); // ADV ID
+            const variableDisplay = document.getElementById('predict-adv-variable-value'); // ADV ID
+
+            function setupPredictElifActivity() { // ADV Function
+                // Reset state
+                feedbackDiv.classList.remove('visible', 'correct', 'incorrect');
+                ifBtn.disabled = false; elifBtn.disabled = false; elseBtn.disabled = false;
+                ifBtn.classList.remove('success', 'secondary');
+                elifBtn.classList.remove('success', 'secondary');
+                elseBtn.classList.remove('success', 'secondary');
+
+                const varName = logicData.dataset.variableName;
+                const varValue = parseFloat(logicData.dataset.variableValue); // Assuming number
+                const conditionIfStr = logicData.dataset.conditionIf;
+                const conditionElifStr = logicData.dataset.conditionElif;
+                const currentLang = getStoredLanguage();
+
+                // Simple evaluation
+                let ifIsTrue, elifIsTrue;
+                try {
+                    const evaluateIf = new Function(varName, `return ${conditionIfStr};`);
+                    ifIsTrue = evaluateIf(varValue);
+                    const evaluateElif = new Function(varName, `return ${conditionElifStr};`);
+                    elifIsTrue = evaluateElif(varValue);
+                } catch (e) {
+                    console.error("Error evaluating prediction condition:", e);
+                    ifIsTrue = false; elifIsTrue = false; // Default on error
+                }
+
+                let correctPrediction;
+                if (ifIsTrue) { correctPrediction = 'if'; }
+                else if (elifIsTrue) { correctPrediction = 'elif'; }
+                else { correctPrediction = 'else'; }
+
+                variableDisplay.textContent = `${varName} = ${varValue}`; // Update display
+
+                const handlePrediction = (event) => {
+                    const chosenPrediction = event.currentTarget.dataset.prediction;
+                    ifBtn.disabled = true; elifBtn.disabled = true; elseBtn.disabled = true;
+
+                    const replacements = {
+                         variableValue: `${varName} = ${varValue}`,
+                         conditionIf: conditionIfStr,
+                         conditionElif: conditionElifStr,
+                         truthIf: getTranslation(ifIsTrue ? 'feedback_predict_true' : 'feedback_predict_false', currentLang),
+                         truthElif: getTranslation(elifIsTrue ? 'feedback_predict_true' : 'feedback_predict_false', currentLang),
+                         correctBlock: getTranslation(`feedback_predict_${correctPrediction}_block`, currentLang) // Use dynamic block name
+                     };
+
+                    if (chosenPrediction === correctPrediction) {
+                        let messageKey;
+                        if (correctPrediction === 'if') messageKey = 'feedback_predict_adv_correct_if';
+                        else if (correctPrediction === 'elif') messageKey = 'feedback_predict_adv_correct_elif';
+                        else messageKey = 'feedback_predict_adv_correct_else';
+                        showFeedback('predict-elif-feedback', messageKey, 'correct', replacements); // ADV ID
+                        event.currentTarget.classList.add('success');
+                    } else {
+                        showFeedback('predict-elif-feedback', 'feedback_predict_adv_incorrect', 'incorrect', replacements); // ADV ID
+                        event.currentTarget.classList.add('secondary'); // Mark wrong choice
+                        // Highlight correct button
+                        let correctBtn;
+                        if (correctPrediction === 'if') correctBtn = ifBtn;
+                        else if (correctPrediction === 'elif') correctBtn = elifBtn;
+                        else correctBtn = elseBtn;
+                        correctBtn.classList.add('success');
+                    }
+                };
+
+                // Remove old listeners before adding new ones
+                ifBtn.removeEventListener('click', handlePrediction);
+                elifBtn.removeEventListener('click', handlePrediction);
+                elseBtn.removeEventListener('click', handlePrediction);
+                ifBtn.addEventListener('click', handlePrediction);
+                elifBtn.addEventListener('click', handlePrediction);
+                elseBtn.addEventListener('click', handlePrediction);
+            }
+        }
+
+        // --- Activity 3 (Adv): Build-an-elif ---
+        const buildAnElifSection = document.getElementById('build-an-elif'); // ADV ID
+        let buildElifDropZone; // ADV scope
+
+        if (buildAnElifSection) {
+            const piecesContainer = document.getElementById('draggable-adv-pieces'); // ADV ID
+            buildElifDropZone = document.getElementById('build-elif-drop-zone'); // ADV ID
+            const checkBtn = document.getElementById('check-build-elif-btn'); // ADV ID
+            const resetBtn = document.getElementById('reset-build-elif-btn'); // ADV ID
+            const feedbackDiv = document.getElementById('build-elif-feedback'); // ADV ID
+
+             // Define pieces for if/elif/else structure
+             const initialBuildElifPiecesData = [ // ADV Pieces
+                 { key: 'build_piece_if', canonicalValue: 'if', displayValue: 'if', type: 'keyword-if' },
+                 { key: 'build_piece_elif', canonicalValue: 'elif', displayValue: 'elif', type: 'keyword-elif' }, // Added elif
+                 { key: 'build_piece_else', canonicalValue: 'else', displayValue: 'else', type: 'keyword-else' },
+                 { key: 'build_piece_cond_gold', canonicalValue: 'score >= 95', displayValue: 'score >= 95', type: 'condition' }, // New condition
+                 { key: 'build_piece_cond_silver', canonicalValue: 'score >= 90', displayValue: 'score >= 90', type: 'condition' },// New condition
+                 { key: 'build_piece_colon', canonicalValue: ':', displayValue: ':', type: 'colon' },
+                 { key: 'build_piece_print', canonicalValue: 'print()', displayValue: 'print()', type: 'print' }, // Generic print
+                 { key: 'build_piece_string_gold', canonicalValue: '"Gold"', displayValue: '"Gold"', type: 'string' }, // New string
+                 { key: 'build_piece_string_silver', canonicalValue: '"Silver"', displayValue: '"Silver"', type: 'string' }, // New string
+                 { key: 'build_piece_string_bronze', canonicalValue: '"Bronze"', displayValue: '"Bronze"', type: 'string' }, // New string
+             ];
+
+            let draggedElement = null; let touchDragElement = null; let originalPiece = null; let startX, startY, offsetX, offsetY;
+
+            // Create piece element (using canonical value for data-value) - Reuse standard practice version
+            function createBuildPieceElement(pieceData, currentLang) {
+                 const piece = document.createElement('span');
+                 piece.classList.add('piece', 'code-font');
+                 piece.draggable = true;
+                 const displayText = pieceData.key ? getTranslation(pieceData.key, currentLang) : pieceData.displayValue;
+                 piece.textContent = displayText;
+                 piece.dataset.value = pieceData.canonicalValue; // Use canonical for logic/check
+                 piece.dataset.type = pieceData.type;
+                 if(pieceData.key) piece.dataset.transKey = pieceData.key; // Store key if exists
+                 piece.setAttribute('data-type', pieceData.type); // Ensure attribute is set for CSS selector
+                 addDragListeners(piece);
+                 addTouchListeners(piece);
+                 return piece;
+             }
+
+            // Populate pieces area - Adapted for ADV
+            function populateBuildElifPieces() {
+                 const currentLang = getStoredLanguage();
+                 piecesContainer.innerHTML = '';
+                 const shuffledPieces = [...initialBuildElifPiecesData].sort(() => Math.random() - 0.5);
+                 shuffledPieces.forEach(pData => {
+                     piecesContainer.appendChild(createBuildPieceElement(pData, currentLang));
+                 });
+             }
+
+            // Reset drop zone and feedback - Adapted for ADV
+            function setupBuildElifListeners() {
+                 populateBuildElifPieces(); // Populate with current lang ADV pieces
+                 buildElifDropZone.innerHTML = ''; // Clear drop zone
+                 const placeholder = document.createElement('span');
+                 placeholder.id = 'build-elif-drop-zone-placeholder'; // ADV ID
+                 placeholder.dataset.translate = 'build_adv_drop_placeholder'; // ADV Key
+                 placeholder.textContent = getTranslation('build_adv_drop_placeholder', getStoredLanguage());
+                 buildElifDropZone.appendChild(placeholder);
+                 feedbackDiv.classList.remove('visible', 'correct', 'incorrect', 'info');
+                 checkBtn.classList.remove('success');
+                 checkBtn.disabled = false;
+                 buildElifDropZone.classList.remove('over');
+             }
+
+             // Drag/Touch Listeners (Reused from standard practice, adapt drop zone target)
+             function addDragListeners(element) { /* ... Same as standard, check drop zone ID if needed ... */
+                element.addEventListener('dragstart', (e) => { if (e.target.closest('#build-elif-drop-zone')) { e.preventDefault(); return; } draggedElement = element; element.classList.add('ghosting'); e.dataTransfer.effectAllowed = 'move'; try { e.dataTransfer.setData('text/plain', element.dataset.value); } catch (err) {} });
+                element.addEventListener('dragend', () => { if (draggedElement && draggedElement.parentNode) { draggedElement.classList.remove('ghosting'); } draggedElement = null; buildElifDropZone.classList.remove('over'); }); // Use ADV drop zone ID
+             }
+            function handleTouchStart(e) { /* ... Same as standard, check drop zone ID if needed ... */
+                if (touchDragElement || e.target.closest('#build-elif-drop-zone')) return; originalPiece = e.target.closest('.piece'); if (!originalPiece || !piecesContainer.contains(originalPiece)) return; const touch = e.targetTouches[0]; startX = touch.clientX; startY = touch.clientY; const rect = originalPiece.getBoundingClientRect(); offsetX = startX - rect.left; offsetY = startY - rect.top; touchDragElement = originalPiece.cloneNode(true); touchDragElement.classList.add('dragging'); touchDragElement.style.position = 'fixed'; touchDragElement.style.left = `${startX - offsetX}px`; touchDragElement.style.top = `${startY - offsetY}px`; touchDragElement.style.width = `${rect.width}px`; touchDragElement.style.height = `${rect.height}px`; document.body.appendChild(touchDragElement); originalPiece.classList.add('ghosting'); e.preventDefault();
+            }
+            function handleTouchMove(e) { /* ... Same as standard, check drop zone ID if needed ... */
+                 if (!touchDragElement) return; e.preventDefault(); const touch = e.targetTouches[0]; const currentX = touch.clientX; const currentY = touch.clientY; touchDragElement.style.left = `${currentX - offsetX}px`; touchDragElement.style.top = `${currentY - offsetY}px`; touchDragElement.style.display = 'none'; const elemBelow = document.elementFromPoint(currentX, currentY); touchDragElement.style.display = ''; const isOverDropZone = elemBelow === buildElifDropZone || buildElifDropZone.contains(elemBelow); buildElifDropZone.classList.toggle('over', isOverDropZone); // Use ADV drop zone ID
+            }
+            function handleTouchEnd(e) { /* ... Same as standard, check drop zone ID if needed ... */
+                if (!touchDragElement || !originalPiece) return; const touch = e.changedTouches[0]; const finalX = touch.clientX; const finalY = touch.clientY; touchDragElement.style.display = 'none'; const elemBelow = document.elementFromPoint(finalX, finalY); touchDragElement.style.display = ''; const droppedInZone = elemBelow === buildElifDropZone || buildElifDropZone.contains(elemBelow); if (droppedInZone) { buildElifDropZone.querySelector('#build-elif-drop-zone-placeholder')?.remove(); const droppedPiece = originalPiece.cloneNode(true); droppedPiece.classList.remove('ghosting'); droppedPiece.draggable = false; droppedPiece.style.cursor = 'default'; droppedPiece.removeEventListener('touchstart', handleTouchStart); droppedPiece.removeEventListener('touchmove', handleTouchMove); droppedPiece.removeEventListener('touchend', handleTouchEnd); buildElifDropZone.appendChild(droppedPiece); originalPiece.remove(); } else { originalPiece.classList.remove('ghosting'); } if (touchDragElement.parentNode === document.body) { document.body.removeChild(touchDragElement); } buildElifDropZone.classList.remove('over'); touchDragElement = null; originalPiece = null; // Use ADV drop zone ID
+            }
+            function addTouchListeners(element) { /* ... Same as standard ... */
+                element.addEventListener('touchstart', handleTouchStart, { passive: false }); element.addEventListener('touchmove', handleTouchMove, { passive: false }); element.addEventListener('touchend', handleTouchEnd);
+            }
+
+            // Drop Zone Listeners - Adapted for ADV
+            buildElifDropZone.addEventListener('dragover', (e) => { e.preventDefault(); buildElifDropZone.classList.add('over'); });
+            buildElifDropZone.addEventListener('dragleave', () => { buildElifDropZone.classList.remove('over'); });
+            buildElifDropZone.addEventListener('drop', (e) => {
+                 e.preventDefault(); buildElifDropZone.classList.remove('over');
+                 if (draggedElement && piecesContainer.contains(draggedElement)) {
+                     buildElifDropZone.querySelector('#build-elif-drop-zone-placeholder')?.remove(); // ADV ID
+                     const droppedPiece = draggedElement; droppedPiece.classList.remove('ghosting'); droppedPiece.draggable = false; droppedPiece.style.cursor = 'default';
+                     buildElifDropZone.appendChild(droppedPiece); // Append to ADV zone
+                     draggedElement = null;
+                 }
+             });
+
+            // Check button logic for if/elif/else structure - Adapted for ADV
+            checkBtn.addEventListener('click', () => {
+                 const droppedPieces = Array.from(buildElifDropZone.querySelectorAll('.piece'));
+                 const sequenceValues = droppedPieces.map(p => p.dataset.value);
+
+                 // Define the target sequence for if/elif/else
+                 const correctSequence = [
+                     'if', 'score >= 95', ':',
+                     'print()', '"Gold"',
+                     'elif', 'score >= 90', ':',
+                     'print()', '"Silver"',
+                     'else', ':',
+                     'print()', '"Bronze"'
+                 ];
+
+                 // Basic structural check (order and presence)
+                 let correct = true;
+                 let feedbackKey = 'feedback_build_adv_correct'; // ADV Key
+
+                 // Check length first
+                 if (sequenceValues.length !== correctSequence.length) {
+                     correct = false;
+                     feedbackKey = droppedPieces.length > 0 ? 'feedback_build_adv_almost' : 'feedback_build_adv_incorrect';
+                 } else {
+                     // Check exact sequence match
+                     for (let i = 0; i < correctSequence.length; i++) {
+                         if (sequenceValues[i] !== correctSequence[i]) {
+                             correct = false;
+                             // Provide more specific feedback based on where the mismatch occurs
+                             if (i < 5 && !sequenceValues.includes('if')) feedbackKey = 'feedback_build_adv_incorrect'; // Missing if early
+                             else if (i >= 5 && i < 10 && !sequenceValues.includes('elif')) feedbackKey = 'feedback_build_adv_missing_elif';
+                             else if (i >= 10 && !sequenceValues.includes('else')) feedbackKey = 'feedback_build_adv_incorrect'; // Missing else
+                             else if (sequenceValues.indexOf('elif') < sequenceValues.indexOf('if') || sequenceValues.indexOf('else') < sequenceValues.indexOf('elif')) feedbackKey = 'feedback_build_adv_order';
+                             else feedbackKey = 'feedback_build_adv_almost'; // General "almost"
+                             break; // Stop checking on first mismatch
+                         }
+                     }
+                 }
+
+                 if (correct) {
+                     showFeedback('build-elif-feedback', feedbackKey, 'correct'); // ADV ID
+                     checkBtn.classList.add('success');
+                     checkBtn.disabled = true;
+                 } else {
+                     showFeedback('build-elif-feedback', feedbackKey, 'incorrect'); // ADV ID
+                     checkBtn.classList.remove('success');
+                 }
+            });
+            resetBtn.addEventListener('click', setupBuildElifListeners); // Use ADV setup
+        }
+
+
+        // --- Activity 4 (Adv): Code Simulator (Multi-way Decision) ---
+        const simMultiwaySection = document.getElementById('code-simulator-multiway'); // ADV ID
+        if(simMultiwaySection) {
+            const editor = document.getElementById('sim-adv-editor-input'); // ADV IDs
+            const outputArea = document.getElementById('sim-adv-output');
+            const runBtn = document.getElementById('run-sim-adv-btn');
+            const feedbackDiv = document.getElementById('sim-adv-feedback');
+
+            runBtn.addEventListener('click', () => {
+                 const userCode = editor.value;
+                 let placeholder = outputArea.querySelector('.placeholder');
+                 outputArea.innerHTML = ''; // Clear previous output
+                 if (!placeholder) {
+                     placeholder = document.createElement('span');
+                     placeholder.className = 'placeholder';
+                     placeholder.dataset.translate = 'simulator_output_placeholder';
+                 }
+                 placeholder.textContent = getTranslation('simulator_output_placeholder', getStoredLanguage());
+                 feedbackDiv.classList.remove('visible', 'correct', 'incorrect', 'info');
+
+                 if (userCode.trim() === '') {
+                     outputArea.appendChild(placeholder);
+                     showFeedback('sim-adv-feedback', 'feedback_sim_empty', 'info'); // ADV ID
+                     return;
+                 }
+
+                 // Basic Syntax Checks (More complex for elif)
+                 const hasIf = /^\s*if\s+.+:/m.test(userCode);
+                 const hasElif = /^\s*elif\s+.+:/m.test(userCode);
+                 const hasElse = /^\s*else\s*:/m.test(userCode);
+                 // Very basic condition checks for this specific problem
+                 const hasCondIf = /if\s+temp\s*<\s*0\s*:/m.test(userCode);
+                 const hasCondElif = /elif\s+temp\s*<=\s*10\s*:/m.test(userCode); // Simple check, doesn't ensure correct logic range fully
+                 const hasPrintIf = /if.+:\s*\n\s+print\(\s*(["'])Freezing\1\s*\)/m.test(userCode);
+                 const hasPrintElif = /elif.+:\s*\n\s+print\(\s*(["'])Cold\1\s*\)/m.test(userCode);
+                 const hasPrintElse = /else\s*:\s*\n\s+print\(\s*(["'])Moderate\1\s*\)/m.test(userCode);
+
+
+                 // Test Case (using the one from description)
+                 const testValue = 5;
+                 const expectedOutput = "Cold"; // For temp = 5
+
+                 // Simulate Execution (Very basic - check structure and extract print based on test case)
+                 let actualOutput = null;
+                 let simulationError = false;
+                 let errorKey = 'feedback_sim_adv_error'; // ADV Generic error
+
+                 if (!hasIf) { simulationError = true; errorKey = 'feedback_sim_error'; } // Use generic if missing base
+                 else if (!hasElif) { simulationError = true; errorKey = 'feedback_sim_adv_no_elif'; } // ADV specific
+                 else if (!hasElse) { simulationError = true; errorKey = 'feedback_sim_error'; } // Generic
+                 else if (!hasCondIf || !hasCondElif) { simulationError = true; errorKey = 'feedback_sim_adv_condition_logic'; } // ADV specific
+                 else if (!hasPrintIf || !hasPrintElif || !hasPrintElse) { simulationError = true; errorKey = 'feedback_sim_no_print'; } // Generic
+                 else {
+                     // Basic simulation based on test value
+                     if (testValue < 0) actualOutput = "Freezing";
+                     else if (testValue <= 10) actualOutput = "Cold";
+                     else actualOutput = "Moderate";
+                     // We assume the user wrote the correct print strings if the structure looks ok
+                 }
+
+
+                 if (simulationError) {
+                     outputArea.appendChild(placeholder);
+                     showFeedback('sim-adv-feedback', errorKey, 'incorrect'); // ADV ID
+                 } else if (actualOutput !== null) {
+                     const outputLine = document.createElement('span');
+                     outputLine.classList.add('output-line');
+                     outputLine.textContent = `> ${actualOutput}`; // Show the simulated output
+                     outputArea.appendChild(outputLine);
+
+                     // Compare simulated output with expected
+                     if (actualOutput === expectedOutput) {
+                         showFeedback('sim-adv-feedback', 'feedback_sim_adv_success', 'correct', { output: actualOutput, testValue: testValue }); // ADV Keys
+                     } else {
+                         // Attempt to get the *user's* print statement for the case that *should* have run
+                         let userPrintedOutput = "Unknown";
+                         try {
+                             if (expectedOutput === "Freezing") userPrintedOutput = userCode.match(/if.+:\s*\n\s+print\(\s*(["'])(.*?)\1\s*\)/m)[2];
+                             else if (expectedOutput === "Cold") userPrintedOutput = userCode.match(/elif.+:\s*\n\s+print\(\s*(["'])(.*?)\1\s*\)/m)[2];
+                             else userPrintedOutput = userCode.match(/else\s*:\s*\n\s+print\(\s*(["'])(.*?)\1\s*\)/m)[2];
+                         } catch (e) {} // Ignore if match fails
+
+                         showFeedback('sim-adv-feedback', 'feedback_sim_adv_wrong_output', 'incorrect', { output: userPrintedOutput, expectedOutput: expectedOutput, testValue: testValue }); // ADV Keys
+                     }
+                 } else {
+                     outputArea.appendChild(placeholder);
+                     showFeedback('sim-adv-feedback', 'feedback_sim_adv_error', 'incorrect'); // ADV ID
+                 }
+             });
+        }
+
+
+        // --- Activity 5 (Adv): Mini Missions (Advanced Decisions) ---
+        const missionsAdvancedSection = document.getElementById('mini-missions-advanced'); // ADV ID
+        let updateMissionAdvancedSummary; // ADV scope
+
+        if (missionsAdvancedSection) {
+            const missionRunButtons = missionsAdvancedSection.querySelectorAll('.mission-run-adv-btn'); // ADV Class
+            const summaryFeedback = document.getElementById('missions-adv-summary-feedback'); // ADV ID
+            const totalMissions = missionsAdvancedSection.querySelectorAll('.mission').length;
+            let completedMissionsCount = 0;
+
+            updateMissionAdvancedSummary = function() { // ADV Function
+                 completedMissionsCount = missionsAdvancedSection.querySelectorAll('.mission[data-completed="true"]').length;
+                 const currentLang = getStoredLanguage();
+                 if (completedMissionsCount === totalMissions) {
+                     showFeedback('missions-adv-summary-feedback', 'feedback_missions_summary_all_done', 'correct', { totalMissions: totalMissions }); // ADV ID, Key
+                 } else if (completedMissionsCount > 0) {
+                     showFeedback('missions-adv-summary-feedback', 'feedback_missions_summary_progress', 'info', { completedCount: completedMissionsCount, totalMissions: totalMissions }); // ADV ID, Key
+                 } else {
+                     summaryFeedback.classList.remove('visible', 'correct', 'incorrect', 'info');
+                 }
+            }
+
+            missionRunButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const missionId = button.dataset.missionId;
+                    const missionDiv = document.getElementById(`mission-adv-${missionId}`); // ADV ID prefix
+                    if (!missionDiv) return;
+                    const editor = missionDiv.querySelector('.mission-editor');
+                    const outputArea = missionDiv.querySelector('.mission-output');
+                    const feedbackDivId = `mission-adv-feedback-${missionId}`; // ADV ID
+                    const feedbackDiv = document.getElementById(feedbackDivId);
+                    const statusIcon = missionDiv.querySelector('.mission-status-adv i'); // ADV Class
+                    const userCode = editor.value;
+                    outputArea.innerHTML = '';
+                    let success = false;
+                    let feedbackMessageKey = 'feedback_mission_syntax_error';
+                    let feedbackType = 'incorrect';
+                    let feedbackReplacements = {};
+                    let testPassed = true;
+
+                    // --- Basic Validation Logic - ADVANCED ---
+                    try {
+                        let testCases = [];
+                        let checkLogic = (code, inputs) => { return { pass: false, got: "Validation Error", expected: "Unknown" }; }; // Placeholder
+                        let defaultHintKey = 'feedback_mission_syntax_error';
+
+                        if (missionId === '1') { // Number Ranges (elif)
+                            testCases = [{x: 5, expected: "Small"}, {x: 10, expected: "Medium"}, {x: 50, expected: "Medium"}, {x: 51, expected: "Large"}, {x: -1, expected: "Small"}];
+                            checkLogic = (code, inputs) => {
+                                const x = inputs.x;
+                                let expected;
+                                if (x < 10) expected = "Small";
+                                else if (x <= 50) expected = "Medium";
+                                else expected = "Large";
+                                // Basic structure check
+                                const hasIf = /if\s+x\s*<\s*10\s*:/m.test(code);
+                                const hasElif = /elif\s+x\s*<=\s*50\s*:/m.test(code); // Check includes <=
+                                const hasElse = /else\s*:/m.test(code);
+                                if (!hasIf || !hasElif || !hasElse) return { pass: false, got: "Structure Mismatch (if/elif/else)", expected: expected };
+                                // Simulate output based on structure
+                                let got = "Structure OK, Print Mismatch";
+                                try {
+                                    if (x < 10) got = code.match(/if.+:\s*\n\s+print\(\s*["'](Small)["']\s*\)/m)[1];
+                                    else if (x <= 50) got = code.match(/elif.+:\s*\n\s+print\(\s*["'](Medium)["']\s*\)/m)[1];
+                                    else got = code.match(/else.+:\s*\n\s+print\(\s*["'](Large)["']\s*\)/m)[1];
+                                } catch (e) { /* got remains mismatch */ }
+                                return { pass: got === expected, got: got, expected: expected };
+                            };
+                            defaultHintKey = 'feedback_mission_adv1_hint';
+                        } else if (missionId === '2') { // Simple Login (and)
+                             testCases = [
+                                 {username: "admin", password: "pass123", expected: "Login Success"},
+                                 {username: "admin", password: "wrong", expected: "Login Failed"},
+                                 {username: "user", password: "pass123", expected: "Login Failed"},
+                                 {username: "user", password: "wrong", expected: "Login Failed"}
+                             ];
+                            checkLogic = (code, inputs) => {
+                                const { username, password } = inputs;
+                                const expected = (username === "admin" && password === "pass123") ? "Login Success" : "Login Failed";
+                                const hasAnd = /if\s+username\s*==\s*["']admin["']\s+and\s+password\s*==\s*["']pass123["']\s*:/m.test(code);
+                                const hasElse = /else\s*:/m.test(code);
+                                if (!hasAnd || !hasElse) return { pass: false, got: "Structure Mismatch (if with 'and', else)", expected: expected };
+                                let got = "Structure OK, Print Mismatch";
+                                 try {
+                                    if (username === "admin" && password === "pass123") got = code.match(/if.+:\s*\n\s+print\(\s*["'](Login Success)["']\s*\)/m)[1];
+                                    else got = code.match(/else.+:\s*\n\s+print\(\s*["'](Login Failed)["']\s*\)/m)[1];
+                                } catch (e) { /* got remains mismatch */ }
+                                return { pass: got === expected, got: got, expected: expected };
+                            };
+                            defaultHintKey = 'feedback_mission_adv2_hint';
+                        } else if (missionId === '3') { // Nested Check
+                             testCases = [
+                                 {num: 10, expected: "Positive Even"}, {num: 7, expected: "Positive Odd"},
+                                 {num: 0, expected: "Not Positive"}, {num: -5, expected: "Not Positive"}
+                             ];
+                             checkLogic = (code, inputs) => {
+                                const num = inputs.num;
+                                let expected;
+                                if (num > 0) { expected = (num % 2 === 0) ? "Positive Even" : "Positive Odd"; }
+                                else { expected = "Not Positive"; }
+                                // Check outer structure
+                                const hasOuterIf = /if\s+num\s*>\s*0\s*:/m.test(code);
+                                const hasOuterElse = /else\s*:\s*\n\s+print\(\s*["']Not Positive["']\s*\)/m.test(code);
+                                // Check inner structure (only if outer looks ok)
+                                const hasInnerIf = hasOuterIf ? /if\s+num\s*>\s*0\s*:\s*\n\s+if\s+num\s*%\s*2\s*==\s*0\s*:/m.test(code) : false;
+                                const hasInnerElse = hasOuterIf ? /if\s+num\s*>\s*0\s*:\s*\n(?:.|\n)*?\s+else\s*:/m.test(code) : false; // Flexible check for inner else placement
+                                if (!hasOuterIf || !hasOuterElse) return { pass: false, got: "Outer Structure Mismatch (if num > 0 / else)", expected: expected };
+                                let got = "Structure OK, Print Mismatch";
+                                try {
+                                    if (num > 0) {
+                                        if (!hasInnerIf || !hasInnerElse) return { pass: false, got: "Inner Structure Mismatch (if/else for even/odd)", expected: expected };
+                                        if (num % 2 === 0) got = code.match(/if\s+num\s*%\s*2\s*==\s*0\s*:\s*\n\s+print\(\s*["'](Positive Even)["']\s*\)/m)[1];
+                                        else got = code.match(/else\s*:\s*\n\s+print\(\s*["'](Positive Odd)["']\s*\)/m)[1]; // Find inner else print
+                                    } else {
+                                        got = "Not Positive"; // Already checked outer else print exists
+                                    }
+                                } catch(e) { /* got remains mismatch */ }
+                                return { pass: got === expected, got: got, expected: expected };
+                             };
+                             defaultHintKey = 'feedback_mission_adv3_hint';
+                        }
+
+                        // Run tests
+                        let firstFail = null;
+                        outputArea.innerHTML = '';
+                        for (const testCase of testCases) {
+                             const result = checkLogic(userCode, testCase);
+                             const outputLine = document.createElement('span');
+                             outputLine.classList.add('output-line');
+                             const testInputString = Object.entries(testCase).filter(([key]) => key !== 'expected').map(([key, val]) => `${key}=${typeof val === 'string' ? `"${val}"` : val}`).join(', ');
+
+                             if(result.pass) {
+                                outputLine.textContent = `Test (Input: ${testInputString}): Passed ✔ (Output: ${result.got})`;
+                                outputLine.style.color = 'var(--success-color)';
+                             } else {
+                                testPassed = false;
+                                if (!firstFail) firstFail = { input: testInputString, expected: result.expected, got: result.got };
+                                outputLine.textContent = `Test (Input: ${testInputString}): Failed ❌ (Expected: '${result.expected}', Got: '${result.got || 'Error'}')`;
+                                outputLine.style.color = 'var(--error-color)';
+                             }
+                             outputArea.appendChild(outputLine);
+                        }
+                        success = testPassed;
+
+                        if(success) {
+                             feedbackMessageKey = 'feedback_mission_success';
+                             feedbackType = 'correct';
+                        } else {
+                            feedbackMessageKey = 'feedback_mission_fail_test'; // Overwrite hint with fail message
+                            feedbackType = 'incorrect';
+                            feedbackReplacements = firstFail || {};
+                            // Append hint if specific hint exists
+                            const hint = getTranslation(defaultHintKey, getStoredLanguage());
+                            if (hint && !hint.startsWith('[')) { // Don't show raw key
+                                feedbackReplacements.hint = `<br><small><i>Hint: ${hint}</i></small>`; // Append hint HTML
+                                const currentMsg = getTranslation(feedbackMessageKey, getStoredLanguage(), firstFail || {});
+                                feedbackDiv.innerHTML = currentMsg + feedbackReplacements.hint;
+                                feedbackDiv.className = 'feedback-message'; feedbackDiv.classList.add('visible', feedbackType);
+                                // Early return to prevent overwriting with generic feedback call
+                                updateMissionAdvancedSummary();
+                                return;
+                            }
+                        }
+
+                    } catch (error) {
+                        console.error(`Mission ${missionId} validation error:`, error);
+                        success = false;
+                        testPassed = false;
+                        feedbackMessageKey = 'feedback_mission_syntax_error';
+                        outputArea.textContent = 'Error during validation.';
+                    }
+                    // --- End Validation ---
+
+                    if (success) {
+                        statusIcon.className = 'fas fa-check-circle';
+                        missionDiv.dataset.completed = 'true';
+                    } else {
+                        statusIcon.className = 'fas fa-times-circle';
+                        missionDiv.dataset.completed = 'false';
+                    }
+                    // Show feedback (unless hint was already shown)
+                     if (!feedbackReplacements.hint) {
+                        showFeedback(feedbackDivId, feedbackMessageKey, feedbackType, feedbackReplacements);
+                     }
+                    updateMissionAdvancedSummary(); // ADV Update
+                });
+            });
+            updateMissionAdvancedSummary(); // Initial call
+        }
+
+        // --- Fade-in animations on scroll (Same as standard practice) ---
+        const fadeElements = document.querySelectorAll('.fade-in');
+        const animateOnScroll = () => {
+             const windowHeight = window.innerHeight;
+             fadeElements.forEach(el => { if (el.style.opacity === '1') return; const rect = el.getBoundingClientRect(); if (rect.top < windowHeight - 80 && rect.bottom >= 50) { el.style.opacity = '1'; el.style.transform = 'translateY(0)'; } });
+        };
+        const scrollHandler = () => window.requestAnimationFrame(animateOnScroll);
+        window.addEventListener('scroll', scrollHandler);
+
+        // --- Initial Language Application and Activity Setups ---
+        setLanguage(initialLang); // Apply language FIRST
+        animateOnScroll(); // Trigger initial animation check
+
+        // Call initial setups for Module 7 ADVANCED activities *after* language is set
+        // These are already called by setLanguage, but included for clarity
+        if (anatomyElifSection) setupElifAnatomy();
+        if (predictElifSection) setupPredictElifActivity();
+        if (buildAnElifSection) setupBuildElifListeners();
+        if (missionsAdvancedSection) updateMissionAdvancedSummary(); // Initialize summary count
+
+    }); // End DOMContentLoaded
+    </script>
+
+</body>
+</html>

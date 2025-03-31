@@ -1,0 +1,1224 @@
+<!DOCTYPE html>
+<!-- Language set by JS -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Title set by JS -->
+    <title data-translate="page_title">Module 14: Advanced While Loops!</title>
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* --- Base Styles & Variables (Mostly unchanged from Module 0 / Practice) --- */
+        :root {
+            --primary-color: #007bff; /* Blue */
+            --secondary-color: #6c757d; /* Grey */
+            --background-light: #f8f9fa;
+            --background-medium: #e9ecef;
+            --background-dark: #343a40;
+            --text-light: #f8f9fa;
+            --text-dark: #212529;
+            --accent-color: #ffc107; /* Yellow */
+            --success-color: #28a745; /* Green */
+            --error-color: #dc3545;   /* Red */
+            --info-color: #17a2b8;    /* Teal */
+            --warning-color: #fd7e14; /* Orange - For loop warnings/debug */
+            --break-color: #e83e8c; /* Pink - for break keyword */
+            --continue-color: #6f42c1; /* Indigo - for continue keyword */
+            --border-radius: 8px;
+            --transition-speed: 0.3s;
+            --font-body: 'Roboto', sans-serif;
+            --font-title: 'Orbitron', sans-serif;
+            --font-code: 'Courier New', Courier, monospace;
+            --selection-highlight-bg: rgba(0, 123, 255, 0.1);
+            --selection-highlight-border: rgba(0, 123, 255, 0.4);
+            /* Consistent Nav Colors */
+            --nav-primary: #6e48aa;
+            --nav-success: #4cc9f0;
+            --nav-dark: #1a1a2e;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; font-size: 16px; }
+        body {
+            font-family: var(--font-body); line-height: 1.7;
+            background-color: var(--background-light); color: var(--text-dark);
+            overflow-x: hidden;
+        }
+
+        /* --- Utility Classes (Unchanged) --- */
+        .container { max-width: 960px; margin: 0 auto; padding: 0 15px; }
+        .text-center { text-align: center; }
+        .highlight { color: var(--primary-color); font-weight: bold; }
+        .code-font { font-family: var(--font-code); }
+        .hidden { display: none !important; }
+        .button-group { margin-top: 2rem; display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; }
+
+        /* --- Advanced Animations (Unchanged) --- */
+        .fade-in { opacity: 0; transform: translateY(20px); animation: fadeInAnimation 0.8s ease-out forwards; }
+        .fade-in.delay-1 { animation-delay: 0.2s; } .fade-in.delay-2 { animation-delay: 0.4s; }
+        .fade-in.delay-3 { animation-delay: 0.6s; } .fade-in.delay-4 { animation-delay: 0.8s; }
+        @keyframes fadeInAnimation { to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulseHeaderIcon { 0% { transform: scale(1); opacity: 0.1; filter: brightness(1); } 50% { transform: scale(1.05); opacity: 0.25; filter: brightness(1.2); } 100% { transform: scale(1); opacity: 0.1; filter: brightness(1); } }
+        @keyframes successGlow { 0% { box-shadow: 0 0 3px rgba(40, 167, 69, 0.3); transform: scale(1); } 50% { box-shadow: 0 0 12px 5px rgba(40, 167, 69, 0.5); transform: scale(1.01); } 100% { box-shadow: 0 0 3px rgba(40, 167, 69, 0.3); transform: scale(1); } }
+        .success-glow-anim { animation: successGlow 0.9s ease-out; }
+        @keyframes shake { 10%, 90% { transform: translate3d(-2px, 0, 0); } 20%, 80% { transform: translate3d(3px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-5px, 0, 0); } 40%, 60% { transform: translate3d(5px, 0, 0); } }
+        .shake-anim { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes iconAppearCorrect { 0% { transform: scale(0.5) rotate(-15deg); opacity: 0; } 60% { transform: scale(1.2) rotate(5deg); opacity: 1; } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
+        @keyframes iconAppearIncorrect { 0% { transform: scale(0.5) rotate(-15deg); opacity: 0; } 50% { transform: scale(1.2) rotate(10deg); opacity: 1; } 70% { transform: scale(0.9) rotate(-5deg); } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
+        @keyframes iconAppearWarning { /* For loop issues */ 0% { transform: scale(0.6) rotateY(90deg); opacity: 0; } 100% { transform: scale(1) rotateY(0deg); opacity: 1; } }
+        .action-button:active:not(:disabled) { transform: translateY(1px) scale(0.98); filter: brightness(0.95); }
+
+
+        /* --- Minimal Retractable Nav (Unchanged) --- */
+        .minimal-nav-button { position: fixed; top: 15px; right: 15px; z-index: 1001; background-color: rgba(52, 58, 64, 0.75); color: var(--text-light); border: none; border-radius: var(--border-radius); padding: 8px 12px; cursor: pointer; transition: background-color var(--transition-speed), opacity var(--transition-speed), transform var(--transition-speed); font-size: 1.1rem; opacity: 0.6; box-shadow: 0 2px 5px rgba(0,0,0,0.2); line-height: 1; }
+        .minimal-nav-button:hover { background-color: rgba(52, 58, 64, 0.95); opacity: 1; transform: scale(1.05); }
+        .minimal-nav { position: fixed; top: 60px; right: 15px; z-index: 1000; background-color: var(--background-dark); border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.3); padding: 0.8rem; opacity: 0; transform: translateY(-15px) scale(0.95); transform-origin: top right; pointer-events: none; transition: opacity var(--transition-speed) ease, transform var(--transition-speed) ease; min-width: 200px; }
+        body.nav-active .minimal-nav { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+        .minimal-nav ul { list-style: none; margin: 0; padding: 0; }
+        .minimal-nav ul li { margin-bottom: 5px; }
+        .minimal-nav ul li:last-child { margin-bottom: 0; }
+        .minimal-nav ul li a { display: flex; align-items: center; color: var(--text-light); text-decoration: none; padding: 0.6rem 1rem; border-radius: 4px; transition: background-color var(--transition-speed), color var(--transition-speed); white-space: nowrap; font-weight: 400; font-size: 0.95rem; }
+        .minimal-nav ul li a i.fas { margin-right: 10px; width: 1.2em; text-align: center; opacity: 0.8; transition: opacity var(--transition-speed); }
+        .minimal-nav ul li a:hover { background-color: var(--primary-color); color: var(--text-light); }
+        .minimal-nav ul li a:hover i.fas { opacity: 1; }
+        /* Language Switcher Styles (Unchanged) */
+        .minimal-nav .language-switcher-item { padding: 0.5rem 1rem; border-top: 1px solid var(--secondary-color); margin-top: 8px; padding-top: 13px; }
+        #languageSelect { width: 100%; background: rgba(255,255,255,0.1); color: white; border: 1px solid var(--nav-success); border-radius: 5px; padding: 6px 30px 6px 12px; cursor: pointer; font-size: 0.9rem; appearance: none; -webkit-appearance: none; -moz-appearance: none; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%234CC9F0%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right 10px center; background-size: 10px auto; transition: background-color 0.3s ease; }
+        #languageSelect:hover { background-color: rgba(255,255,255,0.15); }
+        #languageSelect option { background: var(--nav-dark); color: var(--text-light); }
+
+        /* --- Practice Header (Slightly different gradient for Advanced) --- */
+        .practice-header { background: linear-gradient(135deg, var(--nav-primary), #4a2f7c); color: var(--text-light); padding: 3rem 0 4rem; text-align: center; position: relative; overflow: hidden; border-bottom: 5px solid var(--nav-success); } /* Changed gradient */
+        .practice-header h1 { font-family: var(--font-title); font-size: 2.8rem; margin-bottom: 0.5rem; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); animation: fadeInAnimation 1s ease-out; }
+        .practice-header p { font-size: 1.1rem; font-weight: 300; opacity: 0.9; animation: fadeInAnimation 1s ease-out 0.3s forwards; opacity: 0; }
+        .header-icon { position: absolute; font-size: 4rem; color: var(--text-light); animation: pulseHeaderIcon 6s infinite ease-in-out alternate; }
+        .icon1 { top: 20%; left: 15%; animation-duration: 7s; animation-delay: 0.5s; } /* Loop icon */
+        .icon2 { bottom: 15%; right: 20%; animation-duration: 5s; animation-delay: 1s; } /* Gears/advanced icon */
+
+        /* --- Practice Section Styling (Unchanged) --- */
+        .practice-section { padding: 3rem 0; background-color: var(--background-medium); border-bottom: 1px solid #d6d8db; }
+        .practice-section:nth-child(odd) { background-color: var(--background-light); }
+        .practice-section:last-of-type { border-bottom: none; }
+        .practice-section h2 { font-family: var(--font-title); font-size: 1.8rem; color: var(--primary-color); margin-bottom: 1rem; text-align: center; }
+        .practice-section .section-description { text-align: center; margin-bottom: 2.5rem; color: var(--secondary-color); font-size: 1.05rem; max-width: 700px; margin-left: auto; margin-right: auto; }
+
+        /* --- General Interactive Elements (Unchanged) --- */
+        .interactive-area { background-color: #fff; padding: 2rem; border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.08); margin-top: 1.5rem; position: relative; transition: box-shadow 0.5s ease-out; }
+        .feedback-message { padding: 0.8rem 1rem; margin-top: 1rem; border-radius: var(--border-radius); font-weight: bold; text-align: center; opacity: 0; max-height: 0; overflow: hidden; transition: opacity var(--transition-speed) ease, max-height var(--transition-speed) ease, margin-top var(--transition-speed) ease; }
+        .feedback-message.visible { opacity: 1; max-height: 100px; margin-top: 1.5rem; }
+        .feedback-message.correct { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .feedback-message.incorrect { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .feedback-message.info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .feedback-message.warning { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; } /* For loop warnings/debug */
+        .feedback-message .fas { margin: 0 3px; }
+        .action-button { display: inline-block; padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold; color: var(--text-light); background-color: var(--primary-color); border: none; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), transform var(--transition-speed), filter var(--transition-speed), box-shadow var(--transition-speed); margin-top: 1rem; vertical-align: middle; box-shadow: 0 2px 5px rgba(0,0,0,0.1); text-decoration: none; }
+        .action-button:hover:not(:disabled) { background-color: #0056b3; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+        .action-button:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none; box-shadow: none; opacity: 0.7; }
+        .action-button.success { background-color: var(--success-color); }
+        .action-button.success:hover:not(:disabled) { background-color: #218838; }
+        .action-button.secondary { background-color: var(--secondary-color); }
+        .action-button.secondary:hover:not(:disabled) { background-color: #5a6268; }
+        .action-button.warning { background-color: var(--warning-color); color: var(--text-dark); }
+        .action-button.warning:hover:not(:disabled) { background-color: #e0a800; }
+        /* Code styling (Added break/continue, nested level) */
+        .code-block { background-color: var(--background-dark); color: var(--text-light); padding: 1.5rem; border-radius: var(--border-radius); font-family: var(--font-code); font-size: 1rem; position: relative; overflow-x: auto; margin: 1rem 0; line-height: 1.6; }
+        .code-keyword { color: #569cd6; font-weight: bold; }
+        .code-string { color: #ce9178; }
+        .code-comment { color: #6a9955; font-style: italic; }
+        .code-function { color: #dcdcaa; }
+        .code-paren { color: #ffd700; }
+        .code-number { color: #b5cea8; }
+        .code-operator { color: #d4d4d4; }
+        .code-variable { color: #9cdcfe; }
+        .code-condition { color: var(--accent-color); background-color: rgba(255, 193, 7, 0.1); padding: 0 3px; border-radius: 3px; }
+        .code-indent { padding-left: 2em; display: block; }
+        .code-indent-2 { padding-left: 4em; display: block; } /* For nested loops */
+        .code-break { color: var(--break-color); font-weight: bold; background-color: rgba(232, 62, 140, 0.1); padding: 0 3px; border-radius: 3px;} /* Style for break */
+        .code-continue { color: var(--continue-color); font-weight: bold; background-color: rgba(111, 66, 193, 0.1); padding: 0 3px; border-radius: 3px;} /* Style for continue */
+        .code-error-line { background-color: rgba(220, 53, 69, 0.2); border-left: 3px solid var(--error-color); display: block; margin: 0 -1.5rem; padding-left: calc(1.5rem - 3px); } /* Highlight error lines */
+
+        /* --- Activity 1: Trace with Break --- */
+        /* Uses same structure as original Trace activity */
+        #trace-break .trace-code { margin-bottom: 1.5rem; }
+        #trace-break .trace-controls { margin-top: 1rem; text-align: center; }
+        #trace-break .trace-output-prediction label { display: block; margin-bottom: 0.5rem; font-weight: bold; }
+        #trace-break #trace-prediction-input-break {
+            width: 100%; max-width: 400px; /* Allow slightly wider for potentially more output */
+            padding: 0.5rem; border: 1px solid var(--secondary-color); border-radius: var(--border-radius);
+            font-family: var(--font-code); font-size: 1rem; margin-bottom: 1rem;
+        }
+         #trace-break .trace-explanation {
+             font-size: 0.9rem; padding: 0.8rem; border-radius: var(--border-radius); margin-top: 1.5rem;
+             background-color: var(--background-medium); border-left: 4px solid var(--info-color);
+             color: var(--text-dark);
+         }
+        #trace-break .trace-explanation code { background-color: rgba(0,0,0,0.05); padding: 2px 4px; border-radius: 3px; }
+
+        /* --- Activity 2: Simulator with Continue --- */
+        /* Uses same structure as original Simulator activity */
+        #sim-continue .sim-editor { width: 100%; min-height: 120px; background-color: var(--background-dark); color: var(--text-light); border: 1px solid var(--secondary-color); border-radius: var(--border-radius); padding: 1rem; font-family: var(--font-code); font-size: 1rem; line-height: 1.5; resize: vertical; }
+        #sim-continue .sim-output-area { margin-top: 1rem; min-height: 80px; background-color: #1a1a1a; border: 1px solid #444; border-radius: var(--border-radius); padding: 1rem; color: var(--accent-color); font-family: var(--font-code); font-size: 1.05rem; white-space: pre-wrap; word-wrap: break-word; }
+        #sim-continue .sim-output-area .placeholder { color: var(--secondary-color); font-style: italic; font-size: 0.9rem; }
+        #sim-continue .sim-output-area .output-line { display: block; }
+        #sim-continue .sim-output-area .warning-line { color: var(--warning-color); font-style: italic; }
+
+        /* --- Activity 3: Nested Loop Mission --- */
+        /* Uses same structure as original Missions activity */
+        #adv-missions .mission { padding: 1.5rem; border: 1px solid #d6d8db; border-radius: var(--border-radius); margin-bottom: 1.5rem; background-color: var(--background-light); position: relative; }
+        #adv-missions .mission-status { position: absolute; top: 10px; right: 10px; font-size: 1.5rem; transition: transform 0.3s ease; }
+        #adv-missions .mission-status .fa-check-circle { color: var(--success-color); transform-origin: center; }
+        #adv-missions .mission-status .fa-times-circle { color: var(--error-color); }
+        #adv-missions .mission-status .fa-question-circle { color: var(--secondary-color); }
+        #adv-missions .mission[data-completed="true"] .mission-status .fa-check-circle { animation: iconAppearCorrect 0.6s ease-out; }
+        #adv-missions .mission-editor { width: 100%; min-height: 150px; background-color: var(--background-dark); color: var(--text-light); border: 1px solid var(--secondary-color); border-radius: var(--border-radius); padding: 1rem; font-family: var(--font-code); font-size: 1rem; line-height: 1.5; resize: vertical; margin-top: 1rem; }
+        #adv-missions .mission-output { margin-top: 1rem; min-height: 50px; background-color: #1a1a1a; border: 1px solid #444; border-radius: var(--border-radius); padding: 0.8rem; color: var(--accent-color); font-family: var(--font-code); font-size: 1rem; white-space: pre-wrap; word-wrap: break-word; }
+        #adv-missions .mission-output .warning-line { color: var(--warning-color); font-style: italic; }
+
+        /* --- Activity 4: Debugging Mission --- */
+        /* Similar to mission, but presents faulty code */
+        #debug-mission .faulty-code { background-color: #495057; color: #ced4da; border: 1px dashed var(--warning-color); }
+        #debug-mission .faulty-code .code-error-line { background-color: rgba(253, 126, 20, 0.2); border-left-color: var(--warning-color); }
+
+        /* --- Final Section (Unchanged) --- */
+        .completion-section { padding: 4rem 0; text-align: center; }
+        .completion-section .icon { font-size: 4rem; color: var(--success-color); margin-bottom: 1rem; display: inline-block; opacity: 0; animation: iconAppearCorrect 1s ease-out 0.5s forwards; }
+        .completion-section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); }
+        .completion-section p { font-size: 1.1rem; margin-top: 1rem; color: var(--secondary-color); }
+
+        /* --- Responsive Design (Adjustments for new elements if needed) --- */
+        @media (max-width: 768px) {
+            html { font-size: 15px; }
+            .practice-header h1 { font-size: 2.2rem; }
+            .practice-section h2 { font-size: 1.6rem; }
+            .interactive-area { padding: 1.5rem; }
+            .minimal-nav { min-width: 180px; }
+            .minimal-nav ul li a { padding: 0.6rem 0.8rem; }
+            #languageSelect { font-size: 0.85rem; padding: 5px 25px 5px 10px;}
+            .button-group { flex-direction: column; align-items: center; }
+            #adv-missions .mission-editor { min-height: 120px; }
+        }
+        @media (max-width: 480px) {
+            html { font-size: 14px; }
+            .practice-header h1 { font-size: 1.8rem; }
+            .practice-header p { font-size: 1rem; }
+            .practice-section h2 { font-size: 1.4rem; }
+            .interactive-area { padding: 1rem; }
+            .action-button { font-size: 0.9rem; padding: 0.7rem 1.2rem; width: 90%; max-width: 300px;}
+            .code-block { font-size: 0.9rem; padding: 1rem; }
+            .sim-editor, .sim-output-area, .mission-editor, .mission-output { font-size: 0.9rem; } /* Sim/Mission editors */
+            #trace-break #trace-prediction-input-break { font-size: 0.9rem; } /* Trace input */
+            .button-group a.action-button { width: 90%; max-width: 300px; margin-bottom: 0.5rem; }
+            #adv-missions .mission-editor { min-height: 100px; }
+             /* Adjust Nav */
+             .minimal-nav-button { top: 10px; right: 10px; padding: 6px 10px; font-size: 1rem; }
+             .minimal-nav { top: 48px; right: 10px; min-width: 160px; }
+             .minimal-nav ul li a { padding: 0.5rem 0.7rem; font-size: 0.9rem;}
+             .minimal-nav ul li a i.fas { margin-right: 8px; }
+             #languageSelect { font-size: 0.8rem; padding: 4px 20px 4px 8px;}
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ========= Minimal Nav Handle ========= -->
+    <button id="minimal-nav-toggle" class="minimal-nav-button" aria-label="Toggle Navigation Menu">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- ========= Minimal Nav Panel (Updated Links for Advanced) ========= -->
+    <nav id="minimal-nav-panel" class="minimal-nav">
+        <ul>
+            <!-- Updated HREFs for Advanced Page -->
+            <li><a href="ctp-practice-14.html"><i class="fas fa-arrow-left fa-fw"></i> <span data-translate="nav_practice">Back to Practice</span></a></li>
+            <li><a href="ctp-video-14.html"><i class="fas fa-video fa-fw"></i> <span data-translate="nav_video">View Video Lesson</span></a></li>
+            <li><a href="ctp-dashboard.html"><i class="fas fa-list fa-fw"></i> <span data-translate="nav_menu">Course Menu</span></a></li>
+            <hr style="border: none; border-top: 1px solid var(--secondary-color); margin: 8px 0;">
+            <!-- Updated Internal Links for Advanced Activities -->
+            <li><a href="#trace-break"><i class="fas fa-sign-out-alt fa-fw"></i> <span data-translate="nav_trace_break">Trace with Break</span></a></li>
+            <li><a href="#sim-continue"><i class="fas fa-forward fa-fw"></i> <span data-translate="nav_sim_continue">Skip with Continue</span></a></li>
+            <li><a href="#adv-missions"><i class="fas fa-layer-group fa-fw"></i> <span data-translate="nav_nested">Nested Loops</span></a></li>
+            <li><a href="#debug-mission"><i class="fas fa-bug fa-fw"></i> <span data-translate="nav_debug">Debug Loop</span></a></li>
+            <!-- Language Switcher Item (Unchanged) -->
+            <li class="language-switcher-item">
+                 <select id="languageSelect" aria-label="Select Language">
+                     <option value="en" data-translate="lang_en">🇬🇧 English</option>
+                     <option value="pt" data-translate="lang_pt">🇧🇷 Português</option>
+                     <option value="zh" data-translate="lang_zh">🇨🇳 中文</option>
+                 </select>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- ========= Header (Updated Title & Subtitle for Advanced) ========= -->
+    <header class="practice-header">
+        <!-- Changed icon -->
+        <i class="fas fa-sync-alt header-icon icon1"></i>
+        <i class="fas fa-cogs header-icon icon2"></i> <!-- Gears icon -->
+        <div class="container">
+            <h1 data-translate="header_title">Module 14: Advanced `while`</h1>
+            <p data-translate="header_subtitle">Deeper dives: `break`, `continue`, nested loops, and debugging.</p>
+        </div>
+    </header>
+
+    <!-- ========= Main Content ========= -->
+    <main>
+        <!-- ========= Activity 1: Trace with Break ========= -->
+        <section id="trace-break" class="practice-section">
+            <div class="container">
+                <h2 class="fade-in"><i class="fas fa-sign-out-alt"></i> <span data-translate="trace_break_title">Trace with `break`</span></h2>
+                <p class="section-description fade-in delay-1" data-translate="trace_break_desc">
+                    The `break` statement exits a loop immediately. Predict the exact output of this code, including all printed lines.
+                </p>
+                <div class="interactive-area fade-in delay-2">
+                    <div class="trace-code code-block">
+                        <span class="code-variable">i</span> <span class="code-operator">=</span> <span class="code-number">0</span><br>
+                        <span class="code-keyword">while</span> <span class="code-condition"><span class="code-variable">i</span> <span class="code-operator">&lt;</span> <span class="code-number">10</span></span>:<br>
+                        <span class="code-indent"><span class="code-function">print</span>(<span class="code-string">"Current i:"</span>, <span class="code-variable">i</span>)</span>
+                        <span class="code-indent"><span class="code-keyword">if</span> <span class="code-condition"><span class="code-variable">i</span> <span class="code-operator">==</span> <span class="code-number">3</span></span>:</span><br>
+                        <span class="code-indent-2"><span class="code-function">print</span>(<span class="code-string">"Breaking!"</span>)</span>
+                        <span class="code-indent-2"><span class="code-break">break</span></span>
+                        <span class="code-indent"><span class="code-variable">i</span> <span class="code-operator">=</span> <span class="code-variable">i</span> <span class="code-operator">+</span> <span class="code-number">1</span></span>
+                        <span class="code-function">print</span>(<span class="code-string">"Loop finished."</span>)
+                    </div>
+                    <div class="trace-output-prediction">
+                         <label for="trace-prediction-input-break" data-translate="trace_break_input_label">What is the exact, complete output?</label>
+                         <textarea id="trace-prediction-input-break" class="code-font" rows="5" data-translate-placeholder="trace_break_input_placeholder" placeholder="Type each line of output exactly as it would appear..."></textarea>
+                    </div>
+                     <div class="text-center">
+                         <button id="check-trace-break-btn" class="action-button" data-translate="button_check_trace">Check Prediction</button>
+                     </div>
+                     <div id="trace-break-feedback" class="feedback-message"></div>
+                     <div id="trace-break-explanation" class="trace-explanation hidden">
+                        <h4 data-translate="trace_exp_title">Explanation:</h4>
+                        <p data-translate="trace_break_exp_detail">
+                            The loop starts with `i = 0`.
+                            - `i=0`: Prints "Current i: 0". `i` becomes 1.
+                            - `i=1`: Prints "Current i: 1". `i` becomes 2.
+                            - `i=2`: Prints "Current i: 2". `i` becomes 3.
+                            - `i=3`: Prints "Current i: 3". The condition `i == 3` is True. Prints "Breaking!". The `break` statement is executed, immediately stopping the loop. The `i = i + 1` line inside the loop is skipped.
+                            - The code after the loop runs, printing "Loop finished.".
+                            The final output consists of these lines exactly.
+                        </p>
+                     </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========= Activity 2: Simulator with Continue ========= -->
+        <section id="sim-continue" class="practice-section">
+             <div class="container">
+                 <h2 class="fade-in"><i class="fas fa-forward"></i> <span data-translate="sim_continue_title">Skip with `continue`</span></h2>
+                 <p class="section-description fade-in delay-1" data-translate="sim_continue_desc">
+                     Use a `while` loop and the `continue` statement to print only the *even* numbers between 1 and 7 (inclusive). `continue` skips the rest of the current iteration.
+                 </p>
+                 <div class="interactive-area fade-in delay-2">
+                     <label for="sim-editor-input-continue" style="font-weight: bold; display:block; margin-bottom: 8px;" data-translate="simulator_editor_label">Code Editor:</label>
+                     <textarea id="sim-editor-input-continue" class="sim-editor" rows="8" data-translate-placeholder="sim_continue_editor_placeholder" placeholder='num = 0\nwhile num < 7:\n    num = num + 1\n    # Check if odd\n    if num % 2 != 0: \n        # Skip the print for odd numbers\n        continue \n    print(num)'></textarea>
+                     <div class="text-center">
+                          <button id="run-sim-btn-continue" class="action-button" data-translate="button_run_sim">Run Simulation</button>
+                     </div>
+                     <label for="sim-output-continue" style="font-weight: bold; display:block; margin-top: 1.5rem; margin-bottom: 8px;" data-translate="simulator_output_label">Simulated Output:</label>
+                     <div id="sim-output-continue" class="sim-output-area">
+                         <span class="placeholder" data-translate="simulator_output_placeholder">Output will appear here...</span>
+                     </div>
+                     <div id="sim-feedback-continue" class="feedback-message"></div>
+                 </div>
+             </div>
+        </section>
+
+         <!-- ========= Activity 3: Advanced Missions (Nested, While True) ========= -->
+        <section id="adv-missions" class="practice-section">
+             <div class="container">
+                  <h2 class="fade-in"><i class="fas fa-layer-group"></i> <span data-translate="adv_missions_title">Advanced Missions</span></h2>
+                 <p class="section-description fade-in delay-1" data-translate="adv_missions_desc">
+                     Tackle these challenges involving nested loops and the `while True`/`break` pattern. Pay attention to indentation!
+                 </p>
+                 <div class="interactive-area fade-in delay-2">
+                     <!-- Mission 1: Nested Loop Pattern -->
+                     <div class="mission" id="mission-adv-1" data-completed="false">
+                         <span class="mission-status"><i class="fas fa-question-circle"></i></span>
+                         <h4 data-translate="adv_mission1_title">Mission 1: Nested Pattern</h4>
+                         <p data-translate="adv_mission1_desc">Use *nested* `while` loops to print a small triangle pattern of stars (`*`). The output should be:<br><code>*</code><br><code>**</code><br><code>***</code></p>
+                         <textarea class="sim-editor mission-editor" id="mission-editor-adv-1" rows="8" data-translate-placeholder="adv_mission1_placeholder" placeholder='row = 1\nwhile row <= 3:\n    col = 1\n    line = ""\n    while col <= row:\n        line = line + "*"\n        col = col + 1\n    print(line)\n    row = row + 1'></textarea>
+                         <div class="text-center"> <button class="action-button mission-run-btn" data-mission-id="adv-1" data-translate="button_test_mission_adv_1">Test Mission 1</button> </div>
+                         <div class="sim-output-area mission-output" id="mission-output-adv-1"></div>
+                         <div id="mission-feedback-adv-1" class="feedback-message mission-feedback"></div>
+                     </div>
+
+                     <!-- Mission 2: While True with Break -->
+                     <div class="mission" id="mission-adv-2" data-completed="false">
+                          <span class="mission-status"><i class="fas fa-question-circle"></i></span>
+                         <h4 data-translate="adv_mission2_title">Mission 2: `while True` Stop</h4>
+                         <p data-translate="adv_mission2_desc">Simulate reading numbers until the number `0` is encountered. Use a `while True:` loop and a `break` statement. Print the sum of all numbers entered *before* 0. (Simulate input with a list `[5, 8, 3, 0, 4]`).</p>
+                         <textarea class="sim-editor mission-editor" id="mission-editor-adv-2" rows="9" data-translate-placeholder="adv_mission2_placeholder" placeholder='inputs = [5, 8, 3, 0, 4]\nindex = 0\ntotal = 0\nwhile True:\n    num = inputs[index]\n    if num == 0:\n        break # Exit loop when 0 is found\n    total = total + num\n    index = index + 1\nprint(total)'></textarea>
+                          <div class="text-center"> <button class="action-button mission-run-btn" data-mission-id="adv-2" data-translate="button_test_mission_adv_2">Test Mission 2</button> </div>
+                         <div class="sim-output-area mission-output" id="mission-output-adv-2"></div>
+                         <div id="mission-feedback-adv-2" class="feedback-message mission-feedback"></div>
+                     </div>
+                     <div id="missions-summary-feedback-adv" class="feedback-message" style="margin-top: 2rem;"></div>
+                 </div>
+             </div>
+        </section>
+
+        <!-- ========= Activity 4: Debugging Mission ========= -->
+        <section id="debug-mission" class="practice-section">
+             <div class="container">
+                  <h2 class="fade-in"><i class="fas fa-bug"></i> <span data-translate="debug_mission_title">Debugging Challenge</span></h2>
+                 <p class="section-description fade-in delay-1" data-translate="debug_mission_desc">
+                     This code is supposed to print numbers from 10 down to 1, but it has an infinite loop! Find the bug and fix it in the editor below.
+                 </p>
+                 <div class="interactive-area fade-in delay-2">
+                     <div class="mission" id="mission-debug-1"> <!-- Use mission structure for consistency -->
+                         <span class="mission-status"><i class="fas fa-question-circle"></i></span>
+                         <h4 data-translate="debug_mission1_title">Mission: Fix the Countdown</h4>
+                         <p data-translate="debug_mission1_desc">The variable `count` is never changed inside the loop, causing the condition `count > 0` to always be true. Add the line to decrease `count`.</p>
+                         <label style="font-weight: bold; display:block; margin-bottom: 8px;" data-translate="debug_faulty_code_label">Faulty Code (Infinite Loop):</label>
+                         <div class="code-block faulty-code">
+                             <span class="code-variable">count</span> <span class="code-operator">=</span> <span class="code-number">10</span><br>
+                             <span class="code-keyword">while</span> <span class="code-condition"><span class="code-variable">count</span> <span class="code-operator">&gt;</span> <span class="code-number">0</span></span>:<br>
+                             <span class="code-indent"><span class="code-function">print</span>(<span class="code-variable">count</span>)</span><br>
+                             <span class="code-indent code-error-line"><span class="code-comment" data-translate="debug_missing_line_comment"># Bug: Missing update! count never decreases!</span></span>
+                         </div>
+                         <label for="mission-editor-debug-1" style="font-weight: bold; display:block; margin-top: 1rem; margin-bottom: 8px;" data-translate="debug_editor_label">Your Corrected Code:</label>
+                         <textarea class="sim-editor mission-editor" id="mission-editor-debug-1" rows="6" data-translate-placeholder="debug_editor_placeholder" placeholder='count = 10\nwhile count > 0:\n    print(count)\n    count = count - 1 # Add this line!'></textarea>
+                         <div class="text-center"> <button class="action-button mission-run-btn" data-mission-id="debug-1" data-translate="button_test_debug_mission">Test Fix</button> </div>
+                         <div class="sim-output-area mission-output" id="mission-output-debug-1"></div>
+                         <div id="mission-feedback-debug-1" class="feedback-message mission-feedback"></div>
+                     </div>
+                 </div>
+             </div>
+        </section>
+
+         <!-- ========= Completion Section (Updated Links for Advanced) ========= -->
+        <section class="completion-section">
+            <div class="container">
+                 <div class="icon fade-in" style="animation: iconAppearCorrect 1s ease-out 0.5s forwards;">
+                    <!-- Loop related icons, maybe more complex -->
+                    <i class="fas fa-check-double"></i> <i class="fas fa-project-diagram"></i> <i class="fas fa-check-double"></i>
+                </div>
+                <h2 class="fade-in delay-1" data-translate="completion_title">Advanced Practice Complete!</h2>
+                <p class="fade-in delay-2" data-translate="completion_desc">
+                    Fantastic job navigating these advanced `while` loop concepts! You're building solid looping skills.<br>
+                    Review the standard practice, watch the video, or head back to the course menu.
+                </p>
+                <div class="button-group">
+                    <!-- Updated HREFs for Advanced Page -->
+                    <a href="ctp-practice-14.html" class="action-button secondary fade-in delay-3"><i class="fas fa-arrow-left"></i> <span data-translate="button_review_practice">Review Practice</span></a>
+                    <a href="ctp-video-14.html" class="action-button success fade-in delay-3"><i class="fas fa-video"></i> <span data-translate="button_view_video">View Video Lesson</span></a>
+                    <a href="ctp-dashboard.html" class="action-button secondary fade-in delay-4"><i class="fas fa-list"></i> <span data-translate="button_back_menu">Back to Course Menu</span></a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ========= Script ========= -->
+    <script>
+    // --- Translations Object (Module 14 Advanced Specific Keys Added) ---
+    const translations = {
+        en: {
+            "page_title": "Module 14: Advanced While Loops!",
+            "nav_practice": "Back to Practice", "nav_video": "View Video Lesson", "nav_menu": "Course Menu",
+            "nav_trace_break": "Trace with Break", "nav_sim_continue": "Skip with Continue", "nav_nested": "Nested Loops", "nav_debug": "Debug Loop",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title": "Module 14: Advanced `while`", "header_subtitle": "Deeper dives: `break`, `continue`, nested loops, and debugging.",
+            "trace_break_title": "Trace with `break`", "trace_break_desc": "The `break` statement exits a loop immediately. Predict the exact output of this code, including all printed lines.",
+            "trace_break_input_label": "What is the exact, complete output?", "trace_break_input_placeholder": "Type each line of output exactly as it would appear...",
+            "button_check_trace": "Check Prediction", // Reused key
+            "feedback_trace_correct": "Exactly right! You followed the `break` perfectly.", // Slightly adjusted
+            "feedback_trace_incorrect": "Not quite. Remember `break` stops the loop instantly. The correct output is shown. See explanation below.", // Adjusted
+            "feedback_trace_empty": "Please enter your prediction for the complete output.", // Adjusted
+            "trace_exp_title": "Explanation:", // Reused key
+            "trace_break_exp_detail": "The loop starts with `i = 0`. - `i=0`: Prints \"Current i: 0\". `i` becomes 1. - `i=1`: Prints \"Current i: 1\". `i` becomes 2. - `i=2`: Prints \"Current i: 2\". `i` becomes 3. - `i=3`: Prints \"Current i: 3\". The condition `i == 3` is True. Prints \"Breaking!\". The `break` statement is executed, immediately stopping the loop. The `i = i + 1` line inside the loop is skipped. - The code after the loop runs, printing \"Loop finished.\". The final output consists of these lines exactly.",
+            "sim_continue_title": "Skip with `continue`", "sim_continue_desc": "Use a `while` loop and the `continue` statement to print only the *even* numbers between 1 and 7 (inclusive). `continue` skips the rest of the current iteration.",
+            "simulator_editor_label": "Code Editor:", // Reused key
+            "sim_continue_editor_placeholder": 'num = 0\\nwhile num < 7:\\n    num = num + 1\\n    # Check if odd\\n    if num % 2 != 0: \\n        # Skip the print for odd numbers\\n        continue \\n    print(num)',
+            "button_run_sim": "Run Simulation", // Reused key
+            "simulator_output_label": "Simulated Output:", // Reused key
+            "simulator_output_placeholder": "Output will appear here...", // Reused key
+            "feedback_sim_success": "Simulation successful!", // Reused key
+            "feedback_sim_empty": "Editor is empty.", // Reused key
+            "feedback_sim_no_while": "Missing the `while` keyword or condition structure.", // Reused key
+            "feedback_sim_no_continue": "Missing the `continue` keyword inside the `if` block.", // New specific feedback
+            "feedback_sim_missing_if": "Missing the `if` statement needed to trigger `continue`.", // New specific feedback
+            "feedback_sim_no_update": "Warning: Didn't find a variable update inside the loop body. This might cause an infinite loop!", // Reused key
+            "feedback_sim_infinite": "Warning: Loop simulated for max iterations! Check your condition and update step.", // Reused key
+            "feedback_sim_output_mismatch": "Loop structure looks okay, but the output doesn't match the required even numbers (2, 4, 6).", // Adjusted
+            "adv_missions_title": "Advanced Missions", "adv_missions_desc": "Tackle these challenges involving nested loops and the `while True`/`break` pattern. Pay attention to indentation!",
+            "adv_mission1_title": "Mission 1: Nested Pattern", "adv_mission1_desc": "Use *nested* `while` loops to print a small triangle pattern of stars (`*`). The output should be:<br>`*`<br>`**`<br>`***`",
+            "adv_mission1_placeholder": 'row = 1\\nwhile row <= 3:\\n    col = 1\\n    line = ""\\n    while col <= row:\\n        line = line + "*"\n        col = col + 1\\n    print(line)\\n    row = row + 1',
+            "button_test_mission_adv_1": "Test Mission 1",
+            "adv_mission2_title": "Mission 2: `while True` Stop", "adv_mission2_desc": "Simulate reading numbers until the number `0` is encountered. Use a `while True:` loop and a `break` statement. Print the sum of all numbers entered *before* 0. (Simulate input with a list `[5, 8, 3, 0, 4]`).",
+            "adv_mission2_placeholder": 'inputs = [5, 8, 3, 0, 4]\\nindex = 0\\ntotal = 0\\nwhile True:\\n    num = inputs[index]\\n    if num == 0:\\n        break # Exit loop when 0 is found\\n    total = total + num\\n    index = index + 1\\nprint(total)',
+            "button_test_mission_adv_2": "Test Mission 2",
+            "feedback_mission_success": "Mission Accomplished!", // Reused key
+            "feedback_mission_syntax_error": "Syntax/structure error in your code.", // Adjusted
+            "feedback_mission_condition_error": "Check your loop condition(s) and `if` statements.", // Adjusted
+            "feedback_mission_update_error": "Are the loop variables being updated correctly?", // Adjusted
+            "feedback_mission_output_error": "The code runs, but the final output/result is incorrect.", // Adjusted
+            "feedback_mission_infinite_warning": "Loop might be infinite. Check exit conditions (`break` or loop condition).", // Adjusted
+            "feedback_adv_mission1_hint": "You need an outer loop for rows (1 to 3) and an inner loop for columns (1 to current row). Build the string inside the inner loop.",
+            "feedback_adv_mission2_hint": "Use `while True:`. Inside, get the next number. Check `if num == 0: break`. If not 0, add to `total` and advance the index. Print `total` *after* the loop.",
+            "feedback_adv_missions_summary_all_done": "All {totalMissions} advanced missions complete! Loop master!", // Adjusted
+            "feedback_adv_missions_summary_progress": "Completed {completedCount} of {totalMissions} advanced missions. Keep going!", // Adjusted
+            "debug_mission_title": "Debugging Challenge", "debug_mission_desc": "This code is supposed to print numbers from 10 down to 1, but it has an infinite loop! Find the bug and fix it in the editor below.",
+            "debug_mission1_title": "Mission: Fix the Countdown", "debug_mission1_desc": "The variable `count` is never changed inside the loop, causing the condition `count > 0` to always be true. Add the line to decrease `count`.",
+            "debug_faulty_code_label": "Faulty Code (Infinite Loop):", "debug_missing_line_comment": "# Bug: Missing update! count never decreases!",
+            "debug_editor_label": "Your Corrected Code:", "debug_editor_placeholder": 'count = 10\\nwhile count > 0:\\n    print(count)\\n    count = count - 1 # Add this line!',
+            "button_test_debug_mission": "Test Fix",
+            "feedback_debug_success": "Bug Squashed! The loop now terminates correctly.",
+            "feedback_debug_still_infinite": "Still seems infinite. Did you add the line to *decrease* `count` inside the loop?",
+            "feedback_debug_output_wrong": "The loop finishes, but the output isn't the expected countdown (10 down to 1). Check the update logic.",
+            "completion_title": "Advanced Practice Complete!", "completion_desc": "Fantastic job navigating these advanced `while` loop concepts! You're building solid looping skills.<br> Review the standard practice, watch the video, or head back to the course menu.",
+            "button_review_practice": "Review Practice", "button_view_video": "View Video Lesson", "button_back_menu": "Back to Course Menu"
+        },
+        pt: {
+            "page_title": "Módulo 14: While Loops Avançados!",
+            "nav_practice": "Voltar à Prática", "nav_video": "Ver Lição em Vídeo", "nav_menu": "Menu do Curso",
+            "nav_trace_break": "Rastrear com Break", "nav_sim_continue": "Pular com Continue", "nav_nested": "Loops Aninhados", "nav_debug": "Depurar Loop",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title": "Módulo 14: `while` Avançado", "header_subtitle": "Aprofundando: `break`, `continue`, loops aninhados e depuração.",
+            "trace_break_title": "Rastrear com `break`", "trace_break_desc": "A instrução `break` sai de um loop imediatamente. Preveja a saída exata deste código, incluindo todas as linhas impressas.",
+            "trace_break_input_label": "Qual é a saída exata e completa?", "trace_break_input_placeholder": "Digite cada linha da saída exatamente como apareceria...",
+            "button_check_trace": "Verificar Previsão",
+            "feedback_trace_correct": "Exatamente! Você seguiu o `break` perfeitamente.",
+            "feedback_trace_incorrect": "Quase lá. Lembre-se que `break` para o loop instantaneamente. A saída correta é mostrada. Veja a explicação abaixo.",
+            "feedback_trace_empty": "Por favor, insira sua previsão para a saída completa.",
+            "trace_exp_title": "Explicação:",
+            "trace_break_exp_detail": "O loop começa com `i = 0`. - `i=0`: Imprime \"Current i: 0\". `i` torna-se 1. - `i=1`: Imprime \"Current i: 1\". `i` torna-se 2. - `i=2`: Imprime \"Current i: 2\". `i` torna-se 3. - `i=3`: Imprime \"Current i: 3\". A condição `i == 3` é Verdadeira. Imprime \"Breaking!\". A instrução `break` é executada, parando imediatamente o loop. A linha `i = i + 1` dentro do loop é pulada. - O código após o loop executa, imprimindo \"Loop finished.\". A saída final consiste exatamente nessas linhas.",
+            "sim_continue_title": "Pular com `continue`", "sim_continue_desc": "Use um loop `while` e a instrução `continue` para imprimir apenas os números *pares* entre 1 e 7 (inclusive). `continue` pula o resto da iteração atual.",
+            "simulator_editor_label": "Editor de Código:",
+            "sim_continue_editor_placeholder": 'num = 0\\nwhile num < 7:\\n    num = num + 1\\n    # Verifica se é ímpar\\n    if num % 2 != 0: \\n        # Pula a impressão para números ímpares\\n        continue \\n    print(num)',
+            "button_run_sim": "Executar Simulação",
+            "simulator_output_label": "Saída Simulada:",
+            "simulator_output_placeholder": "A saída aparecerá aqui...",
+            "feedback_sim_success": "Simulação bem-sucedida!",
+            "feedback_sim_empty": "Editor está vazio.",
+            "feedback_sim_no_while": "Faltando a palavra-chave `while` ou estrutura da condição.",
+            "feedback_sim_no_continue": "Faltando a palavra-chave `continue` dentro do bloco `if`.",
+            "feedback_sim_missing_if": "Faltando a instrução `if` necessária para acionar `continue`.",
+            "feedback_sim_no_update": "Aviso: Não encontrei atualização de variável dentro do corpo do loop. Isso pode causar um loop infinito!",
+            "feedback_sim_infinite": "Aviso: Loop simulado por iterações máximas! Verifique sua condição e passo de atualização.",
+            "feedback_sim_output_mismatch": "Estrutura do loop parece OK, mas a saída não corresponde aos números pares necessários (2, 4, 6).",
+            "adv_missions_title": "Missões Avançadas", "adv_missions_desc": "Enfrente estes desafios envolvendo loops aninhados e o padrão `while True`/`break`. Preste atenção à indentação!",
+            "adv_mission1_title": "Missão 1: Padrão Aninhado", "adv_mission1_desc": "Use loops `while` *aninhados* para imprimir um pequeno padrão de triângulo de estrelas (`*`). A saída deve ser:<br>`*`<br>`**`<br>`***`",
+            "adv_mission1_placeholder": 'linha = 1\\nwhile linha <= 3:\\n    coluna = 1\\n    texto = ""\\n    while coluna <= linha:\\n        texto = texto + "*"\n        coluna = coluna + 1\\n    print(texto)\\n    linha = linha + 1',
+            "button_test_mission_adv_1": "Testar Missão 1",
+            "adv_mission2_title": "Missão 2: Parada `while True`", "adv_mission2_desc": "Simule a leitura de números até que o número `0` seja encontrado. Use um loop `while True:` e uma instrução `break`. Imprima a soma de todos os números inseridos *antes* de 0. (Simule a entrada com uma lista `[5, 8, 3, 0, 4]`).",
+            "adv_mission2_placeholder": 'entradas = [5, 8, 3, 0, 4]\\nindice = 0\\ntotal = 0\\nwhile True:\\n    num = entradas[indice]\\n    if num == 0:\\n        break # Sai do loop quando encontra 0\\n    total = total + num\\n    indice = indice + 1\\nprint(total)',
+            "button_test_mission_adv_2": "Testar Missão 2",
+            "feedback_mission_success": "Missão Cumprida!",
+            "feedback_mission_syntax_error": "Erro de sintaxe/estrutura no seu código.",
+            "feedback_mission_condition_error": "Verifique sua(s) condição(ões) de loop e instruções `if`.",
+            "feedback_mission_update_error": "As variáveis do loop estão sendo atualizadas corretamente?",
+            "feedback_mission_output_error": "O código roda, mas a saída/resultado final está incorreto.",
+            "feedback_mission_infinite_warning": "Loop pode ser infinito. Verifique as condições de saída (`break` ou condição do loop).",
+            "feedback_adv_mission1_hint": "Você precisa de um loop externo para linhas (1 a 3) e um interno para colunas (1 até a linha atual). Construa a string dentro do loop interno.",
+            "feedback_adv_mission2_hint": "Use `while True:`. Dentro, pegue o próximo número. Verifique `if num == 0: break`. Se não for 0, adicione ao `total` e avance o índice. Imprima `total` *após* o loop.",
+            "feedback_adv_missions_summary_all_done": "Todas as {totalMissions} missões avançadas completas! Mestre dos loops!",
+            "feedback_adv_missions_summary_progress": "{completedCount} de {totalMissions} missões avançadas completas. Continue!",
+            "debug_mission_title": "Desafio de Depuração", "debug_mission_desc": "Este código deveria imprimir números de 10 a 1, mas tem um loop infinito! Encontre o bug e corrija-o no editor abaixo.",
+            "debug_mission1_title": "Missão: Consertar a Contagem Regressiva", "debug_mission1_desc": "A variável `count` nunca é alterada dentro do loop, fazendo com que a condição `count > 0` seja sempre verdadeira. Adicione a linha para decrementar `count`.",
+            "debug_faulty_code_label": "Código Defeituoso (Loop Infinito):", "debug_missing_line_comment": "# Bug: Falta atualização! count nunca diminui!",
+            "debug_editor_label": "Seu Código Corrigido:", "debug_editor_placeholder": 'count = 10\\nwhile count > 0:\\n    print(count)\\n    count = count - 1 # Adicione esta linha!',
+            "button_test_debug_mission": "Testar Correção",
+            "feedback_debug_success": "Bug Esmagado! O loop agora termina corretamente.",
+            "feedback_debug_still_infinite": "Ainda parece infinito. Você adicionou a linha para *diminuir* `count` dentro do loop?",
+            "feedback_debug_output_wrong": "O loop termina, mas a saída não é a contagem regressiva esperada (10 a 1). Verifique a lógica de atualização.",
+            "completion_title": "Prática Avançada Completa!", "completion_desc": "Trabalho fantástico navegando nestes conceitos avançados de loop `while`! Você está construindo sólidas habilidades de loop.<br> Reveja a prática padrão, assista ao vídeo ou volte ao menu do curso.",
+            "button_review_practice": "Rever Prática", "button_view_video": "Ver Lição em Vídeo", "button_back_menu": "Voltar ao Menu do Curso"
+        },
+        zh: {
+             "page_title": "模块 14：高级 While 循环！",
+             "nav_practice": "返回练习", "nav_video": "观看视频课程", "nav_menu": "课程菜单",
+             "nav_trace_break": "用 Break 追踪", "nav_sim_continue": "用 Continue 跳过", "nav_nested": "嵌套循环", "nav_debug": "调试循环",
+             "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+             "header_title": "模块 14：高级 `while`", "header_subtitle": "深入探讨：`break`、`continue`、嵌套循环和调试。",
+             "trace_break_title": "用 `break` 追踪", "trace_break_desc": "`break` 语句会立即退出循环。预测此代码的确切输出，包括所有打印的行。",
+             "trace_break_input_label": "确切、完整的输出是什么？", "trace_break_input_placeholder": "完全按照它出现的样子输入每一行输出...",
+             "button_check_trace": "检查预测",
+             "feedback_trace_correct": "完全正确！您完美地追踪了 `break`。",
+             "feedback_trace_incorrect": "不太对。请记住 `break` 会立即停止循环。正确的输出已显示。请参阅下面的解释。",
+             "feedback_trace_empty": "请输入您对完整输出的预测。",
+             "trace_exp_title": "解释：",
+             "trace_break_exp_detail": "循环从 `i = 0` 开始。 - `i=0`：打印 “Current i: 0”。`i` 变为 1。 - `i=1`：打印 “Current i: 1”。`i` 变为 2。 - `i=2`：打印 “Current i: 2”。`i` 变为 3。 - `i=3`：打印 “Current i: 3”。条件 `i == 3` 为 True。打印 “Breaking!”。执行 `break` 语句，立即停止循环。循环内的 `i = i + 1` 行被跳过。 - 循环后的代码运行，打印 “Loop finished.”。最终输出由这些行精确组成。",
+             "sim_continue_title": "用 `continue` 跳过", "sim_continue_desc": "使用 `while` 循环和 `continue` 语句仅打印 1 到 7（含）之间的*偶数*。`continue` 会跳过当前迭代的剩余部分。",
+             "simulator_editor_label": "代码编辑器：",
+             "sim_continue_editor_placeholder": 'num = 0\\nwhile num < 7:\\n    num = num + 1\\n    # 检查是否为奇数\\n    if num % 2 != 0: \\n        # 跳过奇数的打印\\n        continue \\n    print(num)',
+             "button_run_sim": "运行模拟",
+             "simulator_output_label": "模拟输出：",
+             "simulator_output_placeholder": "输出将显示在此处...",
+             "feedback_sim_success": "模拟成功！",
+             "feedback_sim_empty": "编辑器是空的。",
+             "feedback_sim_no_while": "缺少 `while` 关键字或条件结构。",
+             "feedback_sim_no_continue": "在 `if` 块内缺少 `continue` 关键字。",
+             "feedback_sim_missing_if": "缺少触发 `continue` 所需的 `if` 语句。",
+             "feedback_sim_no_update": "警告：在循环体内未找到变量更新。这可能导致无限循环！",
+             "feedback_sim_infinite": "警告：循环已模拟最大迭代次数！检查您的条件和更新步骤。",
+             "feedback_sim_output_mismatch": "循环结构看起来没问题，但输出与所需的偶数（2, 4, 6）不匹配。",
+             "adv_missions_title": "高级任务", "adv_missions_desc": "应对这些涉及嵌套循环和 `while True`/`break` 模式的挑战。注意缩进！",
+             "adv_mission1_title": "任务 1：嵌套模式", "adv_mission1_desc": "使用*嵌套*的 `while` 循环打印一个小的星号 (`*`) 三角形图案。输出应为：<br>`*`<br>`**`<br>`***`",
+             "adv_mission1_placeholder": 'row = 1\\nwhile row <= 3:\\n    col = 1\\n    line = ""\\n    while col <= row:\\n        line = line + "*"\n        col = col + 1\\n    print(line)\\n    row = row + 1',
+             "button_test_mission_adv_1": "测试任务 1",
+             "adv_mission2_title": "任务 2：`while True` 停止", "adv_mission2_desc": "模拟读取数字，直到遇到数字 `0`。使用 `while True:` 循环和 `break` 语句。打印在 0 *之前*输入的所有数字的总和。（使用列表 `[5, 8, 3, 0, 4]` 模拟输入）。",
+             "adv_mission2_placeholder": 'inputs = [5, 8, 3, 0, 4]\\nindex = 0\\ntotal = 0\\nwhile True:\\n    num = inputs[index]\\n    if num == 0:\\n        break # 找到 0 时退出循环\\n    total = total + num\\n    index = index + 1\\nprint(total)',
+             "button_test_mission_adv_2": "测试任务 2",
+             "feedback_mission_success": "任务完成！",
+             "feedback_mission_syntax_error": "您的代码中存在语法/结构错误。",
+             "feedback_mission_condition_error": "检查您的循环条件和 `if` 语句。",
+             "feedback_mission_update_error": "循环变量是否正确更新？",
+             "feedback_mission_output_error": "代码运行，但最终输出/结果不正确。",
+             "feedback_mission_infinite_warning": "循环可能是无限的。检查退出条件（`break` 或循环条件）。",
+             "feedback_adv_mission1_hint": "您需要一个外层循环用于行（1 到 3）和一个内层循环用于列（1 到当前行）。在内层循环中构建字符串。",
+             "feedback_adv_mission2_hint": "使用 `while True:`。在内部，获取下一个数字。检查 `if num == 0: break`。如果不是 0，则将其加到 `total` 并推进索引。在循环*之后*打印 `total`。",
+             "feedback_adv_missions_summary_all_done": "所有 {totalMissions} 个高级任务已完成！循环大师！",
+             "feedback_adv_missions_summary_progress": "已完成 {totalMissions} 个高级任务中的 {completedCount} 个。继续！",
+             "debug_mission_title": "调试挑战", "debug_mission_desc": "这段代码本应打印从 10 到 1 的数字，但它有一个无限循环！找出错误并在下面的编辑器中修复它。",
+             "debug_mission1_title": "任务：修复倒计时", "debug_mission1_desc": "变量 `count` 在循环内部从未改变，导致条件 `count > 0` 始终为真。添加减少 `count` 的那一行。",
+             "debug_faulty_code_label": "错误代码（无限循环）：", "debug_missing_line_comment": "# Bug：缺少更新！count 从未减少！",
+             "debug_editor_label": "您更正后的代码：", "debug_editor_placeholder": 'count = 10\\nwhile count > 0:\\n    print(count)\\n    count = count - 1 # 添加此行！',
+             "button_test_debug_mission": "测试修复",
+             "feedback_debug_success": "错误已修复！循环现在可以正确终止。",
+             "feedback_debug_still_infinite": "似乎仍然是无限循环。您是否在循环内部添加了*减少* `count` 的那一行？",
+             "feedback_debug_output_wrong": "循环结束了，但输出不是预期的倒计时（10 到 1）。检查更新逻辑。",
+             "completion_title": "高级练习完成！", "completion_desc": "出色地掌握了这些高级 `while` 循环概念！您正在构建扎实的循环技能。<br> 复习标准练习，观看视频，或返回课程菜单。",
+             "button_review_practice": "复习练习", "button_view_video": "观看视频课程", "button_back_menu": "返回课程菜单"
+        }
+    };
+
+
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // --- Language Management Functions (Mostly Unchanged) ---
+        function getStoredLanguage() {
+            const storedLang = localStorage.getItem('userLanguage');
+            if (storedLang && translations[storedLang]) return storedLang;
+            const browserLang = navigator.language || navigator.userLanguage;
+            if (browserLang.startsWith('pt')) return 'pt';
+            if (browserLang.startsWith('zh')) return 'zh';
+            return 'en'; // Default to English
+        }
+
+        function setLanguage(lang) {
+            if (!translations[lang]) lang = 'en'; // Fallback
+            localStorage.setItem('userLanguage', lang);
+            document.documentElement.lang = lang;
+            translatePage(lang);
+
+            const langSelect = document.getElementById('languageSelect');
+            if (langSelect) langSelect.value = lang;
+
+            // Re-initialize or update language-dependent activities
+            if (document.getElementById('trace-break')) setupTraceBreakActivity(); // Setup trace activity
+            if (document.getElementById('adv-missions') && typeof updateAdvMissionSummary === 'function') {
+                updateAdvMissionSummary(); // Update summary text
+            }
+            // Add setups for other new activities if needed
+        }
+
+        function getTranslation(key, lang, replacements = {}) {
+            let text = translations[lang]?.[key] ?? translations['en']?.[key] ?? `[${key}]`;
+            for (const placeholder in replacements) {
+                const regex = new RegExp(`\\{${placeholder}\\}`, 'g');
+                text = text.replace(regex, replacements[placeholder]);
+            }
+            return text;
+        }
+
+        function translatePage(lang) {
+             if (!translations[lang]) lang = 'en';
+             document.querySelectorAll('[data-translate]').forEach(el => {
+                 const key = el.getAttribute('data-translate');
+                 const translation = getTranslation(key, lang);
+                 if (el.tagName === 'TITLE') document.title = translation;
+                 else if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') { /* Placeholders handled below */ }
+                 else if (el.tagName === 'OPTION') el.textContent = translation;
+                 else {
+                     if (translation.includes('<') && translation.includes('>')) el.innerHTML = translation;
+                     else el.textContent = translation;
+                 }
+             });
+             document.querySelectorAll('[data-translate-placeholder]').forEach(el => {
+                 const key = el.getAttribute('data-translate-placeholder');
+                 el.setAttribute('placeholder', getTranslation(key, lang));
+             });
+             document.querySelectorAll('[data-translate-title]').forEach(el => {
+                 const key = el.getAttribute('data-translate-title');
+                 el.setAttribute('title', getTranslation(key, lang));
+             });
+
+             // Specific update for trace explanation which might be visible
+             const traceExplanation = document.getElementById('trace-break-explanation');
+             if(traceExplanation && !traceExplanation.classList.contains('hidden')) {
+                const detail = traceExplanation.querySelector('p[data-translate="trace_break_exp_detail"]');
+                const title = traceExplanation.querySelector('h4[data-translate="trace_exp_title"]');
+                if(detail) detail.innerHTML = getTranslation('trace_break_exp_detail', lang); // Use innerHTML for code tags
+                if(title) title.textContent = getTranslation('trace_exp_title', lang);
+             }
+        }
+
+        const initialLang = getStoredLanguage();
+
+        // --- Minimal Nav Logic (Unchanged from Module 0) ---
+        const navToggleButton = document.getElementById('minimal-nav-toggle');
+        const navPanel = document.getElementById('minimal-nav-panel');
+        const body = document.body;
+        if (navToggleButton && navPanel) {
+            navToggleButton.addEventListener('click', (event) => { event.stopPropagation(); body.classList.toggle('nav-active'); navToggleButton.setAttribute('aria-expanded', body.classList.contains('nav-active')); });
+            document.addEventListener('click', (event) => { if (body.classList.contains('nav-active') && !navPanel.contains(event.target) && event.target !== navToggleButton && !navToggleButton.contains(event.target) ) { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); } });
+            navPanel.querySelectorAll('a').forEach(link => { link.addEventListener('click', () => { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); }); });
+            document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && body.classList.contains('nav-active')) { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); } });
+            navToggleButton.setAttribute('aria-expanded', 'false');
+        }
+
+        // --- Language Switcher Setup (Unchanged) ---
+        const langSelect = document.getElementById('languageSelect');
+        if (langSelect) {
+            langSelect.addEventListener('change', (e) => setLanguage(e.target.value));
+        }
+
+        // --- Helper Function for Feedback (Unchanged) ---
+        function showFeedback(elementId, messageKey, type = 'info', replacements = {}) {
+            const feedbackEl = document.getElementById(elementId);
+            if (!feedbackEl) { console.error(`Feedback element not found: ${elementId}`); return; }
+            const currentLang = getStoredLanguage();
+            const translatedMessage = getTranslation(messageKey, currentLang, replacements);
+            if (translatedMessage.includes('<') && translatedMessage.includes('>')) feedbackEl.innerHTML = translatedMessage;
+            else feedbackEl.textContent = translatedMessage;
+            feedbackEl.className = 'feedback-message'; // Reset classes first
+            feedbackEl.classList.add('visible', type);
+            const interactiveArea = feedbackEl.closest('.interactive-area, .mission'); // Apply to mission div too
+            if (!interactiveArea) return;
+            interactiveArea.classList.remove('success-glow-anim', 'shake-anim');
+            void interactiveArea.offsetWidth; // Trigger reflow
+            if (type === 'correct') interactiveArea.classList.add('success-glow-anim');
+            else if (type === 'incorrect' || type === 'warning') interactiveArea.classList.add('shake-anim');
+        }
+
+        // --- Helper to Run Code Simulation (with iteration limit) ---
+        // Simplified simulation, focuses on loop control and print output
+        function simulateCodeExecution(code, maxIterations = 100) {
+            let output = [];
+            let vars = {}; // Very simple variable store
+            let iterationCounts = {}; // Track iterations per loop level
+            let potentialInfinite = false;
+            let error = null;
+            let currentLine = 0;
+            const lines = code.split('\n');
+            let loopStack = []; // To track nested loops and their conditions/variables
+
+            try {
+                while (currentLine < lines.length && !potentialInfinite && !error) {
+                    let line = lines[currentLine].trim();
+                    let executed = false; // Flag if line was part of loop control/execution
+
+                    // --- Basic Variable Assignment ---
+                    let assignMatch = line.match(/^(\w+)\s*=\s*(.+)$/);
+                    if (assignMatch) {
+                        let varName = assignMatch[1];
+                        let expression = assignMatch[2];
+                        // Very basic eval - ONLY simple numbers, strings, or var + num
+                        try {
+                             if (/^\d+$/.test(expression)) {
+                                 vars[varName] = parseInt(expression);
+                             } else if (/^["'].*["']$/.test(expression)) {
+                                 vars[varName] = expression.slice(1, -1);
+                             } else if (/^(\w+)\s*([+\-])\s*(\d+)$/.test(expression)) { // var = var +/- num
+                                 let updateMatch = expression.match(/^(\w+)\s*([+\-])\s*(\d+)$/);
+                                 if (vars[updateMatch[1]] !== undefined) {
+                                     let baseVal = vars[updateMatch[1]];
+                                     let op = updateMatch[2];
+                                     let val = parseInt(updateMatch[3]);
+                                     vars[varName] = (op === '+') ? baseVal + val : baseVal - val;
+                                 } else { /* var not defined */ }
+                             } else if (/^\w+$/.test(expression) && vars[expression] !== undefined) { // var = other_var
+                                vars[varName] = vars[expression];
+                             } else {
+                                 // Try basic direct eval (CAUTION - limited scope)
+                                 // Replace known vars with their values for simple expressions
+                                 let evalExpr = expression;
+                                 for(const v in vars) {
+                                    evalExpr = evalExpr.replace(new RegExp(`\\b${v}\\b`, 'g'), vars[v]);
+                                 }
+                                 if (/^[0-9+\-*/%()\s.]+$/.test(evalExpr)) { // Only allow basic math if all vars replaced
+                                     vars[varName] = eval(evalExpr);
+                                 }
+                             }
+                        } catch(e){ /* Ignore assignment errors for now */ }
+                        executed = true;
+                    }
+
+                    // --- Basic Print Statement ---
+                    let printMatch = line.match(/^print\((.*)\)$/);
+                    if (printMatch) {
+                        let printArg = printMatch[1].trim();
+                        let outVal = "";
+                         try {
+                             // Handle simple string literal, variable, or basic var + string concat
+                             if (/^["'](.*)["']$/.test(printArg)) {
+                                 outVal = printArg.slice(1, -1);
+                             } else if (vars[printArg] !== undefined) {
+                                 outVal = vars[printArg].toString();
+                             } else {
+                                // Try basic eval after replacing vars
+                                let evalArg = printArg;
+                                for(const v in vars) {
+                                    evalArg = evalArg.replace(new RegExp(`\\b${v}\\b`, 'g'), vars[v].toString());
+                                }
+                                // Remove quotes for simple string concat simulation
+                                evalArg = evalArg.replace(/["']/g, '');
+                                // Check if it looks like simple concat/values
+                                if (/^[a-zA-Z0-9\s.,+\-*/%()]*$/.test(evalArg)) {
+                                    // Avoid full eval, just output the evaluated string representation
+                                    outVal = evalArg.split('+').map(s => s.trim()).join(''); // Very basic concat simulation
+                                }
+                             }
+                         } catch (e) { outVal = "[print error]"; }
+                        output.push(outVal);
+                        executed = true;
+                    }
+
+                    // --- While Loop Start ---
+                    let whileMatch = line.match(/^while\s+(.+):$/);
+                    if (whileMatch) {
+                        let condition = whileMatch[1].trim();
+                        let loopId = `loop_${currentLine}`;
+                         if (loopStack.length === 0 || loopStack[loopStack.length-1].line !== currentLine) { // Entering loop first time
+                            iterationCounts[loopId] = 0;
+                            loopStack.push({ line: currentLine, condition: condition, id: loopId, blockIndent: (line.match(/^\s*/)[0].length / 4) + 1 });
+                         }
+
+                        iterationCounts[loopId]++;
+                        if (iterationCounts[loopId] > maxIterations) {
+                            potentialInfinite = true;
+                            break;
+                        }
+
+                        let conditionMet = false;
+                        try {
+                            let evalCond = condition;
+                             if (evalCond.toLowerCase() === 'true') { // Handle 'while True:'
+                                conditionMet = true;
+                             } else {
+                                for(const v in vars) {
+                                    evalCond = evalCond.replace(new RegExp(`\\b${v}\\b`, 'g'), typeof vars[v] === 'string' ? `"${vars[v]}"` : vars[v]);
+                                }
+                                // Basic eval for conditions (e.g., i < 5, x == "stop")
+                                if (/^[a-zA-Z0-9\s"'<>!=%&|().+-]+$/.test(evalCond)) { // Allow common operators/values
+                                     conditionMet = eval(evalCond);
+                                }
+                             }
+                        } catch(e) { conditionMet = false; /* Condition eval error */ }
+
+                        if (conditionMet) {
+                            currentLine++; // Enter loop block
+                        } else {
+                            // Skip loop block
+                            let indentLevel = loopStack[loopStack.length-1].blockIndent;
+                            loopStack.pop(); // Exit this loop level
+                            currentLine++;
+                            while (currentLine < lines.length && (lines[currentLine].match(/^\s*/)[0].length / 4) >= indentLevel) {
+                                currentLine++;
+                            }
+                            executed = true; // Jumped past loop
+                        }
+                        continue; // Process next line (either inside loop or after)
+                    }
+
+                    // --- If Statement Start (Simplified - check condition, maybe execute break/continue) ---
+                    let ifMatch = line.match(/^if\s+(.+):$/);
+                     if (ifMatch && loopStack.length > 0) { // Only check if/break/continue inside loops for simplicity
+                        let condition = ifMatch[1].trim();
+                        let conditionMet = false;
+                        try {
+                            let evalCond = condition;
+                            for(const v in vars) {
+                                evalCond = evalCond.replace(new RegExp(`\\b${v}\\b`, 'g'), typeof vars[v] === 'string' ? `"${vars[v]}"` : vars[v]);
+                            }
+                            if (/^[a-zA-Z0-9\s"'<>!=%&|().+-]+$/.test(evalCond)) {
+                                conditionMet = eval(evalCond);
+                            }
+                        } catch(e) { conditionMet = false; }
+
+                        if (conditionMet) {
+                            // Check next line for break/continue (simplified)
+                            if (currentLine + 1 < lines.length) {
+                                let nextLine = lines[currentLine + 1].trim();
+                                if (nextLine === 'break') {
+                                    // Find end of current loop block and jump
+                                    let indentLevel = loopStack[loopStack.length-1].blockIndent;
+                                    loopStack.pop();
+                                    currentLine++; // Move past 'break' line itself
+                                    while (currentLine < lines.length && (lines[currentLine].match(/^\s*/)[0].length / 4) >= indentLevel) {
+                                        currentLine++;
+                                    }
+                                    executed = true;
+                                    continue; // Jumped past loop
+                                } else if (nextLine === 'continue') {
+                                    // Jump back to the start of the current loop
+                                    currentLine = loopStack[loopStack.length - 1].line;
+                                    executed = true;
+                                    continue; // Re-evaluate loop condition
+                                }
+                            }
+                        }
+                        // If condition not met, or no break/continue, just proceed
+                     }
+
+
+                    // --- End of Loop Block Check ---
+                    if (loopStack.length > 0) {
+                         let currentIndent = line.match(/^\s*/)[0].length / 4;
+                         let expectedIndent = loopStack[loopStack.length - 1].blockIndent;
+                         // If line is not empty and indent level decreases or matches loop start level
+                         if (line !== "" && currentIndent < expectedIndent) {
+                             // Jump back to the start of the current loop
+                             currentLine = loopStack[loopStack.length - 1].line;
+                             executed = true;
+                             continue; // Re-evaluate loop condition
+                         }
+                    }
+
+                    if (!executed) { // If line wasn't handled, move to next
+                         currentLine++;
+                    }
+                 } // End while(currentLine < lines.length)
+
+            } catch (e) {
+                console.error("Simulation Error:", e);
+                error = `Simulation Error on line ${currentLine + 1}: ${e.message}`;
+                output.push(error);
+            }
+
+            return {
+                output: output.join('\n'),
+                finalVars: vars,
+                wasInfinite: potentialInfinite,
+                error: error
+            };
+        }
+
+
+        // --- Activity 1: Trace with Break (New Activity Logic) ---
+        const traceBreakSection = document.getElementById('trace-break');
+        if (traceBreakSection) {
+            const predictionInput = document.getElementById('trace-prediction-input-break');
+            const checkBtn = document.getElementById('check-trace-break-btn');
+            const feedbackDiv = document.getElementById('trace-break-feedback');
+            const explanationDiv = document.getElementById('trace-break-explanation');
+            // IMPORTANT: Exact output including newlines matters here
+            const correctAnswer = `Current i: 0
+Current i: 1
+Current i: 2
+Current i: 3
+Breaking!
+Loop finished.`;
+
+            function setupTraceBreakActivity() {
+                predictionInput.value = '';
+                feedbackDiv.classList.remove('visible');
+                explanationDiv.classList.add('hidden');
+                predictionInput.classList.remove('correct', 'incorrect');
+                checkBtn.disabled = false;
+                // Reset explanation text
+                explanationDiv.querySelector('p[data-translate="trace_break_exp_detail"]').innerHTML = getTranslation('trace_break_exp_detail', getStoredLanguage());
+                explanationDiv.querySelector('h4[data-translate="trace_exp_title"]').textContent = getTranslation('trace_exp_title', getStoredLanguage());
+            }
+
+            checkBtn.addEventListener('click', () => {
+                // Normalize whitespace/newlines for comparison
+                const userPrediction = predictionInput.value.trim().replace(/\r\n/g, '\n');
+                const normalizedCorrectAnswer = correctAnswer.trim().replace(/\r\n/g, '\n');
+
+                feedbackDiv.classList.remove('visible');
+                explanationDiv.classList.add('hidden');
+
+                if (userPrediction === '') {
+                    showFeedback('trace-break-feedback', 'feedback_trace_empty', 'info');
+                    return;
+                }
+
+                if (userPrediction === normalizedCorrectAnswer) {
+                    showFeedback('trace-break-feedback', 'feedback_trace_correct', 'correct');
+                     predictionInput.classList.add('correct');
+                     checkBtn.disabled = true;
+                     predictionInput.disabled = true; // Disable input on correct
+                } else {
+                    showFeedback('trace-break-feedback', 'feedback_trace_incorrect', 'incorrect');
+                    predictionInput.classList.add('incorrect');
+                    explanationDiv.classList.remove('hidden');
+                }
+            });
+            setupTraceBreakActivity(); // Initial setup
+        }
+
+
+        // --- Activity 2: Simulator with Continue (New Activity Logic) ---
+        const simContinueSection = document.getElementById('sim-continue');
+        if (simContinueSection) {
+            const editor = document.getElementById('sim-editor-input-continue');
+            const outputArea = document.getElementById('sim-output-continue');
+            const runBtn = document.getElementById('run-sim-btn-continue');
+            const feedbackDiv = document.getElementById('sim-feedback-continue');
+            const expectedOutput = "2\n4\n6"; // Even numbers expected
+
+            runBtn.addEventListener('click', () => {
+                const code = editor.value.trim();
+                let placeholder = outputArea.querySelector('.placeholder');
+                outputArea.innerHTML = ''; // Clear previous output
+                if (!placeholder) {
+                    placeholder = document.createElement('span');
+                    placeholder.className = 'placeholder';
+                    placeholder.dataset.translate = 'simulator_output_placeholder';
+                }
+                placeholder.textContent = getTranslation('simulator_output_placeholder', getStoredLanguage());
+                feedbackDiv.classList.remove('visible');
+
+                if (code === '') {
+                    outputArea.appendChild(placeholder);
+                    showFeedback('sim-feedback-continue', 'feedback_sim_empty', 'info');
+                    return;
+                }
+
+                // Check for key elements: while, if, continue
+                const hasWhile = /while\s+.+:/m.test(code);
+                const hasIf = /if\s+.+:/m.test(code);
+                const hasContinue = /\bcontinue\b/.test(code);
+
+                if (!hasWhile) {
+                     outputArea.appendChild(placeholder);
+                     showFeedback('sim-feedback-continue', 'feedback_sim_no_while', 'incorrect');
+                     return;
+                }
+                 if (!hasIf) {
+                     outputArea.appendChild(placeholder);
+                     showFeedback('sim-feedback-continue', 'feedback_sim_missing_if', 'incorrect');
+                     return;
+                }
+                 if (!hasContinue) {
+                     outputArea.appendChild(placeholder);
+                     showFeedback('sim-feedback-continue', 'feedback_sim_no_continue', 'incorrect');
+                     return;
+                 }
+
+
+                // --- Simulation ---
+                 const simResult = simulateCodeExecution(code);
+                 let feedbackKey = 'feedback_sim_success';
+                 let feedbackType = 'correct';
+                 const simOutput = simResult.output.trim();
+
+                 // Display output
+                 if (simOutput || simResult.error) {
+                     simOutput.split('\n').forEach(line => {
+                         const lineSpan = document.createElement('span');
+                         lineSpan.className = `output-line ${simResult.error && line.startsWith('Simulation Error') ? 'warning-line' : ''}`;
+                         lineSpan.textContent = `> ${line}`;
+                         outputArea.appendChild(lineSpan);
+                     });
+                 } else {
+                     outputArea.appendChild(placeholder); // Show placeholder if no output
+                 }
+
+                 // Check result
+                 if (simResult.error) {
+                     feedbackKey = 'feedback_mission_syntax_error'; // Reuse mission error
+                     feedbackType = 'incorrect';
+                 } else if (simResult.wasInfinite) {
+                     feedbackKey = 'feedback_sim_infinite';
+                     feedbackType = 'warning';
+                     const warnSpan = document.createElement('span');
+                     warnSpan.className = 'output-line warning-line';
+                     warnSpan.textContent = getTranslation(feedbackKey, getStoredLanguage());
+                     outputArea.appendChild(warnSpan);
+                 } else if (simOutput !== expectedOutput) {
+                     feedbackKey = 'feedback_sim_output_mismatch';
+                     feedbackType = 'incorrect';
+                 }
+
+                 showFeedback('sim-feedback-continue', feedbackKey, feedbackType);
+             });
+        }
+
+
+         // --- Activity 3 & 4: Advanced / Debug Missions (Combined Logic) ---
+        const advMissionsSection = document.getElementById('adv-missions');
+        const debugMissionSection = document.getElementById('debug-mission');
+        let updateAdvMissionSummary; // Define in this scope
+
+        function setupMissionRuns() {
+            const missionRunButtons = document.querySelectorAll('.mission-run-btn'); // Select all mission buttons
+            const summaryFeedback = document.getElementById('missions-summary-feedback-adv'); // Use the advanced summary ID
+            const allMissions = document.querySelectorAll('#adv-missions .mission, #debug-mission .mission'); // Select all mission divs
+            const totalMissions = allMissions.length;
+            let completedMissionsCount = 0;
+
+            updateAdvMissionSummary = function() { // Assign function
+                 completedMissionsCount = document.querySelectorAll('.mission[data-completed="true"]').length; // Recount all completed
+                 const currentLang = getStoredLanguage();
+                 if (totalMissions === 0) return; // Avoid division by zero or messages if no missions exist
+
+                 if (completedMissionsCount === totalMissions) {
+                     showFeedback('missions-summary-feedback-adv', 'feedback_adv_missions_summary_all_done', 'correct', { totalMissions: totalMissions });
+                 } else if (completedMissionsCount > 0) {
+                     showFeedback('missions-summary-feedback-adv', 'feedback_adv_missions_summary_progress', 'info', { completedCount: completedMissionsCount, totalMissions: totalMissions });
+                 } else {
+                    if(summaryFeedback) summaryFeedback.classList.remove('visible'); // Hide if 0 completed
+                 }
+            }
+
+            missionRunButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const missionId = button.dataset.missionId; // e.g., "adv-1", "adv-2", "debug-1"
+                    const missionDiv = document.getElementById(`mission-${missionId}`);
+                    if (!missionDiv) return;
+
+                    const editor = missionDiv.querySelector('.mission-editor');
+                    const outputArea = missionDiv.querySelector('.mission-output');
+                    const feedbackDivId = `mission-feedback-${missionId}`;
+                    const feedbackDiv = document.getElementById(feedbackDivId);
+                    const statusIcon = missionDiv.querySelector('.mission-status i');
+                    const code = editor.value.trim();
+
+                    outputArea.innerHTML = ''; // Clear output
+                    feedbackDiv.classList.remove('visible'); // Clear feedback
+
+                    let success = false;
+                    let feedbackMessageKey = 'feedback_mission_syntax_error';
+                    let feedbackType = 'incorrect';
+                    let expectedOutput = "";
+
+                    // --- Mission Validation ---
+                    const simResult = simulateCodeExecution(code, 150); // Allow more iterations for missions
+                    const simOutput = simResult.output.trim();
+
+                    try {
+                        if (missionId === 'adv-1') { // Nested pattern
+                            expectedOutput = "*\n**\n***";
+                            if (!simResult.error && !simResult.wasInfinite && simOutput === expectedOutput) {
+                                success = true;
+                            } else if (!simResult.error && !simResult.wasInfinite) {
+                                feedbackMessageKey = 'feedback_mission_output_error';
+                            } else if (simResult.wasInfinite) {
+                                feedbackMessageKey = 'feedback_mission_infinite_warning';
+                            } else { feedbackMessageKey = 'feedback_adv_mission1_hint'; } // Use hint on syntax/other errors
+                        }
+                        else if (missionId === 'adv-2') { // while True sum
+                            // Expected sum: 5 + 8 + 3 = 16
+                            expectedOutput = "16";
+                             // Check key elements: while True, break
+                            const hasWhileTrue = /while\s+True\s*:/m.test(code);
+                            const hasBreak = /\bbreak\b/.test(code);
+
+                            if (!simResult.error && !simResult.wasInfinite && hasWhileTrue && hasBreak && simOutput === expectedOutput) {
+                                success = true;
+                            } else if (!hasWhileTrue || !hasBreak) {
+                                feedbackMessageKey = 'feedback_adv_mission2_hint'; // Structure wrong
+                            } else if (!simResult.error && !simResult.wasInfinite) {
+                                feedbackMessageKey = 'feedback_mission_output_error';
+                            } else if (simResult.wasInfinite) {
+                                feedbackMessageKey = 'feedback_mission_infinite_warning';
+                            } else { feedbackMessageKey = 'feedback_adv_mission2_hint'; }
+                        }
+                        else if (missionId === 'debug-1') { // Debug countdown
+                            expectedOutput = "10\n9\n8\n7\n6\n5\n4\n3\n2\n1";
+                            const hasUpdate = /count\s*=\s*count\s*-\s*1/.test(code) || /count\s*-=\s*1/.test(code); // Check for the fix
+
+                            if (!simResult.error && !simResult.wasInfinite && hasUpdate && simOutput === expectedOutput) {
+                                success = true;
+                                feedbackMessageKey = 'feedback_debug_success';
+                            } else if (!hasUpdate) {
+                                feedbackMessageKey = 'feedback_debug_still_infinite'; // Specific feedback: fix not added
+                            } else if (simResult.wasInfinite && hasUpdate) {
+                                feedbackMessageKey = 'feedback_mission_infinite_warning'; // Update added but still infinite? Logic error.
+                            } else if (!simResult.error && !simResult.wasInfinite && hasUpdate) {
+                                feedbackMessageKey = 'feedback_debug_output_wrong'; // Finishes, but wrong output
+                            } else {
+                                feedbackMessageKey = 'feedback_mission_syntax_error'; // Generic syntax error
+                            }
+                        }
+
+                    } catch (e) {
+                        console.error(`Mission ${missionId} validation error:`, e);
+                        feedbackMessageKey = 'feedback_mission_syntax_error';
+                    }
+                    // --- End Validation ---
+
+                    // Display results
+                    if (simOutput || simResult.error) {
+                         simOutput.split('\n').forEach(line => {
+                             const span = document.createElement('span');
+                             span.className = `output-line ${simResult.error && line.startsWith('Simulation Error') ? 'warning-line' : ''}`;
+                             span.textContent = `> ${line}`;
+                             outputArea.appendChild(span);
+                         });
+                    } else {
+                        outputArea.innerHTML = `<span class="placeholder">${getTranslation('simulator_output_placeholder', getStoredLanguage())}</span>`;
+                    }
+
+                     if (simResult.wasInfinite && !success) { // Add warning message if infinite loop occurred and wasn't the explicit goal (if any)
+                         feedbackType = 'warning';
+                         const warnSpan = document.createElement('span');
+                         warnSpan.className = 'output-line warning-line';
+                         // Use the specific infinite key if available, otherwise generic
+                         const infiniteKey = feedbackMessageKey === 'feedback_mission_infinite_warning' || feedbackMessageKey === 'feedback_debug_still_infinite' ? feedbackMessageKey : 'feedback_mission_infinite_warning';
+                         warnSpan.textContent = getTranslation(infiniteKey, getStoredLanguage());
+                         outputArea.appendChild(warnSpan);
+                         feedbackMessageKey = infiniteKey; // Ensure the feedback message matches the warning
+                     }
+
+
+                    if (success) {
+                        feedbackType = 'correct';
+                        // Use specific success message for debug mission, otherwise generic
+                        feedbackMessageKey = (missionId === 'debug-1') ? 'feedback_debug_success' : 'feedback_mission_success';
+                        statusIcon.className = 'fas fa-check-circle';
+                        missionDiv.dataset.completed = 'true';
+                    } else {
+                        feedbackType = (feedbackMessageKey.includes('infinite') || feedbackMessageKey.includes('warning')) ? 'warning' : 'incorrect';
+                        statusIcon.className = (feedbackType === 'warning') ? 'fas fa-exclamation-triangle' : 'fas fa-times-circle';
+                        missionDiv.dataset.completed = 'false';
+                    }
+
+                    showFeedback(feedbackDivId, feedbackMessageKey, feedbackType);
+                    updateAdvMissionSummary(); // Update summary after each run
+                });
+            });
+            updateAdvMissionSummary(); // Initial call
+        } // End setupMissionRuns
+
+
+        // --- Fade-in animations on scroll (Unchanged) ---
+        const fadeElements = document.querySelectorAll('.fade-in');
+        const animateOnScroll = () => {
+             const windowHeight = window.innerHeight;
+             fadeElements.forEach(el => {
+                 if (el.style.opacity === '1') return; // Already visible
+                 const rect = el.getBoundingClientRect();
+                 if (rect.top < windowHeight - 80 && rect.bottom >= 50) {
+                     el.style.opacity = '1';
+                     el.style.transform = 'translateY(0)';
+                 }
+             });
+        };
+        const scrollHandler = () => window.requestAnimationFrame(animateOnScroll);
+        window.addEventListener('scroll', scrollHandler);
+
+
+        // --- Initial Language Application and Activity Setups ---
+        setLanguage(initialLang); // Apply language FIRST
+        animateOnScroll(); // Trigger initial animation check AFTER language is set
+        setupMissionRuns(); // Set up mission buttons AFTER language is set
+
+        // Call initial setups for other activities if they need specific resets
+        // Note: setupTraceBreakActivity is called within setLanguage now.
+
+    }); // End DOMContentLoaded
+    </script>
+
+</body>
+</html>

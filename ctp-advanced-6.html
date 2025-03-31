@@ -1,1 +1,1219 @@
+<!DOCTYPE html>
+<!-- Language set by JS -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Title set by JS -->
+    <title data-translate="page_title">Module 6: Adv. Decisions - else/elif</title>
+    <!-- Fonts & Icons (Same as standard practice) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
+    <style>
+        /* --- Base Styles & Variables (Same as standard practice) --- */
+        :root {
+            --primary-color: #007bff; /* Blue */
+            --secondary-color: #6c757d; /* Grey */
+            --background-light: #f8f9fa;
+            --background-medium: #e9ecef;
+            --background-dark: #343a40;
+            --text-light: #f8f9fa;
+            --text-dark: #212529;
+            --accent-color: #ffc107; /* Yellow */
+            --success-color: #28a745; /* Green */
+            --error-color: #dc3545;   /* Red */
+            --info-color: #17a2b8;    /* Teal */
+            --border-radius: 8px;
+            --transition-speed: 0.3s;
+            --font-body: 'Roboto', sans-serif;
+            --font-title: 'Orbitron', sans-serif;
+            --selection-highlight-bg: rgba(0, 123, 255, 0.1);
+            --selection-highlight-border: rgba(0, 123, 255, 0.4);
+            --nav-primary: #6e48aa;
+            --nav-success: #4cc9f0;
+            --nav-dark: #1a1a2e;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; font-size: 16px; }
+        body {
+            font-family: var(--font-body); line-height: 1.7;
+            background-color: var(--background-light); color: var(--text-dark);
+            overflow-x: hidden;
+        }
+
+        /* --- Utility Classes (Same as standard practice) --- */
+        .container { max-width: 960px; margin: 0 auto; padding: 0 15px; }
+        .text-center { text-align: center; }
+        .highlight { color: var(--primary-color); font-weight: bold; }
+        .code-font { font-family: 'Courier New', Courier, monospace; }
+        .hidden { display: none !important; }
+        .button-group { /* For navigation buttons */
+            margin-top: 2rem;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1rem;
+        }
+
+        /* --- Advanced Animations (Same as standard practice) --- */
+        .fade-in { opacity: 0; transform: translateY(20px); animation: fadeInAnimation 0.8s ease-out forwards; }
+        .fade-in.delay-1 { animation-delay: 0.2s; }
+        .fade-in.delay-2 { animation-delay: 0.4s; }
+        .fade-in.delay-3 { animation-delay: 0.6s; }
+        .fade-in.delay-4 { animation-delay: 0.8s; }
+        @keyframes fadeInAnimation { to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulseHeaderIcon {
+            0% { transform: scale(1) rotate(0deg); opacity: 0.1; filter: brightness(1); }
+            50% { transform: scale(1.05) rotate(5deg); opacity: 0.25; filter: brightness(1.2); }
+            100% { transform: scale(1) rotate(0deg); opacity: 0.1; filter: brightness(1); }
+        }
+        @keyframes successGlow {
+             0% { box-shadow: 0 0 3px rgba(40, 167, 69, 0.3); transform: scale(1); }
+             50% { box-shadow: 0 0 12px 5px rgba(40, 167, 69, 0.5); transform: scale(1.01); }
+             100% { box-shadow: 0 0 3px rgba(40, 167, 69, 0.3); transform: scale(1); }
+        }
+        .success-glow-anim { animation: successGlow 0.9s ease-out; }
+        @keyframes shake {
+          10%, 90% { transform: translate3d(-2px, 0, 0); } 20%, 80% { transform: translate3d(3px, 0, 0); }
+          30%, 50%, 70% { transform: translate3d(-5px, 0, 0); } 40%, 60% { transform: translate3d(5px, 0, 0); }
+        }
+        .shake-anim { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes iconAppearCorrect {
+            0% { transform: scale(0.5) rotate(-15deg); opacity: 0; }
+            60% { transform: scale(1.2) rotate(5deg); opacity: 1; }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        @keyframes iconAppearIncorrect {
+             0% { transform: scale(0.5) rotate(-15deg); opacity: 0; }
+             50% { transform: scale(1.2) rotate(10deg); opacity: 1; }
+             70% { transform: scale(0.9) rotate(-5deg); }
+             100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        @keyframes iconAppearMissed { /* Reusing for 'missed' or 'info' indication */
+             0% { transform: scale(0.8) rotateY(90deg); opacity: 0; }
+             100% { transform: scale(1) rotateY(0deg); opacity: 0.8; }
+        }
+        .action-button:active:not(:disabled) {
+            transform: translateY(1px) scale(0.98);
+            filter: brightness(0.95);
+        }
+
+        /* --- Minimal Retractable Nav (Same structure, updated links later) --- */
+        .minimal-nav-button {
+            position: fixed; top: 15px; right: 15px; z-index: 1001;
+            background-color: rgba(52, 58, 64, 0.75); color: var(--text-light);
+            border: none; border-radius: var(--border-radius); padding: 8px 12px;
+            cursor: pointer; transition: background-color var(--transition-speed), opacity var(--transition-speed), transform var(--transition-speed);
+            font-size: 1.1rem; opacity: 0.6; box-shadow: 0 2px 5px rgba(0,0,0,0.2); line-height: 1;
+        }
+        .minimal-nav-button:hover { background-color: rgba(52, 58, 64, 0.95); opacity: 1; transform: scale(1.05); }
+        .minimal-nav {
+            position: fixed; top: 60px; right: 15px; z-index: 1000;
+            background-color: var(--background-dark); border-radius: var(--border-radius);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3); padding: 0.8rem; opacity: 0;
+            transform: translateY(-15px) scale(0.95); transform-origin: top right;
+            pointer-events: none; transition: opacity var(--transition-speed) ease, transform var(--transition-speed) ease;
+            min-width: 200px;
+        }
+        body.nav-active .minimal-nav { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+        .minimal-nav ul { list-style: none; margin: 0; padding: 0; }
+        .minimal-nav ul li { margin-bottom: 5px; }
+        .minimal-nav ul li:last-child { margin-bottom: 0; }
+        .minimal-nav ul li a {
+            display: flex; align-items: center; color: var(--text-light); text-decoration: none;
+            padding: 0.6rem 1rem; border-radius: 4px;
+            transition: background-color var(--transition-speed), color var(--transition-speed);
+            white-space: nowrap; font-weight: 400; font-size: 0.95rem;
+        }
+        .minimal-nav ul li a i.fas { margin-right: 10px; width: 1.2em; text-align: center; opacity: 0.8; transition: opacity var(--transition-speed); }
+        .minimal-nav ul li a:hover { background-color: var(--primary-color); color: var(--text-light); }
+        .minimal-nav ul li a:hover i.fas { opacity: 1; }
+        /* Language Switcher Styles (Same) */
+        .minimal-nav .language-switcher-item { padding: 0.5rem 1rem; border-top: 1px solid var(--secondary-color); margin-top: 8px; padding-top: 13px; }
+        #languageSelect {
+            width: 100%; background: rgba(255,255,255,0.1); color: white; border: 1px solid var(--nav-success);
+            border-radius: 5px; padding: 6px 30px 6px 12px; cursor: pointer; font-size: 0.9rem; appearance: none;
+            -webkit-appearance: none; -moz-appearance: none;
+            background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%234CC9F0%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E');
+            background-repeat: no-repeat; background-position: right 10px center; background-size: 10px auto;
+            transition: background-color 0.3s ease;
+        }
+        #languageSelect:hover { background-color: rgba(255,255,255,0.15); }
+        #languageSelect option { background: var(--nav-dark); color: var(--text-light); }
+        /* --- End Minimal Retractable Nav --- */
+
+
+        /* --- Practice Header (Same style, updated content later) --- */
+        /* Using Blue for this module */
+        .practice-header { background: linear-gradient(135deg, var(--primary-color), #0056b3); color: var(--text-light); padding: 3rem 0 4rem; text-align: center; position: relative; overflow: hidden; border-bottom: 5px solid var(--accent-color); }
+        .practice-header h1 { font-family: var(--font-title); font-size: 2.8rem; margin-bottom: 0.5rem; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); animation: fadeInAnimation 1s ease-out; }
+        .practice-header p { font-size: 1.1rem; font-weight: 300; opacity: 0.9; animation: fadeInAnimation 1s ease-out 0.3s forwards; opacity: 0; }
+        /* Using different icons for advanced feel? Maybe forks/paths? */
+        .header-icon { position: absolute; font-size: 4rem; color: var(--text-light); animation: pulseHeaderIcon 6s infinite ease-in-out alternate; }
+        .icon1 { top: 15%; left: 10%; animation-duration: 7s; transform: rotate(-15deg); } /* Fork */
+        .icon2 { bottom: 10%; right: 15%; animation-duration: 5s; transform: rotate(10deg);} /* Route/Arrows */
+
+        /* --- Practice Section Styling (Same as standard practice) --- */
+        .practice-section { padding: 3rem 0; background-color: var(--background-medium); border-bottom: 1px solid #d6d8db; }
+        .practice-section:nth-child(odd) { background-color: var(--background-light); }
+        .practice-section:last-of-type { border-bottom: none; }
+        .practice-section h2 { font-family: var(--font-title); font-size: 1.8rem; color: var(--primary-color); margin-bottom: 1rem; text-align: center; }
+        .practice-section .section-description { text-align: center; margin-bottom: 2.5rem; color: var(--secondary-color); font-size: 1.05rem; max-width: 700px; margin-left: auto; margin-right: auto; }
+
+        /* --- General Interactive Elements (Same as standard practice) --- */
+        .interactive-area { background-color: #fff; padding: 2rem; border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.08); margin-top: 1.5rem; position: relative; transition: box-shadow 0.5s ease-out; }
+        .feedback-message { padding: 0.8rem 1rem; margin-top: 1rem; border-radius: var(--border-radius); font-weight: bold; text-align: center; opacity: 0; max-height: 0; overflow: hidden; transition: opacity var(--transition-speed) ease, max-height var(--transition-speed) ease, margin-top var(--transition-speed) ease; }
+        .feedback-message.visible { opacity: 1; max-height: 100px; margin-top: 1.5rem; }
+        .feedback-message.correct { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .feedback-message.incorrect { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .feedback-message.info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .feedback-message .fas { margin: 0 3px; }
+        .action-button {
+             display: inline-block; padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold;
+             color: var(--text-light); background-color: var(--primary-color); border: none;
+             border-radius: var(--border-radius); cursor: pointer;
+             transition: background-color var(--transition-speed), transform var(--transition-speed), filter var(--transition-speed), box-shadow var(--transition-speed);
+             margin-top: 1rem; vertical-align: middle; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+             text-decoration: none; /* For <a> tags styled as buttons */
+        }
+        .action-button:hover:not(:disabled) { background-color: #0056b3; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+        .action-button:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none; box-shadow: none; opacity: 0.7; }
+        .action-button.success { background-color: var(--success-color); }
+        .action-button.success:hover:not(:disabled) { background-color: #218838; }
+        .action-button.secondary { background-color: var(--secondary-color); }
+        .action-button.secondary:hover:not(:disabled) { background-color: #5a6268; }
+        .action-button.error { background-color: var(--error-color); } /* For highlighting wrong buttons */
+        .action-button.error:hover:not(:disabled) { background-color: #c82333; }
+        /* Code styling (Same) */
+        .code-block { background-color: var(--background-dark); color: var(--text-light); padding: 1.5rem; border-radius: var(--border-radius); font-family: var(--code-font); font-size: 1rem; position: relative; overflow-x: auto; margin: 1rem 0; }
+        .code-keyword { color: #569cd6; } /* Blue for keywords like 'if', 'else', 'elif' */
+        .code-string { color: #ce9178; } /* Orange for strings */
+        .code-comment { color: #6a9955; } /* Green for comments */
+        .code-function { color: #dcdcaa; } /* Yellowish for function names */
+        .code-operator { color: #d4d4d4; } /* Light grey/white for operators like > */
+        .code-literal { color: #b5cea8; } /* Light green for numbers/booleans */
+        .code-variable { color: #9cdcfe; } /* Light blue for variable names */
+        .code-punctuation { color: #ffd700; } /* Gold for :, () etc. */
+
+        /* --- Activity 1: Branching Syntax --- */
+        .branching-syntax-container {
+            display: grid;
+            grid-template-columns: 1fr; /* Start single column */
+            gap: 2rem;
+            margin-bottom: 1.5rem;
+        }
+         @media (min-width: 768px) {
+             .branching-syntax-container { grid-template-columns: 1fr 1fr; } /* Two columns on wider screens */
+         }
+        .branching-syntax-example h3 {
+             font-family: var(--font-title); font-size: 1.2rem; color: var(--secondary-color);
+             margin-bottom: 0.8rem; text-align: center;
+         }
+        #branching-syntax .code-part { cursor: pointer; border-bottom: 2px dashed rgba(255, 255, 255, 0.3); transition: background-color var(--transition-speed), border-bottom-color var(--transition-speed); padding: 0 2px; display: inline-block; }
+        #branching-syntax .code-part:hover { background-color: rgba(255, 255, 255, 0.15); border-bottom-color: var(--accent-color); }
+        #branching-syntax .code-part.identified { background-color: rgba(40, 167, 69, 0.3); border-bottom: 2px solid var(--success-color); cursor: default; }
+        .part-explanation { font-size: 0.95rem; color: var(--info-color); border-left: 3px solid var(--info-color); padding: 5px 10px; margin-top: 0.5rem; background-color: rgba(23, 162, 184, 0.05); }
+        #branching-syntax-status { margin-top: 1rem; font-style: italic; color: var(--secondary-color); }
+
+        /* --- Activity 2: Logic Flow Prediction --- */
+        #logic-flow .scenario-description { background-color: var(--background-medium); padding: 1rem; border: 1px dashed var(--secondary-color); border-radius: var(--border-radius); margin-bottom: 1rem; font-style: italic; }
+        #logic-flow .code-display { margin-bottom: 1.5rem; } /* Container for code block */
+        #logic-flow .input-display { text-align: center; font-size: 1.1rem; margin-bottom: 1.5rem; }
+        #logic-flow .prediction-options { display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; }
+        #logic-flow .prediction-button { font-size: 1rem; padding: 0.7rem 1.2rem; }
+
+        /* --- Activity 3: Advanced Code Challenge (Simulator - Same style as standard) --- */
+        #advanced-challenge .challenge-setup { background-color: #fff3cd; border: 1px solid #ffeeba; border-radius: var(--border-radius); padding: 0.8rem 1rem; margin-bottom: 1rem; font-size: 0.95rem; color: #856404; }
+        #advanced-challenge .sim-editor { width: 100%; min-height: 120px; /* Slightly taller */ background-color: var(--background-dark); color: var(--text-light); border: 1px solid var(--secondary-color); border-radius: var(--border-radius); padding: 1rem; font-family: var(--code-font); font-size: 1rem; line-height: 1.5; resize: vertical; }
+        #advanced-challenge .sim-output-area { margin-top: 1rem; min-height: 50px; background-color: #1a1a1a; border: 1px solid #444; border-radius: var(--border-radius); padding: 1rem; color: var(--accent-color); font-family: var(--code-font); font-size: 1.05rem; white-space: pre-wrap; word-wrap: break-word; }
+        #advanced-challenge .sim-output-area .placeholder { color: var(--secondary-color); font-style: italic; font-size: 0.9rem; }
+        #advanced-challenge .sim-output-area .output-line { display: block; }
+
+        /* --- Activity 4: CT Connection (Same style as standard) --- */
+        #advanced-ct .ct-explanation { background-color: rgba(23, 162, 184, 0.08); border-left: 4px solid var(--info-color); padding: 1.5rem; border-radius: var(--border-radius); color: var(--text-dark); }
+        #advanced-ct .ct-explanation i { color: var(--info-color); margin-right: 10px; }
+        #advanced-ct .ct-explanation strong { color: var(--primary-color); }
+
+        /* --- Final Section (Same style as standard) --- */
+        .completion-section { padding: 4rem 0; text-align: center; }
+        .completion-section .icon {
+            font-size: 4rem; color: var(--success-color); margin-bottom: 1rem; display: inline-block;
+            opacity: 0; animation: iconAppearCorrect 1s ease-out 0.5s forwards;
+        }
+        .completion-section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); }
+        .completion-section p { font-size: 1.1rem; margin-top: 1rem; color: var(--secondary-color); }
+
+        /* --- Responsive Design (Same breakpoints and general rules) --- */
+        @media (max-width: 768px) {
+            html { font-size: 15px; }
+            .practice-header h1 { font-size: 2.2rem; }
+            .practice-section h2 { font-size: 1.6rem; }
+            .interactive-area { padding: 1.5rem; }
+            .code-block { font-size: 0.95rem; padding: 1.2rem; }
+             #advanced-challenge .sim-editor { font-size: 0.95rem; }
+             #advanced-challenge .sim-output-area { font-size: 1rem; }
+            .button-group { flex-direction: column; align-items: center; }
+            .minimal-nav { min-width: 180px; }
+            .minimal-nav ul li a { padding: 0.6rem 0.8rem; }
+            #languageSelect { font-size: 0.85rem; padding: 5px 25px 5px 10px;}
+        }
+        @media (max-width: 480px) {
+            html { font-size: 14px; }
+            .practice-header h1 { font-size: 1.8rem; }
+            .practice-header p { font-size: 1rem; }
+            .practice-section h2 { font-size: 1.4rem; }
+            .interactive-area { padding: 1rem; }
+            .action-button { font-size: 0.9rem; padding: 0.7rem 1.2rem; width: 90%; max-width: 300px;}
+            .code-block { font-size: 0.9rem; padding: 1rem; }
+            #advanced-challenge .sim-editor, #advanced-challenge .sim-output-area { font-size: 0.9rem; }
+            .button-group a.action-button { width: 90%; max-width: 300px; margin-bottom: 0.5rem; }
+            .minimal-nav-button { top: 10px; right: 10px; padding: 6px 10px; font-size: 1rem; }
+            .minimal-nav { top: 48px; right: 10px; min-width: 160px; }
+            .minimal-nav ul li a { padding: 0.5rem 0.7rem; font-size: 0.9rem;}
+            .minimal-nav ul li a i.fas { margin-right: 8px; }
+            #languageSelect { font-size: 0.8rem; padding: 4px 20px 4px 8px;}
+            .branching-syntax-container { grid-template-columns: 1fr; } /* Ensure single column */
+            #logic-flow .prediction-options { flex-direction: column; align-items: center; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ========= Minimal Nav Handle (Same) ========= -->
+    <button id="minimal-nav-toggle" class="minimal-nav-button" aria-label="Toggle Navigation Menu">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- ========= Minimal Nav Panel (UPDATED Links) ========= -->
+    <nav id="minimal-nav-panel" class="minimal-nav">
+        <ul>
+            <!-- **** UPDATED HREFs for Advanced Module 6 **** -->
+            <li><a href="ctp-practice-6.html"><i class="fas fa-arrow-left fa-fw"></i> <span data-translate="nav_standard">Standard Practice</span></a></li>
+            <li><a href="ctp-video-6.html"><i class="fas fa-video fa-fw"></i> <span data-translate="nav_video">Watch Video Lesson</span></a></li>
+            <li><a href="ctp-dashboard.html"><i class="fas fa-list fa-fw"></i> <span data-translate="nav_menu">Course Menu</span></a></li>
+            <hr style="border: none; border-top: 1px solid var(--secondary-color); margin: 8px 0;">
+            <!-- **** UPDATED Quick Links for Advanced Activities **** -->
+            <li><a href="#branching-syntax"><i class="fas fa-sitemap fa-fw"></i> <span data-translate="nav_syntax_adv">Branching Syntax</span></a></li>
+            <li><a href="#logic-flow"><i class="fas fa-directions fa-fw"></i> <span data-translate="nav_flow">Logic Flow</span></a></li>
+            <li><a href="#advanced-challenge"><i class="fas fa-laptop-code fa-fw"></i> <span data-translate="nav_challenge_adv">Adv. Challenge</span></a></li>
+            <li><a href="#advanced-ct"><i class="fas fa-brain fa-fw"></i> <span data-translate="nav_ct_adv">Adv. CT Link</span></a></li>
+            <!-- Language Switcher Item (Same) -->
+            <li class="language-switcher-item">
+                 <select id="languageSelect" aria-label="Select Language">
+                     <option value="en" data-translate="lang_en">🇬🇧 English</option>
+                     <option value="pt" data-translate="lang_pt">🇧🇷 Português</option>
+                     <option value="zh" data-translate="lang_zh">🇨🇳 中文</option>
+                 </select>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- ========= Header (UPDATED Content) ========= -->
+    <header class="practice-header">
+        <!-- **** UPDATED Icons **** -->
+        <i class="fas fa-code-branch header-icon icon1"></i> <!-- Keep branch -->
+        <i class="fas fa-route header-icon icon2"></i>     <!-- Change to route/path -->
+        <div class="container">
+            <!-- **** UPDATED Title/Subtitle **** -->
+            <h1 data-translate="header_title">Module 6: Advanced Decisions - else & elif</h1>
+            <p data-translate="header_subtitle">Handling alternative paths and multiple conditions.</p>
+        </div>
+    </header>
+
+    <!-- ========= Main Content (NEW Activities) ========= -->
+    <main>
+        <!-- ========= Activity 1: Branching Syntax (`if-else` & `if-elif-else`) ========= -->
+        <section id="branching-syntax" class="practice-section">
+             <div class="container">
+                 <h2 class="fade-in"><i class="fas fa-sitemap"></i> <span data-translate="branching_syntax_title">Branching Structures</span></h2>
+                 <p class="section-description fade-in delay-1" data-translate="branching_syntax_desc">
+                     Beyond a simple `if`, we use `else` for alternatives and `elif` for checking multiple conditions. Click the parts to learn their roles.
+                 </p>
+                 <div class="interactive-area fade-in delay-2">
+                     <div class="branching-syntax-container">
+                         <div class="branching-syntax-example" id="if-else-example">
+                             <h3 data-translate="branching_syntax_ifelse_label">if / else</h3>
+                             <div class="code-block">
+<span class="code-part" data-part="if_kw" data-scope="ifelse" title="Click to identify"><span class="code-keyword">if</span></span><!--
+--> <span class="code-part" data-part="if_cond" data-scope="ifelse" title="Click to identify"><span class="code-variable">time</span> <span class="code-operator">&lt;</span> <span class="code-literal">12</span></span><!--
+--><span class="code-part" data-part="if_colon" data-scope="ifelse" title="Click to identify"><span class="code-punctuation">:</span></span>
+<span class="code-part" data-part="if_indent" data-scope="ifelse" title="Click to identify">    </span><!--
+--><span class="code-part" data-part="if_body" data-scope="ifelse" title="Click to identify"><span class="code-function">print</span><span class="code-punctuation">(</span><span class="code-string" data-translate="branching_syntax_ifelse_code_s1">"Morning"</span><span class="code-punctuation">)</span></span>
+<span class="code-part" data-part="else_kw" data-scope="ifelse" title="Click to identify"><span class="code-keyword">else</span></span><!--
+--><span class="code-part" data-part="else_colon" data-scope="ifelse" title="Click to identify"><span class="code-punctuation">:</span></span>
+<span class="code-part" data-part="else_indent" data-scope="ifelse" title="Click to identify">    </span><!--
+--><span class="code-part" data-part="else_body" data-scope="ifelse" title="Click to identify"><span class="code-function">print</span><span class="code-punctuation">(</span><span class="code-string" data-translate="branching_syntax_ifelse_code_s2">"Afternoon/Evening"</span><span class="code-punctuation">)</span></span>
+                             </div>
+                         </div>
+                         <div class="branching-syntax-example" id="if-elif-else-example">
+                             <h3 data-translate="branching_syntax_ifelifelse_label">if / elif / else</h3>
+                             <div class="code-block">
+<span class="code-part" data-part="if_kw" data-scope="ifelifelse" title="Click to identify"><span class="code-keyword">if</span></span><!--
+--> <span class="code-part" data-part="if_cond" data-scope="ifelifelse" title="Click to identify"><span class="code-variable">grade</span> <span class="code-operator">&gt;=</span> <span class="code-literal">90</span></span><!--
+--><span class="code-part" data-part="if_colon" data-scope="ifelifelse" title="Click to identify"><span class="code-punctuation">:</span></span>
+<span class="code-part" data-part="if_indent" data-scope="ifelifelse" title="Click to identify">    </span><!--
+--><span class="code-part" data-part="if_body" data-scope="ifelifelse" title="Click to identify"><span class="code-function">print</span><span class="code-punctuation">(</span><span class="code-string" data-translate="branching_syntax_ifelifelse_code_s1">"A"</span><span class="code-punctuation">)</span></span>
+<span class="code-part" data-part="elif_kw" data-scope="ifelifelse" title="Click to identify"><span class="code-keyword">elif</span></span><!--
+--> <span class="code-part" data-part="elif_cond" data-scope="ifelifelse" title="Click to identify"><span class="code-variable">grade</span> <span class="code-operator">&gt;=</span> <span class="code-literal">80</span></span><!--
+--><span class="code-part" data-part="elif_colon" data-scope="ifelifelse" title="Click to identify"><span class="code-punctuation">:</span></span>
+<span class="code-part" data-part="elif_indent" data-scope="ifelifelse" title="Click to identify">    </span><!--
+--><span class="code-part" data-part="elif_body" data-scope="ifelifelse" title="Click to identify"><span class="code-function">print</span><span class="code-punctuation">(</span><span class="code-string" data-translate="branching_syntax_ifelifelse_code_s2">"B"</span><span class="code-punctuation">)</span></span>
+<span class="code-part" data-part="else_kw" data-scope="ifelifelse" title="Click to identify"><span class="code-keyword">else</span></span><!--
+--><span class="code-part" data-part="else_colon" data-scope="ifelifelse" title="Click to identify"><span class="code-punctuation">:</span></span>
+<span class="code-part" data-part="else_indent" data-scope="ifelifelse" title="Click to identify">    </span><!--
+--><span class="code-part" data-part="else_body" data-scope="ifelifelse" title="Click to identify"><span class="code-function">print</span><span class="code-punctuation">(</span><span class="code-string" data-translate="branching_syntax_ifelifelse_code_s3">"C or below"</span><span class="code-punctuation">)</span></span>
+                             </div>
+                         </div>
+                     </div>
+                     <div id="branching-syntax-explanations"></div>
+                     <p id="branching-syntax-status" data-translate="branching_syntax_status_initial">Identify all parts in both examples!</p>
+                     <div id="branching-syntax-feedback" class="feedback-message"></div>
+                     <!-- Hidden elements for storing translated explanation parts -->
+                     <div id="explanation-texts" style="display: none;">
+                         <!-- Shared parts -->
+                        <span data-key="if_kw" data-translate="exp_if_kw">`if` keyword: Starts the first check.</span>
+                        <span data-key="if_cond" data-translate="exp_if_cond">`if` Condition: Evaluated first (True/False).</span>
+                        <span data-key="if_colon" data-translate="exp_if_colon">`if` Colon `:`: Ends the `if` condition line.</span>
+                        <span data-key="if_indent" data-translate="exp_if_indent">`if` Indentation: Defines the `if` block.</span>
+                        <span data-key="if_body" data-translate="exp_if_body">`if` Body: Runs if the `if` condition is True.</span>
+                        <span data-key="else_kw" data-translate="exp_else_kw">`else` keyword: Provides the alternative path.</span>
+                        <span data-key="else_colon" data-translate="exp_else_colon">`else` Colon `:`: Ends the `else` line (no condition).</span>
+                        <span data-key="else_indent" data-translate="exp_else_indent">`else` Indentation: Defines the `else` block.</span>
+                        <span data-key="else_body" data-translate="exp_else_body">`else` Body: Runs if *all* preceding `if`/`elif` conditions were False.</span>
+                         <!-- Elif specific parts -->
+                        <span data-key="elif_kw" data-translate="exp_elif_kw">`elif` keyword: Stands for "else if". Checks another condition if the previous `if`/`elif` was False.</span>
+                        <span data-key="elif_cond" data-translate="exp_elif_cond">`elif` Condition: Evaluated only if the preceding `if`/`elif` was False.</span>
+                        <span data-key="elif_colon" data-translate="exp_elif_colon">`elif` Colon `:`: Ends the `elif` condition line.</span>
+                        <span data-key="elif_indent" data-translate="exp_elif_indent">`elif` Indentation: Defines the `elif` block.</span>
+                        <span data-key="elif_body" data-translate="exp_elif_body">`elif` Body: Runs if its condition is True and preceding ones were False.</span>
+                     </div>
+                 </div>
+             </div>
+        </section>
+
+        <!-- ========= Activity 2: Logic Flow Prediction ========= -->
+        <section id="logic-flow" class="practice-section">
+            <div class="container">
+                <h2 class="fade-in"><i class="fas fa-directions"></i> <span data-translate="logic_flow_title">Predict the Path</span></h2>
+                <p class="section-description fade-in delay-1" data-translate="logic_flow_desc">
+                    Only one block (`if`, `elif`, or `else`) will run. Given the input value, predict which message will be printed by the code below.
+                </p>
+                <div class="interactive-area fade-in delay-2">
+                     <div id="logic-scenario-desc" class="scenario-description"></div>
+                     <div id="logic-code-display" class="code-display">
+                         <div class="code-block">
+                            <!-- Code will be loaded by JS -->
+                         </div>
+                     </div>
+                     <div id="logic-input-display" class="input-display">
+                        <!-- Input value will be shown by JS -->
+                     </div>
+                     <div id="logic-prediction-options" class="prediction-options text-center">
+                         <!-- Prediction buttons will be generated by JS -->
+                     </div>
+                     <div id="logic-feedback" class="feedback-message"></div>
+                     <div class="text-center">
+                         <button id="next-logic-btn" class="action-button secondary hidden" data-translate="button_next_scenario">Next Scenario</button>
+                     </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========= Activity 3: Advanced Code Challenge (Simulator) ========= -->
+        <section id="advanced-challenge" class="practice-section">
+             <div class="container">
+                 <h2 class="fade-in"><i class="fas fa-laptop-code"></i> <span data-translate="adv_challenge_title">Code Challenge: Temp Check</span></h2>
+                 <p class="section-description fade-in delay-1" data-translate="adv_challenge_desc">
+                     Write code using `if`, `elif`, and `else` to handle multiple temperature ranges.
+                 </p>
+                 <div class="interactive-area fade-in delay-2">
+                     <div class="challenge-setup" data-translate="adv_challenge_setup">
+                         <strong>Task:</strong> Assume a variable `temperature = 25`. Write Python code that checks the temperature and prints:
+                         <ul>
+                            <li>"Hot" if temperature is greater than 30.</li>
+                            <li>"Warm" if temperature is greater than or equal to 20 (but not > 30).</li>
+                            <li>"Cold" otherwise (if less than 20).</li>
+                         </ul>
+                     </div>
+                     <label for="adv-challenge-editor-input" style="font-weight: bold; display:block; margin-bottom: 8px;" data-translate="adv_challenge_editor_label">Code Editor:</label>
+                     <textarea id="adv-challenge-editor-input" class="sim-editor" rows="7" data-translate-placeholder="adv_challenge_editor_placeholder" placeholder='temperature = 25\n# Your if/elif/else structure here...\n# Example:\n# if temp > 30:\n#     print("Hot")\n# elif temp >= 20:\n#     print("Warm")\n# else:\n#     print("Cold")'></textarea>
+                     <div class="text-center">
+                          <button id="run-adv-challenge-btn" class="action-button" data-translate="button_run_challenge">Run Code</button>
+                     </div>
+                     <label for="adv-challenge-output" style="font-weight: bold; display:block; margin-top: 1.5rem; margin-bottom: 8px;" data-translate="adv_challenge_output_label">Simulated Output:</label>
+                     <div id="adv-challenge-output" class="sim-output-area">
+                         <span class="placeholder" data-translate="adv_challenge_output_placeholder">Output will appear here...</span>
+                     </div>
+                     <div id="adv-challenge-feedback" class="feedback-message"></div>
+                 </div>
+             </div>
+        </section>
+
+        <!-- ========= Activity 4: Advanced CT Connection ========= -->
+        <section id="advanced-ct" class="practice-section">
+             <div class="container">
+                 <h2 class="fade-in"><i class="fas fa-brain"></i> <span data-translate="adv_ct_title">Computational Thinking Enhanced</span></h2>
+                 <p class="section-description fade-in delay-1" data-translate="adv_ct_desc">
+                     How do `else` and `elif` expand our computational problem-solving?
+                 </p>
+                 <div class="interactive-area fade-in delay-2">
+                     <div class="ct-explanation">
+                         <p data-translate="adv_ct_explanation">
+                             <i class="fas fa-route"></i> Introducing <strong>`else`</strong> and <strong>`elif`</strong> significantly enhances <strong>Algorithmic Thinking</strong> by allowing for more complex decision structures.
+                             <ul>
+                                 <li><strong>`else`</strong> provides a default action, ensuring the algorithm always does *something* even if the initial `if` condition isn't met. This mirrors real-world "otherwise" scenarios.</li>
+                                 <li><strong>`elif`</strong> enables checking multiple, mutually exclusive conditions sequentially. This is crucial for tasks like categorization (e.g., grading, temperature ranges) where only one outcome should apply.</li>
+                             </ul>
+                             These constructs let us build algorithms that handle a wider variety of inputs and situations gracefully, making them more robust and precise in their logic.
+                         </p>
+                     </div>
+                     <div id="adv-ct-feedback" class="feedback-message"></div>
+                 </div>
+             </div>
+        </section>
+
+         <!-- ========= Completion Section (UPDATED Links/Text) ========= -->
+        <section class="completion-section">
+            <div class="container">
+                <div class="icon fade-in">
+                    <i class="fas fa-check-double"></i> <i class="fas fa-project-diagram"></i> <i class="fas fa-check-double"></i>
+                </div>
+                <h2 class="fade-in delay-1" data-translate="completion_title">Advanced Practice Complete!</h2>
+                <p class="fade-in delay-2" data-translate="completion_desc">
+                    Fantastic! You've mastered `else` and `elif` for more complex decision-making. <br>
+                    Consolidate your understanding by watching the <strong>Video Lesson</strong> for Module 6.
+                </p>
+                <div class="button-group">
+                    <!-- **** UPDATED HREFs/Text for Advanced Completion **** -->
+                    <a href="ctp-practice-6.html" class="action-button secondary fade-in delay-3"><i class="fas fa-arrow-left"></i> <span data-translate="button_view_practice">Review Standard Practice</span></a>
+                    <a href="ctp-video-6.html" class="action-button success fade-in delay-3"><i class="fas fa-video"></i> <span data-translate="button_watch_video">Watch Video Lesson</span></a>
+                    <a href="ctp-dashboard.html" class="action-button secondary fade-in delay-4"><i class="fas fa-list"></i> <span data-translate="button_back_menu">Back to Course Menu</span></a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ========= Script (UPDATED Logic) ========= -->
+    <script>
+    // --- Translations Object (Extended for Advanced Content) ---
+    const translations = {
+        en: {
+            // Page/Nav Basics
+            "page_title": "Module 6: Adv. Decisions - else/elif",
+            "nav_standard": "Standard Practice", "nav_video": "Watch Video Lesson", "nav_menu": "Course Menu",
+            "nav_syntax_adv": "Branching Syntax", "nav_flow": "Logic Flow", "nav_challenge_adv": "Adv. Challenge", "nav_ct_adv": "Adv. CT Link",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            // Header
+            "header_title": "Module 6: Advanced Decisions - else & elif", "header_subtitle": "Handling alternative paths and multiple conditions.",
+            // Activity 1: Branching Syntax
+            "branching_syntax_title": "Branching Structures", "branching_syntax_desc": "Beyond a simple `if`, we use `else` for alternatives and `elif` for checking multiple conditions. Click the parts to learn their roles.",
+            "branching_syntax_ifelse_label": "if / else",
+            "branching_syntax_ifelse_code_s1": "\"Morning\"",
+            "branching_syntax_ifelse_code_s2": "\"Afternoon/Evening\"",
+            "branching_syntax_ifelifelse_label": "if / elif / else",
+            "branching_syntax_ifelifelse_code_s1": "\"A\"",
+            "branching_syntax_ifelifelse_code_s2": "\"B\"",
+            "branching_syntax_ifelifelse_code_s3": "\"C or below\"",
+            "exp_if_kw": "`if` keyword: Starts the first check.",
+            "exp_if_cond": "`if` Condition: Evaluated first (True/False).",
+            "exp_if_colon": "`if` Colon `:`: Ends the `if` condition line.",
+            "exp_if_indent": "`if` Indentation: Defines the `if` block.",
+            "exp_if_body": "`if` Body: Runs if the `if` condition is True.",
+            "exp_else_kw": "`else` keyword: Provides the alternative path.",
+            "exp_else_colon": "`else` Colon `:`: Ends the `else` line (no condition).",
+            "exp_else_indent": "`else` Indentation: Defines the `else` block.",
+            "exp_else_body": "`else` Body: Runs if *all* preceding `if`/`elif` conditions were False.",
+            "exp_elif_kw": "`elif` keyword: Stands for \"else if\". Checks another condition if the previous `if`/`elif` was False.",
+            "exp_elif_cond": "`elif` Condition: Evaluated only if the preceding `if`/`elif` was False.",
+            "exp_elif_colon": "`elif` Colon `:`: Ends the `elif` condition line.",
+            "exp_elif_indent": "`elif` Indentation: Defines the `elif` block.",
+            "exp_elif_body": "`elif` Body: Runs if its condition is True and preceding ones were False.",
+            "branching_syntax_status_initial": "Identify all parts in both examples!",
+            "branching_syntax_status_progress": "Identified {count} of {total} parts.",
+            "branching_syntax_status_done": "All parts identified!",
+            "feedback_branching_syntax_correct": "Excellent! You've identified all key parts of `if/else` and `if/elif/else` structures.",
+            // Activity 2: Logic Flow
+            "logic_flow_title": "Predict the Path", "logic_flow_desc": "Only one block (`if`, `elif`, or `else`) will run. Given the input value, predict which message will be printed by the code below.",
+            "logic_flow_scenario_desc_1": "Scenario: Checking user status based on login attempts.",
+            "logic_flow_code_1": "attempts = {value}\nif attempts == 0:\n    print(\"New User\")\nelif attempts < 3:\n    print(\"Active\")\nelse:\n    print(\"Locked\")",
+            "logic_flow_input_1": "Input: attempts = {value}",
+            "logic_flow_option_1_1": "New User", "logic_flow_option_1_2": "Active", "logic_flow_option_1_3": "Locked",
+            "logic_flow_scenario_desc_2": "Scenario: Determining discount based on purchase amount.",
+            "logic_flow_code_2": "total = {value}\nif total >= 100:\n    print(\"15% Discount\")\nelif total >= 50:\n    print(\"10% Discount\")\nelse:\n    print(\"No Discount\")",
+            "logic_flow_input_2": "Input: total = {value}",
+            "logic_flow_option_2_1": "15% Discount", "logic_flow_option_2_2": "10% Discount", "logic_flow_option_2_3": "No Discount",
+            "button_next_scenario": "Next Scenario",
+            "feedback_logic_correct": "Correct! With input {input_val}, the condition `{condition}` is the first one met, running the `{block_type}` block and printing '{output}'.",
+            "feedback_logic_incorrect": "Not quite. With input {input_val}, the first condition met is actually `{correct_condition}`, running the `{correct_block_type}` block. Your choice would run only if {reasoning}.",
+             // Activity 3: Advanced Challenge
+             "adv_challenge_title": "Code Challenge: Temp Check", "adv_challenge_desc": "Write code using `if`, `elif`, and `else` to handle multiple temperature ranges.",
+             "adv_challenge_setup": "<strong>Task:</strong> Assume a variable `temperature = 25`. Write Python code that checks the temperature and prints:\n<ul><li>\"Hot\" if temperature is greater than 30.</li><li>\"Warm\" if temperature is greater than or equal to 20 (but not > 30).</li><li>\"Cold\" otherwise (if less than 20).</li></ul>",
+             "adv_challenge_editor_label": "Code Editor:", "adv_challenge_editor_placeholder": "temperature = 25\n# Your if/elif/else structure here...\n# Example:\n# if temp > 30:\n#     print(\"Hot\")\n# elif temp >= 20:\n#     print(\"Warm\")\n# else:\n#     print(\"Cold\")",
+             "button_run_challenge": "Run Code", "adv_challenge_output_label": "Simulated Output:", "adv_challenge_output_placeholder": "Output will appear here...",
+             "feedback_adv_challenge_success": "Perfect! The code correctly identifies 25 as 'Warm' using the `elif` condition.",
+             "feedback_adv_challenge_no_output": "Hmm, no output. Did you include `if`, `elif`, and `else` with `print()` statements in each block?",
+             "feedback_adv_challenge_wrong_output": "Output was '{output}'. Expected 'Warm'. Check your conditions (`> 30`, `>= 20`) and the print messages in each block.",
+             "feedback_adv_challenge_missing_elif": "Make sure you use an `elif` statement to check the 'Warm' condition (e.g., `elif temperature >= 20:`).",
+             "feedback_adv_challenge_missing_else": "Don't forget the `else:` block to catch the 'Cold' condition.",
+             "feedback_adv_challenge_condition_order": "Check the order of your `if`/`elif`. The `> 30` check should usually come before `>= 20`.",
+             "feedback_adv_challenge_indent_error": "Check indentation! Each `print` must be indented under its corresponding `if`, `elif`, or `else`.",
+             "feedback_adv_challenge_syntax_error": "Syntax error suspected. Check colons `:` after each condition and `else`, and ensure proper indentation.",
+             // Activity 4: Advanced CT
+             "adv_ct_title": "Computational Thinking Enhanced", "adv_ct_desc": "How do `else` and `elif` expand our computational problem-solving?",
+             "adv_ct_explanation": "<i class=\"fas fa-route\"></i> Introducing <strong>`else`</strong> and <strong>`elif`</strong> significantly enhances <strong>Algorithmic Thinking</strong> by allowing for more complex decision structures.\n<ul><li><strong>`else`</strong> provides a default action, ensuring the algorithm always does *something* even if the initial `if` condition isn't met. This mirrors real-world \"otherwise\" scenarios.</li><li><strong>`elif`</strong> enables checking multiple, mutually exclusive conditions sequentially. This is crucial for tasks like categorization (e.g., grading, temperature ranges) where only one outcome should apply.</li></ul>\nThese constructs let us build algorithms that handle a wider variety of inputs and situations gracefully, making them more robust and precise in their logic.",
+            // Completion
+            "completion_title": "Advanced Practice Complete!", "completion_desc": "Fantastic! You've mastered `else` and `elif` for more complex decision-making. <br> Consolidate your understanding by watching the <strong>Video Lesson</strong> for Module 6.",
+            "button_view_practice": "Review Standard Practice", "button_watch_video": "Watch Video Lesson", "button_back_menu": "Back to Course Menu"
+        },
+        pt: {
+            // Page/Nav Basics
+            "page_title": "Módulo 6: Decisões Avançadas - else/elif",
+            "nav_standard": "Prática Padrão", "nav_video": "Ver Videoaula", "nav_menu": "Menu do Curso",
+            "nav_syntax_adv": "Sintaxe de Ramificação", "nav_flow": "Fluxo Lógico", "nav_challenge_adv": "Desafio Avançado", "nav_ct_adv": "Link CT Avançado",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            // Header
+            "header_title": "Módulo 6: Decisões Avançadas - else & elif", "header_subtitle": "Lidando com caminhos alternativos e múltiplas condições.",
+            // Activity 1: Branching Syntax
+            "branching_syntax_title": "Estruturas de Ramificação", "branching_syntax_desc": "Além de um `if` simples, usamos `else` para alternativas e `elif` para verificar múltiplas condições. Clique nas partes para aprender suas funções.",
+            "branching_syntax_ifelse_label": "if / else",
+            "branching_syntax_ifelse_code_s1": "\"Manhã\"",
+            "branching_syntax_ifelse_code_s2": "\"Tarde/Noite\"",
+            "branching_syntax_ifelifelse_label": "if / elif / else",
+            "branching_syntax_ifelifelse_code_s1": "\"A\"",
+            "branching_syntax_ifelifelse_code_s2": "\"B\"",
+            "branching_syntax_ifelifelse_code_s3": "\"C ou inferior\"",
+            "exp_if_kw": "Palavra-chave `if`: Inicia a primeira verificação.",
+            "exp_if_cond": "Condição `if`: Avaliada primeiro (Verdadeiro/Falso).",
+            "exp_if_colon": "Dois Pontos `:` `if`: Termina a linha da condição `if`.",
+            "exp_if_indent": "Indentação `if`: Define o bloco `if`.",
+            "exp_if_body": "Corpo `if`: Executa se a condição `if` for Verdadeira.",
+            "exp_else_kw": "Palavra-chave `else`: Fornece o caminho alternativo.",
+            "exp_else_colon": "Dois Pontos `:` `else`: Termina a linha `else` (sem condição).",
+            "exp_else_indent": "Indentação `else`: Define o bloco `else`.",
+            "exp_else_body": "Corpo `else`: Executa se *todas* as condições `if`/`elif` precedentes forem Falsas.",
+            "exp_elif_kw": "Palavra-chave `elif`: Significa \"else if\" (senão se). Verifica outra condição se o `if`/`elif` anterior foi Falso.",
+            "exp_elif_cond": "Condição `elif`: Avaliada apenas se o `if`/`elif` precedente foi Falso.",
+            "exp_elif_colon": "Dois Pontos `:` `elif`: Termina a linha da condição `elif`.",
+            "exp_elif_indent": "Indentação `elif`: Define o bloco `elif`.",
+            "exp_elif_body": "Corpo `elif`: Executa se sua condição for Verdadeira e as precedentes foram Falsas.",
+            "branching_syntax_status_initial": "Identifique todas as partes em ambos os exemplos!",
+            "branching_syntax_status_progress": "Identificadas {count} de {total} partes.",
+            "branching_syntax_status_done": "Todas as partes identificadas!",
+            "feedback_branching_syntax_correct": "Excelente! Você identificou todas as partes chave das estruturas `if/else` e `if/elif/else`.",
+            // Activity 2: Logic Flow
+            "logic_flow_title": "Preveja o Caminho", "logic_flow_desc": "Apenas um bloco (`if`, `elif`, ou `else`) será executado. Dado o valor de entrada, preveja qual mensagem será impressa pelo código abaixo.",
+            "logic_flow_scenario_desc_1": "Cenário: Verificando status do usuário baseado em tentativas de login.",
+            "logic_flow_code_1": "tentativas = {value}\nif tentativas == 0:\n    print(\"Novo Usuário\")\nelif tentativas < 3:\n    print(\"Ativo\")\nelse:\n    print(\"Bloqueado\")",
+            "logic_flow_input_1": "Entrada: tentativas = {value}",
+            "logic_flow_option_1_1": "Novo Usuário", "logic_flow_option_1_2": "Ativo", "logic_flow_option_1_3": "Bloqueado",
+            "logic_flow_scenario_desc_2": "Cenário: Determinando desconto baseado no valor da compra.",
+            "logic_flow_code_2": "total = {value}\nif total >= 100:\n    print(\"15% Desconto\")\nelif total >= 50:\n    print(\"10% Desconto\")\nelse:\n    print(\"Sem Desconto\")",
+            "logic_flow_input_2": "Entrada: total = {value}",
+            "logic_flow_option_2_1": "15% Desconto", "logic_flow_option_2_2": "10% Desconto", "logic_flow_option_2_3": "Sem Desconto",
+            "button_next_scenario": "Próximo Cenário",
+            "feedback_logic_correct": "Correto! Com entrada {input_val}, a condição `{condition}` é a primeira a ser atendida, executando o bloco `{block_type}` e imprimindo '{output}'.",
+            "feedback_logic_incorrect": "Não exatamente. Com entrada {input_val}, a primeira condição atendida na verdade é `{correct_condition}`, executando o bloco `{correct_block_type}`. Sua escolha executaria apenas se {reasoning}.",
+            // Activity 3: Advanced Challenge
+            "adv_challenge_title": "Desafio de Código: Checagem de Temp.", "adv_challenge_desc": "Escreva código usando `if`, `elif` e `else` para lidar com múltiplas faixas de temperatura.",
+            "adv_challenge_setup": "<strong>Tarefa:</strong> Assuma uma variável `temperatura = 25`. Escreva código Python que verifica a temperatura e imprime:\n<ul><li>\"Quente\" se temperatura for maior que 30.</li><li>\"Agradável\" se temperatura for maior ou igual a 20 (mas não > 30).</li><li>\"Frio\" caso contrário (se menor que 20).</li></ul>", // Adjusted strings
+            "adv_challenge_editor_label": "Editor de Código:", "adv_challenge_editor_placeholder": "temperatura = 25\n# Sua estrutura if/elif/else aqui...\n# Exemplo:\n# if temp > 30:\n#     print(\"Quente\")\n# elif temp >= 20:\n#     print(\"Agradável\")\n# else:\n#     print(\"Frio\")",
+            "button_run_challenge": "Executar Código", "adv_challenge_output_label": "Saída Simulada:", "adv_challenge_output_placeholder": "A saída aparecerá aqui...",
+            "feedback_adv_challenge_success": "Perfeito! O código identifica corretamente 25 como 'Agradável' usando a condição `elif`.", // Adjusted string
+            "feedback_adv_challenge_no_output": "Hmm, sem saída. Você incluiu `if`, `elif` e `else` com declarações `print()` em cada bloco?",
+            "feedback_adv_challenge_wrong_output": "A saída foi '{output}'. Esperado 'Agradável'. Verifique suas condições (`> 30`, `>= 20`) e as mensagens de impressão em cada bloco.", // Adjusted string
+            "feedback_adv_challenge_missing_elif": "Certifique-se de usar uma declaração `elif` para verificar a condição 'Agradável' (ex: `elif temperatura >= 20:`).", // Adjusted string
+            "feedback_adv_challenge_missing_else": "Não esqueça o bloco `else:` para capturar a condição 'Frio'.", // Adjusted string
+            "feedback_adv_challenge_condition_order": "Verifique a ordem do seu `if`/`elif`. A verificação `> 30` geralmente deve vir antes de `>= 20`.",
+            "feedback_adv_challenge_indent_error": "Verifique a indentação! Cada `print` deve ser indentado sob seu correspondente `if`, `elif` ou `else`.",
+            "feedback_adv_challenge_syntax_error": "Suspeita de erro de sintaxe. Verifique os dois pontos `:` após cada condição e `else`, e garanta a indentação adequada.",
+            // Activity 4: Advanced CT
+            "adv_ct_title": "Pensamento Computacional Aprimorado", "adv_ct_desc": "Como `else` e `elif` expandem nossa resolução de problemas computacionais?",
+            "adv_ct_explanation": "<i class=\"fas fa-route\"></i> Introduzir <strong>`else`</strong> e <strong>`elif`</strong> aprimora significativamente o <strong>Pensamento Algorítmico</strong> ao permitir estruturas de decisão mais complexas.\n<ul><li><strong>`else`</strong> fornece uma ação padrão, garantindo que o algoritmo sempre faça *algo* mesmo que a condição `if` inicial não seja atendida. Isso espelha cenários do mundo real de \"caso contrário\".</li><li><strong>`elif`</strong> permite verificar múltiplas condições mutuamente exclusivas sequencialmente. Isso é crucial para tarefas como categorização (ex: notas, faixas de temperatura) onde apenas um resultado deve se aplicar.</li></ul>\nEssas construções nos permitem construir algoritmos que lidam com uma variedade maior de entradas e situações de forma elegante, tornando-os mais robustos e precisos em sua lógica.",
+            // Completion
+            "completion_title": "Prática Avançada Completa!", "completion_desc": "Fantástico! Você dominou `else` e `elif` para tomada de decisão mais complexa. <br> Consolide seu entendimento assistindo à <strong>Videoaula</strong> do Módulo 6.",
+            "button_view_practice": "Rever Prática Padrão", "button_watch_video": "Ver Videoaula", "button_back_menu": "Voltar ao Menu"
+        },
+        zh: {
+            // Page/Nav Basics
+            "page_title": "模块 6：高级决策 - else/elif",
+            "nav_standard": "标准练习", "nav_video": "观看视频课程", "nav_menu": "课程菜单",
+            "nav_syntax_adv": "分支语法", "nav_flow": "逻辑流程", "nav_challenge_adv": "高级挑战", "nav_ct_adv": "高级 CT 链接",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+             // Header
+            "header_title": "模块 6：高级决策 - else & elif", "header_subtitle": "处理替代路径和多个条件。",
+            // Activity 1: Branching Syntax
+            "branching_syntax_title": "分支结构", "branching_syntax_desc": "除了简单的 `if`，我们使用 `else` 来处理替代情况，使用 `elif` 来检查多个条件。点击各部分了解它们的作用。",
+            "branching_syntax_ifelse_label": "if / else",
+            "branching_syntax_ifelse_code_s1": "\"上午\"",
+            "branching_syntax_ifelse_code_s2": "\"下午/晚上\"",
+            "branching_syntax_ifelifelse_label": "if / elif / else",
+            "branching_syntax_ifelifelse_code_s1": "\"A\"",
+            "branching_syntax_ifelifelse_code_s2": "\"B\"",
+            "branching_syntax_ifelifelse_code_s3": "\"C 或以下\"",
+            "exp_if_kw": "`if` 关键字：开始第一个检查。",
+            "exp_if_cond": "`if` 条件：首先评估（真/假）。",
+            "exp_if_colon": "`if` 冒号 `:`：结束 `if` 条件行。",
+            "exp_if_indent": "`if` 缩进：定义 `if` 代码块。",
+            "exp_if_body": "`if` 主体：如果 `if` 条件为真则运行。",
+            "exp_else_kw": "`else` 关键字：提供替代路径。",
+            "exp_else_colon": "`else` 冒号 `:`：结束 `else` 行（无条件）。",
+            "exp_else_indent": "`else` 缩进：定义 `else` 代码块。",
+            "exp_else_body": "`else` 主体：如果*所有*前面的 `if`/`elif` 条件都为假则运行。",
+            "exp_elif_kw": "`elif` 关键字：代表“else if”。如果前面的 `if`/`elif` 为假，则检查另一个条件。",
+            "exp_elif_cond": "`elif` 条件：仅在前面的 `if`/`elif` 为假时评估。",
+            "exp_elif_colon": "`elif` 冒号 `:`：结束 `elif` 条件行。",
+            "exp_elif_indent": "`elif` 缩进：定义 `elif` 代码块。",
+            "exp_elif_body": "`elif` 主体：如果其条件为真且前面的条件为假则运行。",
+            "branching_syntax_status_initial": "识别两个示例中的所有部分！",
+            "branching_syntax_status_progress": "已识别 {count} / {total} 个部分。",
+            "branching_syntax_status_done": "所有部分已识别！",
+            "feedback_branching_syntax_correct": "太棒了！你已经识别了 `if/else` 和 `if/elif/else` 结构的所有关键部分。",
+             // Activity 2: Logic Flow
+            "logic_flow_title": "预测路径", "logic_flow_desc": "只有一个代码块（`if`、`elif` 或 `else`）会运行。根据给定的输入值，预测下面的代码将打印哪条消息。",
+            "logic_flow_scenario_desc_1": "场景：根据登录尝试次数检查用户状态。",
+            "logic_flow_code_1": "attempts = {value}\nif attempts == 0:\n    print(\"新用户\")\nelif attempts < 3:\n    print(\"活跃\")\nelse:\n    print(\"已锁定\")",
+            "logic_flow_input_1": "输入: attempts = {value}",
+            "logic_flow_option_1_1": "新用户", "logic_flow_option_1_2": "活跃", "logic_flow_option_1_3": "已锁定",
+            "logic_flow_scenario_desc_2": "场景：根据购买金额确定折扣。",
+            "logic_flow_code_2": "total = {value}\nif total >= 100:\n    print(\"15% 折扣\")\nelif total >= 50:\n    print(\"10% 折扣\")\nelse:\n    print(\"无折扣\")",
+            "logic_flow_input_2": "输入: total = {value}",
+            "logic_flow_option_2_1": "15% 折扣", "logic_flow_option_2_2": "10% 折扣", "logic_flow_option_2_3": "无折扣",
+            "button_next_scenario": "下一个场景",
+            "feedback_logic_correct": "正确！输入 {input_val} 时，条件 `{condition}` 是第一个满足的，运行 `{block_type}` 块并打印 '{output}'。",
+            "feedback_logic_incorrect": "不太对。输入 {input_val} 时，第一个满足的条件实际上是 `{correct_condition}`，运行 `{correct_block_type}` 块。你的选择只有在 {reasoning} 时才会运行。",
+             // Activity 3: Advanced Challenge
+             "adv_challenge_title": "代码挑战：温度检查", "adv_challenge_desc": "使用 `if`、`elif` 和 `else` 编写代码来处理多个温度范围。",
+             "adv_challenge_setup": "<strong>任务：</strong> 假设一个变量 `temperature = 25`。编写 Python 代码检查温度并打印：\n<ul><li>如果温度大于 30，打印“炎热”。</li><li>如果温度大于等于 20（但不大于 30），打印“温暖”。</li><li>否则（如果小于 20），打印“寒冷”。</li></ul>", // Adjusted strings
+             "adv_challenge_editor_label": "代码编辑器：", "adv_challenge_editor_placeholder": "temperature = 25\n# 在这里写你的 if/elif/else 结构...\n# 例如:\n# if temp > 30:\n#     print(\"炎热\")\n# elif temp >= 20:\n#     print(\"温暖\")\n# else:\n#     print(\"寒冷\")",
+             "button_run_challenge": "运行代码", "adv_challenge_output_label": "模拟输出：", "adv_challenge_output_placeholder": "输出将显示在此处...",
+             "feedback_adv_challenge_success": "完美！代码使用 `elif` 条件正确地将 25 识别为“温暖”。", // Adjusted string
+             "feedback_adv_challenge_no_output": "嗯，没有输出。你是否在每个块中都包含了带有 `print()` 语句的 `if`、`elif` 和 `else`？",
+             "feedback_adv_challenge_wrong_output": "输出是 '{output}'。期望输出 '温暖'。检查你的条件 (`> 30`, `>= 20`) 和每个块中的打印消息。", // Adjusted string
+             "feedback_adv_challenge_missing_elif": "确保你使用了 `elif` 语句来检查“温暖”条件（例如 `elif temperature >= 20:`）。", // Adjusted string
+             "feedback_adv_challenge_missing_else": "别忘了用 `else:` 块来捕捉“寒冷”条件。", // Adjusted string
+             "feedback_adv_challenge_condition_order": "检查 `if`/`elif` 的顺序。`> 30` 的检查通常应该在 `>= 20` 之前。",
+             "feedback_adv_challenge_indent_error": "检查缩进！每个 `print` 必须在其对应的 `if`、`elif` 或 `else` 下缩进。",
+             "feedback_adv_challenge_syntax_error": "怀疑有语法错误。检查每个条件和 `else` 后面的冒号 `:`，并确保缩进正确。",
+             // Activity 4: Advanced CT
+             "adv_ct_title": "计算思维增强", "adv_ct_desc": "`else` 和 `elif` 如何扩展我们的计算问题解决能力？",
+             "adv_ct_explanation": "<i class=\"fas fa-route\"></i> 引入 <strong>`else`</strong> 和 <strong>`elif`</strong> 通过允许更复杂的决策结构，显著增强了<strong>算法思维</strong>。\n<ul><li><strong>`else`</strong> 提供了一个默认操作，确保即使初始 `if` 条件不满足，算法也总会做*某事*。这反映了现实世界中的“否则”情景。</li><li><strong>`elif`</strong> 使得能够按顺序检查多个互斥的条件。这对于像分类（例如，评分、温度范围）这样的任务至关重要，因为这些任务只应应用一个结果。</li></ul>\n这些结构使我们能够构建能够优雅地处理更多种类输入和情况的算法，使其在逻辑上更加健壮和精确。",
+             // Completion
+            "completion_title": "高级练习完成！", "completion_desc": "太棒了！你已经掌握了 `else` 和 `elif` 以进行更复杂的决策。 <br> 通过观看模块 6 的<strong>视频课程</strong>来巩固你的理解。",
+            "button_view_practice": "回顾标准练习", "button_watch_video": "观看视频课程", "button_back_menu": "返回课程菜单"
+        }
+    };
+
+
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // --- Language Management Functions (Same as standard practice) ---
+        function getStoredLanguage() {
+            const storedLang = localStorage.getItem('userLanguage');
+            if (storedLang && translations[storedLang]) return storedLang;
+            const browserLang = navigator.language || navigator.userLanguage;
+            if (browserLang.startsWith('pt')) return 'pt';
+            if (browserLang.startsWith('zh')) return 'zh';
+            return 'en';
+        }
+
+        function setLanguage(lang) {
+            if (!translations[lang]) lang = 'en';
+            localStorage.setItem('userLanguage', lang);
+            document.documentElement.lang = lang;
+            translatePage(lang);
+
+            const langSelect = document.getElementById('languageSelect');
+            if (langSelect) langSelect.value = lang;
+
+             // --- Re-initialize Advanced Module 6 Activities ---
+             if (document.getElementById('branching-syntax')) {
+                 setupBranchingSyntaxActivity();
+             }
+             if (document.getElementById('logic-flow')) {
+                 setupLogicFlowActivity(); // Reloads with a new scenario
+             }
+             if (document.getElementById('advanced-challenge')) {
+                 resetAdvancedChallengeSimulator();
+             }
+             // CT Connection is just text, handled by translatePage
+        }
+
+        function getTranslation(key, lang, replacements = {}) {
+            let text = translations[lang]?.[key] ?? translations['en']?.[key] ?? `[${key}]`;
+            for (const placeholder in replacements) {
+                const regex = new RegExp(`\\{${placeholder}\\}`, 'g');
+                text = text.replace(regex, replacements[placeholder]);
+            }
+            return text;
+        }
+
+        function translatePage(lang) {
+            if (!translations[lang]) lang = 'en';
+
+            document.querySelectorAll('[data-translate]').forEach(el => {
+                const key = el.getAttribute('data-translate');
+                const translation = getTranslation(key, lang);
+                 if (el.tagName === 'TITLE') { document.title = translation; }
+                 else if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') { /* Skip value */ }
+                 else if (el.tagName === 'OPTION') { el.textContent = translation; }
+                 else {
+                     // Basic check to see if translation contains HTML tags
+                     if (translation.includes('<') && translation.includes('>')) { el.innerHTML = translation; }
+                     else { el.textContent = translation; }
+                 }
+            });
+
+             document.querySelectorAll('[data-translate-placeholder]').forEach(el => {
+                 const key = el.getAttribute('data-translate-placeholder');
+                 const translation = getTranslation(key, lang);
+                 el.setAttribute('placeholder', translation);
+             });
+
+             document.querySelectorAll('[title]').forEach(el => {
+                // Only translate titles that specifically request it or maybe use a convention
+                if (el.dataset.part || el.closest('#branching-syntax')) { // Example: only for code parts in this activity
+                     const titleKey = "tooltip_click_identify"; // Assume a key if not explicitly set, or handle specific keys
+                     const translation = getTranslation(titleKey, lang); // Need to add this key to translations if missing
+                     if (translation !== `[${titleKey}]`) { // Only set if translation found
+                         el.setAttribute('title', translation);
+                     }
+                 }
+             });
+             // Add the missing translation key for the tooltip
+             if (!translations.en.tooltip_click_identify) translations.en.tooltip_click_identify = "Click to identify";
+             if (!translations.pt.tooltip_click_identify) translations.pt.tooltip_click_identify = "Clique para identificar";
+             if (!translations.zh.tooltip_click_identify) translations.zh.tooltip_click_identify = "点击识别";
+        }
+
+        // --- Initialize Language ---
+        const initialLang = getStoredLanguage();
+        // Note: setLanguage is called later
+
+        // --- Minimal Nav Logic (Same as standard practice) ---
+        const navToggleButton = document.getElementById('minimal-nav-toggle');
+        const navPanel = document.getElementById('minimal-nav-panel');
+        const body = document.body;
+        if (navToggleButton && navPanel) {
+            navToggleButton.addEventListener('click', (event) => { event.stopPropagation(); body.classList.toggle('nav-active'); navToggleButton.setAttribute('aria-expanded', body.classList.contains('nav-active')); });
+            document.addEventListener('click', (event) => { if (body.classList.contains('nav-active') && !navPanel.contains(event.target) && event.target !== navToggleButton && !navToggleButton.contains(event.target) ) { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); } });
+            navPanel.querySelectorAll('a').forEach(link => { link.addEventListener('click', () => { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); }); });
+            document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && body.classList.contains('nav-active')) { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); } });
+            navToggleButton.setAttribute('aria-expanded', 'false');
+        }
+
+        // --- Language Switcher Setup (Same as standard practice) ---
+        const langSelect = document.getElementById('languageSelect');
+        if (langSelect) {
+            langSelect.addEventListener('change', (e) => { setLanguage(e.target.value); });
+        }
+
+        // --- Helper Function for Feedback (Same as standard practice) ---
+        function showFeedback(elementId, messageKey, type = 'info', replacements = {}) {
+            const feedbackEl = document.getElementById(elementId);
+            if (!feedbackEl) { console.error(`Feedback element not found: ${elementId}`); return; }
+            const currentLang = getStoredLanguage();
+            const translatedMessage = getTranslation(messageKey, currentLang, replacements);
+             if (translatedMessage.includes('<') && translatedMessage.includes('>')) { feedbackEl.innerHTML = translatedMessage; }
+             else { feedbackEl.textContent = translatedMessage; }
+            feedbackEl.className = 'feedback-message'; // Reset classes first
+            feedbackEl.classList.add('visible', type);
+            const interactiveArea = feedbackEl.closest('.interactive-area');
+            if (!interactiveArea) return;
+            interactiveArea.classList.remove('success-glow-anim', 'shake-anim');
+            void interactiveArea.offsetWidth; // Trigger reflow
+            if (type === 'correct') { interactiveArea.classList.add('success-glow-anim'); }
+            else if (type === 'incorrect') { interactiveArea.classList.add('shake-anim'); }
+        }
+
+
+        // --- Activity 1: Branching Syntax ---
+        const branchingSyntaxSection = document.getElementById('branching-syntax');
+        let branchingSyntaxExplanations = {};
+        let totalBranchingSyntaxParts = 0;
+        let identifiedBranchingParts = new Set();
+        let currentBranchingSyntaxListeners = [];
+
+        function setupBranchingSyntaxActivity() {
+            if (!branchingSyntaxSection) return;
+            const currentLang = getStoredLanguage();
+            branchingSyntaxExplanations = {};
+            identifiedBranchingParts.clear();
+
+            // Fetch explanations for current language
+            document.querySelectorAll('#explanation-texts span[data-key]').forEach(span => {
+                const key = span.getAttribute('data-key');
+                branchingSyntaxExplanations[key] = getTranslation(`exp_${key}`, currentLang);
+            });
+
+            const parts = branchingSyntaxSection.querySelectorAll('.code-part');
+            const explanationsDiv = document.getElementById('branching-syntax-explanations');
+            const statusP = document.getElementById('branching-syntax-status');
+            const feedbackDiv = document.getElementById('branching-syntax-feedback');
+            totalBranchingSyntaxParts = parts.length; // Count all clickable parts
+
+            // Remove old listeners
+            currentBranchingSyntaxListeners.forEach(({ element, listener }) => {
+                element.removeEventListener('click', listener);
+            });
+            currentBranchingSyntaxListeners = [];
+
+            // Reset visual state
+            parts.forEach(p => p.classList.remove('identified'));
+            explanationsDiv.innerHTML = '';
+            statusP.innerHTML = getTranslation('branching_syntax_status_initial', currentLang);
+            feedbackDiv.classList.remove('visible', 'correct', 'incorrect', 'info');
+
+            parts.forEach(part => {
+                const partKey = part.dataset.part; // e.g., 'if_kw', 'else_body'
+                const scope = part.dataset.scope; // e.g., 'ifelse', 'ifelifelse'
+                const uniqueId = `${scope}-${partKey}`; // Unique identifier for tracking
+
+                const clickListener = () => {
+                    if (!identifiedBranchingParts.has(uniqueId) && partKey && branchingSyntaxExplanations[partKey]) {
+                        part.classList.add('identified');
+                        identifiedBranchingParts.add(uniqueId);
+
+                        const p = document.createElement('p');
+                        p.classList.add('part-explanation');
+                        const icon = document.createElement('i');
+                        icon.className = 'fas fa-check-circle';
+                        icon.style.color = 'var(--success-color)';
+                        const strong = document.createElement('strong');
+
+                        let displayPartText = part.textContent.trim();
+                        if (!displayPartText && (partKey.includes('indent'))) displayPartText = "[Indentation]";
+                        else if(part.querySelector('span')) displayPartText = part.querySelector('span').textContent.trim();
+
+                        strong.textContent = displayPartText + ': ';
+                        p.appendChild(icon);
+                        p.appendChild(strong);
+                        p.appendChild(document.createTextNode(branchingSyntaxExplanations[partKey]));
+                        explanationsDiv.appendChild(p);
+
+                        statusP.innerHTML = getTranslation('branching_syntax_status_progress', currentLang, { count: identifiedBranchingParts.size, total: totalBranchingSyntaxParts });
+
+                        if (identifiedBranchingParts.size === totalBranchingSyntaxParts) {
+                            statusP.innerHTML = getTranslation('branching_syntax_status_done', currentLang);
+                            showFeedback('branching-syntax-feedback', 'feedback_branching_syntax_correct', 'correct');
+                        }
+                    } else if (!branchingSyntaxExplanations[partKey]) {
+                         console.warn(`Explanation missing for part key: ${partKey}`);
+                         // Optional: Still mark as identified visually if explanation missing
+                         if (!identifiedBranchingParts.has(uniqueId)) {
+                            part.classList.add('identified');
+                            identifiedBranchingParts.add(uniqueId);
+                            statusP.innerHTML = getTranslation('branching_syntax_status_progress', currentLang, { count: identifiedBranchingParts.size, total: totalBranchingSyntaxParts });
+                            if (identifiedBranchingParts.size === totalBranchingSyntaxParts) {
+                                statusP.innerHTML = getTranslation('branching_syntax_status_done', currentLang);
+                                showFeedback('branching-syntax-feedback', 'feedback_branching_syntax_correct', 'correct');
+                            }
+                         }
+                    }
+                };
+                part.addEventListener('click', clickListener);
+                currentBranchingSyntaxListeners.push({ element: part, listener: clickListener });
+            });
+        }
+
+        // --- Activity 2: Logic Flow Prediction ---
+        const logicFlowSection = document.getElementById('logic-flow');
+        if (logicFlowSection) {
+            const scenarioDescDiv = document.getElementById('logic-scenario-desc');
+            const codeDisplayDiv = document.getElementById('logic-code-display').querySelector('.code-block');
+            const inputDisplayDiv = document.getElementById('logic-input-display');
+            const optionsContainer = document.getElementById('logic-prediction-options');
+            const nextBtn = document.getElementById('next-logic-btn');
+            const feedbackDiv = document.getElementById('logic-feedback');
+
+            // Define scenarios with translations keys
+            const scenarios = [
+                {
+                    descKey: "logic_flow_scenario_desc_1",
+                    codeKey: "logic_flow_code_1",
+                    inputKey: "logic_flow_input_1",
+                    inputValue: 2, // Example input
+                    options: ["logic_flow_option_1_1", "logic_flow_option_1_2", "logic_flow_option_1_3"],
+                    correctOptionKey: "logic_flow_option_1_2", // "Active"
+                    evaluation: (val) => (val == 0 ? "New User" : val < 3 ? "Active" : "Locked"),
+                    correctConditionDesc: "attempts < 3",
+                    correctBlockType: "elif",
+                    incorrectReasoningKey: "it's not 0, and less than 3" // Example placeholder for reasoning logic
+                },
+                {
+                    descKey: "logic_flow_scenario_desc_2",
+                    codeKey: "logic_flow_code_2",
+                    inputKey: "logic_flow_input_2",
+                    inputValue: 75, // Example input
+                    options: ["logic_flow_option_2_1", "logic_flow_option_2_2", "logic_flow_option_2_3"],
+                    correctOptionKey: "logic_flow_option_2_2", // "10% Discount"
+                    evaluation: (val) => (val >= 100 ? "15% Discount" : val >= 50 ? "10% Discount" : "No Discount"),
+                    correctConditionDesc: "total >= 50",
+                    correctBlockType: "elif",
+                    incorrectReasoningKey: "it's less than 100 but greater than or equal to 50"
+                },
+                 { // Add another scenario
+                    descKey: "logic_flow_scenario_desc_1", // Re-use description key
+                    codeKey: "logic_flow_code_1",
+                    inputKey: "logic_flow_input_1",
+                    inputValue: 5, // Different input
+                    options: ["logic_flow_option_1_1", "logic_flow_option_1_2", "logic_flow_option_1_3"],
+                    correctOptionKey: "logic_flow_option_1_3", // "Locked"
+                    evaluation: (val) => (val == 0 ? "New User" : val < 3 ? "Active" : "Locked"),
+                    correctConditionDesc: "else (attempts >= 3)", // Description for else
+                    correctBlockType: "else",
+                    incorrectReasoningKey: "it's not 0 and not less than 3"
+                }
+            ];
+            let currentScenarioIndex = -1;
+            let currentCorrectOutput = null;
+            let currentScenarioData = null;
+
+            // Basic code syntax highlighter
+            function highlightCode(text) {
+                 return text
+                    .replace(/(\b(?:if|else|elif|print|True|False|None)\b)/g, '<span class="code-keyword">$1</span>')
+                    .replace(/(\b\d+\b)/g, '<span class="code-literal">$1</span>')
+                    .replace(/([a-zA-Z_]\w*)/g, '<span class="code-variable">$1</span>') // Imperfect
+                    .replace(/(==|!=|&lt;|&gt;|&lt;=|&gt;=)/g, '<span class="code-operator">$1</span>') // Handle escaped operators
+                    .replace(/("[^"]*")/g, '<span class="code-string">$1</span>')
+                    .replace(/('[^']*')/g, '<span class="code-string">$1</span>')
+                    .replace(/(:)/g, '<span class="code-punctuation">$1</span>');
+             }
+
+            function setupLogicFlowActivity() {
+                currentScenarioIndex++;
+                if (currentScenarioIndex >= scenarios.length) {
+                    currentScenarioIndex = 0; // Loop back
+                }
+                currentScenarioData = scenarios[currentScenarioIndex];
+                const currentLang = getStoredLanguage();
+
+                // Display scenario text, code, and input
+                scenarioDescDiv.innerHTML = getTranslation(currentScenarioData.descKey, currentLang);
+                const rawCode = getTranslation(currentScenarioData.codeKey, currentLang, { value: currentScenarioData.inputValue });
+                 // Escape HTML special chars for code display before highlighting
+                 const escapedCode = rawCode.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                codeDisplayDiv.innerHTML = highlightCode(escapedCode).replace(/\n/g, '<br>'); // Use innerHTML for <br> and spans
+                inputDisplayDiv.innerHTML = `<strong>${getTranslation(currentScenarioData.inputKey, currentLang, { value: currentScenarioData.inputValue })}</strong>`;
+
+                // Calculate correct output
+                currentCorrectOutput = getTranslation(currentScenarioData.correctOptionKey, currentLang);
+
+                // Create prediction buttons
+                optionsContainer.innerHTML = ''; // Clear old buttons
+                // Shuffle options for variety
+                const shuffledOptions = [...currentScenarioData.options].sort(() => Math.random() - 0.5);
+
+                shuffledOptions.forEach(optionKey => {
+                    const button = document.createElement('button');
+                    button.classList.add('action-button', 'prediction-button');
+                    button.textContent = getTranslation(optionKey, currentLang);
+                    button.dataset.output = getTranslation(optionKey, currentLang); // Store the actual output string
+                    button.addEventListener('click', handlePrediction);
+                    optionsContainer.appendChild(button);
+                });
+
+                // Reset state
+                feedbackDiv.classList.remove('visible', 'correct', 'incorrect');
+                nextBtn.classList.add('hidden');
+            }
+
+            function handlePrediction(event) {
+                const selectedOutput = event.target.dataset.output;
+                const isCorrect = (selectedOutput === currentCorrectOutput);
+                const currentLang = getStoredLanguage();
+
+                 // Disable all buttons and style them
+                 optionsContainer.querySelectorAll('.prediction-button').forEach(btn => {
+                     btn.disabled = true;
+                     if (btn.dataset.output === currentCorrectOutput) {
+                         btn.classList.add('success'); // Highlight correct answer green
+                     } else if (btn === event.target && !isCorrect) {
+                         btn.classList.add('error'); // Highlight wrong *selected* answer red
+                     }
+                 });
+
+
+                if (isCorrect) {
+                    showFeedback('logic-feedback', 'feedback_logic_correct', 'correct', {
+                        input_val: currentScenarioData.inputValue,
+                        condition: currentScenarioData.correctConditionDesc,
+                        block_type: currentScenarioData.correctBlockType,
+                        output: currentCorrectOutput
+                    });
+                } else {
+                    // Construct a basic reasoning string (can be improved)
+                    const reasoning = getTranslation(currentScenarioData.incorrectReasoningKey, currentLang) || `the condition ${currentScenarioData.correctConditionDesc} was met first`;
+
+                    showFeedback('logic-feedback', 'feedback_logic_incorrect', 'incorrect', {
+                        input_val: currentScenarioData.inputValue,
+                        correct_condition: currentScenarioData.correctConditionDesc,
+                        correct_block_type: currentScenarioData.correctBlockType,
+                        reasoning: reasoning
+                    });
+                }
+                nextBtn.classList.remove('hidden');
+            }
+
+            nextBtn.addEventListener('click', setupLogicFlowActivity);
+            // Initial setup call moved to end
+        }
+
+
+        // --- Activity 3: Advanced Code Challenge (Simulator) ---
+        const advChallengeSection = document.getElementById('advanced-challenge');
+        if(advChallengeSection) {
+            const editor = document.getElementById('adv-challenge-editor-input');
+            const outputArea = document.getElementById('adv-challenge-output');
+            const runBtn = document.getElementById('run-adv-challenge-btn');
+            const feedbackDiv = document.getElementById('adv-challenge-feedback');
+            const placeholder = outputArea.querySelector('.placeholder'); // Get initial placeholder
+
+            function resetAdvancedChallengeSimulator() {
+                 editor.value = ''; // Optionally clear
+                 outputArea.innerHTML = ''; // Clear output
+                 if (placeholder) {
+                    placeholder.textContent = getTranslation('adv_challenge_output_placeholder', getStoredLanguage());
+                    outputArea.appendChild(placeholder);
+                 }
+                 feedbackDiv.classList.remove('visible', 'correct', 'incorrect', 'info');
+                 runBtn.disabled = false;
+            }
+
+            runBtn.addEventListener('click', () => {
+                 const code = editor.value;
+                 const currentLang = getStoredLanguage();
+                 outputArea.innerHTML = ''; // Clear output
+                 feedbackDiv.classList.remove('visible');
+                 runBtn.disabled = false; // Ensure enabled
+
+                 // --- Advanced Simulation & Validation ---
+                 let simulatedOutput = '';
+                 let feedbackKey = 'feedback_adv_challenge_syntax_error'; // Default
+                 let feedbackType = 'incorrect';
+                 const temperature = 25; // The value from the task description
+                 const expectedOutput = "Warm"; // Expected for temp = 25
+
+                 // Regex checks for structure
+                 const hasIf = /\bif\b.*\b(temperature|temp)\b\s*>\s*30\s*:/m.test(code);
+                 const hasElif = /\belif\b.*\b(temperature|temp)\b\s*>=\s*20\s*:/m.test(code);
+                 const hasElse = /\belse\s*:/m.test(code);
+                 const hasIfPrint = /\bif\b.*?:\s*\n\s+print\s*\(\s*["']Hot["']\s*\)/mi.test(code.replace("炎热", "Hot").replace("Quente","Hot")); // Normalize for check
+                 const hasElifPrint = /\belif\b.*?:\s*\n\s+print\s*\(\s*["']Warm["']\s*\)/mi.test(code.replace("温暖", "Warm").replace("Agradável","Warm")); // Normalize
+                 const hasElsePrint = /\belse\s*:\s*\n\s+print\s*\(\s*["']Cold["']\s*\)/mi.test(code.replace("寒冷", "Cold").replace("Frio","Cold")); // Normalize
+
+                 let syntaxError = false;
+                 if (!hasIf) feedbackKey = 'feedback_adv_challenge_syntax_error'; // Start with basic checks
+                 else if (!hasElif) feedbackKey = 'feedback_adv_challenge_missing_elif';
+                 else if (!hasElse) feedbackKey = 'feedback_adv_challenge_missing_else';
+                 else if (!hasIfPrint || !hasElifPrint || !hasElsePrint) feedbackKey = 'feedback_adv_challenge_indent_error'; // Likely indent or print issue
+                 else {
+                     // Basic structure seems present, simulate the logic
+                     if (temperature > 30) {
+                         simulatedOutput = getTranslation('branching_syntax_ifelifelse_code_s1', 'en'); // Use English base "A" -> "Hot" for simulation logic
+                         simulatedOutput = "Hot";
+                     } else if (temperature >= 20) {
+                         simulatedOutput = "Warm"; // "B" -> "Warm"
+                     } else {
+                         simulatedOutput = "Cold"; // "C or below" -> "Cold"
+                     }
+
+                    // Translate the simulated output for display comparison if needed
+                    let translatedSimulatedOutput = simulatedOutput; // Default to English if no specific translation needed for compare
+                    if(simulatedOutput === "Hot") translatedSimulatedOutput = getTranslation('adv_challenge_print_hot', currentLang, {}, "Hot"); // Need to add these keys
+                    else if(simulatedOutput === "Warm") translatedSimulatedOutput = getTranslation('adv_challenge_print_warm', currentLang, {}, "Warm");
+                    else if(simulatedOutput === "Cold") translatedSimulatedOutput = getTranslation('adv_challenge_print_cold', currentLang, {}, "Cold");
+
+                    // Add keys if they don't exist (minimal approach)
+                    if (!translations.en.adv_challenge_print_hot) translations.en.adv_challenge_print_hot = "Hot";
+                    if (!translations.pt.adv_challenge_print_hot) translations.pt.adv_challenge_print_hot = "Quente";
+                    if (!translations.zh.adv_challenge_print_hot) translations.zh.adv_challenge_print_hot = "炎热";
+                    if (!translations.en.adv_challenge_print_warm) translations.en.adv_challenge_print_warm = "Warm";
+                    if (!translations.pt.adv_challenge_print_warm) translations.pt.adv_challenge_print_warm = "Agradável";
+                    if (!translations.zh.adv_challenge_print_warm) translations.zh.adv_challenge_print_warm = "温暖";
+                    if (!translations.en.adv_challenge_print_cold) translations.en.adv_challenge_print_cold = "Cold";
+                    if (!translations.pt.adv_challenge_print_cold) translations.pt.adv_challenge_print_cold = "Frio";
+                    if (!translations.zh.adv_challenge_print_cold) translations.zh.adv_challenge_print_cold = "寒冷";
+
+
+                    // Compare simulated output with expected output (in the target language's expected string)
+                     let expectedTranslatedOutput = getTranslation('adv_challenge_print_warm', currentLang, {}, "Warm");
+                     if (simulatedOutput && translatedSimulatedOutput === expectedTranslatedOutput) {
+                         feedbackKey = 'feedback_adv_challenge_success';
+                         feedbackType = 'correct';
+                     } else if (simulatedOutput) {
+                          feedbackKey = 'feedback_adv_challenge_wrong_output';
+                          feedbackType = 'incorrect';
+                     } else {
+                          feedbackKey = 'feedback_adv_challenge_no_output'; // Should be caught by earlier checks
+                          feedbackType = 'incorrect';
+                     }
+                 }
+
+                 // Display simulated output (use the translated version)
+                 if (simulatedOutput) {
+                     const outputLine = document.createElement('span');
+                     outputLine.classList.add('output-line');
+                      // Display the output in the user's language
+                      let displayOutput = simulatedOutput; // Default
+                       if(simulatedOutput === "Hot") displayOutput = getTranslation('adv_challenge_print_hot', currentLang, {}, "Hot");
+                       else if(simulatedOutput === "Warm") displayOutput = getTranslation('adv_challenge_print_warm', currentLang, {}, "Warm");
+                       else if(simulatedOutput === "Cold") displayOutput = getTranslation('adv_challenge_print_cold', currentLang, {}, "Cold");
+
+                     outputLine.textContent = `> ${displayOutput}`;
+                     outputArea.appendChild(outputLine);
+                 } else {
+                     placeholder.textContent = getTranslation('adv_challenge_output_placeholder', currentLang);
+                     outputArea.appendChild(placeholder);
+                 }
+
+                  // Show feedback
+                 showFeedback('adv-challenge-feedback', feedbackKey, feedbackType, { output: simulatedOutput }); // Pass raw simulated if needed
+
+                 if (feedbackType === 'correct') {
+                     // runBtn.disabled = true; // Optional
+                 }
+            });
+
+            // Initial call moved to end
+        }
+
+
+        // --- Activity 4: Advanced CT Connection (No specific JS logic) ---
+
+
+        // --- Fade-in animations on scroll (Same as standard practice) ---
+        const fadeElements = document.querySelectorAll('.fade-in');
+        const animateOnScroll = () => {
+            const windowHeight = window.innerHeight;
+            fadeElements.forEach(el => {
+                if (el.style.opacity === '1') return; // Already visible
+                const rect = el.getBoundingClientRect();
+                if (rect.top < windowHeight - 60 && rect.bottom >= 40) {
+                    el.style.opacity = '1';
+                    el.style.transform = 'translateY(0)';
+                }
+            });
+        };
+        const scrollHandler = () => window.requestAnimationFrame(animateOnScroll);
+        window.addEventListener('scroll', scrollHandler);
+
+
+        // --- Initial Language Application and Activity Setups ---
+        setLanguage(initialLang); // Apply language FIRST
+        animateOnScroll(); // Trigger initial animation check
+
+        // Call initial setups for *advanced* activities after language is set
+        if (document.getElementById('branching-syntax')) setupBranchingSyntaxActivity();
+        if (document.getElementById('logic-flow')) setupLogicFlowActivity();
+        if (document.getElementById('advanced-challenge')) resetAdvancedChallengeSimulator();
+
+    }); // End DOMContentLoaded
+    </script>
+
+</body>
+</html>

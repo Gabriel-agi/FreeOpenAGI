@@ -1,0 +1,1480 @@
+<!DOCTYPE html>
+<!-- Language set by JS -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Title set by JS -->
+    <title data-translate="page_title">Module 11: Advanced List Modification</title>
+    <!-- Fonts & Icons (Same as Practice) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* --- Base Styles & Variables (Inherited from Practice) --- */
+        :root {
+            --primary-color: #007bff; /* Keep primary blue */
+            --secondary-color: #6c757d;
+            --background-light: #f8f9fa;
+            --background-medium: #e9ecef;
+            --background-dark: #343a40;
+            --text-light: #f8f9fa;
+            --text-dark: #212529;
+            --accent-color: #ffc107; /* Yellow */
+            --success-color: #28a745; /* Green */
+            --error-color: #dc3545;   /* Red */
+            --info-color: #17a2b8;    /* Teal */
+            --list-color-base: #e83e8c; /* Pinkish for lists */
+            --list-color-add: #20c997; /* Teal-Green for add */
+            --list-color-remove: #fd7e14; /* Orange for remove */
+            --list-color-replace: #6610f2; /* Indigo for replace */
+            --debug-color: #fd7e14; /* Orange for debug */
+            --slice-color: #6f42c1; /* Purple for slicing */
+            --border-radius: 8px;
+            --transition-speed: 0.3s;
+            --font-body: 'Roboto', sans-serif;
+            --font-title: 'Orbitron', sans-serif;
+            --selection-highlight-bg: rgba(0, 123, 255, 0.1);
+            --selection-highlight-border: rgba(0, 123, 255, 0.4);
+            /* Colors matching news.html for consistency in switcher */
+            --nav-primary: #6e48aa;
+            --nav-success: #4cc9f0;
+            --nav-dark: #1a1a2e;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; font-size: 16px; }
+        body {
+            font-family: var(--font-body); line-height: 1.7;
+            background-color: var(--background-light); color: var(--text-dark);
+            overflow-x: hidden;
+        }
+
+        /* --- Utility Classes (Inherited) --- */
+        .container { max-width: 960px; margin: 0 auto; padding: 0 15px; }
+        .text-center { text-align: center; }
+        .highlight { color: var(--primary-color); font-weight: bold; }
+        .code-font { font-family: 'Courier New', Courier, monospace; }
+        .hidden { display: none !important; }
+        .button-group { margin-top: 2rem; display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; }
+
+        /* --- Advanced Animations (Inherited) --- */
+        .fade-in { opacity: 0; transform: translateY(20px); animation: fadeInAnimation 0.8s ease-out forwards; }
+        .fade-in.delay-1 { animation-delay: 0.2s; }
+        .fade-in.delay-2 { animation-delay: 0.4s; }
+        .fade-in.delay-3 { animation-delay: 0.6s; }
+        .fade-in.delay-4 { animation-delay: 0.8s; }
+        @keyframes fadeInAnimation { to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulseHeaderIcon { 0% { transform: scale(1); opacity: 0.1; filter: brightness(1); } 50% { transform: scale(1.05); opacity: 0.25; filter: brightness(1.2); } 100% { transform: scale(1); opacity: 0.1; filter: brightness(1); } }
+        @keyframes successGlow { 0% { box-shadow: 0 0 3px rgba(40, 167, 69, 0.3); transform: scale(1); } 50% { box-shadow: 0 0 12px 5px rgba(40, 167, 69, 0.5); transform: scale(1.01); } 100% { box-shadow: 0 0 3px rgba(40, 167, 69, 0.3); transform: scale(1); } }
+        .success-glow-anim { animation: successGlow 0.9s ease-out; }
+        @keyframes shake { 10%, 90% { transform: translate3d(-2px, 0, 0); } 20%, 80% { transform: translate3d(3px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-5px, 0, 0); } 40%, 60% { transform: translate3d(5px, 0, 0); } }
+        .shake-anim { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes iconAppearCorrect { 0% { transform: scale(0.5) rotate(-15deg); opacity: 0; } 60% { transform: scale(1.2) rotate(5deg); opacity: 1; } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
+        @keyframes iconAppearIncorrect { 0% { transform: scale(0.5) rotate(-15deg); opacity: 0; } 50% { transform: scale(1.2) rotate(10deg); opacity: 1; } 70% { transform: scale(0.9) rotate(-5deg); } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
+        @keyframes iconAppearMissed { 0% { transform: scale(0.8) rotateY(90deg); opacity: 0; } 100% { transform: scale(1) rotateY(0deg); opacity: 0.8; } }
+        .action-button:active:not(:disabled) { transform: translateY(1px) scale(0.98); filter: brightness(0.95); }
+        @keyframes listChangeHighlight { 0% { background-color: transparent; } 50% { background-color: rgba(255, 193, 7, 0.3); } 100% { background-color: transparent; } }
+        .list-change-anim { animation: listChangeHighlight 0.6s ease-out; }
+
+        /* --- Minimal Retractable Nav (Inherited, links modified in HTML) --- */
+        .minimal-nav-button { position: fixed; top: 15px; right: 15px; z-index: 1001; background-color: rgba(52, 58, 64, 0.75); color: var(--text-light); border: none; border-radius: var(--border-radius); padding: 8px 12px; cursor: pointer; transition: background-color var(--transition-speed), opacity var(--transition-speed), transform var(--transition-speed); font-size: 1.1rem; opacity: 0.6; box-shadow: 0 2px 5px rgba(0,0,0,0.2); line-height: 1; }
+        .minimal-nav-button:hover { background-color: rgba(52, 58, 64, 0.95); opacity: 1; transform: scale(1.05); }
+        .minimal-nav { position: fixed; top: 60px; right: 15px; z-index: 1000; background-color: var(--background-dark); border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.3); padding: 0.8rem; opacity: 0; transform: translateY(-15px) scale(0.95); transform-origin: top right; pointer-events: none; transition: opacity var(--transition-speed) ease, transform var(--transition-speed) ease; min-width: 200px; }
+        body.nav-active .minimal-nav { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+        .minimal-nav ul { list-style: none; margin: 0; padding: 0; }
+        .minimal-nav ul li { margin-bottom: 5px; }
+        .minimal-nav ul li:last-child { margin-bottom: 0; }
+        .minimal-nav ul li a { display: flex; align-items: center; color: var(--text-light); text-decoration: none; padding: 0.6rem 1rem; border-radius: 4px; transition: background-color var(--transition-speed), color var(--transition-speed); white-space: nowrap; font-weight: 400; font-size: 0.95rem; }
+        .minimal-nav ul li a i.fas { margin-right: 10px; width: 1.2em; text-align: center; opacity: 0.8; transition: opacity var(--transition-speed); }
+        .minimal-nav ul li a:hover { background-color: var(--primary-color); color: var(--text-light); }
+        .minimal-nav ul li a:hover i.fas { opacity: 1; }
+        .minimal-nav .language-switcher-item { padding: 0.5rem 1rem; border-top: 1px solid var(--secondary-color); margin-top: 8px; padding-top: 13px; }
+        #languageSelect { width: 100%; background: rgba(255,255,255,0.1); color: white; border: 1px solid var(--nav-success); border-radius: 5px; padding: 6px 30px 6px 12px; cursor: pointer; font-size: 0.9rem; appearance: none; -webkit-appearance: none; -moz-appearance: none; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%234CC9F0%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right 10px center; background-size: 10px auto; transition: background-color 0.3s ease; }
+        #languageSelect:hover { background-color: rgba(255,255,255,0.15); }
+        #languageSelect option { background: var(--nav-dark); color: var(--text-light); }
+
+        /* --- Practice Header (Inherited, title modified) --- */
+        .practice-header { background: linear-gradient(135deg, var(--nav-primary), var(--slice-color)); /* Blend nav/slice colors */ color: var(--text-light); padding: 3rem 0 4rem; text-align: center; position: relative; overflow: hidden; border-bottom: 5px solid var(--accent-color); }
+        .practice-header h1 { font-family: var(--font-title); font-size: 2.8rem; margin-bottom: 0.5rem; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); animation: fadeInAnimation 1s ease-out; }
+        .practice-header p { font-size: 1.1rem; font-weight: 300; opacity: 0.9; animation: fadeInAnimation 1s ease-out 0.3s forwards; opacity: 0; }
+        .header-icon { position: absolute; font-size: 4rem; color: var(--text-light); animation: pulseHeaderIcon 6s infinite ease-in-out alternate; }
+        .icon1 { top: 20%; left: 15%; animation-duration: 7s; transform: rotate(15deg); } /* Code icon */
+        .icon2 { bottom: 15%; right: 20%; animation-duration: 5s; transform: rotate(-10deg);} /* Brain icon */
+
+        /* --- Practice Section Styling (Inherited) --- */
+        .practice-section { padding: 3rem 0; background-color: var(--background-medium); border-bottom: 1px solid #d6d8db; }
+        .practice-section:nth-child(odd) { background-color: var(--background-light); }
+        .practice-section:last-of-type { border-bottom: none; }
+        .practice-section h2 { font-family: var(--font-title); font-size: 1.8rem; color: var(--primary-color); margin-bottom: 1rem; text-align: center; }
+        .practice-section .section-description { text-align: center; margin-bottom: 2.5rem; color: var(--secondary-color); font-size: 1.05rem; max-width: 700px; margin-left: auto; margin-right: auto; }
+
+        /* --- General Interactive Elements (Inherited) --- */
+        .interactive-area { background-color: #fff; padding: 2rem; border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.08); margin-top: 1.5rem; position: relative; transition: box-shadow 0.5s ease-out; }
+        .feedback-message { padding: 0.8rem 1rem; margin-top: 1rem; border-radius: var(--border-radius); font-weight: bold; text-align: center; opacity: 0; max-height: 0; overflow: hidden; transition: opacity var(--transition-speed) ease, max-height var(--transition-speed) ease, margin-top var(--transition-speed) ease; }
+        .feedback-message.visible { opacity: 1; max-height: 100px; margin-top: 1.5rem; }
+        .feedback-message.correct { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .feedback-message.incorrect { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .feedback-message.info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .feedback-message .fas { margin: 0 3px; }
+        .action-button { display: inline-block; padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold; color: var(--text-light); background-color: var(--primary-color); border: none; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), transform var(--transition-speed), filter var(--transition-speed), box-shadow var(--transition-speed); margin-top: 1rem; vertical-align: middle; box-shadow: 0 2px 5px rgba(0,0,0,0.1); text-decoration: none; }
+        .action-button:hover:not(:disabled) { background-color: #0056b3; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+        .action-button:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none; box-shadow: none; opacity: 0.7; }
+        .action-button.success { background-color: var(--success-color); }
+        .action-button.success:hover:not(:disabled) { background-color: #218838; }
+        .action-button.secondary { background-color: var(--secondary-color); }
+        .action-button.secondary:hover:not(:disabled) { background-color: #5a6268; }
+        .code-block { background-color: var(--background-dark); color: var(--text-light); padding: 1.5rem; border-radius: var(--border-radius); font-family: var(--code-font); font-size: 1rem; position: relative; overflow-x: auto; margin: 1rem 0; }
+        .code-keyword { color: #569cd6; } .code-string { color: #ce9178; } .code-comment { color: #6a9955; } .code-function { color: #dcdcaa; } .code-paren { color: #ffd700; } .code-number { color: #b5cea8; } .code-operator { color: #d4d4d4; } .code-method { color: #9cdcfe; }
+        .list-item { display: inline-block; margin: 0 5px; padding: 2px 6px; background-color: rgba(255,255,255,0.1); border-radius: 3px; }
+        .list-item-string { color: var(--code-string); }
+        .list-item-number { color: var(--code-number); }
+
+        /* --- Activity 1: Advanced Predict (Inherited Structure) --- */
+        #adv-predict-list .code-snippet { background-color: var(--background-dark); color: var(--text-light); padding: 1.5rem; border-radius: var(--border-radius); font-family: var(--code-font); font-size: 1rem; margin-bottom: 1.5rem; }
+        #adv-predict-list label { display: block; font-weight: bold; margin-bottom: 8px; }
+        #adv-predict-list input[type="text"] { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-family: var(--code-font); font-size: 1rem; margin-bottom: 1rem; }
+
+        /* --- Activity 2: Slice Master --- */
+        #slice-master .list-visualizer { margin-bottom: 1.5rem; padding: 1rem; background-color: var(--background-dark); border-radius: var(--border-radius); }
+        #slice-master .current-list-display { font-family: var(--code-font); color: var(--text-light); font-size: 1.1rem; text-align: center; padding: 10px; border-radius: 5px; border: 1px dashed var(--secondary-color); margin-bottom: 1rem;}
+        #slice-master .controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; align-items: end; margin-bottom: 1rem;}
+        #slice-master .control-group { background-color: var(--background-light); padding: 1rem; border-radius: var(--border-radius); border: 1px solid var(--background-medium); text-align: center;}
+        #slice-master .control-group label { display: block; margin-bottom: 0.5rem; font-weight: bold; font-size: 0.9rem; color: var(--secondary-color); }
+        #slice-master .control-group input[type="number"], #slice-master .control-group input[type="text"] { width: 80%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-family: var(--code-font); font-size: 0.95rem; margin-bottom: 0.5rem; text-align: center; }
+        #slice-master .action-button { width: 80%; padding: 0.7rem 1rem; font-size: 0.95rem; margin-top: 0.5rem; background-color: var(--slice-color); }
+        #slice-master .action-button:hover:not(:disabled) { background-color: #5a37a0; }
+        #slice-master .action-button.delete { background-color: var(--list-color-remove); }
+        #slice-master .action-button.delete:hover:not(:disabled) { background-color: #d96d0e; }
+        #slice-master .btn-reset { background-color: var(--secondary-color); width: auto; }
+        #slice-master .btn-reset:hover:not(:disabled) { background-color: #5a6268; }
+        #slice-feedback { margin-top: 1rem; font-style: italic; text-align: center; color: var(--info-color); }
+
+        /* --- Activity 3: Debug the Code --- */
+        #debug-code .code-snippet { background-color: var(--background-dark); color: var(--text-light); padding: 1.5rem; border-radius: var(--border-radius); font-family: var(--code-font); font-size: 1rem; margin-bottom: 1.5rem; border-left: 5px solid var(--debug-color); }
+        #debug-code .debug-options { display: flex; flex-direction: column; gap: 0.8rem; margin-bottom: 1.5rem; }
+        .debug-option { background-color: var(--background-light); border: 2px solid var(--secondary-color); border-radius: var(--border-radius); padding: 0.8rem 1rem; cursor: pointer; transition: all var(--transition-speed) ease; display: flex; align-items: center; gap: 10px; }
+        .debug-option input[type="radio"] { margin-right: 8px; accent-color: var(--primary-color); width: 16px; height: 16px; flex-shrink: 0; }
+        .debug-option label { flex-grow: 1; margin: 0; font-weight: normal; cursor: pointer;} /* Label takes up space */
+        .debug-option:hover { background-color: var(--background-medium); border-color: var(--primary-color); }
+        .debug-option.selected { border-color: var(--primary-color); background-color: var(--selection-highlight-bg); }
+        .debug-option.correct { border-color: var(--success-color); background-color: #d4edda; color: #155724; }
+        .debug-option.incorrect { border-color: var(--error-color); background-color: #f8d7da; color: #721c24; animation: shake 0.4s ease-in-out; }
+        .debug-option.disabled { cursor: not-allowed; opacity: 0.7; pointer-events: none; }
+        .debug-option.disabled label { cursor: not-allowed;}
+        #debug-feedback { margin-top: 1rem; }
+        .debug-explanation { font-style: italic; color: var(--secondary-color); font-size: 0.95rem; margin-top: 0.5rem; padding: 0.5rem; background-color: var(--background-medium); border-radius: 4px;}
+
+
+        /* --- Activity 4: Scenario Solver (Inherited Structure from List Challenges) --- */
+        #scenario-solver .mission { padding: 1.5rem; border: 1px solid #d6d8db; border-radius: var(--border-radius); margin-bottom: 1.5rem; background-color: var(--background-light); position: relative; border-left: 5px solid var(--accent-color); }
+        #scenario-solver .mission-status { position: absolute; top: 10px; right: 10px; font-size: 1.5rem; transition: transform 0.3s ease; }
+        #scenario-solver .mission-status .fa-check-circle { color: var(--success-color); transform-origin: center; }
+        #scenario-solver .mission-status .fa-times-circle { color: var(--error-color); }
+        #scenario-solver .mission-status .fa-question-circle { color: var(--secondary-color); }
+        #scenario-solver .mission[data-completed="true"] .mission-status .fa-check-circle { animation: iconAppearCorrect 0.6s ease-out; }
+        #scenario-solver .mission-editor { width: 100%; min-height: 120px; background-color: var(--background-dark); color: var(--text-light); border: 1px solid var(--secondary-color); border-radius: var(--border-radius); padding: 1rem; font-family: var(--code-font); font-size: 1rem; line-height: 1.5; resize: vertical; margin-top: 1rem; }
+        #scenario-solver .initial-list-display { margin-top: 1rem; font-style: italic; color: var(--secondary-color); font-family: var(--code-font); }
+        #scenario-solver .expected-list-display { margin-top: 0.5rem; font-style: italic; color: var(--info-color); font-family: var(--code-font); }
+        #scenario-solver-summary-feedback { margin-top: 2rem; }
+
+        /* --- Final Section (Inherited, text modified) --- */
+        .completion-section { padding: 4rem 0; text-align: center; }
+        .completion-section .icon { font-size: 4rem; color: var(--success-color); margin-bottom: 1rem; display: inline-block; opacity: 0; animation: iconAppearCorrect 1s ease-out 0.5s forwards; }
+        .completion-section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); }
+        .completion-section p { font-size: 1.1rem; margin-top: 1rem; color: var(--secondary-color); }
+
+        /* --- Responsive Design (Inherited) --- */
+        @media (max-width: 768px) {
+            html { font-size: 15px; }
+            .practice-header h1 { font-size: 2.2rem; }
+            .practice-section h2 { font-size: 1.6rem; }
+            .interactive-area { padding: 1.5rem; }
+            #slice-master .controls { grid-template-columns: 1fr; } /* Stack controls */
+            .button-group { flex-direction: column; align-items: center; }
+            .minimal-nav { min-width: 180px; }
+            .minimal-nav ul li a { padding: 0.6rem 0.8rem; }
+            #languageSelect { font-size: 0.85rem; padding: 5px 25px 5px 10px;}
+        }
+        @media (max-width: 480px) {
+            html { font-size: 14px; }
+            .practice-header h1 { font-size: 1.8rem; }
+            .practice-header p { font-size: 1rem; }
+            .practice-section h2 { font-size: 1.4rem; }
+            .interactive-area { padding: 1rem; }
+            .action-button { font-size: 0.9rem; padding: 0.7rem 1.2rem; width: 90%; max-width: 300px;}
+            #adv-predict-list input[type="text"] { font-size: 0.9rem; }
+            #slice-master .control-group input[type="number"], #slice-master .control-group input[type="text"] { width: 95%; }
+            #slice-master .action-button { width: 95%; }
+            #scenario-solver .mission-editor { min-height: 100px; font-size: 0.95rem;}
+            .button-group a.action-button { width: 90%; max-width: 300px; margin-bottom: 0.5rem; }
+            .minimal-nav-button { top: 10px; right: 10px; padding: 6px 10px; font-size: 1rem; }
+            .minimal-nav { top: 48px; right: 10px; min-width: 160px; }
+            .minimal-nav ul li a { padding: 0.5rem 0.7rem; font-size: 0.9rem;}
+            .minimal-nav ul li a i.fas { margin-right: 8px; }
+            #languageSelect { font-size: 0.8rem; padding: 4px 20px 4px 8px;}
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ========= Minimal Nav Handle ========= -->
+    <button id="minimal-nav-toggle" class="minimal-nav-button" aria-label="Toggle Navigation Menu">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- ========= Minimal Nav Panel (with Language Switcher) ========= -->
+    <nav id="minimal-nav-panel" class="minimal-nav">
+        <ul>
+            <!-- *** MODIFIED Links for Module 11 ADVANCED *** -->
+            <li><a href="ctp-practice-11.html"><i class="fas fa-pencil-alt fa-fw"></i> <span data-translate="nav_practice">Standard Practice</span></a></li>
+            <li><a href="ctp-video-11.html"><i class="fas fa-video fa-fw"></i> <span data-translate="nav_video">Watch Video Lesson</span></a></li>
+            <li><a href="ctp-dashboard.html"><i class="fas fa-list fa-fw"></i> <span data-translate="nav_menu">Course Menu</span></a></li>
+            <hr style="border: none; border-top: 1px solid var(--secondary-color); margin: 8px 0;">
+            <!-- *** MODIFIED Links for Module 11 ADVANCED Activities *** -->
+            <li><a href="#adv-predict-list"><i class="fas fa-wand-magic-sparkles fa-fw"></i> <span data-translate="nav_predict">Predict</span></a></li>
+            <li><a href="#slice-master"><i class="fas fa-cut fa-fw"></i> <span data-translate="nav_slice">Slice Master</span></a></li>
+            <li><a href="#debug-code"><i class="fas fa-bug fa-fw"></i> <span data-translate="nav_debug">Debug</span></a></li>
+            <li><a href="#scenario-solver"><i class="fas fa-tasks fa-fw"></i> <span data-translate="nav_solver">Solver</span></a></li>
+            <!-- Language Switcher Item -->
+            <li class="language-switcher-item">
+                 <select id="languageSelect" aria-label="Select Language">
+                     <option value="en" data-translate="lang_en">🇬🇧 English</option>
+                     <option value="pt" data-translate="lang_pt">🇧🇷 Português</option>
+                     <option value="zh" data-translate="lang_zh">🇨🇳 中文</option>
+                 </select>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- ========= Header ========= -->
+    <header class="practice-header">
+        <i class="fas fa-code header-icon icon1"></i>
+        <i class="fas fa-brain header-icon icon2"></i>
+        <div class="container">
+            <!-- *** MODIFIED Title for Module 11 ADVANCED *** -->
+            <h1 data-translate="header_title">Module 11: Advanced List Modification</h1>
+            <p data-translate="header_subtitle">Deepen your understanding with slicing, sequences, and debugging.</p>
+        </div>
+    </header>
+
+    <!-- ========= Main Content ========= -->
+    <main>
+
+        <!-- ========= Activity 1: Predict the Transformation ========= -->
+       <section id="adv-predict-list" class="practice-section">
+            <div class="container">
+                <h2 class="fade-in"><i class="fas fa-wand-magic-sparkles"></i> <span data-translate="adv_predict_title">Predict the Transformation</span></h2>
+                <p class="section-description fade-in delay-1" data-translate="adv_predict_desc">
+                    Carefully trace the operations. What is the final state of the list `items`? Enter the exact Python list representation.
+                </p>
+                <div class="interactive-area fade-in delay-2">
+                    <div id="adv-predict-code-snippet" class="code-snippet">
+                        <!-- Code snippet populated by JS -->
+                    </div>
+                    <label for="adv-prediction-input" data-translate="adv_predict_label">Your Prediction:</label>
+                    <input type="text" id="adv-prediction-input" class="code-font" data-translate-placeholder="predict_placeholder" placeholder="e.g., ['a', 1, 'b']">
+                    <div class="text-center">
+                        <button id="check-adv-prediction-btn" class="action-button" data-translate="button_check_prediction">Check Prediction</button>
+                         <button id="next-adv-prediction-btn" class="action-button secondary hidden" data-translate="button_next_challenge">Next Challenge</button>
+                    </div>
+                    <div id="adv-prediction-feedback" class="feedback-message"></div>
+                </div>
+            </div>
+       </section>
+
+        <!-- ========= Activity 2: Slice Master ========= -->
+        <section id="slice-master" class="practice-section">
+            <div class="container">
+                <h2 class="fade-in"><i class="fas fa-cut"></i> <span data-translate="adv_slice_title">Slice Master</span></h2>
+                <p class="section-description fade-in delay-1" data-translate="adv_slice_desc">
+                    Practice modifying lists using slice assignment and deletion. Define the slice range and the replacement (if any).
+                </p>
+                <div class="interactive-area fade-in delay-2">
+                    <div class="list-visualizer">
+                        <p style="text-align: center; color: var(--text-light); margin-bottom: 0.5rem;" data-translate="modifier_current_list">Current List:</p>
+                        <div id="slice-current-list-display" class="current-list-display code-font">
+                            <!-- List displayed by JS -->
+                        </div>
+                    </div>
+                    <div class="controls">
+                        <!-- Slice Definition -->
+                        <div class="control-group">
+                            <label for="slice-start-index" data-translate="adv_slice_start_label">Slice Start Index:</label>
+                            <input type="number" id="slice-start-index" data-translate-placeholder="modifier_index_placeholder" placeholder="Index">
+                        </div>
+                         <div class="control-group">
+                            <label for="slice-end-index" data-translate="adv_slice_end_label">Slice End Index (Exclusive):</label>
+                            <input type="number" id="slice-end-index" data-translate-placeholder="modifier_index_placeholder" placeholder="Index">
+                        </div>
+                         <!-- Replacement -->
+                         <div class="control-group">
+                            <label for="slice-replace-value" data-translate="adv_slice_replace_label">Replacement List (e.g., [9, 8]):</label>
+                            <input type="text" id="slice-replace-value" data-translate-placeholder="adv_slice_replace_placeholder" placeholder="['new', 1]">
+                         </div>
+                         <!-- Actions -->
+                         <div class="control-group">
+                            <label data-translate="adv_slice_actions_label">Actions:</label>
+                            <button class="action-button" data-action="assign" data-translate="adv_slice_assign_button">Assign Slice</button>
+                            <button class="action-button delete" data-action="delete" data-translate="adv_slice_delete_button">Delete Slice</button>
+                        </div>
+                    </div>
+                     <div class="text-center">
+                         <button id="reset-slice-list" class="action-button btn-reset secondary" data-translate="button_reset">Reset List</button>
+                     </div>
+                    <div id="slice-feedback" class="feedback-message"></div>
+                    <p style="font-size: 0.9rem; text-align: center; margin-top: 1.5rem; color: var(--secondary-color);" data-translate="adv_slice_note">
+                        Remember: Slicing creates powerful ways to modify multiple elements at once!
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========= Activity 3: Debug the Code ========= -->
+       <section id="debug-code" class="practice-section">
+            <div class="container">
+                <h2 class="fade-in"><i class="fas fa-bug"></i> <span data-translate="adv_debug_title">Debug the Code</span></h2>
+                <p class="section-description fade-in delay-1" data-translate="adv_debug_desc">
+                    Find the potential issue or incorrect outcome in the following Python code snippets involving list modifications.
+                </p>
+                <div class="interactive-area fade-in delay-2">
+                    <div id="debug-code-snippet" class="code-snippet">
+                        <!-- Code snippet populated by JS -->
+                    </div>
+                    <p style="font-weight: bold; margin-bottom: 1rem;" data-translate="adv_debug_question">What is the primary issue or incorrect result?</p>
+                    <div id="debug-options" class="debug-options">
+                         <!-- Options populated by JS -->
+                    </div>
+                    <div class="text-center">
+                        <button id="check-debug-btn" class="action-button" data-translate="button_check_answer">Check Answer</button>
+                         <button id="next-debug-btn" class="action-button secondary hidden" data-translate="button_next_challenge">Next Snippet</button>
+                    </div>
+                    <div id="debug-feedback" class="feedback-message">
+                         <div id="debug-explanation" class="debug-explanation hidden"></div>
+                    </div>
+                </div>
+            </div>
+       </section>
+
+         <!-- ========= Activity 4: Scenario Solver ========= -->
+        <section id="scenario-solver" class="practice-section">
+             <div class="container">
+                  <h2 class="fade-in"><i class="fas fa-tasks"></i> <span data-translate="adv_challenges_title">Scenario Solver</span></h2>
+                 <p class="section-description fade-in delay-1" data-translate="adv_challenges_desc">
+                     Write Python code to solve these slightly more complex list manipulation tasks. Aim for concise and correct solutions.
+                 </p>
+                 <div class="interactive-area fade-in delay-2">
+                     <!-- Challenge 1: Add and Remove -->
+                     <div class="mission" id="adv-challenge-1" data-completed="false">
+                         <span class="mission-status"><i class="fas fa-question-circle"></i></span>
+                         <h4 data-translate="adv_challenge1_title">Scenario 1: Update Queue</h4>
+                         <p data-translate="adv_challenge1_desc">You have a list representing a queue. Add <code class="code-font code-string">"Task C"</code> to the end, then remove the item from the *front* (index 0).</p>
+                         <p class="initial-list-display" data-translate="challenge_initial_list">Initial list: <code class="code-font">queue = ["Task A", "Task B"]</code></p>
+                         <p class="expected-list-display" data-translate="challenge_expected_list">Expected result: <code class="code-font">["Task B", "Task C"]</code></p>
+                         <textarea class="mission-editor" rows="4" data-translate-placeholder="adv_challenge1_placeholder" placeholder="Your code for queue here... (likely 2 lines)"></textarea>
+                         <div class="text-center"> <button class="action-button mission-run-btn" data-challenge-id="1" data-translate="button_check_challenge">Check Scenario 1</button> </div>
+                         <div id="adv-challenge-feedback-1" class="feedback-message mission-feedback"></div>
+                     </div>
+                     <!-- Challenge 2: Insert and Slice Delete -->
+                     <div class="mission" id="adv-challenge-2" data-completed="false">
+                          <span class="mission-status"><i class="fas fa-question-circle"></i></span>
+                         <h4 data-translate="adv_challenge2_title">Scenario 2: Data Cleanup</h4>
+                         <p data-translate="adv_challenge2_desc">Start with the list `data`. Insert the number <code class="code-font code-number">0</code> at index 1. Then, delete the slice containing the last two elements.</p>
+                          <p class="initial-list-display" data-translate="challenge_initial_list">Initial list: <code class="code-font">data = [10, 20, 30, 40]</code></p>
+                          <p class="expected-list-display" data-translate="challenge_expected_list">Expected result: <code class="code-font">[10, 0, 20]</code></p>
+                         <textarea class="mission-editor" rows="4" data-translate-placeholder="adv_challenge2_placeholder" placeholder="Your code for data here... (likely 2 lines)"></textarea>
+                          <div class="text-center"> <button class="action-button mission-run-btn" data-challenge-id="2" data-translate="button_check_challenge">Check Scenario 2</button> </div>
+                         <div id="adv-challenge-feedback-2" class="feedback-message mission-feedback"></div>
+                     </div>
+                     <!-- Challenge 3: Pop and Insert -->
+                     <div class="mission" id="adv-challenge-3" data-completed="false">
+                          <span class="mission-status"><i class="fas fa-question-circle"></i></span>
+                         <h4 data-translate="adv_challenge3_title">Scenario 3: Move Element</h4>
+                         <p data-translate="adv_challenge3_desc">From the list `items`, remove the element at index 2 using <code class="code-font code-method">.pop()</code>, and then insert that *same removed element* back into the list at index 0.</p>
+                          <p class="initial-list-display" data-translate="challenge_initial_list">Initial list: <code class="code-font">items = ['a', 'b', 'c', 'd']</code></p>
+                          <p class="expected-list-display" data-translate="challenge_expected_list">Expected result: <code class="code-font">['c', 'a', 'b', 'd']</code></p>
+                         <textarea class="mission-editor" rows="4" data-translate-placeholder="adv_challenge3_placeholder" placeholder="Your code for items here... (requires storing pop result)"></textarea>
+                          <div class="text-center"> <button class="action-button mission-run-btn" data-challenge-id="3" data-translate="button_check_challenge">Check Scenario 3</button> </div>
+                         <div id="adv-challenge-feedback-3" class="feedback-message mission-feedback"></div>
+                     </div>
+
+                     <div id="scenario-solver-summary-feedback" class="feedback-message"></div>
+                 </div>
+             </div>
+        </section>
+
+         <!-- ========= Completion Section ========= -->
+        <section class="completion-section">
+            <div class="container">
+                <div class="icon fade-in" style="animation: iconAppearCorrect 1s ease-out 0.5s forwards;">
+                    <i class="fas fa-graduation-cap"></i> <i class="fas fa-cogs"></i> <i class="fas fa-check-double"></i>
+                </div>
+                <!-- *** MODIFIED Title/Text for Module 11 ADVANCED *** -->
+                <h2 class="fade-in delay-1" data-translate="completion_title">Module 11 Advanced Practice Complete!</h2>
+                <p class="fade-in delay-2" data-translate="completion_desc">
+                    Great job tackling these advanced list modification techniques! You're getting comfortable with Python's list power. <br>
+                    Review the <strong>Standard Practice</strong> or watch the <strong>Video Lesson</strong> if needed, or proceed to the next module!
+                </p>
+                <div class="button-group">
+                    <!-- *** MODIFIED Links for Module 11 ADVANCED *** -->
+                    <a href="ctp-practice-11.html" class="action-button secondary fade-in delay-3"><i class="fas fa-pencil-alt"></i> <span data-translate="button_view_standard">View Standard Practice</span></a>
+                    <a href="ctp-video-11.html" class="action-button info fade-in delay-3" style="background-color: var(--info-color);"><i class="fas fa-video"></i> <span data-translate="button_watch_video">Watch Video Lesson</span></a>
+                    <a href="ctp-dashboard.html" class="action-button secondary fade-in delay-4"><i class="fas fa-list"></i> <span data-translate="button_back_menu">Back to Course Menu</span></a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ========= Script ========= -->
+    <script>
+    // --- Translations Object ---
+    const translations = {
+        en: {
+            // Page & Nav (Advanced)
+            "page_title": "Module 11: Advanced List Modification",
+            "nav_practice": "Standard Practice", "nav_video": "Watch Video Lesson", "nav_menu": "Course Menu",
+            "nav_predict": "Predict", "nav_slice": "Slice Master", "nav_debug": "Debug", "nav_solver": "Solver",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title": "Module 11: Advanced List Modification", "header_subtitle": "Deepen your understanding with slicing, sequences, and debugging.",
+
+            // Common Buttons/Placeholders
+            "button_check_prediction": "Check Prediction", "button_next_challenge": "Next Challenge",
+            "button_check_answer": "Check Answer", "button_next_snippet": "Next Snippet",
+            "button_check_challenge": "Check Scenario", "button_reset": "Reset",
+            "predict_placeholder": "e.g., ['a', 1, 'b']",
+            "modifier_current_list": "Current List:", "modifier_index_placeholder": "Index",
+
+            // Activity 1: Advanced Predict
+            "adv_predict_title": "Predict the Transformation",
+            "adv_predict_desc": "Carefully trace the operations. What is the final state of the list `items`? Enter the exact Python list representation.",
+            "adv_predict_label": "Your Prediction:",
+            "feedback_predict_correct": "Exactly right! <i class='fas fa-bullseye'></i> Complex sequence mastered!",
+            "feedback_predict_incorrect": "Not quite. The correct list was: {correct_list}. Trace each step, especially indices after modifications.",
+            "feedback_predict_invalid": "Invalid format. Use square brackets and commas, e.g., [1, 'a', 2].",
+            "feedback_predict_empty": "Please enter your prediction.",
+
+            // Activity 2: Slice Master
+            "adv_slice_title": "Slice Master",
+            "adv_slice_desc": "Practice modifying lists using slice assignment and deletion. Define the slice range and the replacement (if any).",
+            "adv_slice_start_label": "Slice Start Index:",
+            "adv_slice_end_label": "Slice End Index (Exclusive):",
+            "adv_slice_replace_label": "Replacement List (e.g., [9, 8]):",
+            "adv_slice_replace_placeholder": "['new', 1]",
+            "adv_slice_actions_label": "Actions:",
+            "adv_slice_assign_button": "Assign Slice",
+            "adv_slice_delete_button": "Delete Slice",
+            "adv_slice_note": "Remember: Slicing creates powerful ways to modify multiple elements at once!",
+            "feedback_slice_assign": "Assigned {replacement} to slice [{start}:{end}].",
+            "feedback_slice_delete": "Deleted slice [{start}:{end}].",
+            "feedback_slice_reset": "List reset.",
+            "feedback_slice_invalid_indices": "Invalid slice indices (start={start}, end={end}). Check range and order.",
+            "feedback_slice_invalid_replacement": "Invalid replacement format. Use Python list syntax like [1, 'a'].",
+            "feedback_slice_empty_indices": "Please provide start and end indices.",
+            "feedback_slice_empty_replacement": "Please provide a replacement list for assignment.",
+
+             // Activity 3: Debug the Code
+             "adv_debug_title": "Debug the Code",
+             "adv_debug_desc": "Find the potential issue or incorrect outcome in the following Python code snippets involving list modifications.",
+             "adv_debug_question": "What is the primary issue or incorrect result?",
+             "debug_option_index_error": "IndexError: Accessing index out of range.",
+             "debug_option_value_error": "ValueError: Item specified in .remove() not found.",
+             "debug_option_mod_iteration": "Logic Error: Modifying list size while iterating (can lead to skipped items).", // Conceptual
+             "debug_option_wrong_item_removed": "Logic Error: Removed the wrong item due to shifting indices.",
+             "debug_option_slice_off_by_one": "Logic Error: Slice end index incorrect (off-by-one).",
+             "debug_option_pop_wrong_index": "Logic Error: Popped from the wrong index.",
+             "debug_option_no_error": "No obvious error, code runs but produces unexpected result.",
+             "feedback_debug_correct": "Correct! <i class='fas fa-lightbulb'></i> You spotted the issue.",
+             "feedback_debug_incorrect": "Not quite. <i class='fas fa-times'></i> Review the code and list changes carefully.",
+             "debug_expl_index_error": "Explanation: Accessing or deleting an index that doesn't exist causes an IndexError.",
+             "debug_expl_value_error": "Explanation: Calling .remove(value) when 'value' isn't in the list raises a ValueError.",
+             "debug_expl_mod_iteration": "Explanation: Adding/removing items while looping over a list with `for item in list:` can cause the loop to skip elements or behave unexpectedly.",
+             "debug_expl_wrong_item_removed": "Explanation: When you remove an item, subsequent indices shift. Removing by index repeatedly requires careful index calculation.",
+             "debug_expl_slice_off_by_one": "Explanation: Remember the end index in a slice [start:end] is *exclusive*. Make sure it includes the last element you intend.",
+             "debug_expl_pop_wrong_index": "Explanation: Popping changes the list length and indices. Ensure the index used for pop is correct *at the time of popping*.",
+             "debug_expl_no_error": "Explanation: Sometimes the code runs without crashing, but the logic doesn't achieve the intended modification.",
+
+            // Activity 4: Scenario Solver
+            "adv_challenges_title": "Scenario Solver",
+            "adv_challenges_desc": "Write Python code to solve these slightly more complex list manipulation tasks. Aim for concise and correct solutions.",
+            "challenge_initial_list": "Initial list:", "challenge_expected_list": "Expected result:",
+            "adv_challenge1_title": "Scenario 1: Update Queue", "adv_challenge1_desc": "You have a list representing a queue. Add \"Task C\" to the end, then remove the item from the *front* (index 0).", "adv_challenge1_placeholder": "Your code for queue here... (likely 2 lines)",
+            "adv_challenge2_title": "Scenario 2: Data Cleanup", "adv_challenge2_desc": "Start with the list `data`. Insert the number 0 at index 1. Then, delete the slice containing the last two elements.", "adv_challenge2_placeholder": "Your code for data here... (likely 2 lines)",
+            "adv_challenge3_title": "Scenario 3: Move Element", "adv_challenge3_desc": "From the list `items`, remove the element at index 2 using .pop(), and then insert that *same removed element* back into the list at index 0.", "adv_challenge3_placeholder": "Your code for items here... (requires storing pop result)",
+            "feedback_challenge_success": "Scenario Solved!", "feedback_challenge_incorrect": "Not the expected outcome. Check your logic and method usage.",
+            "feedback_adv_challenge1_hint": "Use .append() and then .pop(0) or del list[0].", "feedback_adv_challenge2_hint": "Use .insert(1, 0) then `del data[-2:]`.", "feedback_adv_challenge3_hint": "Store the result of `items.pop(2)` in a variable, then use `items.insert(0, variable)`.",
+            "feedback_challenges_summary_all_done": "All {totalChallenges} scenarios solved! List ninja!", "feedback_challenges_summary_progress": "Solved {completedCount} of {totalChallenges} scenarios. Keep refining!",
+
+            // Completion Section (Advanced)
+            "completion_title": "Module 11 Advanced Practice Complete!",
+            "completion_desc": "Great job tackling these advanced list modification techniques! You're getting comfortable with Python's list power. <br> Review the <strong>Standard Practice</strong> or watch the <strong>Video Lesson</strong> if needed, or proceed to the next module!",
+            "button_view_standard": "View Standard Practice", "button_watch_video": "Watch Video Lesson", "button_back_menu": "Back to Course Menu"
+        },
+        pt: {
+            // Page & Nav (Avançado)
+            "page_title": "Módulo 11: Modificação Avançada de Listas",
+            "nav_practice": "Prática Padrão", "nav_video": "Assistir Vídeo Aula", "nav_menu": "Menu do Curso",
+            "nav_predict": "Prever", "nav_slice": "Mestre da Fatia", "nav_debug": "Depurar", "nav_solver": "Solucionador",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title": "Módulo 11: Modificação Avançada de Listas", "header_subtitle": "Aprofunde seu entendimento com fatiamento, sequências e depuração.",
+
+            // Botões/Placeholders Comuns
+            "button_check_prediction": "Verificar Previsão", "button_next_challenge": "Próximo Desafio",
+            "button_check_answer": "Verificar Resposta", "button_next_snippet": "Próximo Trecho",
+            "button_check_challenge": "Verificar Cenário", "button_reset": "Reiniciar",
+            "predict_placeholder": "ex: ['a', 1, 'b']",
+            "modifier_current_list": "Lista Atual:", "modifier_index_placeholder": "Índice",
+
+            // Atividade 1: Previsão Avançada
+            "adv_predict_title": "Preveja a Transformação",
+            "adv_predict_desc": "Siga cuidadosamente as operações. Qual é o estado final da lista `items`? Insira a representação exata da lista Python.",
+            "adv_predict_label": "Sua Previsão:",
+            "feedback_predict_correct": "Exatamente correto! <i class='fas fa-bullseye'></i> Sequência complexa dominada!",
+            "feedback_predict_incorrect": "Não exatamente. A lista correta era: {correct_list}. Siga cada passo, especialmente os índices após modificações.",
+            "feedback_predict_invalid": "Formato inválido. Use colchetes e vírgulas, ex: [1, 'a', 2].",
+            "feedback_predict_empty": "Por favor, insira sua previsão.",
+
+            // Atividade 2: Mestre da Fatia
+            "adv_slice_title": "Mestre da Fatia",
+            "adv_slice_desc": "Pratique a modificação de listas usando atribuição e exclusão de fatias. Defina o intervalo da fatia e a substituição (se houver).",
+            "adv_slice_start_label": "Índice Inicial da Fatia:",
+            "adv_slice_end_label": "Índice Final da Fatia (Exclusivo):",
+            "adv_slice_replace_label": "Lista de Substituição (ex: [9, 8]):",
+            "adv_slice_replace_placeholder": "['novo', 1]",
+            "adv_slice_actions_label": "Ações:",
+            "adv_slice_assign_button": "Atribuir Fatia",
+            "adv_slice_delete_button": "Excluir Fatia",
+            "adv_slice_note": "Lembre-se: O fatiamento cria formas poderosas de modificar múltiplos elementos de uma vez!",
+            "feedback_slice_assign": "Atribuído {replacement} à fatia [{start}:{end}].",
+            "feedback_slice_delete": "Fatia [{start}:{end}] excluída.",
+            "feedback_slice_reset": "Lista reiniciada.",
+            "feedback_slice_invalid_indices": "Índices de fatia inválidos (início={start}, fim={end}). Verifique o intervalo e a ordem.",
+            "feedback_slice_invalid_replacement": "Formato de substituição inválido. Use sintaxe de lista Python como [1, 'a'].",
+            "feedback_slice_empty_indices": "Forneça os índices inicial e final.",
+            "feedback_slice_empty_replacement": "Forneça uma lista de substituição para atribuição.",
+
+             // Atividade 3: Depurar o Código
+             "adv_debug_title": "Depurar o Código",
+             "adv_debug_desc": "Encontre o problema potencial ou resultado incorreto nos seguintes trechos de código Python envolvendo modificações de lista.",
+             "adv_debug_question": "Qual é o problema principal ou resultado incorreto?",
+             "debug_option_index_error": "IndexError: Acessando índice fora do intervalo.",
+             "debug_option_value_error": "ValueError: Item especificado em .remove() não encontrado.",
+             "debug_option_mod_iteration": "Erro Lógico: Modificar tamanho da lista durante iteração (pode pular itens).", // Conceitual
+             "debug_option_wrong_item_removed": "Erro Lógico: Removeu o item errado devido à mudança de índices.",
+             "debug_option_slice_off_by_one": "Erro Lógico: Índice final da fatia incorreto (erro por um).",
+             "debug_option_pop_wrong_index": "Erro Lógico: Usou pop no índice errado.",
+             "debug_option_no_error": "Nenhum erro óbvio, código roda mas produz resultado inesperado.",
+             "feedback_debug_correct": "Correto! <i class='fas fa-lightbulb'></i> Você identificou o problema.",
+             "feedback_debug_incorrect": "Não exatamente. <i class='fas fa-times'></i> Revise o código e as alterações na lista com cuidado.",
+             "debug_expl_index_error": "Explicação: Acessar ou deletar um índice que não existe causa um IndexError.",
+             "debug_expl_value_error": "Explicação: Chamar .remove(valor) quando 'valor' não está na lista levanta um ValueError.",
+             "debug_expl_mod_iteration": "Explicação: Adicionar/remover itens enquanto percorre uma lista com `for item in lista:` pode fazer o loop pular elementos ou se comportar inesperadamente.",
+             "debug_expl_wrong_item_removed": "Explicação: Quando você remove um item, os índices subsequentes mudam. Remover por índice repetidamente requer cálculo cuidadoso do índice.",
+             "debug_expl_slice_off_by_one": "Explicação: Lembre-se que o índice final em uma fatia [inicio:fim] é *exclusivo*. Certifique-se de que inclui o último elemento desejado.",
+             "debug_expl_pop_wrong_index": "Explicação: O Pop altera o comprimento e os índices da lista. Garanta que o índice usado para pop está correto *no momento do pop*.",
+             "debug_expl_no_error": "Explicação: Às vezes, o código roda sem travar, mas a lógica não realiza a modificação pretendida.",
+
+            // Atividade 4: Solucionador de Cenários
+            "adv_challenges_title": "Solucionador de Cenários",
+            "adv_challenges_desc": "Escreva código Python para resolver essas tarefas de manipulação de lista um pouco mais complexas. Busque soluções concisas e corretas.",
+            "challenge_initial_list": "Lista inicial:", "challenge_expected_list": "Resultado esperado:",
+            "adv_challenge1_title": "Cenário 1: Atualizar Fila", "adv_challenge1_desc": "Você tem uma lista representando uma fila. Adicione \"Task C\" ao final, depois remova o item da *frente* (índice 0).", "adv_challenge1_placeholder": "Seu código para queue aqui... (provavelmente 2 linhas)",
+            "adv_challenge2_title": "Cenário 2: Limpeza de Dados", "adv_challenge2_desc": "Comece com a lista `data`. Insira o número 0 no índice 1. Em seguida, exclua a fatia contendo os dois últimos elementos.", "adv_challenge2_placeholder": "Seu código para data aqui... (provavelmente 2 linhas)",
+            "adv_challenge3_title": "Cenário 3: Mover Elemento", "adv_challenge3_desc": "Da lista `items`, remova o elemento no índice 2 usando .pop(), e então insira esse *mesmo elemento removido* de volta na lista no índice 0.", "adv_challenge3_placeholder": "Seu código para items aqui... (requer armazenar resultado do pop)",
+            "feedback_challenge_success": "Cenário Resolvido!", "feedback_challenge_incorrect": "Não é o resultado esperado. Verifique sua lógica e uso dos métodos.",
+            "feedback_adv_challenge1_hint": "Use .append() e depois .pop(0) ou del lista[0].", "feedback_adv_challenge2_hint": "Use .insert(1, 0) e depois `del data[-2:]`.", "feedback_adv_challenge3_hint": "Armazene o resultado de `items.pop(2)` em uma variável, depois use `items.insert(0, variavel)`.",
+            "feedback_challenges_summary_all_done": "Todos os {totalChallenges} cenários resolvidos! Ninja das listas!", "feedback_challenges_summary_progress": "Resolvido {completedCount} de {totalChallenges} cenários. Continue refinando!",
+
+            // Seção de Conclusão (Avançado)
+            "completion_title": "Prática Avançada do Módulo 11 Completa!",
+            "completion_desc": "Ótimo trabalho enfrentando essas técnicas avançadas de modificação de listas! Você está ficando confortável com o poder das listas em Python. <br> Revise a <strong>Prática Padrão</strong> ou assista à <strong>Vídeo Aula</strong> se necessário, ou prossiga para o próximo módulo!",
+            "button_view_standard": "Ver Prática Padrão", "button_watch_video": "Assistir Vídeo Aula", "button_back_menu": "Voltar ao Menu do Curso"
+        },
+        zh: {
+            // 页面和导航 (高级)
+            "page_title": "模块 11：高级列表修改",
+            "nav_practice": "标准练习", "nav_video": "观看视频课程", "nav_menu": "课程菜单",
+            "nav_predict": "预测", "nav_slice": "切片大师", "nav_debug": "调试", "nav_solver": "求解器",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title": "模块 11：高级列表修改", "header_subtitle": "通过切片、序列和调试加深您的理解。",
+
+            // 通用按钮/占位符
+            "button_check_prediction": "检查预测", "button_next_challenge": "下一个挑战",
+            "button_check_answer": "检查答案", "button_next_snippet": "下一个代码段",
+            "button_check_challenge": "检查场景", "button_reset": "重置",
+            "predict_placeholder": "例如：['a', 1, 'b']",
+            "modifier_current_list": "当前列表：", "modifier_index_placeholder": "索引",
+
+            // 活动 1：高级预测
+            "adv_predict_title": "预测转换结果",
+            "adv_predict_desc": "仔细追踪操作步骤。列表 `items` 的最终状态是什么？请输入精确的 Python 列表表示。",
+            "adv_predict_label": "你的预测：",
+            "feedback_predict_correct": "完全正确！<i class='fas fa-bullseye'></i> 掌握了复杂序列！",
+            "feedback_predict_incorrect": "不太对。正确的列表是：{correct_list}。请逐步追踪，尤其注意修改后的索引变化。",
+            "feedback_predict_invalid": "格式无效。请使用方括号和逗号，例如：[1, 'a', 2]。",
+            "feedback_predict_empty": "请输入你的预测。",
+
+            // 活动 2：切片大师
+            "adv_slice_title": "切片大师",
+            "adv_slice_desc": "练习使用切片赋值和删除来修改列表。定义切片范围和替换内容（如果有）。",
+            "adv_slice_start_label": "切片起始索引：",
+            "adv_slice_end_label": "切片结束索引（不含）：",
+            "adv_slice_replace_label": "替换列表（例如：[9, 8]）：",
+            "adv_slice_replace_placeholder": "['new', 1]",
+            "adv_slice_actions_label": "操作：",
+            "adv_slice_assign_button": "赋值切片",
+            "adv_slice_delete_button": "删除切片",
+            "adv_slice_note": "请记住：切片提供了强大的方式来一次性修改多个元素！",
+            "feedback_slice_assign": "已将 {replacement} 赋值给切片 [{start}:{end}]。",
+            "feedback_slice_delete": "已删除切片 [{start}:{end}]。",
+            "feedback_slice_reset": "列表已重置。",
+            "feedback_slice_invalid_indices": "无效的切片索引（开始={start}，结束={end}）。请检查范围和顺序。",
+            "feedback_slice_invalid_replacement": "无效的替换格式。请使用 Python 列表语法，如 [1, 'a']。",
+            "feedback_slice_empty_indices": "请输入起始和结束索引。",
+            "feedback_slice_empty_replacement": "请为赋值操作提供替换列表。",
+
+             // 活动 3：调试代码
+             "adv_debug_title": "调试代码",
+             "adv_debug_desc": "找出以下涉及列表修改的 Python 代码段中的潜在问题或不正确的结果。",
+             "adv_debug_question": "主要问题或不正确的结果是什么？",
+             "debug_option_index_error": "IndexError: 访问的索引超出范围。",
+             "debug_option_value_error": "ValueError: .remove() 中指定的项未找到。",
+             "debug_option_mod_iteration": "逻辑错误：在迭代时修改列表大小（可能导致跳过项目）。", // 概念性
+             "debug_option_wrong_item_removed": "逻辑错误：由于索引移动而删除了错误的项。",
+             "debug_option_slice_off_by_one": "逻辑错误：切片结束索引不正确（差一错误）。",
+             "debug_option_pop_wrong_index": "逻辑错误：从错误的索引弹出了项。",
+             "debug_option_no_error": "没有明显错误，代码运行但产生意外结果。",
+             "feedback_debug_correct": "正确！<i class='fas fa-lightbulb'></i> 你发现了问题所在。",
+             "feedback_debug_incorrect": "不太对。 <i class='fas fa-times'></i> 请仔细检查代码和列表的变化。",
+             "debug_expl_index_error": "解释：访问或删除不存在的索引会导致 IndexError。",
+             "debug_expl_value_error": "解释：当列表中不存在 'value' 时调用 .remove(value) 会引发 ValueError。",
+             "debug_expl_mod_iteration": "解释：在使用 `for item in list:` 循环列表时添加/删除项目，可能导致循环跳过元素或行为异常。",
+             "debug_expl_wrong_item_removed": "解释：当你删除一个项目时，后续的索引会发生变化。重复按索引删除需要仔细计算索引。",
+             "debug_expl_slice_off_by_one": "解释：请记住切片 [start:end] 中的结束索引是*不包含*的。确保它包含了你想要操作的最后一个元素的下一个位置。",
+             "debug_expl_pop_wrong_index": "解释：Pop 操作会改变列表长度和索引。确保用于 pop 的索引在*执行 pop 操作时*是正确的。",
+             "debug_expl_no_error": "解释：有时代码可以无错误运行，但其逻辑未能实现预期的修改效果。",
+
+            // 活动 4：场景求解器
+            "adv_challenges_title": "场景求解器",
+            "adv_challenges_desc": "编写 Python 代码来解决这些稍微复杂一些的列表操作任务。力求解决方案简洁且正确。",
+            "challenge_initial_list": "初始列表：", "challenge_expected_list": "预期结果：",
+            "adv_challenge1_title": "场景 1：更新队列", "adv_challenge1_desc": "你有一个表示队列的列表。将 \"Task C\" 添加到末尾，然后移除*队首*（索引 0）的项。", "adv_challenge1_placeholder": "在此处编写 queue 的代码...（可能需要 2 行）",
+            "adv_challenge2_title": "场景 2：数据清理", "adv_challenge2_desc": "从列表 `data` 开始。在索引 1 处插入数字 0。然后，删除包含最后两个元素的切片。", "adv_challenge2_placeholder": "在此处编写 data 的代码...（可能需要 2 行）",
+            "adv_challenge3_title": "场景 3：移动元素", "adv_challenge3_desc": "从列表 `items` 中，使用 .pop() 移除索引 2 处的元素，然后将这个*被移除的元素*插回列表的索引 0 处。", "adv_challenge3_placeholder": "在此处编写 items 的代码...（需要存储 pop 的结果）",
+            "feedback_challenge_success": "场景已解决！", "feedback_challenge_incorrect": "结果不符合预期。请检查你的逻辑和方法使用。",
+            "feedback_adv_challenge1_hint": "使用 .append()，然后使用 .pop(0) 或 del list[0]。", "feedback_adv_challenge2_hint": "使用 .insert(1, 0)，然后使用 `del data[-2:]`。", "feedback_adv_challenge3_hint": "将 `items.pop(2)` 的结果存储在一个变量中，然后使用 `items.insert(0, variable)`。",
+            "feedback_challenges_summary_all_done": "所有 {totalChallenges} 个场景已解决！列表忍者！", "feedback_challenges_summary_progress": "已解决 {completedCount} / {totalChallenges} 个场景。继续完善！",
+
+            // 完成部分 (高级)
+            "completion_title": "模块 11 高级练习完成！",
+            "completion_desc": "干得漂亮，成功应对了这些高级列表修改技巧！你对 Python 列表的掌握越来越熟练了。<br> 如果需要，可以回顾<strong>标准练习</strong>或观看<strong>视频课程</strong>，或者继续学习下一个模块！",
+            "button_view_standard": "查看标准练习", "button_watch_video": "观看视频课程", "button_back_menu": "返回课程菜单"
+        }
+    };
+
+
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // --- Language Management Functions (Same as Practice) ---
+        function getStoredLanguage() {
+            const storedLang = localStorage.getItem('userLanguage');
+            if (storedLang && translations[storedLang]) return storedLang;
+            const browserLang = navigator.language || navigator.userLanguage;
+            if (browserLang.startsWith('pt')) return 'pt';
+            if (browserLang.startsWith('zh')) return 'zh';
+            return 'en';
+        }
+
+        function setLanguage(lang) {
+            if (!translations[lang]) lang = 'en';
+            localStorage.setItem('userLanguage', lang);
+            document.documentElement.lang = lang;
+            translatePage(lang);
+
+            const langSelect = document.getElementById('languageSelect');
+            if (langSelect) langSelect.value = lang;
+
+            // Re-initialize or update language-dependent interactive content
+            if (document.getElementById('adv-predict-list')) setupAdvancedPrediction();
+            if (document.getElementById('slice-master')) setupSliceMaster();
+            if (document.getElementById('debug-code')) setupDebugCode();
+            if (document.getElementById('scenario-solver')) {
+                setupScenarioSolver();
+                if (typeof updateScenarioSummary === 'function') updateScenarioSummary();
+            }
+        }
+
+        function getTranslation(key, lang, replacements = {}) {
+            let text = translations[lang]?.[key] ?? translations['en']?.[key] ?? `[${key}]`;
+            for (const placeholder in replacements) {
+                const regex = new RegExp(`\\{${placeholder}\\}`, 'g');
+                text = text.replace(regex, replacements[placeholder]);
+            }
+            return text;
+        }
+
+        function translatePage(lang) {
+             if (!translations[lang]) lang = 'en';
+             document.querySelectorAll('[data-translate]').forEach(el => {
+                 const key = el.getAttribute('data-translate');
+                 const translation = getTranslation(key, lang);
+                  if (el.tagName === 'TITLE') { document.title = translation; }
+                  else if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') { /* Skip placeholders */ }
+                  else if (el.tagName === 'OPTION') { el.textContent = translation; }
+                  else {
+                     // Use innerHTML only if the translation explicitly contains HTML tags
+                     if (translation.includes('<') && translation.includes('>')) { el.innerHTML = translation; }
+                     else { el.textContent = translation; }
+                  }
+             });
+             document.querySelectorAll('[data-translate-placeholder]').forEach(el => {
+                 const key = el.getAttribute('data-translate-placeholder');
+                 const translation = getTranslation(key, lang);
+                 el.setAttribute('placeholder', translation);
+             });
+             document.querySelectorAll('[data-translate-title]').forEach(el => {
+                  const key = el.getAttribute('data-translate-title');
+                  const translation = getTranslation(key, lang);
+                  el.setAttribute('title', translation);
+             });
+             // Special case for debug explanation which might contain code tags
+             const explanationDiv = document.getElementById('debug-explanation');
+             if (explanationDiv && explanationDiv.dataset.explanationKey) {
+                 const key = explanationDiv.dataset.explanationKey;
+                 explanationDiv.innerHTML = getTranslation(key, lang); // Use innerHTML here
+             }
+        }
+
+        // --- Initialize Language ---
+        const initialLang = getStoredLanguage();
+
+        // --- Minimal Nav Logic (Same as Practice) ---
+        const navToggleButton = document.getElementById('minimal-nav-toggle');
+        const navPanel = document.getElementById('minimal-nav-panel');
+        const body = document.body;
+        if (navToggleButton && navPanel) {
+            navToggleButton.addEventListener('click', (event) => { event.stopPropagation(); body.classList.toggle('nav-active'); navToggleButton.setAttribute('aria-expanded', body.classList.contains('nav-active')); });
+            document.addEventListener('click', (event) => { if (body.classList.contains('nav-active') && !navPanel.contains(event.target) && event.target !== navToggleButton && !navToggleButton.contains(event.target) ) { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); } });
+            navPanel.querySelectorAll('a').forEach(link => { link.addEventListener('click', () => { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); }); });
+            document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && body.classList.contains('nav-active')) { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); } });
+            navToggleButton.setAttribute('aria-expanded', 'false');
+        }
+
+        // --- Language Switcher Setup (Same as Practice) ---
+        const langSelect = document.getElementById('languageSelect');
+        if (langSelect) {
+            langSelect.addEventListener('change', (e) => setLanguage(e.target.value));
+        }
+
+        // --- Helper Function for Feedback (Same as Practice) ---
+        function showFeedback(elementId, messageKey, type = 'info', replacements = {}) {
+            const feedbackEl = document.getElementById(elementId);
+            if (!feedbackEl) { console.error(`Feedback element not found: ${elementId}`); return; }
+            const currentLang = getStoredLanguage();
+            const translatedMessage = getTranslation(messageKey, currentLang, replacements);
+
+            // Use innerHTML only if the message contains tags (like for code formatting in errors)
+             if (translatedMessage.includes('<') && translatedMessage.includes('>')) { feedbackEl.innerHTML = translatedMessage; }
+             else { feedbackEl.textContent = translatedMessage; }
+
+            feedbackEl.className = 'feedback-message'; // Reset classes first
+            // Special handling for debug explanation visibility
+            const explanationDiv = document.getElementById('debug-explanation');
+            if (elementId === 'debug-feedback' && explanationDiv) {
+                explanationDiv.classList.add('hidden'); // Hide explanation by default
+            } else {
+                 feedbackEl.classList.add('visible', type);
+            }
+             feedbackEl.classList.add('visible', type); // Apply main classes
+
+            const interactiveArea = feedbackEl.closest('.interactive-area');
+            if (!interactiveArea) return;
+            interactiveArea.classList.remove('success-glow-anim', 'shake-anim');
+            void interactiveArea.offsetWidth; // Trigger reflow
+            if (type === 'correct') { interactiveArea.classList.add('success-glow-anim'); }
+            else if (type === 'incorrect') { interactiveArea.classList.add('shake-anim'); }
+        }
+        function hideFeedback(elementId) {
+             const feedbackEl = document.getElementById(elementId);
+             if (feedbackEl) {
+                 feedbackEl.classList.remove('visible', 'correct', 'incorrect', 'info');
+                 feedbackEl.style.maxHeight = '0';
+                 feedbackEl.style.marginTop = '0';
+                 // Also hide debug explanation if hiding general debug feedback
+                 if (elementId === 'debug-feedback') {
+                     const explanationDiv = document.getElementById('debug-explanation');
+                     if (explanationDiv) explanationDiv.classList.add('hidden');
+                 }
+             }
+        }
+
+        // --- Helper: Basic Python List String Parser (Use with caution!) ---
+        // Tries to parse a string like "[1, 'a', True]" into a JS array. VERY basic.
+        function parsePythonListString(listStr) {
+            listStr = listStr.trim();
+            if (!listStr.startsWith('[') || !listStr.endsWith(']')) {
+                throw new Error("String must start with '[' and end with ']'.");
+            }
+            const content = listStr.slice(1, -1).trim();
+            if (content === '') return []; // Empty list
+
+            // Attempt to split by comma, respecting quotes (simple approach)
+            const items = [];
+            let currentItem = '';
+            let inSingleQuotes = false;
+            let inDoubleQuotes = false;
+
+            for (let i = 0; i < content.length; i++) {
+                const char = content[i];
+
+                if (char === "'" && !inDoubleQuotes) {
+                    inSingleQuotes = !inSingleQuotes;
+                } else if (char === '"' && !inSingleQuotes) {
+                    inDoubleQuotes = !inDoubleQuotes;
+                }
+
+                if (char === ',' && !inSingleQuotes && !inDoubleQuotes) {
+                    items.push(currentItem.trim());
+                    currentItem = '';
+                } else {
+                    currentItem += char;
+                }
+            }
+            items.push(currentItem.trim()); // Add the last item
+
+            // Convert items to JS types (basic)
+            return items.map(item => {
+                if ((item.startsWith("'") && item.endsWith("'")) || (item.startsWith('"') && item.endsWith('"'))) {
+                    return item.slice(1, -1); // String
+                }
+                const num = Number(item);
+                if (!isNaN(num)) {
+                    return num; // Number
+                }
+                if (item.toLowerCase() === 'true') return true;
+                if (item.toLowerCase() === 'false') return false;
+                if (item.toLowerCase() === 'none') return null; // Represent None as null
+                 // Add more basic types if needed, otherwise treat as string (or throw error)
+                // For simplicity here, if it's not recognized, keep as string (might be wrong)
+                console.warn(`Unrecognized item type during parse: ${item}, treating as string.`);
+                return item;
+            });
+        }
+
+        // --- Activity 1: Advanced Predict the List ---
+        const advPredictListSection = document.getElementById('adv-predict-list');
+        if (advPredictListSection) {
+            const codeSnippetDiv = document.getElementById('adv-predict-code-snippet');
+            const predictionInput = document.getElementById('adv-prediction-input');
+            const checkBtn = document.getElementById('check-adv-prediction-btn');
+            const nextBtn = document.getElementById('next-adv-prediction-btn');
+            const feedbackDiv = document.getElementById('adv-prediction-feedback');
+
+             const predictionChallengesAdvanced = [
+                 {
+                     code: `items = ['x', 'y', 'z']\nitems.insert(1, items.pop(0))\nitems.append('w')`, // pop returns 'x', inserted at 1
+                     correctAnswer: `['y', 'x', 'z', 'w']`
+                 },
+                 {
+                     code: `items = [1, 2, 3, 4, 5]\ndel items[1:3] # Deletes index 1 and 2 (2, 3)\nitems.remove(5)`,
+                     correctAnswer: `[1, 4]`
+                 },
+                 {
+                     code: `items = [10, 20, 30]\nitems[-1] = 99 # Modify last item\nitems[0:1] = [1, 2, 3] # Replace first item with multiple`,
+                     correctAnswer: `[1, 2, 3, 20, 99]`
+                 },
+                  {
+                     code: `items = ['a', 'b', 'c', 'd', 'e']\npopped = items.pop()\nitems.insert(0, popped)\nitems.pop(2)`, // Pop 'e', insert 'e' at 0 -> ['e', 'a', 'b', 'c', 'd'], pop index 2 ('b')
+                      correctAnswer: `['e', 'a', 'c', 'd']`
+                  },
+                 {
+                     code: `items = [0] * 4 # [0, 0, 0, 0]\nitems[1:3] = ['X'] # Replace index 1, 2 with 'X'\ndel items[0]`,
+                     correctAnswer: `['X', 0]`
+                 }
+             ];
+            let currentAdvChallengeIndex = 0;
+
+            function highlightCode(code) {
+                return code
+                    .replace(/(\bdel\b|\bprint\b)/g, '<span class="code-keyword">$1</span>')
+                    .replace(/(\.append\(|\.insert\(|\.remove\(|\.pop\()/g, '<span class="code-method">$1</span>')
+                    .replace(/([\[\]])/g, '<span class="code-paren">$1</span>')
+                    .replace(/('.*?'|".*?")/g, '<span class="code-string">$1</span>')
+                    .replace(/(\b\d+\b)/g, '<span class="code-number">$1</span>')
+                    .replace(/(#.*)/g, '<span class="code-comment">$1</span>'); // Add comment highlight
+            }
+
+            function loadAdvancedPredictionChallenge(index) {
+                const challenge = predictionChallengesAdvanced[index];
+                codeSnippetDiv.innerHTML = highlightCode(challenge.code).replace(/\n/g, '<br>');
+                predictionInput.value = '';
+                hideFeedback('adv-prediction-feedback');
+                checkBtn.disabled = false;
+                checkBtn.classList.remove('success');
+                nextBtn.classList.add('hidden');
+            }
+
+            function setupAdvancedPrediction() {
+                currentAdvChallengeIndex = Math.floor(Math.random() * predictionChallengesAdvanced.length);
+                loadAdvancedPredictionChallenge(currentAdvChallengeIndex);
+            }
+
+            checkBtn.addEventListener('click', () => {
+                const userAnswerRaw = predictionInput.value.trim();
+                const correctAnswerRaw = predictionChallengesAdvanced[currentAdvChallengeIndex].correctAnswer;
+                const currentLang = getStoredLanguage();
+
+                if (userAnswerRaw === '') {
+                    showFeedback('adv-prediction-feedback', 'feedback_predict_empty', 'info');
+                    return;
+                }
+
+                 // More robust comparison: attempt to parse both to ensure structure matches
+                let userList, correctList;
+                 let formatValid = true;
+                try {
+                    // Use a safer eval or a dedicated parser if available
+                    // For simplicity here, directly compare string representations after normalization
+                    // A better approach would involve parsing into actual JS arrays if security allows
+                    const normalize = (str) => str.replace(/\s+/g, '').replace(/,]/g, ']'); // Remove spaces, handle trailing commas if needed
+                    const userAnswer = normalize(userAnswerRaw);
+                    const correctAnswer = normalize(correctAnswerRaw);
+
+                    if (userAnswer === correctAnswer) {
+                        showFeedback('adv-prediction-feedback', 'feedback_predict_correct', 'correct');
+                        checkBtn.disabled = true;
+                        checkBtn.classList.add('success');
+                        nextBtn.classList.remove('hidden');
+                    } else {
+                        // Check basic format before showing incorrect
+                         if (!userAnswer.startsWith('[') || !userAnswer.endsWith(']')) {
+                             showFeedback('adv-prediction-feedback', 'feedback_predict_invalid', 'incorrect');
+                         } else {
+                             showFeedback('adv-prediction-feedback', 'feedback_predict_incorrect', 'incorrect', { correct_list: `<code class="code-font">${correctAnswerRaw}</code>` });
+                         }
+                        checkBtn.disabled = false;
+                        nextBtn.classList.add('hidden');
+                    }
+
+                } catch (e) {
+                    console.error("Prediction parsing error:", e);
+                    showFeedback('adv-prediction-feedback', 'feedback_predict_invalid', 'incorrect');
+                    checkBtn.disabled = false;
+                    nextBtn.classList.add('hidden');
+                }
+            });
+
+            nextBtn.addEventListener('click', () => {
+                currentAdvChallengeIndex = (currentAdvChallengeIndex + 1) % predictionChallengesAdvanced.length;
+                loadAdvancedPredictionChallenge(currentAdvChallengeIndex);
+            });
+
+            // setupAdvancedPrediction(); // Called by setLanguage
+        }
+
+
+        // --- Activity 2: Slice Master ---
+        const sliceMasterSection = document.getElementById('slice-master');
+        if (sliceMasterSection) {
+            const listDisplay = document.getElementById('slice-current-list-display');
+            const controlsDiv = sliceMasterSection.querySelector('.controls');
+            const feedbackDiv = document.getElementById('slice-feedback');
+            const startIndexInput = document.getElementById('slice-start-index');
+            const endIndexInput = document.getElementById('slice-end-index');
+            const replaceValueInput = document.getElementById('slice-replace-value');
+            const resetBtn = document.getElementById('reset-slice-list');
+
+            let currentSliceList = [];
+            const initialSliceList = ['a', 'b', 'c', 'd', 'e', 'f']; // Initial state
+
+            function renderSliceList() {
+                listDisplay.innerHTML = ''; // Clear previous
+                listDisplay.appendChild(document.createTextNode('['));
+                currentSliceList.forEach((item, index) => {
+                    const span = document.createElement('span');
+                    span.classList.add('list-item');
+                    if (typeof item === 'string') {
+                        span.textContent = `"${item}"`;
+                        span.classList.add('list-item-string');
+                    } else if (typeof item === 'number') {
+                        span.textContent = item;
+                        span.classList.add('list-item-number');
+                    } else { // Handle boolean, null, etc.
+                        span.textContent = String(item);
+                         if (typeof item === 'boolean') span.style.color = 'var(--code-keyword)';
+                         if (item === null) span.style.color = 'var(--code-keyword)';
+                    }
+                    listDisplay.appendChild(span);
+                    if (index < currentSliceList.length - 1) {
+                        listDisplay.appendChild(document.createTextNode(', '));
+                    }
+                });
+                listDisplay.appendChild(document.createTextNode(']'));
+                listDisplay.classList.add('list-change-anim');
+                setTimeout(() => listDisplay.classList.remove('list-change-anim'), 600);
+                 // Reset inputs
+                 startIndexInput.value = '';
+                 endIndexInput.value = '';
+                 replaceValueInput.value = '';
+            }
+
+            function setupSliceMaster() {
+                currentSliceList = [...initialSliceList];
+                renderSliceList();
+                hideFeedback('slice-feedback');
+            }
+
+            controlsDiv.addEventListener('click', (e) => {
+                if (e.target.tagName === 'BUTTON' && e.target.dataset.action) {
+                    const action = e.target.dataset.action;
+                    const startStr = startIndexInput.value;
+                    const endStr = endIndexInput.value;
+                    const replaceStr = replaceValueInput.value.trim();
+
+                    hideFeedback('slice-feedback');
+                    let success = true;
+                    let feedbackKey = '';
+                    let feedbackParams = {};
+
+                    // Allow empty start/end to mean 0 / length
+                    let start = startStr === '' ? 0 : parseInt(startStr, 10);
+                    let end = endStr === '' ? currentSliceList.length : parseInt(endStr, 10);
+
+
+                     // Basic validation for indices being numbers if not empty
+                     if ( (startStr !== '' && isNaN(start)) || (endStr !== '' && isNaN(end)) ) {
+                        success = false;
+                        feedbackKey = 'feedback_slice_invalid_indices';
+                        feedbackParams = { start: startStr, end: endStr };
+                        showFeedback('slice-feedback', feedbackKey, 'incorrect', feedbackParams);
+                        return;
+                    }
+
+                    // More robust index validation needed before splice
+                    // Adjust negative indices
+                    if (start < 0) start = currentSliceList.length + start;
+                    if (end < 0) end = currentSliceList.length + end;
+                    // Clamp indices to valid range after potential negative adjustments
+                    start = Math.max(0, Math.min(currentSliceList.length, start));
+                     end = Math.max(start, Math.min(currentSliceList.length, end)); // End shouldn't be before start
+
+                    try {
+                        if (action === 'assign') {
+                            if (replaceStr === '') {
+                                success = false;
+                                feedbackKey = 'feedback_slice_empty_replacement';
+                            } else {
+                                const replacementList = parsePythonListString(replaceStr);
+                                // Perform the slice assignment using splice
+                                currentSliceList.splice(start, end - start, ...replacementList);
+                                feedbackKey = 'feedback_slice_assign';
+                                feedbackParams = { start: startStr || 0, end: endStr || 'end', replacement: replaceStr };
+                            }
+                        } else if (action === 'delete') {
+                             // Perform slice deletion using splice
+                            currentSliceList.splice(start, end - start);
+                            feedbackKey = 'feedback_slice_delete';
+                            feedbackParams = { start: startStr || 0, end: endStr || 'end' };
+                        }
+                    } catch (error) {
+                        console.error("Slice error:", error);
+                        success = false;
+                        if (error.message.includes('[')) { // Likely parsing error
+                           feedbackKey = 'feedback_slice_invalid_replacement';
+                        } else {
+                            feedbackKey = 'feedback_slice_invalid_indices'; // Assume index issue otherwise
+                            feedbackParams = { start: startStr, end: endStr };
+                        }
+                    }
+
+                    if (feedbackKey) {
+                        showFeedback('slice-feedback', feedbackKey, success ? 'info' : 'incorrect', feedbackParams);
+                    }
+                    if (success) {
+                        renderSliceList();
+                    }
+                }
+            });
+
+            resetBtn.addEventListener('click', setupSliceMaster);
+            // setupSliceMaster(); // Called by setLanguage
+        }
+
+
+        // --- Activity 3: Debug the Code ---
+        const debugCodeSection = document.getElementById('debug-code');
+        if (debugCodeSection) {
+            const codeSnippetDiv = document.getElementById('debug-code-snippet');
+            const optionsContainer = document.getElementById('debug-options');
+            const checkBtn = document.getElementById('check-debug-btn');
+            const nextBtn = document.getElementById('next-debug-btn');
+            const feedbackDiv = document.getElementById('debug-feedback');
+            const explanationDiv = document.getElementById('debug-explanation');
+
+             const debugChallenges = [
+                 {
+                     code: `nums = [10, 20, 30]\nprint(nums[3])`,
+                     options: ['debug_option_value_error', 'debug_option_index_error', 'debug_option_no_error'],
+                     correctOptionIndex: 1,
+                     explanationKey: 'debug_expl_index_error'
+                 },
+                 {
+                     code: `items = ['a', 'b', 'c']\nitems.remove('d')`,
+                     options: ['debug_option_index_error', 'debug_option_no_error', 'debug_option_value_error'],
+                     correctOptionIndex: 2,
+                     explanationKey: 'debug_expl_value_error'
+                 },
+                 {
+                     code: `data = [1, 2, 3, 4, 5]\nfor i in range(len(data)):\n    if data[i] % 2 == 0:\n        data.pop(i) # Problematic!`,
+                     options: ['debug_option_mod_iteration', 'debug_option_index_error', 'debug_option_value_error'],
+                     correctOptionIndex: 0, // Modifying list while iterating over indices derived from original length is risky
+                     explanationKey: 'debug_expl_mod_iteration' // Explain *why* it's problematic (skips items)
+                 },
+                  {
+                      code: `letters = ['w', 'x', 'y', 'z']\ndel letters[1]\ndel letters[2] # Deletes 'z', not 'y'`,
+                      options: ['debug_option_index_error', 'debug_option_wrong_item_removed', 'debug_option_pop_wrong_index'],
+                      correctOptionIndex: 1, // Indices shift after the first deletion
+                      explanationKey: 'debug_expl_wrong_item_removed'
+                  },
+                 {
+                     code: `scores = [100, 90, 80, 70]\n# Goal: Remove 80 and 70\nnew_scores = scores[0:2]`, // Creates a new list, doesn't modify original as intended by comments
+                     options: ['debug_option_slice_off_by_one', 'debug_option_no_error', 'debug_option_wrong_item_removed'], // Technically no error, but unexpected result
+                     correctOptionIndex: 1, // No error, but doesn't do what the comment implies
+                      explanationKey: 'debug_expl_no_error' // Explain slicing creates a *new* list here
+                 }
+             ];
+             let currentDebugIndex = 0;
+             let blockDebugClicks = false;
+
+             function loadDebugChallenge(index) {
+                 const challenge = debugChallenges[index];
+                 const currentLang = getStoredLanguage();
+                 codeSnippetDiv.innerHTML = highlightCode(challenge.code).replace(/\n/g, '<br>');
+                 optionsContainer.innerHTML = '';
+                 blockDebugClicks = false;
+
+                 challenge.options.forEach((optionKey, i) => {
+                     const optionDiv = document.createElement('div');
+                     optionDiv.classList.add('debug-option');
+                     optionDiv.dataset.optionIndex = i;
+
+                     const input = document.createElement('input');
+                     input.type = 'radio';
+                     input.name = 'debug-choice';
+                     input.id = `debug-option-${i}`;
+                     input.value = i;
+
+                     const label = document.createElement('label');
+                     label.htmlFor = `debug-option-${i}`;
+                     label.textContent = getTranslation(optionKey, currentLang);
+
+                     optionDiv.appendChild(input);
+                     optionDiv.appendChild(label);
+                     optionDiv.addEventListener('click', () => {
+                         if (!blockDebugClicks) input.checked = true;
+                     }); // Allow clicking div to select radio
+                     optionsContainer.appendChild(optionDiv);
+                 });
+
+                 hideFeedback('debug-feedback');
+                 explanationDiv.classList.add('hidden');
+                 explanationDiv.innerHTML = '';
+                 checkBtn.disabled = false;
+                 nextBtn.classList.add('hidden');
+             }
+
+             function setupDebugCode() {
+                 currentDebugIndex = Math.floor(Math.random() * debugChallenges.length);
+                 loadDebugChallenge(currentDebugIndex);
+             }
+
+             checkBtn.addEventListener('click', () => {
+                 if (blockDebugClicks) return;
+                 const selectedRadio = optionsContainer.querySelector('input[name="debug-choice"]:checked');
+                 if (!selectedRadio) return; // Nothing selected
+
+                 blockDebugClicks = true;
+                 const selectedIndex = parseInt(selectedRadio.value, 10);
+                 const challenge = debugChallenges[currentDebugIndex];
+                 const currentLang = getStoredLanguage();
+
+                 optionsContainer.querySelectorAll('.debug-option').forEach(opt => {
+                     opt.classList.add('disabled'); // Disable all visually
+                 });
+                 const selectedOptionDiv = selectedRadio.closest('.debug-option');
+
+                 if (selectedIndex === challenge.correctOptionIndex) {
+                     selectedOptionDiv.classList.add('correct');
+                     showFeedback('debug-feedback', 'feedback_debug_correct', 'correct');
+                 } else {
+                     selectedOptionDiv.classList.add('incorrect');
+                      showFeedback('debug-feedback', 'feedback_debug_incorrect', 'incorrect');
+                     // Highlight the correct one
+                     const correctOptionDiv = optionsContainer.querySelector(`[data-option-index="${challenge.correctOptionIndex}"]`);
+                     if (correctOptionDiv) {
+                        setTimeout(() => correctOptionDiv.classList.add('correct'), 400);
+                     }
+                 }
+
+                 // Show explanation
+                 explanationDiv.innerHTML = getTranslation(challenge.explanationKey, currentLang);
+                 explanationDiv.classList.remove('hidden');
+                 // Ensure feedback message resizes to accommodate explanation
+                  feedbackDiv.style.maxHeight = '200px'; // Allow more space
+
+                 checkBtn.disabled = true;
+                 nextBtn.classList.remove('hidden');
+             });
+
+             nextBtn.addEventListener('click', () => {
+                 currentDebugIndex = (currentDebugIndex + 1) % debugChallenges.length;
+                 loadDebugChallenge(currentDebugIndex);
+             });
+
+             // setupDebugCode(); // Called by setLanguage
+        }
+
+
+        // --- Activity 4: Scenario Solver (Advanced List Challenges) ---
+        const scenarioSolverSection = document.getElementById('scenario-solver');
+        let updateScenarioSummary; // Define scope
+        if (scenarioSolverSection) {
+            const missionRunButtons = scenarioSolverSection.querySelectorAll('.mission-run-btn');
+            const summaryFeedback = document.getElementById('scenario-solver-summary-feedback');
+            const totalScenarios = scenarioSolverSection.querySelectorAll('.mission').length;
+            let completedScenariosCount = 0;
+
+             updateScenarioSummary = function() {
+                 completedScenariosCount = scenarioSolverSection.querySelectorAll('.mission[data-completed="true"]').length;
+                 const currentLang = getStoredLanguage();
+                 if (completedScenariosCount === totalScenarios) {
+                     showFeedback('scenario-solver-summary-feedback', 'feedback_challenges_summary_all_done', 'correct', { totalChallenges: totalScenarios });
+                 } else if (completedScenariosCount > 0) {
+                      showFeedback('scenario-solver-summary-feedback', 'feedback_challenges_summary_progress', 'info', { completedCount: completedScenariosCount, totalChallenges: totalScenarios });
+                 } else {
+                     summaryFeedback.classList.remove('visible'); // Just hide if 0
+                 }
+             }
+
+             // Simulate Python list modification based on code lines (VERY simplified)
+             function simulateCodeExecution(initialList, codeLines) {
+                 let currentList = [...initialList]; // Start with a copy
+                 let variables = {}; // For storing pop result
+
+                 for (const line of codeLines) {
+                     const trimmedLine = line.trim();
+                     if (trimmedLine === '' || trimmedLine.startsWith('#')) continue; // Skip empty/comments
+
+                     try {
+                         // Append
+                         let match = trimmedLine.match(/^(\w+)\.append\((.*)\)$/);
+                         if (match) {
+                             const listName = match[1]; // Ignored for now, assume it's the target list
+                             const valueStr = match[2].trim();
+                             const value = JSON.parse(valueStr.replace(/'/g, '"')); // Basic string/number parse
+                             currentList.push(value);
+                             continue;
+                         }
+
+                         // Insert
+                          match = trimmedLine.match(/^(\w+)\.insert\(\s*(\d+)\s*,\s*(.*)\s*\)$/);
+                         if (match) {
+                             const index = parseInt(match[2], 10);
+                             const valueStr = match[3].trim();
+                             const value = JSON.parse(valueStr.replace(/'/g, '"'));
+                             if (index >= 0 && index <= currentList.length) { // Allow insert at end
+                                currentList.splice(index, 0, value);
+                             } else { throw new Error("Index out of range for insert"); }
+                             continue;
+                         }
+
+                          // Pop with assignment
+                         match = trimmedLine.match(/^(\w+)\s*=\s*(\w+)\.pop\(\s*(-?\d+)?\s*\)$/);
+                          if (match) {
+                              const varName = match[1];
+                              const listName = match[2];
+                              const indexStr = match[3];
+                              let index = (indexStr === undefined) ? currentList.length - 1 : parseInt(indexStr, 10);
+                              if (index < 0) index = currentList.length + index;
+
+                              if (index >= 0 && index < currentList.length) {
+                                 variables[varName] = currentList.splice(index, 1)[0];
+                              } else { throw new Error("Pop index out of range"); }
+                              continue;
+                          }
+
+                          // Pop without assignment
+                         match = trimmedLine.match(/^(\w+)\.pop\(\s*(-?\d+)?\s*\)$/);
+                         if (match) {
+                             // Similar logic as above, just no assignment
+                             const indexStr = match[2];
+                             let index = (indexStr === undefined) ? currentList.length - 1 : parseInt(indexStr, 10);
+                             if (index < 0) index = currentList.length + index;
+                             if (index >= 0 && index < currentList.length) {
+                                currentList.splice(index, 1);
+                             } else { throw new Error("Pop index out of range"); }
+                             continue;
+                         }
+
+                          // Del index
+                         match = trimmedLine.match(/^del\s+(\w+)\s*\[\s*(-?\d+)\s*\]$/);
+                         if (match) {
+                             let index = parseInt(match[2], 10);
+                              if (index < 0) index = currentList.length + index;
+                              if (index >= 0 && index < currentList.length) {
+                                currentList.splice(index, 1);
+                              } else { throw new Error("Del index out of range"); }
+                              continue;
+                         }
+
+                         // Del slice
+                         match = trimmedLine.match(/^del\s+(\w+)\s*\[\s*(-?\d+)?\s*:\s*(-?\d+)?\s*\]$/);
+                         if (match) {
+                             let start = match[2] === undefined ? 0 : parseInt(match[2], 10);
+                             let end = match[3] === undefined ? currentList.length : parseInt(match[3], 10);
+                             if (start < 0) start = currentList.length + start;
+                             if (end < 0) end = currentList.length + end;
+                             start = Math.max(0, start);
+                             end = Math.min(currentList.length, end);
+                             if (start < end) {
+                                currentList.splice(start, end - start);
+                              }
+                              continue;
+                         }
+
+                         // Insert using stored variable (simple case)
+                         match = trimmedLine.match(/^(\w+)\.insert\(\s*(\d+)\s*,\s*(\w+)\s*\)$/);
+                         if (match) {
+                             const listName = match[1];
+                             const index = parseInt(match[2], 10);
+                             const varName = match[3];
+                             if (variables.hasOwnProperty(varName)) {
+                                 if (index >= 0 && index <= currentList.length) {
+                                     currentList.splice(index, 0, variables[varName]);
+                                 } else { throw new Error("Index out of range for insert"); }
+                             } else { throw new Error(`Variable '${varName}' not defined`); }
+                             continue;
+                         }
+
+
+                         // If no match, assume error or unsupported syntax
+                         console.warn("Unsupported simulation line:", trimmedLine);
+                          // throw new Error("Unsupported code line for simulation");
+
+
+                     } catch (e) {
+                         console.error("Simulation error:", e.message, "on line:", trimmedLine);
+                         throw e; // Re-throw to signal failure
+                     }
+                 }
+                 return currentList;
+             }
+
+             // Compare two arrays (simple comparison for basic types)
+             function arraysEqual(a, b) {
+                 if (a === b) return true;
+                 if (a == null || b == null) return false;
+                 if (a.length !== b.length) return false;
+                 for (let i = 0; i < a.length; ++i) {
+                     if (a[i] !== b[i]) return false;
+                 }
+                 return true;
+             }
+
+            // Define expected results and initial states
+             const scenarioDetails = {
+                 '1': { initial: ["Task A", "Task B"], expected: ["Task B", "Task C"], hintKey: 'feedback_adv_challenge1_hint' },
+                 '2': { initial: [10, 20, 30, 40], expected: [10, 0, 20], hintKey: 'feedback_adv_challenge2_hint' },
+                 '3': { initial: ['a', 'b', 'c', 'd'], expected: ['c', 'a', 'b', 'd'], hintKey: 'feedback_adv_challenge3_hint' }
+             };
+
+            missionRunButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const challengeId = button.dataset.challengeId;
+                    const missionDiv = document.getElementById(`adv-challenge-${challengeId}`);
+                    if (!missionDiv) return;
+                    const editor = missionDiv.querySelector('.mission-editor');
+                    const feedbackDivId = `adv-challenge-feedback-${challengeId}`;
+                    const feedbackDiv = document.getElementById(feedbackDivId);
+                    const statusIcon = missionDiv.querySelector('.mission-status i');
+                    const code = editor.value;
+                    const codeLines = code.split('\n').filter(line => line.trim() !== ''); // Split and remove empty lines
+
+                    hideFeedback(feedbackDivId); // Clear previous feedback
+
+                    let success = false;
+                    let feedbackKey = 'feedback_challenge_incorrect';
+                    let feedbackType = 'incorrect';
+                    const details = scenarioDetails[challengeId];
+
+                    if (!details) return; // Should not happen
+
+                    try {
+                        const finalSimulatedList = simulateCodeExecution(details.initial, codeLines);
+                         if (arraysEqual(finalSimulatedList, details.expected)) {
+                             success = true;
+                             feedbackKey = 'feedback_challenge_success';
+                             feedbackType = 'correct';
+                         } else {
+                             feedbackKey = details.hintKey || 'feedback_challenge_incorrect';
+                         }
+                    } catch (error) {
+                        console.error(`Execution failed for challenge ${challengeId}:`, error);
+                        feedbackKey = 'feedback_challenge_incorrect'; // Show generic error on simulation failure
+                        // Optionally provide more specific feedback based on error type?
+                    }
+
+                    showFeedback(feedbackDivId, feedbackKey, feedbackType);
+                     statusIcon.className = success ? 'fas fa-check-circle' : 'fas fa-times-circle';
+                     missionDiv.dataset.completed = success ? 'true' : 'false';
+                    updateScenarioSummary();
+                 });
+            });
+
+            function setupScenarioSolver() {
+                // Reset visual state if needed
+                scenarioSolverSection.querySelectorAll('.mission').forEach(m => {
+                     const id = m.id.split('-')[2]; // adv-challenge-ID
+                     hideFeedback(`adv-challenge-feedback-${id}`);
+                     // Reset icon/status if desired on language change/reset
+                     // const statusIcon = m.querySelector('.mission-status i');
+                     // statusIcon.className = 'fas fa-question-circle';
+                     // m.dataset.completed = 'false';
+                });
+                 if (typeof updateScenarioSummary === 'function') updateScenarioSummary();
+            }
+            // updateScenarioSummary(); // Called later
+        }
+
+
+        // --- Fade-in animations on scroll (Same as Practice) ---
+        const fadeElements = document.querySelectorAll('.fade-in');
+        const animateOnScroll = () => {
+            const windowHeight = window.innerHeight;
+            fadeElements.forEach(el => {
+                if (el.style.opacity === '1') return;
+                const rect = el.getBoundingClientRect();
+                 if (rect.top < windowHeight - 50 && rect.bottom >= 50) {
+                    el.style.opacity = '1';
+                    el.style.transform = 'translateY(0)';
+                 }
+            });
+        };
+        const scrollHandler = () => window.requestAnimationFrame(animateOnScroll);
+        window.addEventListener('scroll', scrollHandler);
+
+        // --- Initial Setup Calls ---
+        setLanguage(initialLang); // Apply language FIRST, which calls sub-setups
+        animateOnScroll(); // Trigger initial animation check
+
+        // Call updateScenarioSummary explicitly after initial setup
+        if (scenarioSolverSection && typeof updateScenarioSummary === 'function') {
+            updateScenarioSummary();
+        }
+
+    }); // End DOMContentLoaded
+    </script>
+
+</body>
+</html>
