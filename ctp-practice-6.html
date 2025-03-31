@@ -1,1 +1,1183 @@
+<!DOCTYPE html>
+<!-- Language set by JS -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Title set by JS -->
+    <title data-translate="page_title">Module 6: Simple Decisions - if</title>
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
+    <style>
+        /* --- Base Styles & Variables --- */
+        :root {
+            --primary-color: #007bff; /* Blue */
+            --secondary-color: #6c757d; /* Grey */
+            --background-light: #f8f9fa;
+            --background-medium: #e9ecef;
+            --background-dark: #343a40;
+            --text-light: #f8f9fa;
+            --text-dark: #212529;
+            --accent-color: #ffc107; /* Yellow */
+            --success-color: #28a745; /* Green */
+            --error-color: #dc3545;   /* Red */
+            --info-color: #17a2b8;    /* Teal */
+            --border-radius: 8px;
+            --transition-speed: 0.3s;
+            --font-body: 'Roboto', sans-serif;
+            --font-title: 'Orbitron', sans-serif;
+            --selection-highlight-bg: rgba(0, 123, 255, 0.1);
+            --selection-highlight-border: rgba(0, 123, 255, 0.4);
+            /* Colors matching news.html for consistency in switcher potentially */
+            --nav-primary: #6e48aa;
+            --nav-success: #4cc9f0;
+            --nav-dark: #1a1a2e;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; font-size: 16px; }
+        body {
+            font-family: var(--font-body); line-height: 1.7;
+            background-color: var(--background-light); color: var(--text-dark);
+            overflow-x: hidden;
+        }
+
+        /* --- Utility Classes --- */
+        .container { max-width: 960px; margin: 0 auto; padding: 0 15px; }
+        .text-center { text-align: center; }
+        .highlight { color: var(--primary-color); font-weight: bold; }
+        .code-font { font-family: 'Courier New', Courier, monospace; }
+        .hidden { display: none !important; }
+        .button-group { /* For navigation buttons */
+            margin-top: 2rem;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1rem;
+        }
+
+        /* --- Advanced Animations --- */
+        .fade-in { opacity: 0; transform: translateY(20px); animation: fadeInAnimation 0.8s ease-out forwards; }
+        .fade-in.delay-1 { animation-delay: 0.2s; }
+        .fade-in.delay-2 { animation-delay: 0.4s; }
+        .fade-in.delay-3 { animation-delay: 0.6s; }
+        .fade-in.delay-4 { animation-delay: 0.8s; }
+        @keyframes fadeInAnimation { to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulseHeaderIcon {
+            0% { transform: scale(1); opacity: 0.1; filter: brightness(1); }
+            50% { transform: scale(1.05); opacity: 0.25; filter: brightness(1.2); }
+            100% { transform: scale(1); opacity: 0.1; filter: brightness(1); }
+        }
+        @keyframes successGlow {
+             0% { box-shadow: 0 0 3px rgba(40, 167, 69, 0.3); transform: scale(1); }
+             50% { box-shadow: 0 0 12px 5px rgba(40, 167, 69, 0.5); transform: scale(1.01); }
+             100% { box-shadow: 0 0 3px rgba(40, 167, 69, 0.3); transform: scale(1); }
+        }
+        .success-glow-anim { animation: successGlow 0.9s ease-out; }
+        @keyframes shake {
+          10%, 90% { transform: translate3d(-2px, 0, 0); } 20%, 80% { transform: translate3d(3px, 0, 0); }
+          30%, 50%, 70% { transform: translate3d(-5px, 0, 0); } 40%, 60% { transform: translate3d(5px, 0, 0); }
+        }
+        .shake-anim { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes iconAppearCorrect {
+            0% { transform: scale(0.5) rotate(-15deg); opacity: 0; }
+            60% { transform: scale(1.2) rotate(5deg); opacity: 1; }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        @keyframes iconAppearIncorrect {
+             0% { transform: scale(0.5) rotate(-15deg); opacity: 0; }
+             50% { transform: scale(1.2) rotate(10deg); opacity: 1; }
+             70% { transform: scale(0.9) rotate(-5deg); }
+             100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        @keyframes iconAppearMissed { /* Reusing for 'missed' or 'info' indication */
+             0% { transform: scale(0.8) rotateY(90deg); opacity: 0; }
+             100% { transform: scale(1) rotateY(0deg); opacity: 0.8; }
+        }
+        .action-button:active:not(:disabled) {
+            transform: translateY(1px) scale(0.98);
+            filter: brightness(0.95);
+        }
+
+
+        /* --- Minimal Retractable Nav (with Language Switcher Integration) --- */
+        .minimal-nav-button {
+            position: fixed; top: 15px; right: 15px; z-index: 1001; /* Above the panel */
+            background-color: rgba(52, 58, 64, 0.75); color: var(--text-light);
+            border: none; border-radius: var(--border-radius); padding: 8px 12px;
+            cursor: pointer; transition: background-color var(--transition-speed), opacity var(--transition-speed), transform var(--transition-speed);
+            font-size: 1.1rem; opacity: 0.6; box-shadow: 0 2px 5px rgba(0,0,0,0.2); line-height: 1;
+        }
+        .minimal-nav-button:hover { background-color: rgba(52, 58, 64, 0.95); opacity: 1; transform: scale(1.05); }
+        .minimal-nav {
+            position: fixed; top: 60px; right: 15px; z-index: 1000;
+            background-color: var(--background-dark); border-radius: var(--border-radius);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3); padding: 0.8rem; opacity: 0;
+            transform: translateY(-15px) scale(0.95); transform-origin: top right;
+            pointer-events: none; transition: opacity var(--transition-speed) ease, transform var(--transition-speed) ease;
+            min-width: 200px;
+        }
+        body.nav-active .minimal-nav { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+        .minimal-nav ul { list-style: none; margin: 0; padding: 0; }
+        .minimal-nav ul li { margin-bottom: 5px; }
+        .minimal-nav ul li:last-child { margin-bottom: 0; }
+        .minimal-nav ul li a {
+            display: flex; align-items: center; color: var(--text-light); text-decoration: none;
+            padding: 0.6rem 1rem; border-radius: 4px;
+            transition: background-color var(--transition-speed), color var(--transition-speed);
+            white-space: nowrap; font-weight: 400; font-size: 0.95rem;
+        }
+        .minimal-nav ul li a i.fas { margin-right: 10px; width: 1.2em; text-align: center; opacity: 0.8; transition: opacity var(--transition-speed); }
+        .minimal-nav ul li a:hover { background-color: var(--primary-color); color: var(--text-light); }
+        .minimal-nav ul li a:hover i.fas { opacity: 1; }
+        /* Language Switcher Styles */
+        .minimal-nav .language-switcher-item { padding: 0.5rem 1rem; border-top: 1px solid var(--secondary-color); margin-top: 8px; padding-top: 13px; }
+        #languageSelect {
+            width: 100%; background: rgba(255,255,255,0.1); color: white; border: 1px solid var(--nav-success);
+            border-radius: 5px; padding: 6px 30px 6px 12px; cursor: pointer; font-size: 0.9rem; appearance: none;
+            -webkit-appearance: none; -moz-appearance: none;
+            background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%234CC9F0%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E');
+            background-repeat: no-repeat; background-position: right 10px center; background-size: 10px auto;
+            transition: background-color 0.3s ease;
+        }
+        #languageSelect:hover { background-color: rgba(255,255,255,0.15); }
+        #languageSelect option { background: var(--nav-dark); color: var(--text-light); }
+        /* --- End Minimal Retractable Nav --- */
+
+
+        /* --- Practice Header --- */
+        /* Using Blue for this module */
+        .practice-header { background: linear-gradient(135deg, var(--primary-color), #0056b3); color: var(--text-light); padding: 3rem 0 4rem; text-align: center; position: relative; overflow: hidden; border-bottom: 5px solid var(--accent-color); }
+        .practice-header h1 { font-family: var(--font-title); font-size: 2.8rem; margin-bottom: 0.5rem; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); animation: fadeInAnimation 1s ease-out; }
+        .practice-header p { font-size: 1.1rem; font-weight: 300; opacity: 0.9; animation: fadeInAnimation 1s ease-out 0.3s forwards; opacity: 0; }
+        /* Using branching icon */
+        .header-icon { position: absolute; font-size: 4rem; color: var(--text-light); animation: pulseHeaderIcon 6s infinite ease-in-out alternate; }
+        .icon1 { top: 20%; left: 15%; animation-duration: 7s; } /* Branch */
+        .icon2 { bottom: 15%; right: 20%; animation-duration: 5s; } /* Brain */
+
+        /* --- Practice Section Styling --- */
+        .practice-section { padding: 3rem 0; background-color: var(--background-medium); border-bottom: 1px solid #d6d8db; }
+        .practice-section:nth-child(odd) { background-color: var(--background-light); }
+        .practice-section:last-of-type { border-bottom: none; }
+        .practice-section h2 { font-family: var(--font-title); font-size: 1.8rem; color: var(--primary-color); margin-bottom: 1rem; text-align: center; }
+        .practice-section .section-description { text-align: center; margin-bottom: 2.5rem; color: var(--secondary-color); font-size: 1.05rem; max-width: 700px; margin-left: auto; margin-right: auto; }
+
+        /* --- General Interactive Elements --- */
+        .interactive-area { background-color: #fff; padding: 2rem; border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.08); margin-top: 1.5rem; position: relative; transition: box-shadow 0.5s ease-out; }
+        .feedback-message { padding: 0.8rem 1rem; margin-top: 1rem; border-radius: var(--border-radius); font-weight: bold; text-align: center; opacity: 0; max-height: 0; overflow: hidden; transition: opacity var(--transition-speed) ease, max-height var(--transition-speed) ease, margin-top var(--transition-speed) ease; }
+        .feedback-message.visible { opacity: 1; max-height: 100px; margin-top: 1.5rem; }
+        .feedback-message.correct { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .feedback-message.incorrect { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .feedback-message.info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .feedback-message .fas { margin: 0 3px; } /* Spacing for icons in feedback */
+        .action-button {
+             display: inline-block; padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold;
+             color: var(--text-light); background-color: var(--primary-color); border: none;
+             border-radius: var(--border-radius); cursor: pointer;
+             transition: background-color var(--transition-speed), transform var(--transition-speed), filter var(--transition-speed), box-shadow var(--transition-speed);
+             margin-top: 1rem; vertical-align: middle; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+             text-decoration: none; /* For <a> tags styled as buttons */
+        }
+        .action-button:hover:not(:disabled) { background-color: #0056b3; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+        .action-button:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none; box-shadow: none; opacity: 0.7; }
+        .action-button.success { background-color: var(--success-color); }
+        .action-button.success:hover:not(:disabled) { background-color: #218838; }
+        .action-button.secondary { background-color: var(--secondary-color); }
+        .action-button.secondary:hover:not(:disabled) { background-color: #5a6268; }
+        /* Code styling */
+        .code-block { background-color: var(--background-dark); color: var(--text-light); padding: 1.5rem; border-radius: var(--border-radius); font-family: var(--code-font); font-size: 1rem; position: relative; overflow-x: auto; margin: 1rem 0; }
+        .code-keyword { color: #569cd6; } /* Blue for keywords like 'if' */
+        .code-string { color: #ce9178; } /* Orange for strings */
+        .code-comment { color: #6a9955; } /* Green for comments */
+        .code-function { color: #dcdcaa; } /* Yellowish for function names */
+        .code-operator { color: #d4d4d4; } /* Light grey/white for operators like > */
+        .code-literal { color: #b5cea8; } /* Light green for numbers/booleans */
+        .code-variable { color: #9cdcfe; } /* Light blue for variable names */
+        .code-punctuation { color: #ffd700; } /* Gold for :, () etc. */
+
+        /* --- Activity 1: Anatomy of 'if' --- */
+        #if-syntax .code-part { cursor: pointer; border-bottom: 2px dashed rgba(255, 255, 255, 0.3); transition: background-color var(--transition-speed), border-bottom-color var(--transition-speed); padding: 0 2px; display: inline-block; }
+        #if-syntax .code-part:hover { background-color: rgba(255, 255, 255, 0.15); border-bottom-color: var(--accent-color); }
+        #if-syntax .code-part.identified { background-color: rgba(40, 167, 69, 0.3); border-bottom: 2px solid var(--success-color); cursor: default; }
+        .part-explanation { font-size: 0.95rem; color: var(--info-color); border-left: 3px solid var(--info-color); padding: 5px 10px; margin-top: 0.5rem; background-color: rgba(23, 162, 184, 0.05); }
+        #if-syntax-status { margin-top: 1rem; font-style: italic; color: var(--secondary-color); }
+
+        /* --- Activity 2: Indentation Check --- */
+        .indentation-block-container { display: flex; align-items: center; margin-bottom: 15px; position: relative; }
+        .indent-feedback-icon { width: 30px; height: 24px; margin-right: 10px; display: inline-flex; align-items: center; justify-content: center; transition: opacity var(--transition-speed); opacity: 0; font-size: 1.2rem; }
+        .indent-feedback-icon.visible { opacity: 1; }
+        .indentation-code-block { flex-grow: 1; background-color: var(--background-dark); color: var(--text-light); padding: 15px 20px; border-radius: 5px; cursor: pointer; transition: background-color var(--transition-speed), transform var(--transition-speed), border-left-color var(--transition-speed); font-family: var(--code-font); border-left: 4px solid transparent; user-select: none; -webkit-user-select: none; white-space: pre; } /* Use pre for indentation */
+        .indentation-code-block:hover { background-color: #495057; transform: translateX(3px); }
+        .indentation-code-block.selected-visual { background-color: var(--selection-highlight-bg); border-left-color: var(--selection-highlight-border); color: var(--text-dark); }
+        .indentation-code-block.checked-state { cursor: default; } /* Prevent hover/active effects when checked */
+        .indent-feedback-icon .fa-check { color: var(--success-color); animation: iconAppearCorrect 0.5s ease-out forwards; }
+        .indent-feedback-icon .fa-times { color: var(--error-color); animation: iconAppearIncorrect 0.6s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards; }
+        /* No 'missed' icon needed here */
+        #reset-indent-btn { margin-left: 10px; }
+
+        /* --- Activity 3: Condition Evaluator --- */
+        #condition-evaluator .condition-display { background-color: var(--background-medium); padding: 1rem; border-radius: var(--border-radius); margin-bottom: 1.5rem; text-align: center; font-family: var(--code-font); font-size: 1.1rem; border: 1px solid #ccc; }
+        #condition-evaluator .eval-buttons { display: flex; justify-content: center; gap: 1rem; }
+        #condition-evaluator .eval-button { font-size: 1.1rem; padding: 0.8rem 2rem; }
+
+        /* --- Activity 4: Code Challenge (Simulator) --- */
+        #code-challenge .challenge-setup { background-color: #fff3cd; border: 1px solid #ffeeba; border-radius: var(--border-radius); padding: 0.8rem 1rem; margin-bottom: 1rem; font-size: 0.95rem; color: #856404; }
+        #code-challenge .sim-editor { width: 100%; min-height: 100px; background-color: var(--background-dark); color: var(--text-light); border: 1px solid var(--secondary-color); border-radius: var(--border-radius); padding: 1rem; font-family: var(--code-font); font-size: 1rem; line-height: 1.5; resize: vertical; }
+        #code-challenge .sim-output-area { margin-top: 1rem; min-height: 50px; background-color: #1a1a1a; border: 1px solid #444; border-radius: var(--border-radius); padding: 1rem; color: var(--accent-color); font-family: var(--code-font); font-size: 1.05rem; white-space: pre-wrap; word-wrap: break-word; }
+        #code-challenge .sim-output-area .placeholder { color: var(--secondary-color); font-style: italic; font-size: 0.9rem; }
+        #code-challenge .sim-output-area .output-line { display: block; }
+
+        /* --- Activity 5: CT Connection --- */
+        #ct-connection .ct-explanation { background-color: rgba(23, 162, 184, 0.08); border-left: 4px solid var(--info-color); padding: 1.5rem; border-radius: var(--border-radius); color: var(--text-dark); }
+        #ct-connection .ct-explanation i { color: var(--info-color); margin-right: 10px; }
+        #ct-connection .ct-explanation strong { color: var(--primary-color); }
+
+        /* --- Final Section --- */
+        .completion-section { padding: 4rem 0; text-align: center; }
+        .completion-section .icon {
+            font-size: 4rem; color: var(--success-color); margin-bottom: 1rem; display: inline-block;
+            opacity: 0; animation: iconAppearCorrect 1s ease-out 0.5s forwards;
+        }
+        .completion-section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); }
+        .completion-section p { font-size: 1.1rem; margin-top: 1rem; color: var(--secondary-color); }
+
+        /* --- Responsive Design --- */
+        @media (max-width: 768px) {
+            html { font-size: 15px; }
+            .practice-header h1 { font-size: 2.2rem; }
+            .practice-section h2 { font-size: 1.6rem; }
+            .interactive-area { padding: 1.5rem; }
+            .indentation-code-block { padding: 12px 15px; font-size: 0.9rem; }
+            .indent-feedback-icon { width: 25px; margin-right: 8px; font-size: 1.1rem;}
+            .button-group { flex-direction: column; align-items: center; }
+            .minimal-nav { min-width: 180px; }
+            .minimal-nav ul li a { padding: 0.6rem 0.8rem; }
+            #languageSelect { font-size: 0.85rem; padding: 5px 25px 5px 10px;}
+        }
+        @media (max-width: 480px) {
+            html { font-size: 14px; }
+            .practice-header h1 { font-size: 1.8rem; }
+            .practice-header p { font-size: 1rem; }
+            .practice-section h2 { font-size: 1.4rem; }
+            .interactive-area { padding: 1rem; }
+            .action-button { font-size: 0.9rem; padding: 0.7rem 1.2rem; width: 90%; max-width: 300px;}
+            .indentation-code-block { padding: 10px 12px; font-size: 0.85rem;}
+            .indent-feedback-icon { width: 20px; margin-right: 5px; font-size: 1rem;}
+            #code-challenge .sim-editor, #code-challenge .sim-output-area { font-size: 0.9rem; }
+            .button-group a.action-button { width: 90%; max-width: 300px; margin-bottom: 0.5rem; }
+            .minimal-nav-button { top: 10px; right: 10px; padding: 6px 10px; font-size: 1rem; }
+            .minimal-nav { top: 48px; right: 10px; min-width: 160px; }
+            .minimal-nav ul li a { padding: 0.5rem 0.7rem; font-size: 0.9rem;}
+            .minimal-nav ul li a i.fas { margin-right: 8px; }
+            #languageSelect { font-size: 0.8rem; padding: 4px 20px 4px 8px;}
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ========= Minimal Nav Handle ========= -->
+    <button id="minimal-nav-toggle" class="minimal-nav-button" aria-label="Toggle Navigation Menu">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- ========= Minimal Nav Panel (with Language Switcher) ========= -->
+    <nav id="minimal-nav-panel" class="minimal-nav">
+        <ul>
+            <!-- **** MODIFIED HREF for Module 6 **** -->
+            <li><a href="ctp-theory-6.html"><i class="fas fa-book-open fa-fw"></i> <span data-translate="nav_theory">View Theory</span></a></li>
+            <li><a href="ctp-advanced-6.html"><i class="fas fa-flask fa-fw"></i> <span data-translate="nav_advanced">Advanced Practice</span></a></li>
+            <li><a href="ctp-dashboard.html"><i class="fas fa-list fa-fw"></i> <span data-translate="nav_menu">Course Menu</span></a></li>
+            <hr style="border: none; border-top: 1px solid var(--secondary-color); margin: 8px 0;">
+            <!-- **** MODIFIED Quick Links for Module 6 Activities **** -->
+            <li><a href="#if-syntax"><i class="fas fa-microscope fa-fw"></i> <span data-translate="nav_syntax">Syntax</span></a></li>
+            <li><a href="#indentation-check"><i class="fas fa-ruler-horizontal fa-fw"></i> <span data-translate="nav_indent">Indentation</span></a></li>
+            <li><a href="#condition-evaluator"><i class="fas fa-check-double fa-fw"></i> <span data-translate="nav_condition">Condition</span></a></li>
+            <li><a href="#code-challenge"><i class="fas fa-laptop-code fa-fw"></i> <span data-translate="nav_challenge">Challenge</span></a></li>
+            <li><a href="#ct-connection"><i class="fas fa-brain fa-fw"></i> <span data-translate="nav_ct">CT Link</span></a></li>
+            <!-- Language Switcher Item -->
+            <li class="language-switcher-item">
+                 <select id="languageSelect" aria-label="Select Language">
+                     <option value="en" data-translate="lang_en">🇬🇧 English</option>
+                     <option value="pt" data-translate="lang_pt">🇧🇷 Português</option>
+                     <option value="zh" data-translate="lang_zh">🇨🇳 中文</option>
+                 </select>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- ========= Header ========= -->
+    <header class="practice-header">
+        <!-- **** MODIFIED Icons **** -->
+        <i class="fas fa-code-branch header-icon icon1"></i>
+        <i class="fas fa-brain header-icon icon2"></i>
+        <div class="container">
+            <!-- **** MODIFIED Title/Subtitle **** -->
+            <h1 data-translate="header_title">Module 6: Simple Decisions - if</h1>
+            <p data-translate="header_subtitle">Let's explore how programs make choices!</p>
+        </div>
+    </header>
+
+    <!-- ========= Main Content ========= -->
+    <main>
+        <!-- ========= Activity 1: Anatomy of 'if' ========= -->
+        <section id="if-syntax" class="practice-section">
+             <div class="container">
+                 <h2 class="fade-in"><i class="fas fa-microscope"></i> <span data-translate="if_syntax_title">Anatomy of an 'if' Statement</span></h2>
+                 <p class="section-description fade-in delay-1" data-translate="if_syntax_desc">
+                     An `if` statement allows code to run *only* if a condition is true. Click the parts below to see what they do.
+                 </p>
+                 <div class="interactive-area fade-in delay-2">
+                     <div class="code-block">
+                         <span class="code-part" data-part="keyword" data-translate-title="tooltip_click_identify" title="Click to identify this part"><span class="code-keyword">if</span></span><!--
+                      --> <span class="code-part" data-part="condition" data-translate-title="tooltip_click_identify" title="Click to identify this part"><span class="code-variable">temperature</span> <span class="code-operator">&gt;</span> <span class="code-literal">30</span></span><!--
+                      --><span class="code-part" data-part="colon" data-translate-title="tooltip_click_identify" title="Click to identify this part"><span class="code-punctuation">:</span></span>
+<span class="code-part" data-part="indentation" data-translate-title="tooltip_click_identify" title="Click to identify this part">    </span><!-- Invisible indentation block for clicking -->
+<span class="code-part" data-part="body" data-translate-title="tooltip_click_identify" title="Click to identify this part"><span class="code-function">print</span><span class="code-punctuation">(</span><span class="code-string" data-translate="if_syntax_code_string">"It's hot!"</span><span class="code-punctuation">)</span></span>
+                     </div>
+                     <div id="if-syntax-explanations"></div>
+                     <p id="if-syntax-status" data-translate="if_syntax_status_initial">Identify all 5 parts!</p>
+                     <div id="if-syntax-feedback" class="feedback-message"></div>
+                     <!-- Hidden elements for storing translated explanation parts -->
+                     <div id="explanation-texts" style="display: none;">
+                        <span data-key="keyword" data-translate="if_syntax_exp_keyword">The `if` keyword: Signals the start of a conditional statement.</span>
+                        <span data-key="condition" data-translate="if_syntax_exp_condition">The Condition: An expression that results in True or False (e.g., `temperature > 30`).</span>
+                        <span data-key="colon" data-translate="if_syntax_exp_colon">The Colon `:`: Marks the end of the condition and the start of the code block to execute if True.</span>
+                        <span data-key="indentation" data-translate="if_syntax_exp_indentation">Indentation (Spaces/Tabs): Crucial! Defines the block of code controlled by the `if`. Usually 4 spaces.</span>
+                        <span data-key="body" data-translate="if_syntax_exp_body">The Body: The indented code that runs *only* if the condition is True.</span>
+                     </div>
+                 </div>
+             </div>
+        </section>
+
+        <!-- ========= Activity 2: Indentation Check ========= -->
+        <section id="indentation-check" class="practice-section">
+            <div class="container">
+                <h2 class="fade-in"><i class="fas fa-ruler-horizontal"></i> <span data-translate="indent_title">Spot the Correct Indentation</span></h2>
+                <p class="section-description fade-in delay-1" data-translate="indent_desc">
+                    Indentation is vital in Python! Click on the code block(s) below where the `print` statement is <strong>correctly</strong> indented for the `if` statement.
+                </p>
+                <div class="interactive-area fade-in delay-2">
+                    <div id="indentation-options">
+                        <!-- Code blocks will be generated by JS -->
+                    </div>
+                     <div class="text-center">
+                         <button id="check-indent-btn" class="action-button" data-translate="button_check_indent">Check Selection</button>
+                         <button id="reset-indent-btn" class="action-button secondary hidden" data-translate="button_try_again">Try Again</button>
+                     </div>
+                     <div id="indent-feedback" class="feedback-message"></div>
+                     <!-- Data for JS -->
+                     <div id="indentation-data" style="display: none;">
+                        <div data-correct="true" data-key="indent_code_correct1">if score > 50:<br>    print("Pass")</div>
+                        <div data-correct="false" data-key="indent_code_wrong1">if age < 18:<br>print("Minor")</div>
+                        <div data-correct="false" data-key="indent_code_wrong2">if active == True:<br> print("User is active")</div> <!-- Mix tabs/spaces visually -->
+                        <div data-correct="true" data-key="indent_code_correct2">if name == "AI":<br>    print("Hello AI!")</div>
+                        <div data-correct="false" data-key="indent_code_wrong3">if count != 0:<br>        print("Not zero") # Too much indent</div>
+                     </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========= Activity 3: Condition Evaluator ========= -->
+        <section id="condition-evaluator" class="practice-section">
+             <div class="container">
+                 <h2 class="fade-in"><i class="fas fa-check-double"></i> <span data-translate="condition_title">True or False?</span></h2>
+                 <p class="section-description fade-in delay-1" data-translate="condition_desc">
+                     The `if` statement depends on whether its condition is True or False. Given the variable value, decide if the condition shown is True or False.
+                 </p>
+                 <div class="interactive-area fade-in delay-2">
+                     <div id="condition-setup" class="condition-display">
+                        <!-- Example: <span class="code-variable">age</span> = <span class="code-literal">25</span> -->
+                     </div>
+                     <div id="condition-expression" class="condition-display">
+                        <!-- Example: <span class="code-variable">age</span> <span class="code-operator">&lt;</span> <span class="code-literal">18</span> -->
+                     </div>
+                     <div class="eval-buttons text-center">
+                         <button id="eval-true-btn" class="action-button success eval-button" data-value="true">True</button>
+                         <button id="eval-false-btn" class="action-button error eval-button" data-value="false">False</button> <!-- Added error class for visual distinction -->
+                     </div>
+                     <div id="eval-feedback" class="feedback-message"></div>
+                     <div class="text-center">
+                         <button id="next-condition-btn" class="action-button secondary hidden" data-translate="button_next_condition">Next Condition</button>
+                     </div>
+                 </div>
+             </div>
+        </section>
+
+        <!-- ========= Activity 4: Code Challenge (Simulator) ========= -->
+        <section id="code-challenge" class="practice-section">
+             <div class="container">
+                 <h2 class="fade-in"><i class="fas fa-laptop-code"></i> <span data-translate="challenge_title">Code Challenge: Simple Check</span></h2>
+                 <p class="section-description fade-in delay-1" data-translate="challenge_desc">
+                     Time to write your own `if` statement! Use the editor below.
+                 </p>
+                 <div class="interactive-area fade-in delay-2">
+                     <div class="challenge-setup" data-translate="challenge_setup">
+                         <strong>Task:</strong> Assume a variable `points = 15`. Write Python code that checks if `points` is greater than 10. If it is, print the message "Level Up!".
+                     </div>
+                     <label for="challenge-editor-input" style="font-weight: bold; display:block; margin-bottom: 8px;" data-translate="challenge_editor_label">Code Editor:</label>
+                     <textarea id="challenge-editor-input" class="sim-editor" rows="5" data-translate-placeholder="challenge_editor_placeholder" placeholder='points = 15\n# Your if statement here...\n# Example: if condition:\n#     print("Your message")'></textarea>
+                     <div class="text-center">
+                          <button id="run-challenge-btn" class="action-button" data-translate="button_run_challenge">Run Code</button>
+                     </div>
+                     <label for="challenge-output" style="font-weight: bold; display:block; margin-top: 1.5rem; margin-bottom: 8px;" data-translate="challenge_output_label">Simulated Output:</label>
+                     <div id="challenge-output" class="sim-output-area">
+                         <span class="placeholder" data-translate="challenge_output_placeholder">Output will appear here...</span>
+                     </div>
+                     <div id="challenge-feedback" class="feedback-message"></div>
+                 </div>
+             </div>
+        </section>
+
+        <!-- ========= Activity 5: CT Connection ========= -->
+        <section id="ct-connection" class="practice-section">
+             <div class="container">
+                 <h2 class="fade-in"><i class="fas fa-brain"></i> <span data-translate="ct_title">Computational Thinking Link</span></h2>
+                 <p class="section-description fade-in delay-1" data-translate="ct_desc">
+                     How does the `if` statement relate to how we think computationally?
+                 </p>
+                 <div class="interactive-area fade-in delay-2">
+                     <div class="ct-explanation">
+                         <p data-translate="ct_explanation">
+                             <i class="fas fa-project-diagram"></i> The <strong>`if` statement</strong> is a fundamental building block in <strong>Algorithmic Thinking</strong>. It allows us to create different <strong>conditional pathways</strong> or branches in our instructions. Just like deciding "IF it's raining, THEN take an umbrella," computers use `if` to execute specific steps only when certain conditions are met. This enables algorithms to adapt and respond to different situations or data inputs, making them much more flexible and powerful.
+                         </p>
+                     </div>
+                     <div id="ct-feedback" class="feedback-message"></div> <!-- Optional: Could add a simple "Got it!" button later -->
+                 </div>
+             </div>
+        </section>
+
+         <!-- ========= Completion Section ========= -->
+        <section class="completion-section">
+            <div class="container">
+                <div class="icon fade-in">
+                    <i class="fas fa-check-circle"></i> <i class="fas fa-code-branch"></i> <i class="fas fa-check-circle"></i>
+                </div>
+                <h2 class="fade-in delay-1" data-translate="completion_title">Module 6 Practice Complete!</h2>
+                <p class="fade-in delay-2" data-translate="completion_desc">
+                    Excellent! You've practiced making decisions with `if` statements. Conditional logic is key! <br>
+                    Ready for more complex decisions? Try the <strong>Advanced Practice</strong> for Module 6.
+                </p>
+                <div class="button-group">
+                    <!-- **** MODIFIED HREF for Module 6 **** -->
+                    <a href="ctp-theory-6.html" class="action-button secondary fade-in delay-3"><i class="fas fa-book-open"></i> <span data-translate="button_view_theory">View Theory Again</span></a>
+                    <a href="ctp-advanced-6.html" class="action-button success fade-in delay-3"><i class="fas fa-arrow-right"></i> <span data-translate="button_start_advanced">Start Advanced Practice</span></a>
+                    <a href="ctp-dashboard.html" class="action-button secondary fade-in delay-4"><i class="fas fa-list"></i> <span data-translate="button_back_menu">Back to Course Menu</span></a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ========= Script ========= -->
+    <script>
+    // --- Translations Object ---
+    const translations = {
+        en: {
+            "page_title": "Module 6: Simple Decisions - if",
+            "tooltip_click_identify": "Click to identify this part",
+            "nav_theory": "View Theory", "nav_advanced": "Advanced Practice", "nav_menu": "Course Menu",
+            "nav_syntax": "Syntax", "nav_indent": "Indentation", "nav_condition": "Condition", "nav_challenge": "Challenge", "nav_ct": "CT Link",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title": "Module 6: Simple Decisions - if", "header_subtitle": "Let's explore how programs make choices!",
+            "if_syntax_title": "Anatomy of an 'if' Statement", "if_syntax_desc": "An `if` statement allows code to run *only* if a condition is true. Click the parts below to see what they do.",
+            "if_syntax_code_string": "\"It's hot!\"",
+            "if_syntax_status_initial": "Identify all 5 parts!", "if_syntax_status_progress": "Identified {count} of {total} parts.", "if_syntax_status_done": "All parts identified!",
+            "if_syntax_exp_keyword": "The `if` keyword: Signals the start of a conditional statement.",
+            "if_syntax_exp_condition": "The Condition: An expression that results in True or False (e.g., `temperature > 30`).",
+            "if_syntax_exp_colon": "The Colon `:`: Marks the end of the condition and the start of the code block to execute if True.",
+            "if_syntax_exp_indentation": "Indentation (Spaces/Tabs): Crucial! Defines the block of code controlled by the `if`. Usually 4 spaces.",
+            "if_syntax_exp_body": "The Body: The indented code that runs *only* if the condition is True.",
+            "feedback_if_syntax_correct": "Great job dissecting the 'if' statement!",
+            "indent_title": "Spot the Correct Indentation", "indent_desc": "Indentation is vital in Python! Click on the code block(s) below where the `print` statement is <strong>correctly</strong> indented for the `if` statement.",
+            "indent_code_correct1": "if score > 50:\n    print(\"Pass\")",
+            "indent_code_wrong1": "if age < 18:\nprint(\"Minor\")", // No indent
+            "indent_code_wrong2": "if active == True:\n print(\"User is active\")", // Wrong indent (1 space)
+            "indent_code_correct2": "if name == \"AI\":\n    print(\"Hello AI!\")",
+            "indent_code_wrong3": "if count != 0:\n        print(\"Not zero\")", // Too much indent
+            "button_check_indent": "Check Selection", "button_try_again": "Try Again",
+            "feedback_indent_correct": "Perfect! You spotted all {totalCorrect} correctly indented blocks. <i class=\"fas fa-ruler-vertical\"></i>",
+            "feedback_indent_incorrect": "Not quite right. {hints}. Remember, the code *inside* the `if` needs consistent indentation (usually 4 spaces).",
+            "feedback_indent_hint_incorrect": "{count} incorrect selection(s) marked with <i class=\"fas fa-times\"></i>",
+            "feedback_indent_hint_missed": "{count} missed correct block(s) marked with <i class=\"fas fa-eye\"></i> (hidden check)",
+            "feedback_indent_hints_joiner": ", and ",
+            "condition_title": "True or False?", "condition_desc": "The `if` statement depends on whether its condition is True or False. Given the variable value, decide if the condition shown is True or False.",
+            "button_next_condition": "Next Condition",
+            "feedback_condition_correct": "Correct! The condition evaluates to {result}.",
+            "feedback_condition_incorrect": "Not quite. This condition actually evaluates to {correctResult}. Think about how the comparison works.",
+            "challenge_title": "Code Challenge: Simple Check", "challenge_desc": "Time to write your own `if` statement! Use the editor below.",
+            "challenge_setup": "<strong>Task:</strong> Assume a variable `points = 15`. Write Python code that checks if `points` is greater than 10. If it is, print the message \"Level Up!\".",
+            "challenge_editor_label": "Code Editor:", "challenge_editor_placeholder": "points = 15\n# Your if statement here...\n# Example: if condition:\n#     print(\"Your message\")",
+            "button_run_challenge": "Run Code", "challenge_output_label": "Simulated Output:", "challenge_output_placeholder": "Output will appear here...",
+            "feedback_challenge_success": "Excellent! The code correctly prints 'Level Up!' because 15 > 10.",
+            "feedback_challenge_no_output": "Hmm, the code ran but didn't print anything. Did you check if `points > 10` and use `print()` inside the `if`?",
+            "feedback_challenge_wrong_output": "The output was '{output}'. Expected 'Level Up!'. Check your `print()` statement.",
+            "feedback_challenge_no_if": "Make sure you are using an `if` statement to check the condition.",
+            "feedback_challenge_no_condition": "Did you include the condition `points > 10` after the `if`?",
+            "feedback_challenge_indent_error": "Check the indentation! The `print` statement must be indented inside the `if`.",
+            "feedback_challenge_syntax_error": "There seems to be a syntax error. Check for the colon `:` after the condition and correct indentation.",
+            "ct_title": "Computational Thinking Link", "ct_desc": "How does the `if` statement relate to how we think computationally?",
+            "ct_explanation": "<i class=\"fas fa-project-diagram\"></i> The <strong>`if` statement</strong> is a fundamental building block in <strong>Algorithmic Thinking</strong>. It allows us to create different <strong>conditional pathways</strong> or branches in our instructions. Just like deciding \"IF it's raining, THEN take an umbrella,\" computers use `if` to execute specific steps only when certain conditions are met. This enables algorithms to adapt and respond to different situations or data inputs, making them much more flexible and powerful.",
+            "completion_title": "Module 6 Practice Complete!", "completion_desc": "Excellent! You've practiced making decisions with `if` statements. Conditional logic is key! <br> Ready for more complex decisions? Try the <strong>Advanced Practice</strong> for Module 6.",
+            "button_view_theory": "View Theory Again", "button_start_advanced": "Start Advanced Practice", "button_back_menu": "Back to Course Menu"
+        },
+        pt: {
+            "page_title": "Módulo 6: Decisões Simples - if",
+            "tooltip_click_identify": "Clique para identificar esta parte",
+            "nav_theory": "Ver Teoria", "nav_advanced": "Prática Avançada", "nav_menu": "Menu do Curso",
+            "nav_syntax": "Sintaxe", "nav_indent": "Indentação", "nav_condition": "Condição", "nav_challenge": "Desafio", "nav_ct": "Link CT",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title": "Módulo 6: Decisões Simples - if", "header_subtitle": "Vamos explorar como os programas fazem escolhas!",
+            "if_syntax_title": "Anatomia de uma Declaração 'if'", "if_syntax_desc": "Uma declaração `if` permite que o código execute *apenas* se uma condição for verdadeira. Clique nas partes abaixo para ver o que fazem.",
+            "if_syntax_code_string": "\"Está quente!\"",
+            "if_syntax_status_initial": "Identifique todas as 5 partes!", "if_syntax_status_progress": "Identificadas {count} de {total} partes.", "if_syntax_status_done": "Todas as partes identificadas!",
+            "if_syntax_exp_keyword": "A palavra-chave `if`: Sinaliza o início de uma declaração condicional.",
+            "if_syntax_exp_condition": "A Condição: Uma expressão que resulta em Verdadeiro ou Falso (ex: `temperatura > 30`).",
+            "if_syntax_exp_colon": "Os Dois Pontos `:`: Marcam o fim da condição e o início do bloco de código a ser executado se Verdadeiro.",
+            "if_syntax_exp_indentation": "Indentação (Espaços/Tabs): Crucial! Define o bloco de código controlado pelo `if`. Geralmente 4 espaços.",
+            "if_syntax_exp_body": "O Corpo: O código indentado que executa *apenas* se a condição for Verdadeira.",
+            "feedback_if_syntax_correct": "Ótimo trabalho dissecando a declaração 'if'!",
+            "indent_title": "Identifique a Indentação Correta", "indent_desc": "A indentação é vital em Python! Clique no(s) bloco(s) de código abaixo onde a declaração `print` está <strong>corretamente</strong> indentada para a declaração `if`.",
+            "indent_code_correct1": "if score > 50:\n    print(\"Passou\")", // Traduzido
+            "indent_code_wrong1": "if age < 18:\nprint(\"Menor\")", // Traduzido
+            "indent_code_wrong2": "if active == True:\n print(\"Usuário ativo\")", // Traduzido
+            "indent_code_correct2": "if name == \"IA\":\n    print(\"Olá IA!\")", // Traduzido
+            "indent_code_wrong3": "if count != 0:\n        print(\"Não é zero\")", // Traduzido
+            "button_check_indent": "Verificar Seleção", "button_try_again": "Tentar Novamente",
+            "feedback_indent_correct": "Perfeito! Você identificou todos os {totalCorrect} blocos indentados corretamente. <i class=\"fas fa-ruler-vertical\"></i>",
+            "feedback_indent_incorrect": "Não está certo. {hints}. Lembre-se, o código *dentro* do `if` precisa de indentação consistente (geralmente 4 espaços).",
+            "feedback_indent_hint_incorrect": "{count} seleção(ões) incorreta(s) marcada(s) com <i class=\"fas fa-times\"></i>",
+            "feedback_indent_hint_missed": "{count} bloco(s) correto(s) não selecionado(s) marcado(s) com <i class=\"fas fa-eye\"></i> (verificação oculta)",
+            "feedback_indent_hints_joiner": ", e ",
+            "condition_title": "Verdadeiro ou Falso?", "condition_desc": "A declaração `if` depende se sua condição é Verdadeira ou Falsa. Dado o valor da variável, decida se a condição mostrada é Verdadeira ou Falsa.",
+            "button_next_condition": "Próxima Condição",
+            "feedback_condition_correct": "Correto! A condição avalia para {result}.", // result = True/False
+            "feedback_condition_incorrect": "Não exatamente. Esta condição na verdade avalia para {correctResult}. Pense em como a comparação funciona.",
+            "challenge_title": "Desafio de Código: Verificação Simples", "challenge_desc": "Hora de escrever sua própria declaração `if`! Use o editor abaixo.",
+            "challenge_setup": "<strong>Tarefa:</strong> Assuma uma variável `pontos = 15`. Escreva código Python que verifica se `pontos` é maior que 10. Se for, imprima a mensagem \"Subiu de nível!\".",
+            "challenge_editor_label": "Editor de Código:", "challenge_editor_placeholder": "pontos = 15\n# Sua declaração if aqui...\n# Exemplo: if condicao:\n#     print(\"Sua mensagem\")",
+            "button_run_challenge": "Executar Código", "challenge_output_label": "Saída Simulada:", "challenge_output_placeholder": "A saída aparecerá aqui...",
+            "feedback_challenge_success": "Excelente! O código imprime corretamente 'Subiu de nível!' porque 15 > 10.",
+            "feedback_challenge_no_output": "Hmm, o código executou mas não imprimiu nada. Você verificou se `pontos > 10` e usou `print()` dentro do `if`?",
+            "feedback_challenge_wrong_output": "A saída foi '{output}'. Esperado 'Subiu de nível!'. Verifique sua declaração `print()`.",
+            "feedback_challenge_no_if": "Certifique-se de que está usando uma declaração `if` para verificar a condição.",
+            "feedback_challenge_no_condition": "Você incluiu a condição `pontos > 10` após o `if`?",
+            "feedback_challenge_indent_error": "Verifique a indentação! A declaração `print` deve estar indentada dentro do `if`.",
+            "feedback_challenge_syntax_error": "Parece haver um erro de sintaxe. Verifique os dois pontos `:` após a condição e a indentação correta.",
+            "ct_title": "Link com Pensamento Computacional", "ct_desc": "Como a declaração `if` se relaciona com a forma como pensamos computacionalmente?",
+            "ct_explanation": "<i class=\"fas fa-project-diagram\"></i> A <strong>declaração `if`</strong> é um bloco de construção fundamental no <strong>Pensamento Algorítmico</strong>. Ela nos permite criar diferentes <strong>caminhos condicionais</strong> ou ramificações em nossas instruções. Assim como decidir \"SE está chovendo, ENTÃO leve um guarda-chuva,\" os computadores usam `if` para executar passos específicos apenas quando certas condições são atendidas. Isso permite que os algoritmos se adaptem e respondam a diferentes situações ou dados de entrada, tornando-os muito mais flexíveis e poderosos.",
+            "completion_title": "Prática do Módulo 6 Completa!", "completion_desc": "Excelente! Você praticou a tomada de decisões com declarações `if`. A lógica condicional é chave! <br> Pronto para decisões mais complexas? Experimente a <strong>Prática Avançada</strong> do Módulo 6.",
+            "button_view_theory": "Ver Teoria Novamente", "button_start_advanced": "Iniciar Prática Avançada", "button_back_menu": "Voltar ao Menu do Curso"
+        },
+        zh: {
+            "page_title": "模块 6：简单决策 - if",
+            "tooltip_click_identify": "点击识别此部分",
+            "nav_theory": "查看理论", "nav_advanced": "高级练习", "nav_menu": "课程菜单",
+            "nav_syntax": "语法", "nav_indent": "缩进", "nav_condition": "条件", "nav_challenge": "挑战", "nav_ct": "CT 链接",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title": "模块 6：简单决策 - if", "header_subtitle": "让我们探索程序如何做出选择！",
+            "if_syntax_title": "剖析 'if' 语句", "if_syntax_desc": "`if` 语句允许代码*仅*在条件为真时运行。点击下面的部分看看它们的作用。",
+            "if_syntax_code_string": "\"天气炎热！\"", // Chinese translation for "It's hot!"
+            "if_syntax_status_initial": "识别所有 5 个部分！", "if_syntax_status_progress": "已识别 {count} / {total} 个部分。", "if_syntax_status_done": "所有部分已识别！",
+            "if_syntax_exp_keyword": "`if` 关键字：标志着条件语句的开始。",
+            "if_syntax_exp_condition": "条件：一个结果为 True 或 False 的表达式（例如：`temperature > 30`）。",
+            "if_syntax_exp_colon": "冒号 `:`：标记条件的结束和如果条件为 True 时要执行的代码块的开始。",
+            "if_syntax_exp_indentation": "缩进（空格/制表符）：至关重要！定义了由 `if` 控制的代码块。通常是 4 个空格。",
+            "if_syntax_exp_body": "主体：*仅*在条件为 True 时运行的缩进代码。",
+            "feedback_if_syntax_correct": "很棒！成功剖析了 'if' 语句！",
+            "indent_title": "找出正确的缩进", "indent_desc": "缩进在 Python 中至关重要！点击下方 `print` 语句相对于 `if` 语句<strong>正确</strong>缩进的代码块。",
+            "indent_code_correct1": "if score > 50:\n    print(\"通过\")", // Chinese
+            "indent_code_wrong1": "if age < 18:\nprint(\"未成年\")", // Chinese
+            "indent_code_wrong2": "if active == True:\n print(\"用户是活跃的\")", // Chinese
+            "indent_code_correct2": "if name == \"AI\":\n    print(\"你好 AI！\")", // Chinese
+            "indent_code_wrong3": "if count != 0:\n        print(\"非零\")", // Chinese
+            "button_check_indent": "检查选择", "button_try_again": "再试一次",
+            "feedback_indent_correct": "完美！你找出了所有 {totalCorrect} 个正确缩进的块。<i class=\"fas fa-ruler-vertical\"></i>",
+            "feedback_indent_incorrect": "不太对。{hints}。记住，`if` *内部*的代码需要一致的缩进（通常是 4 个空格）。",
+            "feedback_indent_hint_incorrect": "{count} 个错误选择，已用 <i class=\"fas fa-times\"></i> 标记",
+            "feedback_indent_hint_missed": "{count} 个遗漏的正确块，已用 <i class=\"fas fa-eye\"></i> 标记（隐藏检查）",
+            "feedback_indent_hints_joiner": "，并且 ",
+            "condition_title": "True 还是 False？", "condition_desc": "`if` 语句取决于其条件是 True 还是 False。根据给定的变量值，判断显示的条件是 True 还是 False。",
+            "button_next_condition": "下一个条件",
+            "feedback_condition_correct": "正确！该条件计算结果为 {result}。", // result = True/False (or translated)
+            "feedback_condition_incorrect": "不对哦。这个条件实际上计算结果为 {correctResult}。想想比较是如何工作的。",
+            "challenge_title": "代码挑战：简单检查", "challenge_desc": "是时候编写你自己的 `if` 语句了！使用下面的编辑器。",
+            "challenge_setup": "<strong>任务：</strong> 假设一个变量 `points = 15`。编写 Python 代码检查 `points` 是否大于 10。如果是，则打印消息 “升级了！”。",
+            "challenge_editor_label": "代码编辑器：", "challenge_editor_placeholder": "points = 15\n# 在这里写你的 if 语句...\n# 例如: if 条件:\n#     print(\"你的消息\")",
+            "button_run_challenge": "运行代码", "challenge_output_label": "模拟输出：", "challenge_output_placeholder": "输出将显示在此处...",
+            "feedback_challenge_success": "太棒了！代码正确地打印了“升级了！”，因为 15 > 10。",
+            "feedback_challenge_no_output": "嗯，代码运行了但没有打印任何东西。你检查 `points > 10` 并在 `if` 内部使用 `print()` 了吗？",
+            "feedback_challenge_wrong_output": "输出是 '{output}'。期望输出 '升级了！'。检查你的 `print()` 语句。",
+            "feedback_challenge_no_if": "确保你使用了 `if` 语句来检查条件。",
+            "feedback_challenge_no_condition": "你在 `if` 后面包含条件 `points > 10` 了吗？",
+            "feedback_challenge_indent_error": "检查缩进！`print` 语句必须在 `if` 内部缩进。",
+            "feedback_challenge_syntax_error": "似乎有语法错误。检查条件后的冒号 `:` 和正确的缩进。",
+            "ct_title": "计算思维链接", "ct_desc": "`if` 语句与我们的计算思维方式有何关联？",
+            "ct_explanation": "<i class=\"fas fa-project-diagram\"></i> <strong>`if` 语句</strong>是<strong>算法思维</strong>中的一个基本构建块。它允许我们在指令中创建不同的<strong>条件路径</strong>或分支。就像决定“如果下雨，那么带伞”一样，计算机使用 `if` 仅在满足某些条件时执行特定步骤。这使得算法能够适应并响应不同的情况或数据输入，从而使它们更加灵活和强大。",
+            "completion_title": "模块 6 练习完成！", "completion_desc": "非常好！你已经练习了使用 `if` 语句做决策。条件逻辑是关键！<br> 准备好进行更复杂的决策了吗？试试模块 6 的<strong>高级练习</strong>。",
+            "button_view_theory": "再次查看理论", "button_start_advanced": "开始高级练习", "button_back_menu": "返回课程菜单"
+        }
+    };
+
+
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // --- Language Management Functions (Same as Module 0) ---
+        function getStoredLanguage() { /* ... same ... */
+            const storedLang = localStorage.getItem('userLanguage');
+            if (storedLang && translations[storedLang]) return storedLang;
+            const browserLang = navigator.language || navigator.userLanguage;
+            if (browserLang.startsWith('pt')) return 'pt';
+            if (browserLang.startsWith('zh')) return 'zh';
+            return 'en';
+        }
+
+        function setLanguage(lang) { /* ... mostly same ... */
+            if (!translations[lang]) lang = 'en';
+            localStorage.setItem('userLanguage', lang);
+            document.documentElement.lang = lang;
+            translatePage(lang);
+
+            const langSelect = document.getElementById('languageSelect');
+            if (langSelect) langSelect.value = lang;
+
+             // --- Re-initialize Module 6 Activities ---
+             if (document.getElementById('if-syntax')) {
+                setupIfSyntaxActivity();
+             }
+             if (document.getElementById('indentation-check')) {
+                 setupIndentationCheck();
+             }
+             if (document.getElementById('condition-evaluator')) {
+                 setupConditionEvaluator(); // Reloads with a new condition
+             }
+             if (document.getElementById('code-challenge')) {
+                 // Reset simulator state if needed (optional, placeholder/feedback handled by translate)
+                 resetChallengeSimulator();
+             }
+             // CT Connection is just text, handled by translatePage
+        }
+
+        function getTranslation(key, lang, replacements = {}) { /* ... same ... */
+            let text = translations[lang]?.[key] ?? translations['en']?.[key] ?? `[${key}]`;
+            for (const placeholder in replacements) {
+                const regex = new RegExp(`\\{${placeholder}\\}`, 'g');
+                text = text.replace(regex, replacements[placeholder]);
+            }
+            return text;
+        }
+
+        function translatePage(lang) { /* ... same ... */
+            if (!translations[lang]) lang = 'en';
+
+            document.querySelectorAll('[data-translate]').forEach(el => {
+                const key = el.getAttribute('data-translate');
+                const translation = getTranslation(key, lang);
+                 if (el.tagName === 'TITLE') { document.title = translation; }
+                 else if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') { /* Skip */ }
+                 else if (el.tagName === 'OPTION') { el.textContent = translation; }
+                 else {
+                     if (translation.includes('<') && translation.includes('>')) { el.innerHTML = translation; }
+                     else { el.textContent = translation; }
+                 }
+            });
+
+            document.querySelectorAll('[data-translate-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-translate-placeholder');
+                const translation = getTranslation(key, lang);
+                el.setAttribute('placeholder', translation);
+            });
+
+             document.querySelectorAll('[data-translate-title]').forEach(el => {
+                 const key = el.getAttribute('data-translate-title');
+                 const translation = getTranslation(key, lang);
+                 el.setAttribute('title', translation);
+             });
+        }
+
+        // --- Initialize Language ---
+        const initialLang = getStoredLanguage();
+        // Note: setLanguage is called later
+
+        // --- Minimal Nav Logic (Same as Module 0) ---
+        const navToggleButton = document.getElementById('minimal-nav-toggle');
+        const navPanel = document.getElementById('minimal-nav-panel');
+        const body = document.body;
+        if (navToggleButton && navPanel) { /* ... same event listeners ... */
+            navToggleButton.addEventListener('click', (event) => { event.stopPropagation(); body.classList.toggle('nav-active'); navToggleButton.setAttribute('aria-expanded', body.classList.contains('nav-active')); });
+            document.addEventListener('click', (event) => { if (body.classList.contains('nav-active') && !navPanel.contains(event.target) && event.target !== navToggleButton && !navToggleButton.contains(event.target) ) { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); } });
+            navPanel.querySelectorAll('a').forEach(link => { link.addEventListener('click', () => { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); }); });
+            document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && body.classList.contains('nav-active')) { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); } });
+            navToggleButton.setAttribute('aria-expanded', 'false');
+        }
+
+        // --- Language Switcher Setup (Same as Module 0) ---
+        const langSelect = document.getElementById('languageSelect');
+        if (langSelect) {
+            langSelect.addEventListener('change', (e) => { setLanguage(e.target.value); });
+        }
+
+        // --- Helper Function for Feedback (Same as Module 0) ---
+        function showFeedback(elementId, messageKey, type = 'info', replacements = {}) { /* ... same ... */
+            const feedbackEl = document.getElementById(elementId);
+            if (!feedbackEl) { console.error(`Feedback element not found: ${elementId}`); return; }
+            const currentLang = getStoredLanguage();
+            const translatedMessage = getTranslation(messageKey, currentLang, replacements);
+             if (translatedMessage.includes('<') && translatedMessage.includes('>')) { feedbackEl.innerHTML = translatedMessage; }
+             else { feedbackEl.textContent = translatedMessage; }
+            feedbackEl.className = 'feedback-message'; // Reset classes first
+            feedbackEl.classList.add('visible', type);
+            const interactiveArea = feedbackEl.closest('.interactive-area');
+            if (!interactiveArea) return;
+            interactiveArea.classList.remove('success-glow-anim', 'shake-anim');
+            void interactiveArea.offsetWidth;
+            if (type === 'correct') { interactiveArea.classList.add('success-glow-anim'); }
+            else if (type === 'incorrect') { interactiveArea.classList.add('shake-anim'); }
+        }
+
+
+        // --- Activity 1: Anatomy of 'if' ---
+        const ifSyntaxSection = document.getElementById('if-syntax');
+        let ifSyntaxExplanations = {}; // Populated based on language
+        const totalIfSyntaxParts = 5;
+        let currentIfSyntaxListeners = [];
+
+        function setupIfSyntaxActivity() {
+            if (!ifSyntaxSection) return;
+            const currentLang = getStoredLanguage();
+            ifSyntaxExplanations = {}; // Clear previous
+
+            // Fetch explanations for current language
+            document.querySelectorAll('#explanation-texts span[data-key]').forEach(span => {
+                const key = span.getAttribute('data-key');
+                // Construct the translation key dynamically
+                ifSyntaxExplanations[key] = getTranslation(`if_syntax_exp_${key}`, currentLang);
+            });
+
+            const parts = ifSyntaxSection.querySelectorAll('.code-part');
+            const explanationsDiv = document.getElementById('if-syntax-explanations');
+            const statusP = document.getElementById('if-syntax-status');
+            const feedbackDiv = document.getElementById('if-syntax-feedback');
+            let identifiedCount = 0;
+
+            // Remove old listeners
+            currentIfSyntaxListeners.forEach(({ element, listener }) => {
+                element.removeEventListener('click', listener);
+            });
+            currentIfSyntaxListeners = [];
+
+            // Reset visual state
+            parts.forEach(p => p.classList.remove('identified'));
+            explanationsDiv.innerHTML = '';
+            statusP.innerHTML = getTranslation('if_syntax_status_initial', currentLang);
+            feedbackDiv.classList.remove('visible', 'correct', 'incorrect', 'info');
+
+            parts.forEach(part => {
+                const clickListener = () => {
+                    const partType = part.dataset.part;
+                    if (!part.classList.contains('identified') && partType && ifSyntaxExplanations[partType]) {
+                        part.classList.add('identified');
+                        identifiedCount++;
+
+                        const p = document.createElement('p');
+                        p.classList.add('part-explanation');
+                        const icon = document.createElement('i');
+                        icon.className = 'fas fa-check-circle';
+                        icon.style.color = 'var(--success-color)';
+                        const strong = document.createElement('strong');
+
+                        // Find the best text representation
+                        let displayPartText = part.textContent.trim();
+                        if (!displayPartText && partType === 'indentation') displayPartText = "[Indentation]"; // Special case for indent span
+                        else if(part.querySelector('span')) displayPartText = part.querySelector('span').textContent.trim(); // Get inner span text if exists
+
+                        strong.textContent = displayPartText + ': ';
+                        p.appendChild(icon);
+                        p.appendChild(strong);
+                        p.appendChild(document.createTextNode(ifSyntaxExplanations[partType])); // Use fetched explanation
+                        explanationsDiv.appendChild(p);
+
+                        statusP.innerHTML = getTranslation('if_syntax_status_progress', currentLang, { count: identifiedCount, total: totalIfSyntaxParts });
+
+                        if (identifiedCount === totalIfSyntaxParts) {
+                            statusP.innerHTML = getTranslation('if_syntax_status_done', currentLang);
+                            showFeedback('if-syntax-feedback', 'feedback_if_syntax_correct', 'correct');
+                        }
+                    } else if (!ifSyntaxExplanations[partType]) {
+                         console.warn(`Explanation missing or part already identified: ${partType}`);
+                         if (!part.classList.contains('identified')) {
+                             // Add basic feedback if explanation is missing but part isn't identified yet
+                             part.classList.add('identified'); // Mark as identified to prevent re-triggering
+                             identifiedCount++;
+                             statusP.innerHTML = getTranslation('if_syntax_status_progress', currentLang, { count: identifiedCount, total: totalIfSyntaxParts });
+                              if (identifiedCount === totalIfSyntaxParts) {
+                                 statusP.innerHTML = getTranslation('if_syntax_status_done', currentLang);
+                                 showFeedback('if-syntax-feedback', 'feedback_if_syntax_correct', 'correct'); // Still show success if all clicked
+                             }
+                         }
+                    }
+                };
+                part.addEventListener('click', clickListener);
+                currentIfSyntaxListeners.push({ element: part, listener: clickListener });
+            });
+        }
+
+        // --- Activity 2: Indentation Check ---
+        const indentCheckSection = document.getElementById('indentation-check');
+        if (indentCheckSection) {
+            const optionsContainer = document.getElementById('indentation-options');
+            const checkBtn = document.getElementById('check-indent-btn');
+            const resetBtn = document.getElementById('reset-indent-btn');
+            const feedbackDiv = document.getElementById('indent-feedback');
+            const dataContainer = document.getElementById('indentation-data');
+            let currentIndentListeners = [];
+            let totalCorrectIndentOptions = 0;
+
+            function createIndentOptionElement(optionData, currentLang) {
+                 const container = document.createElement('div');
+                 container.classList.add('indentation-block-container');
+
+                 const iconPlaceholder = document.createElement('span');
+                 iconPlaceholder.classList.add('indent-feedback-icon');
+
+                 const codeBlock = document.createElement('div');
+                 codeBlock.classList.add('indentation-code-block');
+                 codeBlock.dataset.correct = optionData.correct.toString();
+                 // Get translated code snippet using the key
+                 codeBlock.innerHTML = getTranslation(optionData.key, currentLang).replace(/\n/g, '<br>'); // Use innerHTML for <br>
+
+                 container.appendChild(iconPlaceholder);
+                 container.appendChild(codeBlock);
+                 return container;
+            }
+
+            function setupIndentationCheck() {
+                 const currentLang = getStoredLanguage();
+                 currentIndentListeners.forEach(({ element, listener }) => {
+                    element.removeEventListener('click', listener);
+                 });
+                 currentIndentListeners = [];
+                 optionsContainer.innerHTML = '';
+                 totalCorrectIndentOptions = 0;
+
+                 // Get data from hidden divs
+                 const optionDivs = dataContainer.querySelectorAll('div[data-key]');
+                 const optionsData = Array.from(optionDivs).map(div => ({
+                     key: div.getAttribute('data-key'),
+                     correct: div.getAttribute('data-correct') === 'true'
+                 }));
+
+                 // Shuffle options
+                 optionsData.sort(() => Math.random() - 0.5);
+
+                 optionsData.forEach(optionData => {
+                     if (optionData.correct) totalCorrectIndentOptions++;
+                     const optionElementContainer = createIndentOptionElement(optionData, currentLang);
+                     optionsContainer.appendChild(optionElementContainer);
+                     const codeBlockDiv = optionElementContainer.querySelector('.indentation-code-block');
+
+                     const blockClickListener = () => {
+                         if (codeBlockDiv.classList.contains('checked-state')) return;
+                         codeBlockDiv.classList.toggle('selected-visual');
+                     };
+                     codeBlockDiv.addEventListener('click', blockClickListener);
+                     currentIndentListeners.push({ element: codeBlockDiv, listener: blockClickListener });
+                 });
+
+                 feedbackDiv.classList.remove('visible', 'correct', 'incorrect', 'info');
+                 resetBtn.classList.add('hidden');
+                 checkBtn.disabled = false;
+                 checkBtn.classList.remove('success');
+            }
+
+            checkBtn.addEventListener('click', () => {
+                 let correctSelections = 0; let incorrectSelections = 0; let missedCorrect = 0;
+                 const blockContainers = optionsContainer.querySelectorAll('.indentation-block-container');
+                 let isCorrectOverall = false;
+                 const currentLang = getStoredLanguage();
+
+                 blockContainers.forEach(container => {
+                    const codeBlock = container.querySelector('.indentation-code-block');
+                    const iconPlaceholder = container.querySelector('.indent-feedback-icon');
+                    const isCorrect = codeBlock.dataset.correct === 'true';
+                    const isSelected = codeBlock.classList.contains('selected-visual');
+
+                    iconPlaceholder.innerHTML = ''; // Clear previous icon
+                    iconPlaceholder.classList.remove('visible');
+                    codeBlock.classList.add('checked-state'); // Mark as checked
+
+                    let iconClass = '';
+                    if (isSelected && isCorrect) { iconClass = 'fas fa-check'; correctSelections++; iconPlaceholder.classList.add('visible'); }
+                    else if (isSelected && !isCorrect) { iconClass = 'fas fa-times'; incorrectSelections++; iconPlaceholder.classList.add('visible'); }
+                    else if (!isSelected && isCorrect) { /* Don't show icon for missed, maybe add eye later if needed */ missedCorrect++; } // Just count missed
+
+                    if (iconClass) { const icon = document.createElement('i'); icon.className = iconClass; iconPlaceholder.appendChild(icon); }
+                 });
+
+                 let feedbackMsgKey = ''; let feedbackReplacements = {};
+                 if (incorrectSelections === 0 && missedCorrect === 0 && correctSelections === totalCorrectIndentOptions) {
+                     isCorrectOverall = true;
+                     feedbackMsgKey = 'feedback_indent_correct';
+                     feedbackReplacements = { totalCorrect: totalCorrectIndentOptions };
+                     showFeedback('indent-feedback', feedbackMsgKey, 'correct', feedbackReplacements);
+                     checkBtn.classList.add('success');
+                 } else {
+                     let hints = [];
+                     if (incorrectSelections > 0) hints.push(getTranslation('feedback_indent_hint_incorrect', currentLang, { count: incorrectSelections }));
+                     if (missedCorrect > 0) hints.push(getTranslation('feedback_indent_hint_missed', currentLang, { count: missedCorrect })); // Adding hint for missed
+                     feedbackMsgKey = 'feedback_indent_incorrect';
+                     feedbackReplacements = { hints: hints.join(getTranslation('feedback_indent_hints_joiner', currentLang)) };
+                     showFeedback('indent-feedback', feedbackMsgKey, 'incorrect', feedbackReplacements);
+                     checkBtn.classList.remove('success');
+                 }
+
+                 if (isCorrectOverall) {
+                     resetBtn.classList.add('hidden');
+                     checkBtn.disabled = true;
+                 } else {
+                     resetBtn.classList.remove('hidden');
+                     checkBtn.disabled = true; // Disable check btn until reset
+                 }
+            });
+
+            resetBtn.addEventListener('click', setupIndentationCheck);
+            // setupIndentationCheck(); // Called by setLanguage/initial setup
+        }
+
+        // --- Activity 3: Condition Evaluator ---
+        const conditionEvalSection = document.getElementById('condition-evaluator');
+        if (conditionEvalSection) {
+            const setupDiv = document.getElementById('condition-setup');
+            const expressionDiv = document.getElementById('condition-expression');
+            const trueBtn = document.getElementById('eval-true-btn');
+            const falseBtn = document.getElementById('eval-false-btn');
+            const nextBtn = document.getElementById('next-condition-btn');
+            const feedbackDiv = document.getElementById('eval-feedback');
+
+            const conditions = [
+                { setup: 'age = 25', expression: 'age < 18', result: false },
+                { setup: 'score = 95', expression: 'score >= 90', result: true },
+                { setup: 'name = "AI"', expression: 'name == "AI"', result: true },
+                { setup: 'count = 0', expression: 'count != 0', result: false },
+                { setup: 'is_active = True', expression: 'is_active == False', result: false },
+                { setup: 'temperature = 15', expression: 'temperature > 20', result: false },
+                 { setup: 'items = 3', expression: 'items > 0', result: true },
+            ];
+            let currentConditionIndex = -1; // Start at -1 to load first on initial call
+            let currentCorrectResult = null;
+
+             // Function to display a condition (handles syntax highlighting)
+             function displayCondition(data) {
+                // Very basic syntax highlighting for demo
+                const highlight = (text) => text
+                    .replace(/(\b(?:if|else|elif|True|False|None)\b)/g, '<span class="code-keyword">$1</span>')
+                    .replace(/(\b\d+\b)/g, '<span class="code-literal">$1</span>')
+                    .replace(/([a-zA-Z_]\w*)/g, '<span class="code-variable">$1</span>') // Imperfect, highlights keywords again
+                    .replace(/(&lt;|&gt;|==|!=|&gt;=|&lt;=)/g, '<span class="code-operator">$1</span>') // Handle escaped operators
+                    .replace(/("[^"]*")/g, '<span class="code-string">$1</span>')
+                    .replace(/('[^']*')/g, '<span class="code-string">$1</span>');
+
+                 setupDiv.innerHTML = highlight(data.setup);
+                 // Escape < and > for display before highlighting
+                 const escapedExpression = data.expression.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                 expressionDiv.innerHTML = highlight(escapedExpression);
+                 currentCorrectResult = data.result;
+             }
+
+            function setupConditionEvaluator() {
+                 currentConditionIndex++;
+                 if (currentConditionIndex >= conditions.length) {
+                     currentConditionIndex = 0; // Loop back
+                 }
+                 displayCondition(conditions[currentConditionIndex]);
+
+                 // Reset state
+                 feedbackDiv.classList.remove('visible', 'correct', 'incorrect');
+                 trueBtn.disabled = false;
+                 falseBtn.disabled = false;
+                 trueBtn.classList.remove('success', 'error'); // Remove result indication
+                 falseBtn.classList.remove('success', 'error');
+                 nextBtn.classList.add('hidden');
+            }
+
+            function handleEvaluation(selectedValue) {
+                const isCorrect = (selectedValue === currentCorrectResult);
+                const currentLang = getStoredLanguage();
+                const resultText = currentCorrectResult ? 'True' : 'False'; // Simple text for replacement
+
+                if (isCorrect) {
+                    showFeedback('eval-feedback', 'feedback_condition_correct', 'correct', { result: resultText });
+                     if(selectedValue) trueBtn.classList.add('success'); else falseBtn.classList.add('success');
+                } else {
+                    showFeedback('eval-feedback', 'feedback_condition_incorrect', 'incorrect', { correctResult: resultText });
+                     if(selectedValue) trueBtn.classList.add('error'); else falseBtn.classList.add('error'); // Mark wrong choice red
+                }
+                trueBtn.disabled = true;
+                falseBtn.disabled = true;
+                nextBtn.classList.remove('hidden');
+            }
+
+            trueBtn.addEventListener('click', () => handleEvaluation(true));
+            falseBtn.addEventListener('click', () => handleEvaluation(false));
+            nextBtn.addEventListener('click', setupConditionEvaluator);
+
+            // Initial setup call moved to end
+        }
+
+
+        // --- Activity 4: Code Challenge (Simulator) ---
+        const challengeSection = document.getElementById('code-challenge');
+        if(challengeSection) {
+            const editor = document.getElementById('challenge-editor-input');
+            const outputArea = document.getElementById('challenge-output');
+            const runBtn = document.getElementById('run-challenge-btn');
+            const feedbackDiv = document.getElementById('challenge-feedback');
+            const placeholder = outputArea.querySelector('.placeholder'); // Get placeholder initially
+
+            function resetChallengeSimulator() {
+                editor.value = ''; // Optionally clear editor on language change or reset
+                outputArea.innerHTML = ''; // Clear output
+                if (placeholder) {
+                    // Re-translate and add placeholder back
+                    placeholder.textContent = getTranslation('challenge_output_placeholder', getStoredLanguage());
+                    outputArea.appendChild(placeholder);
+                }
+                 feedbackDiv.classList.remove('visible', 'correct', 'incorrect', 'info');
+                 runBtn.disabled = false; // Re-enable button if it was disabled
+            }
+
+            runBtn.addEventListener('click', () => {
+                 const code = editor.value; // Get full code including potential setup
+                 const currentLang = getStoredLanguage();
+                 outputArea.innerHTML = ''; // Clear previous output
+                 feedbackDiv.classList.remove('visible', 'correct', 'incorrect', 'info');
+                 runBtn.disabled = false; // Ensure button is enabled
+
+                 // --- Basic Simulation & Validation ---
+                 let simulatedOutput = '';
+                 let feedbackKey = 'feedback_challenge_syntax_error'; // Default
+                 let feedbackType = 'incorrect';
+
+                 // Rough check for core elements
+                 const hasIf = /\bif\b/.test(code);
+                 const hasCondition = /points\s*>\s*10/.test(code);
+                 const hasColon = /if.*?points\s*>\s*10\s*:/.test(code);
+                 const hasPrint = /\bprint\s*\(\s*["']Level Up!["']\s*\)/.test(code);
+                 // Very basic check for indentation after the 'if points > 10:' line
+                 const indentRegex = /if\s+points\s*>\s*10\s*:\s*\n\s{4,}print\s*\(\s*["']Level Up!["']\s*\)/;
+                 const hasCorrectIndent = indentRegex.test(code);
+
+                 // Simulate the logic
+                 let points = 15; // The setup value
+                 let executedPrint = false;
+                 let syntaxError = false;
+
+                 // Very simplified check - doesn't actually run Python
+                 if (!hasIf) {
+                    feedbackKey = 'feedback_challenge_no_if';
+                 } else if (!hasCondition) {
+                    feedbackKey = 'feedback_challenge_no_condition';
+                 } else if (!hasColon) {
+                     feedbackKey = 'feedback_challenge_syntax_error'; // Likely missing colon
+                     syntaxError = true;
+                 } else if (!hasCorrectIndent && hasPrint) { // Check indent only if print exists
+                     feedbackKey = 'feedback_challenge_indent_error';
+                     syntaxError = true; // Treat major indent error like syntax error
+                 } else {
+                     // Assume basic structure is okay, simulate the condition
+                     if (points > 10) {
+                         // Now check if the print statement exists within this simulated path
+                         if (hasPrint && hasCorrectIndent) {
+                             simulatedOutput = "Level Up!";
+                             executedPrint = true;
+                             feedbackKey = 'feedback_challenge_success';
+                             feedbackType = 'correct';
+                         } else if(hasPrint && !hasCorrectIndent) {
+                             // Should have been caught by indent check, but double-check
+                             feedbackKey = 'feedback_challenge_indent_error';
+                             syntaxError = true;
+                         } else {
+                              // Condition is true, but print is wrong or missing
+                              feedbackKey = 'feedback_challenge_no_output'; // Or could refine if print exists but is wrong
+                         }
+                     } else {
+                         // Condition is false, so *no* output is expected (success in this case if print is correctly absent or guarded)
+                         if (hasPrint && hasCorrectIndent) {
+                             // Print exists and is indented, but shouldn't run - this is a logic issue for other scenarios, but fine here
+                             feedbackKey = 'feedback_challenge_no_output'; // Correctly no output
+                             feedbackType = 'correct'; // Technically correct not to print
+                         } else {
+                            feedbackKey = 'feedback_challenge_no_output'; // Correctly no output
+                            feedbackType = 'correct'; // Correct not to print
+                         }
+                     }
+                 }
+
+
+                 // Display simulated output
+                 if (simulatedOutput) {
+                     const outputLine = document.createElement('span');
+                     outputLine.classList.add('output-line');
+                     outputLine.textContent = `> ${simulatedOutput}`;
+                     outputArea.appendChild(outputLine);
+                 } else if (!syntaxError && feedbackType !== 'correct') {
+                    // Show placeholder only if there was no output AND it wasn't expected correct behavior (like no print when condition false)
+                     placeholder.textContent = getTranslation('challenge_output_placeholder', currentLang);
+                     outputArea.appendChild(placeholder);
+                 } else if (syntaxError) {
+                     placeholder.textContent = getTranslation('challenge_output_placeholder', currentLang);
+                     outputArea.appendChild(placeholder);
+                 }
+
+                 // Show feedback
+                 showFeedback('challenge-feedback', feedbackKey, feedbackType, { output: simulatedOutput });
+
+                 // Disable button on success
+                 if (feedbackType === 'correct') {
+                     // runBtn.disabled = true; // Optional: Keep enabled for experimentation
+                 }
+             });
+
+             // Initial setup call moved to end
+        }
+
+        // --- Activity 5: CT Connection (No JS logic needed beyond translation) ---
+
+
+        // --- Fade-in animations on scroll (Same as Module 0) ---
+        const fadeElements = document.querySelectorAll('.fade-in');
+        const animateOnScroll = () => { /* ... same ... */
+            const windowHeight = window.innerHeight;
+            fadeElements.forEach(el => {
+                if (el.style.opacity === '1') return; // Already visible
+                const rect = el.getBoundingClientRect();
+                // Adjust threshold slightly if needed
+                if (rect.top < windowHeight - 60 && rect.bottom >= 40) {
+                    el.style.opacity = '1';
+                    el.style.transform = 'translateY(0)';
+                }
+            });
+        };
+        const scrollHandler = () => window.requestAnimationFrame(animateOnScroll);
+        window.addEventListener('scroll', scrollHandler);
+
+
+        // --- Initial Language Application and Activity Setups ---
+        setLanguage(initialLang); // Apply language FIRST
+        animateOnScroll(); // Trigger initial animation check
+
+        // Call initial setups for activities that need it *after* language is set
+        // Note: some setup functions are already called within setLanguage for re-initialization
+        if (document.getElementById('if-syntax')) setupIfSyntaxActivity();
+        if (document.getElementById('indentation-check')) setupIndentationCheck();
+        if (document.getElementById('condition-evaluator')) setupConditionEvaluator(); // Load the first condition
+        if (document.getElementById('code-challenge')) resetChallengeSimulator(); // Ensure simulator starts fresh
+
+
+    }); // End DOMContentLoaded
+    </script>
+
+</body>
+</html>

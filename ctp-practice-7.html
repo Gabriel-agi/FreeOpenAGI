@@ -1,1 +1,1339 @@
+<!DOCTYPE html>
+<!-- Language set by JS -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Title set by JS -->
+    <title data-translate="page_title">Module 7: Handling Alternatives - else</title>
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
+    <style>
+        /* --- Base Styles & Variables --- */
+        :root {
+            --primary-color: #007bff; /* Blue */
+            --secondary-color: #6c757d; /* Grey */
+            --background-light: #f8f9fa;
+            --background-medium: #e9ecef;
+            --background-dark: #343a40; /* Dark Grey */
+            --text-light: #f8f9fa;
+            --text-dark: #212529;
+            --accent-color: #ffc107; /* Yellow */
+            --success-color: #28a745; /* Green */
+            --error-color: #dc3545;   /* Red */
+            --info-color: #17a2b8;    /* Teal */
+            --logic-color-if: #17a2b8;    /* Teal (for 'if' emphasis) */
+            --logic-color-else: #fd7e14;  /* Orange (for 'else' emphasis) */
+            --condition-color: #6f42c1; /* Purple (for conditions) */
+            --border-radius: 8px;
+            --transition-speed: 0.3s;
+            --font-body: 'Roboto', sans-serif;
+            --font-title: 'Orbitron', sans-serif;
+            --selection-highlight-bg: rgba(0, 123, 255, 0.1);
+            --selection-highlight-border: rgba(0, 123, 255, 0.4);
+            /* Colors matching potential nav consistency */
+            --nav-primary: #6e48aa;
+            --nav-success: #4cc9f0;
+            --nav-dark: #1a1a2e;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; font-size: 16px; }
+        body {
+            font-family: var(--font-body); line-height: 1.7;
+            background-color: var(--background-light); color: var(--text-dark);
+            overflow-x: hidden;
+        }
+
+        /* --- Utility Classes --- */
+        .container { max-width: 960px; margin: 0 auto; padding: 0 15px; }
+        .text-center { text-align: center; }
+        .highlight { color: var(--primary-color); font-weight: bold; }
+        .code-font { font-family: 'Courier New', Courier, monospace; }
+        .hidden { display: none !important; }
+        .button-group {
+            margin-top: 2rem; display: flex; flex-wrap: wrap;
+            justify-content: center; gap: 1rem;
+        }
+        .indent { margin-left: 2em; } /* Simple indentation helper */
+
+        /* --- Advanced Animations (Copied from Module 0) --- */
+        .fade-in { opacity: 0; transform: translateY(20px); animation: fadeInAnimation 0.8s ease-out forwards; }
+        .fade-in.delay-1 { animation-delay: 0.2s; }
+        .fade-in.delay-2 { animation-delay: 0.4s; }
+        .fade-in.delay-3 { animation-delay: 0.6s; }
+        .fade-in.delay-4 { animation-delay: 0.8s; }
+        @keyframes fadeInAnimation { to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulseHeaderIcon { 0% { transform: scale(1); opacity: 0.1; filter: brightness(1); } 50% { transform: scale(1.05); opacity: 0.25; filter: brightness(1.2); } 100% { transform: scale(1); opacity: 0.1; filter: brightness(1); } }
+        @keyframes successGlow { 0% { box-shadow: 0 0 3px rgba(40, 167, 69, 0.3); transform: scale(1); } 50% { box-shadow: 0 0 12px 5px rgba(40, 167, 69, 0.5); transform: scale(1.01); } 100% { box-shadow: 0 0 3px rgba(40, 167, 69, 0.3); transform: scale(1); } }
+        .success-glow-anim { animation: successGlow 0.9s ease-out; }
+        @keyframes shake { 10%, 90% { transform: translate3d(-2px, 0, 0); } 20%, 80% { transform: translate3d(3px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-5px, 0, 0); } 40%, 60% { transform: translate3d(5px, 0, 0); } }
+        .shake-anim { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes iconAppearCorrect { 0% { transform: scale(0.5) rotate(-15deg); opacity: 0; } 60% { transform: scale(1.2) rotate(5deg); opacity: 1; } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
+        @keyframes iconAppearIncorrect { 0% { transform: scale(0.5) rotate(-15deg); opacity: 0; } 50% { transform: scale(1.2) rotate(10deg); opacity: 1; } 70% { transform: scale(0.9) rotate(-5deg); } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
+        @keyframes iconAppearMissed { 0% { transform: scale(0.8) rotateY(90deg); opacity: 0; } 100% { transform: scale(1) rotateY(0deg); opacity: 0.8; } }
+        .action-button:active:not(:disabled) { transform: translateY(1px) scale(0.98); filter: brightness(0.95); }
+
+        /* --- Minimal Retractable Nav (Copied from Module 0, check hrefs below) --- */
+        .minimal-nav-button { position: fixed; top: 15px; right: 15px; z-index: 1001; background-color: rgba(52, 58, 64, 0.75); color: var(--text-light); border: none; border-radius: var(--border-radius); padding: 8px 12px; cursor: pointer; transition: background-color var(--transition-speed), opacity var(--transition-speed), transform var(--transition-speed); font-size: 1.1rem; opacity: 0.6; box-shadow: 0 2px 5px rgba(0,0,0,0.2); line-height: 1; }
+        .minimal-nav-button:hover { background-color: rgba(52, 58, 64, 0.95); opacity: 1; transform: scale(1.05); }
+        .minimal-nav { position: fixed; top: 60px; right: 15px; z-index: 1000; background-color: var(--background-dark); border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.3); padding: 0.8rem; opacity: 0; transform: translateY(-15px) scale(0.95); transform-origin: top right; pointer-events: none; transition: opacity var(--transition-speed) ease, transform var(--transition-speed) ease; min-width: 200px; }
+        body.nav-active .minimal-nav { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+        .minimal-nav ul { list-style: none; margin: 0; padding: 0; }
+        .minimal-nav ul li { margin-bottom: 5px; }
+        .minimal-nav ul li:last-child { margin-bottom: 0; }
+        .minimal-nav ul li a { display: flex; align-items: center; color: var(--text-light); text-decoration: none; padding: 0.6rem 1rem; border-radius: 4px; transition: background-color var(--transition-speed), color var(--transition-speed); white-space: nowrap; font-weight: 400; font-size: 0.95rem; }
+        .minimal-nav ul li a i.fas { margin-right: 10px; width: 1.2em; text-align: center; opacity: 0.8; transition: opacity var(--transition-speed); }
+        .minimal-nav ul li a:hover { background-color: var(--primary-color); color: var(--text-light); }
+        .minimal-nav ul li a:hover i.fas { opacity: 1; }
+        .minimal-nav .language-switcher-item { padding: 0.5rem 1rem; border-top: 1px solid var(--secondary-color); margin-top: 8px; padding-top: 13px; }
+        #languageSelect { width: 100%; background: rgba(255,255,255,0.1); color: white; border: 1px solid var(--nav-success); border-radius: 5px; padding: 6px 30px 6px 12px; cursor: pointer; font-size: 0.9rem; appearance: none; -webkit-appearance: none; -moz-appearance: none; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%234CC9F0%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right 10px center; background-size: 10px auto; transition: background-color 0.3s ease; }
+        #languageSelect:hover { background-color: rgba(255,255,255,0.15); }
+        #languageSelect option { background: var(--nav-dark); color: var(--text-light); }
+        /* --- End Minimal Retractable Nav --- */
+
+        /* --- Practice Header --- */
+        /* Using primary color gradient for variety */
+        .practice-header { background: linear-gradient(135deg, var(--primary-color), #0056b3); color: var(--text-light); padding: 3rem 0 4rem; text-align: center; position: relative; overflow: hidden; border-bottom: 5px solid var(--accent-color); }
+        .practice-header h1 { font-family: var(--font-title); font-size: 2.8rem; margin-bottom: 0.5rem; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); animation: fadeInAnimation 1s ease-out; }
+        .practice-header p { font-size: 1.1rem; font-weight: 300; opacity: 0.9; animation: fadeInAnimation 1s ease-out 0.3s forwards; opacity: 0; }
+        /* Adjusted header icons */
+        .header-icon { position: absolute; font-size: 4rem; color: var(--text-light); animation: pulseHeaderIcon 6s infinite ease-in-out alternate; }
+        .icon1 { top: 20%; left: 15%; animation-duration: 7s; content: "\f126"; /* fa-code-branch */ font-family: "Font Awesome 6 Free"; font-weight: 900;}
+        .icon2 { bottom: 15%; right: 20%; animation-duration: 5s; content: "\f543"; /* fa-brain */ font-family: "Font Awesome 6 Free"; font-weight: 900; }
+
+        /* --- Practice Section Styling (Copied from Module 0) --- */
+        .practice-section { padding: 3rem 0; background-color: var(--background-medium); border-bottom: 1px solid #d6d8db; }
+        .practice-section:nth-child(odd) { background-color: var(--background-light); }
+        .practice-section:last-of-type { border-bottom: none; }
+        .practice-section h2 { font-family: var(--font-title); font-size: 1.8rem; color: var(--primary-color); margin-bottom: 1rem; text-align: center; }
+        .practice-section .section-description { text-align: center; margin-bottom: 2.5rem; color: var(--secondary-color); font-size: 1.05rem; max-width: 700px; margin-left: auto; margin-right: auto; }
+
+        /* --- General Interactive Elements (Copied from Module 0) --- */
+        .interactive-area { background-color: #fff; padding: 2rem; border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.08); margin-top: 1.5rem; position: relative; transition: box-shadow 0.5s ease-out; }
+        .feedback-message { padding: 0.8rem 1rem; margin-top: 1rem; border-radius: var(--border-radius); font-weight: bold; text-align: center; opacity: 0; max-height: 0; overflow: hidden; transition: opacity var(--transition-speed) ease, max-height var(--transition-speed) ease, margin-top var(--transition-speed) ease; }
+        .feedback-message.visible { opacity: 1; max-height: 100px; margin-top: 1.5rem; }
+        .feedback-message.correct { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .feedback-message.incorrect { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .feedback-message.info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .feedback-message .fas { margin: 0 3px; }
+        .action-button { display: inline-block; padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold; color: var(--text-light); background-color: var(--primary-color); border: none; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), transform var(--transition-speed), filter var(--transition-speed), box-shadow var(--transition-speed); margin-top: 1rem; vertical-align: middle; box-shadow: 0 2px 5px rgba(0,0,0,0.1); text-decoration: none; }
+        .action-button:hover:not(:disabled) { background-color: #0056b3; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+        .action-button:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none; box-shadow: none; opacity: 0.7; }
+        .action-button.success { background-color: var(--success-color); }
+        .action-button.success:hover:not(:disabled) { background-color: #218838; }
+        .action-button.secondary { background-color: var(--secondary-color); }
+        .action-button.secondary:hover:not(:disabled) { background-color: #5a6268; }
+        /* Code styling */
+        .code-block { background-color: var(--background-dark); color: var(--text-light); padding: 1.5rem; border-radius: var(--border-radius); font-family: var(--code-font); font-size: 1rem; position: relative; overflow-x: auto; margin: 1rem 0; line-height: 1.6; }
+        .code-keyword { color: #569cd6; font-weight: bold; }
+        .code-string { color: #ce9178; }
+        .code-comment { color: #6a9955; font-style: italic; }
+        .code-function { color: #dcdcaa; }
+        .code-paren { color: #ffd700; }
+        .code-number { color: #b5cea8; }
+        .code-operator { color: #d4d4d4; }
+        .code-condition { color: var(--condition-color); font-weight: bold; }
+        .code-if-branch { border-left: 3px solid var(--logic-color-if); padding-left: 10px; margin-left: 2px; background: rgba(23, 162, 184, 0.05); }
+        .code-else-branch { border-left: 3px solid var(--logic-color-else); padding-left: 10px; margin-left: 2px; background: rgba(253, 126, 20, 0.05); }
+
+        /* --- Activity 1: Anatomy of if/else --- */
+        #anatomy-ifelse .code-part { cursor: pointer; border-bottom: 2px dashed rgba(255, 255, 255, 0.3); transition: background-color var(--transition-speed), border-bottom-color var(--transition-speed); padding: 0 2px; display: inline-block; }
+        #anatomy-ifelse .code-part:hover { background-color: rgba(255, 255, 255, 0.15); border-bottom-color: var(--accent-color); }
+        #anatomy-ifelse .code-part.identified { background-color: rgba(40, 167, 69, 0.3); border-bottom: 2px solid var(--success-color); cursor: default; }
+        .part-explanation { font-size: 0.95rem; border-left: 3px solid var(--info-color); padding: 5px 10px; margin-top: 0.5rem; background-color: rgba(23, 162, 184, 0.05); }
+        .part-explanation .fas { color: var(--success-color); margin-right: 5px;}
+        #anatomy-status { margin-top: 1rem; font-style: italic; color: var(--secondary-color); }
+
+        /* --- Activity 2: Predict the Path --- */
+        #predict-path .code-block { margin-bottom: 1.5rem; }
+        #predict-path .variable-display { margin-bottom: 1.5rem; font-size: 1.1rem; text-align: center; }
+        #predict-path .prediction-buttons { display: flex; justify-content: center; gap: 1.5rem; margin-top: 1rem; }
+        .predict-btn { padding: 0.8rem 2rem; font-size: 1.1rem; }
+        .predict-btn.if-branch { background-color: var(--logic-color-if); }
+        .predict-btn.if-branch:hover:not(:disabled) { background-color: #138496; }
+        .predict-btn.else-branch { background-color: var(--logic-color-else); }
+        .predict-btn.else-branch:hover:not(:disabled) { background-color: #e06200; }
+        #predict-feedback .fas { animation: iconAppearCorrect 0.5s ease-out; } /* Simple feedback icon */
+
+        /* --- Activity 3: Build-an-Else --- */
+        #build-an-else .draggable-pieces { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 1.5rem; padding: 1rem; background-color: var(--background-light); border: 1px dashed var(--secondary-color); border-radius: var(--border-radius); justify-content: center; user-select: none; -webkit-user-select: none; -ms-user-select: none; }
+        .piece { display: inline-block; padding: 8px 12px; background-color: var(--primary-color); color: var(--text-light); border-radius: 4px; cursor: grab; font-family: var(--code-font); font-size: 1rem; transition: background-color var(--transition-speed), transform var(--transition-speed), opacity 0.1s ease, box-shadow var(--transition-speed); border: 1px solid #0056b3; touch-action: none; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .piece:active { cursor: grabbing; }
+        .piece.dragging { opacity: 0.6 !important; transform: scale(1.05) rotate(3deg); position: fixed !important; pointer-events: none !important; z-index: 1000 !important; cursor: grabbing !important; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+        .piece.ghosting { opacity: 0.3; }
+        /* Specific piece colors */
+        .piece[data-type="keyword-if"] { background-color: var(--logic-color-if); border-color: #138496;}
+        .piece[data-type="keyword-else"] { background-color: var(--logic-color-else); border-color: #e06200;}
+        .piece[data-type="condition"] { background-color: var(--condition-color); border-color: #5a379e; }
+        .piece[data-type="string"] { background-color: #b17a62; border-color:#9d6c56; }
+        .piece[data-type="colon"] { background-color: var(--secondary-color); border-color:#5a6268; }
+        .piece[data-type="print"] { background-color: #868e96; border-color:#6c757d; }
+        .piece[data-type="indent"] { background-color: transparent; border: 1px dashed #ccc; color: #aaa; font-style: italic; cursor: default; padding: 8px 5px; width: 2em; text-align: center; opacity: 0.7;} /* Visual only */
+
+        #build-drop-zone { min-height: 120px; background-color: var(--background-dark); border: 3px dashed var(--secondary-color); border-radius: var(--border-radius); padding: 15px; display: flex; flex-direction: column; align-items: flex-start; gap: 5px; transition: border-color var(--transition-speed), background-color var(--transition-speed), box-shadow var(--transition-speed); font-family: var(--code-font); }
+        #build-drop-zone.over { border-color: var(--accent-color); background-color: #495057; box-shadow: inset 0 0 10px rgba(255,193,7,0.2); }
+        #build-drop-zone .piece { cursor: default; margin: 0; touch-action: auto; box-shadow: none; margin-bottom: 5px; }
+        #build-drop-zone .drop-line { display: flex; align-items: center; gap: 5px; width: 100%; } /* Helper for visual structure */
+        #build-drop-zone-placeholder { color: var(--secondary-color); font-style: italic; width: 100%; text-align: center; align-self: center;}
+
+        /* --- Activity 4: Code Simulator (Decision Maker) --- */
+        #code-simulator-decision .sim-editor { width: 100%; min-height: 150px; background-color: var(--background-dark); color: var(--text-light); border: 1px solid var(--secondary-color); border-radius: var(--border-radius); padding: 1rem; font-family: var(--code-font); font-size: 1rem; line-height: 1.5; resize: vertical; }
+        #code-simulator-decision .sim-output-area { margin-top: 1rem; min-height: 50px; background-color: #1a1a1a; border: 1px solid #444; border-radius: var(--border-radius); padding: 1rem; color: var(--accent-color); font-family: var(--code-font); font-size: 1.05rem; white-space: pre-wrap; word-wrap: break-word; }
+        #code-simulator-decision .sim-output-area .placeholder { color: var(--secondary-color); font-style: italic; font-size: 0.9rem; }
+        #code-simulator-decision .sim-output-area .output-line { display: block; }
+        #code-simulator-decision .test-case-area { margin-top: 1rem; padding: 0.8rem; background-color: var(--background-medium); border-radius: var(--border-radius); font-size: 0.95rem; }
+
+        /* --- Activity 5: Mini Missions (if/else) --- */
+        #mini-missions-else .mission { padding: 1.5rem; border: 1px solid #d6d8db; border-radius: var(--border-radius); margin-bottom: 1.5rem; background-color: var(--background-light); position: relative; }
+        .mission-status { position: absolute; top: 10px; right: 10px; font-size: 1.5rem; transition: transform 0.3s ease; }
+        .mission-status .fa-check-circle { color: var(--success-color); transform-origin: center; }
+        .mission-status .fa-times-circle { color: var(--error-color); }
+        .mission-status .fa-question-circle { color: var(--secondary-color); }
+        .mission[data-completed="true"] .mission-status .fa-check-circle { animation: iconAppearCorrect 0.6s ease-out; }
+        #mini-missions-else .mission-editor { width: 100%; min-height: 120px; background-color: var(--background-dark); color: var(--text-light); border: 1px solid var(--secondary-color); border-radius: var(--border-radius); padding: 1rem; font-family: var(--code-font); font-size: 1rem; line-height: 1.5; resize: vertical; margin-top: 1rem; }
+        #mini-missions-else .mission-output { margin-top: 1rem; min-height: 30px; background-color: #1a1a1a; border: 1px solid #444; border-radius: var(--border-radius); padding: 0.8rem; color: var(--accent-color); font-family: var(--code-font); font-size: 1rem; white-space: pre-wrap; word-wrap: break-word; }
+
+        /* --- Final Section (Copied from Module 0) --- */
+        .completion-section { padding: 4rem 0; text-align: center; }
+        .completion-section .icon { font-size: 4rem; color: var(--success-color); margin-bottom: 1rem; display: inline-block; opacity: 0; animation: iconAppearCorrect 1s ease-out 0.5s forwards; }
+        .completion-section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); }
+        .completion-section p { font-size: 1.1rem; margin-top: 1rem; color: var(--secondary-color); }
+
+        /* --- Responsive Design (Copied from Module 0, minor adjustments maybe needed) --- */
+        @media (max-width: 768px) {
+            html { font-size: 15px; }
+            .practice-header h1 { font-size: 2.2rem; }
+            .practice-section h2 { font-size: 1.6rem; }
+            .interactive-area { padding: 1.5rem; }
+            #build-an-else .draggable-pieces { padding: 0.8rem; }
+            .piece { padding: 6px 10px; font-size: 0.95rem; }
+            #build-drop-zone { min-height: 100px; padding: 10px; }
+            .predict-btn { padding: 0.7rem 1.5rem; font-size: 1rem; }
+            .button-group { flex-direction: column; align-items: center; }
+             /* Adjust nav panel if needed */
+            .minimal-nav { min-width: 180px; }
+            .minimal-nav ul li a { padding: 0.6rem 0.8rem; }
+            #languageSelect { font-size: 0.85rem; padding: 5px 25px 5px 10px;}
+        }
+        @media (max-width: 480px) {
+            html { font-size: 14px; }
+            .practice-header h1 { font-size: 1.8rem; }
+            .practice-header p { font-size: 1rem; }
+            .practice-section h2 { font-size: 1.4rem; }
+            .interactive-area { padding: 1rem; }
+            .action-button, .predict-btn { font-size: 0.9rem; padding: 0.7rem 1.2rem; width: 90%; max-width: 300px;}
+            #code-simulator-decision .sim-editor, #code-simulator-decision .sim-output-area { font-size: 0.9rem; }
+            #mini-missions-else .mission-editor, #mini-missions-else .mission-output { font-size: 0.9rem;}
+            #build-an-else .draggable-pieces { justify-content: space-around; } /* Better wrapping */
+            .piece { font-size: 0.9rem; }
+            #predict-path .prediction-buttons { flex-direction: column; gap: 0.8rem; align-items: center;}
+            .button-group a.action-button { width: 90%; max-width: 300px; margin-bottom: 0.5rem; }
+            /* Adjust Nav */
+             .minimal-nav-button { top: 10px; right: 10px; padding: 6px 10px; font-size: 1rem; }
+             .minimal-nav { top: 48px; right: 10px; min-width: 160px; }
+             .minimal-nav ul li a { padding: 0.5rem 0.7rem; font-size: 0.9rem;}
+             .minimal-nav ul li a i.fas { margin-right: 8px; }
+             #languageSelect { font-size: 0.8rem; padding: 4px 20px 4px 8px;}
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ========= Minimal Nav Handle ========= -->
+    <button id="minimal-nav-toggle" class="minimal-nav-button" aria-label="Toggle Navigation Menu">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- ========= Minimal Nav Panel (with Language Switcher) ========= -->
+    <nav id="minimal-nav-panel" class="minimal-nav">
+        <ul>
+            <!-- *** UPDATED HREFS FOR MODULE 7 *** -->
+            <li><a href="ctp-theory-7.html"><i class="fas fa-book-open fa-fw"></i> <span data-translate="nav_theory">View Theory</span></a></li>
+            <li><a href="ctp-advanced-7.html"><i class="fas fa-flask fa-fw"></i> <span data-translate="nav_advanced">Advanced Practice</span></a></li>
+            <li><a href="ctp-dashboard.html"><i class="fas fa-list fa-fw"></i> <span data-translate="nav_menu">Course Menu</span></a></li>
+            <hr style="border: none; border-top: 1px solid var(--secondary-color); margin: 8px 0;">
+            <!-- *** UPDATED SECTION LINKS FOR MODULE 7 *** -->
+            <li><a href="#anatomy-ifelse"><i class="fas fa-microscope fa-fw"></i> <span data-translate="nav_anatomy">Anatomy</span></a></li>
+            <li><a href="#predict-path"><i class="fas fa-map-signs fa-fw"></i> <span data-translate="nav_predict">Predict Path</span></a></li>
+            <li><a href="#build-an-else"><i class="fas fa-puzzle-piece fa-fw"></i> <span data-translate="nav_build">Build</span></a></li>
+            <li><a href="#code-simulator-decision"><i class="fas fa-keyboard fa-fw"></i> <span data-translate="nav_simulator">Simulator</span></a></li>
+            <li><a href="#mini-missions-else"><i class="fas fa-rocket fa-fw"></i> <span data-translate="nav_missions">Missions</span></a></li>
+            <!-- Language Switcher Item -->
+            <li class="language-switcher-item">
+                 <select id="languageSelect" aria-label="Select Language">
+                     <option value="en" data-translate="lang_en">🇬🇧 English</option>
+                     <option value="pt" data-translate="lang_pt">🇧🇷 Português</option>
+                     <option value="zh" data-translate="lang_zh">🇨🇳 中文</option>
+                 </select>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- ========= Header ========= -->
+    <header class="practice-header">
+        <i class="fas header-icon icon1"></i>
+        <i class="fas header-icon icon2"></i>
+        <div class="container">
+            <!-- *** UPDATED HEADER TEXT FOR MODULE 7 *** -->
+            <h1 data-translate="header_title">Module 7: Practice Zone - Decisions!</h1>
+            <p data-translate="header_subtitle">Let's practice making choices in code with `if` and `else`.</p>
+        </div>
+    </header>
+
+    <!-- ========= Main Content ========= -->
+    <main>
+        <!-- ========= Activity 1: Anatomy of if/else ========= -->
+        <section id="anatomy-ifelse" class="practice-section">
+             <div class="container">
+                 <h2 class="fade-in"><i class="fas fa-microscope"></i> <span data-translate="anatomy_title">Anatomy of an `if/else` Statement</span></h2>
+                 <p class="section-description fade-in delay-1" data-translate="anatomy_desc">
+                     This structure lets code choose between two paths. Click on the highlighted parts below to understand their roles.
+                 </p>
+                 <div class="interactive-area fade-in delay-2">
+                     <div class="code-block">
+                         <span class="code-part" data-part="if-keyword" data-translate-title="tooltip_click_identify" title="Click to identify this part"><span class="code-keyword">if</span></span><!--
+                      --> <span class="code-part" data-part="condition" data-translate-title="tooltip_click_identify" title="Click to identify this part"><span class="code-condition">temperature</span> <span class="code-operator">&gt;</span> <span class="code-number">25</span></span><!--
+                      --><span><span class="code-paren">:</span></span><br>
+                         <div class="indent code-if-branch">
+                            <span class="code-part" data-part="if-body" data-translate-title="tooltip_click_identify" title="Click to identify this part"><span class="code-function">print</span>(<span class="code-string" data-translate="anatomy_code_string_hot">"It's hot!"</span>)</span> <!-- *** TRANSLATABLE *** -->
+                         </div>
+                         <span class="code-part" data-part="else-keyword" data-translate-title="tooltip_click_identify" title="Click to identify this part"><span class="code-keyword">else</span></span><!--
+                      --><span><span class="code-paren">:</span></span><br>
+                         <div class="indent code-else-branch">
+                             <span class="code-part" data-part="else-body" data-translate-title="tooltip_click_identify" title="Click to identify this part"><span class="code-function">print</span>(<span class="code-string" data-translate="anatomy_code_string_cool">"It's cool."</span>)</span> <!-- *** TRANSLATABLE *** -->
+                         </div>
+                     </div>
+                     <div id="anatomy-explanations"></div>
+                     <p id="anatomy-status" data-translate="anatomy_status_initial">Identify all 5 parts!</p>
+                     <div id="anatomy-feedback" class="feedback-message"></div>
+                     <!-- Hidden elements for storing translated explanation parts -->
+                     <div id="explanation-texts" style="display: none;">
+                        <span data-key="if-keyword" data-translate="anatomy_exp_if_keyword">The `if` keyword: Starts the decision. Checks the condition next to it.</span>
+                        <span data-key="condition" data-translate="anatomy_exp_condition">The condition (`temperature > 25`): An expression that is either True or False.</span>
+                        <span data-key="if-body" data-translate="anatomy_exp_if_body">The `if` block body: Code indented below `if`. Runs only if the condition is True.</span>
+                        <span data-key="else-keyword" data-translate="anatomy_exp_else_keyword">The `else` keyword: Specifies the alternative path.</span>
+                        <span data-key="else-body" data-translate="anatomy_exp_else_body">The `else` block body: Code indented below `else`. Runs only if the `if` condition was False.</span>
+                     </div>
+                 </div>
+             </div>
+        </section>
+
+        <!-- ========= Activity 2: Predict the Path ========= -->
+        <section id="predict-path" class="practice-section">
+             <div class="container">
+                 <h2 class="fade-in"><i class="fas fa-map-signs"></i> <span data-translate="predict_title">Predict the Path</span></h2>
+                 <p class="section-description fade-in delay-1" data-translate="predict_desc">
+                     Look at the code and the value of the variable. Which block of code (`if` or `else`) will run? Click the correct button.
+                 </p>
+                 <div class="interactive-area fade-in delay-2">
+                     <div class="variable-display">
+                         <span data-translate="predict_variable_label">Variable value:</span> <code id="predict-variable-value" class="code-font" style="background: var(--background-medium); padding: 2px 6px; border-radius: 4px;">score = 75</code>
+                     </div>
+                     <div class="code-block">
+                        <span class="code-keyword">if</span> <span class="code-condition">score</span> <span class="code-operator">&gt;=</span> <span class="code-number">60</span><span><span class="code-paren">:</span></span><br>
+                        <div class="indent code-if-branch">
+                            <span class="code-function">print</span>(<span class="code-string" data-translate="predict_code_pass">"Pass"</span>) <!-- *** TRANSLATABLE *** -->
+                        </div>
+                        <span class="code-keyword">else</span><span><span class="code-paren">:</span></span><br>
+                        <div class="indent code-else-branch">
+                            <span class="code-function">print</span>(<span class="code-string" data-translate="predict_code_fail">"Fail"</span>) <!-- *** TRANSLATABLE *** -->
+                        </div>
+                     </div>
+                     <div class="prediction-buttons text-center">
+                        <button id="predict-if-btn" class="action-button predict-btn if-branch" data-prediction="if"><i class="fas fa-check-circle"></i> <span data-translate="button_predict_if">`if` block runs</span></button>
+                        <button id="predict-else-btn" class="action-button predict-btn else-branch" data-prediction="else"><i class="fas fa-times-circle"></i> <span data-translate="button_predict_else">`else` block runs</span></button>
+                     </div>
+                     <div id="predict-feedback" class="feedback-message"></div>
+                     <!-- Hidden data for logic -->
+                     <div id="predict-logic" data-variable-name="score" data-variable-value="75" data-condition="score >= 60"></div>
+                 </div>
+             </div>
+        </section>
+
+        <!-- ========= Activity 3: Build-an-Else ========= -->
+        <section id="build-an-else" class="practice-section">
+             <div class="container">
+                 <h2 class="fade-in"><i class="fas fa-puzzle-piece"></i> <span data-translate="build_title">Build an `if/else` Statement</span></h2>
+                 <p class="section-description fade-in delay-1" data-translate="build_desc">
+                     Drag the pieces into the dark area to build an `if/else` statement that checks if `count` is 0. Print "Empty" if it is, and "Not Empty" otherwise. Order and keywords matter! (Indentation is shown visually but not strictly enforced by drag placement).
+                 </p>
+                 <div class="interactive-area fade-in delay-2">
+                     <div id="draggable-pieces" class="draggable-pieces">
+                         <!-- Pieces populated by JS -->
+                     </div>
+                     <div id="build-drop-zone" class="code-font">
+                         <span id="build-drop-zone-placeholder" data-translate="build_drop_placeholder">Drop pieces here in the correct order...</span>
+                     </div>
+                     <div class="text-center">
+                         <button id="check-build-btn" class="action-button" data-translate="button_check_build">Check My Code</button>
+                         <button id="reset-build-btn" class="action-button secondary" data-translate="button_reset_build">Reset</button>
+                     </div>
+                     <div id="build-feedback" class="feedback-message"></div>
+                 </div>
+             </div>
+        </section>
+
+         <!-- ========= Activity 4: Code Simulator (Decision Maker) ========= -->
+        <section id="code-simulator-decision" class="practice-section">
+             <div class="container">
+                 <h2 class="fade-in"><i class="fas fa-keyboard"></i> <span data-translate="simulator_title">Your Turn: Make a Decision</span></h2>
+                 <p class="section-description fade-in delay-1" data-translate="simulator_desc">
+                     Write an `if/else` statement in the editor. Check if a variable named `age` is 18 or greater. If it is, print "Adult". Otherwise, print "Minor". We'll test it for you!
+                 </p>
+                 <div class="interactive-area fade-in delay-2">
+                     <label for="sim-editor-input" style="font-weight: bold; display:block; margin-bottom: 8px;" data-translate="simulator_editor_label">Code Editor:</label>
+                     <textarea id="sim-editor-input" class="sim-editor" rows="6" data-translate-placeholder="simulator_editor_placeholder" placeholder='age = 20 # Sample value (we will test others)\nif age >= 18:\n    print("Adult")\nelse:\n    print("Minor")'></textarea>
+                     <div class="text-center">
+                          <button id="run-sim-btn" class="action-button" data-translate="button_run_sim">Run Simulation</button>
+                     </div>
+                     <label style="font-weight: bold; display:block; margin-top: 1.5rem; margin-bottom: 8px;" data-translate="simulator_output_label">Simulated Output (with test case age=20):</label>
+                     <div id="sim-output" class="sim-output-area">
+                         <span class="placeholder" data-translate="simulator_output_placeholder">Output will appear here...</span>
+                     </div>
+                     <div id="sim-feedback" class="feedback-message"></div>
+                 </div>
+             </div>
+        </section>
+
+         <!-- ========= Activity 5: Mini Missions (if/else) ========= -->
+        <section id="mini-missions-else" class="practice-section">
+             <div class="container">
+                  <h2 class="fade-in"><i class="fas fa-rocket"></i> <span data-translate="missions_title">Mini Missions: Decisions!</span></h2>
+                 <p class="section-description fade-in delay-1" data-translate="missions_desc">
+                     Time for some quick coding challenges using `if/else`. Complete the tasks below.
+                 </p>
+                 <div class="interactive-area fade-in delay-2">
+                     <!-- Mission 1 -->
+                     <div class="mission" id="mission-1" data-completed="false">
+                         <span class="mission-status"><i class="fas fa-question-circle"></i></span>
+                         <h4 data-translate="mission1_title">Mission 1: Positive or Not?</h4>
+                         <p data-translate="mission1_desc">Given a variable `number`, write an `if/else` statement. If `number` is greater than 0, print "Positive". Otherwise, print "Not positive".</p>
+                         <textarea class="sim-editor mission-editor" rows="5" data-translate-placeholder="mission1_placeholder" placeholder='number = 5 # Sample value\n\n# Your if/else code here'></textarea>
+                         <div class="text-center"> <button class="action-button mission-run-btn" data-mission-id="1" data-translate="button_test_mission_1">Test Mission 1</button> </div>
+                         <div class="sim-output-area mission-output"></div>
+                         <div id="mission-feedback-1" class="feedback-message mission-feedback"></div>
+                     </div>
+                     <!-- Mission 2 -->
+                     <div class="mission" id="mission-2" data-completed="false">
+                          <span class="mission-status"><i class="fas fa-question-circle"></i></span>
+                         <h4 data-translate="mission2_title">Mission 2: Access Granted?</h4>
+                         <p data-translate="mission2_desc">Given a variable `password`, write an `if/else` statement. If `password` is exactly equal to the string "open_sesame", print "Access Granted". Otherwise, print "Access Denied".</p>
+                         <textarea class="sim-editor mission-editor" rows="5" data-translate-placeholder="mission2_placeholder" placeholder='password = "test" # Sample value\n\n# Your if/else code here'></textarea>
+                          <div class="text-center"> <button class="action-button mission-run-btn" data-mission-id="2" data-translate="button_test_mission_2">Test Mission 2</button> </div>
+                         <div class="sim-output-area mission-output"></div>
+                         <div id="mission-feedback-2" class="feedback-message mission-feedback"></div>
+                     </div>
+                     <!-- Mission 3 -->
+                     <div class="mission" id="mission-3" data-completed="false">
+                          <span class="mission-status"><i class="fas fa-question-circle"></i></span>
+                         <h4 data-translate="mission3_title">Mission 3: Even or Odd?</h4>
+                         <p data-translate="mission3_desc">Given a variable `value`, write an `if/else` statement using the modulo operator (`%`). If `value % 2` equals 0, print "Even". Otherwise, print "Odd".</p>
+                         <textarea class="sim-editor mission-editor" rows="5" data-translate-placeholder="mission3_placeholder" placeholder='value = 4 # Sample value\n\n# Your if/else code here using %'></textarea>
+                          <div class="text-center"> <button class="action-button mission-run-btn" data-mission-id="3" data-translate="button_test_mission_3">Test Mission 3</button> </div>
+                         <div class="sim-output-area mission-output"></div>
+                         <div id="mission-feedback-3" class="feedback-message mission-feedback"></div>
+                     </div>
+                     <div id="missions-summary-feedback" class="feedback-message" style="margin-top: 2rem;"></div>
+                 </div>
+             </div>
+        </section>
+
+         <!-- ========= Completion Section ========= -->
+        <section class="completion-section">
+            <div class="container">
+                <div class="icon fade-in" style="animation: iconAppearCorrect 1s ease-out 0.5s forwards;">
+                    <!-- Using branching icon -->
+                    <i class="fas fa-code-branch"></i> <i class="fas fa-check-double"></i> <i class="fas fa-code-branch"></i>
+                </div>
+                <h2 class="fade-in delay-1" data-translate="completion_title">Module 7 Practice Complete!</h2>
+                <p class="fade-in delay-2" data-translate="completion_desc">
+                    Great job practicing `if/else` statements! You're getting better at controlling the flow of your code.<br>
+                    Ready for more complex decisions? Try the <strong>Advanced Practice</strong> for Module 7!
+                </p>
+                <div class="button-group">
+                    <!-- *** UPDATED HREFS FOR MODULE 7 *** -->
+                    <a href="ctp-theory-7.html" class="action-button secondary fade-in delay-3"><i class="fas fa-book-open"></i> <span data-translate="button_view_theory">View Theory Again</span></a>
+                    <a href="ctp-advanced-7.html" class="action-button success fade-in delay-3"><i class="fas fa-arrow-right"></i> <span data-translate="button_start_advanced">Start Advanced Practice</span></a>
+                    <a href="ctp-dashboard.html" class="action-button secondary fade-in delay-4"><i class="fas fa-list"></i> <span data-translate="button_back_menu">Back to Course Menu</span></a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ========= Script ========= -->
+    <script>
+    // --- Translations Object ---
+    // *** UPDATED for Module 7 ***
+    const translations = {
+        en: {
+            "page_title": "Module 7: Handling Alternatives - else",
+            "tooltip_click_identify": "Click to identify this part",
+            "nav_theory": "View Theory", "nav_advanced": "Advanced Practice", "nav_menu": "Course Menu",
+            "nav_anatomy": "Anatomy", "nav_predict": "Predict Path", "nav_build": "Build", "nav_simulator": "Simulator", "nav_missions": "Missions",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title": "Module 7: Practice Zone - Decisions!", "header_subtitle": "Let's practice making choices in code with `if` and `else`.",
+            // Anatomy
+            "anatomy_title": "Anatomy of an `if/else` Statement", "anatomy_desc": "This structure lets code choose between two paths. Click on the highlighted parts below to understand their roles.",
+            "anatomy_status_initial": "Identify all 5 parts!", "anatomy_status_progress": "Identified {count} of {total} parts.", "anatomy_status_done": "All parts identified!",
+            "anatomy_exp_if_keyword": "The `if` keyword: Starts the decision. Checks the condition next to it.",
+            "anatomy_exp_condition": "The condition (`temperature > 25`): An expression that is either True or False.",
+            "anatomy_exp_if_body": "The `if` block body: Code indented below `if`. Runs only if the condition is True.",
+            "anatomy_exp_else_keyword": "The `else` keyword: Specifies the alternative path.",
+            "anatomy_exp_else_body": "The `else` block body: Code indented below `else`. Runs only if the `if` condition was False.",
+            "anatomy_code_string_hot": "\"It's hot!\"",
+            "anatomy_code_string_cool": "\"It's cool.\"",
+            "feedback_anatomy_correct": "Excellent! You've dissected the if/else structure!",
+            // Predict Path
+            "predict_title": "Predict the Path", "predict_desc": "Look at the code and the value of the variable. Which block of code (`if` or `else`) will run? Click the correct button.",
+            "predict_variable_label": "Variable value:",
+            "predict_code_pass": "\"Pass\"", "predict_code_fail": "\"Fail\"",
+            "button_predict_if": "`if` block runs", "button_predict_else": "`else` block runs",
+            "feedback_predict_correct": "Correct! Since {variableValue} makes the condition `{condition}` True, the `if` block runs.",
+            "feedback_predict_correct_else": "Correct! Since {variableValue} makes the condition `{condition}` False, the `else` block runs.",
+            "feedback_predict_incorrect": "Not quite. Since {variableValue} makes the condition `{condition}` {truthValue}, the `{correctBlock}` block should run.",
+             "feedback_predict_true": "True", "feedback_predict_false": "False", "feedback_predict_if_block": "if", "feedback_predict_else_block": "else",
+            // Build-an-Else
+            "build_title": "Build an `if/else` Statement", "build_desc": "Drag the pieces into the dark area to build an `if/else` statement that checks if `count` is 0. Print \"Empty\" if it is, and \"Not Empty\" otherwise. Order and keywords matter! (Indentation is shown visually but not strictly enforced by drag placement).",
+            "build_drop_placeholder": "Drop pieces here in the correct order...",
+            "build_piece_if": "if", "build_piece_else": "else", "build_piece_condition_count": "count == 0", "build_piece_colon": ":",
+            "build_piece_print": "print()", "build_piece_string_empty": "\"Empty\"", "build_piece_string_not_empty": "\"Not Empty\"",
+            "build_piece_indent": "indent", // Represents the concept
+            "button_check_build": "Check My Code", "button_reset_build": "Reset",
+            "feedback_build_correct": "Perfect structure!", "feedback_build_almost": "Almost! Check the order of keywords, condition, colons, or print statements.",
+            "feedback_build_incorrect": "Not quite right. Review the `if/else` structure: `if condition:\n    indented_code\nelse:\n    indented_code`.",
+            "feedback_build_missing_if": "Missing the `if` keyword or it's misplaced.",
+            "feedback_build_missing_condition": "Missing the condition (`count == 0`) or it's misplaced.",
+            "feedback_build_missing_colon_if": "Missing the colon `:` after the `if` condition.",
+            "feedback_build_missing_print_if": "Missing the `print(\"Empty\")` in the `if` block.",
+            "feedback_build_missing_else": "Missing the `else` keyword or it's misplaced.",
+            "feedback_build_missing_colon_else": "Missing the colon `:` after the `else` keyword.",
+            "feedback_build_missing_print_else": "Missing the `print(\"Not Empty\")` in the `else` block.",
+            // Simulator
+            "simulator_title": "Your Turn: Make a Decision", "simulator_desc": "Write an `if/else` statement in the editor. Check if a variable named `age` is 18 or greater. If it is, print \"Adult\". Otherwise, print \"Minor\". We'll test it for you!",
+            "simulator_editor_label": "Code Editor:", "simulator_editor_placeholder": 'age = 20 # Sample value (we will test others)\nif age >= 18:\n    print("Adult")\nelse:\n    print("Minor")',
+            "button_run_sim": "Run Simulation", "simulator_output_label": "Simulated Output (with test case age=20):", "simulator_output_placeholder": "Output will appear here...",
+            "feedback_sim_success": "Simulation successful! Your code correctly prints '{output}' for age = {testAge}.",
+            "feedback_sim_wrong_output": "Code ran, but printed '{output}'. Expected '{expectedOutput}' for age = {testAge}. Check your condition or print statements.",
+            "feedback_sim_error": "Syntax Error: Check your code structure (if/else, colons, indentation).",
+            "feedback_sim_no_if": "Missing `if` statement.", "feedback_sim_no_else": "Missing `else` statement.", "feedback_sim_no_condition": "Missing or invalid condition (e.g., `age >= 18`).",
+            "feedback_sim_no_print": "Missing `print()` calls inside the blocks.", "feedback_sim_indentation": "Indentation error detected. Code inside `if` and `else` must be indented.",
+            "feedback_sim_empty": "Editor is empty.",
+            // Mini Missions
+            "missions_title": "Mini Missions: Decisions!", "missions_desc": "Time for some quick coding challenges using `if/else`. Complete the tasks below.",
+            "mission1_title": "Mission 1: Positive or Not?", "mission1_desc": "Given a variable `number`, write an `if/else` statement. If `number` is greater than 0, print \"Positive\". Otherwise, print \"Not positive\".", "mission1_placeholder": 'number = 5 # Sample value\n\n# Your if/else code here',
+            "button_test_mission_1": "Test Mission 1",
+            "mission2_title": "Mission 2: Access Granted?", "mission2_desc": "Given a variable `password`, write an `if/else` statement. If `password` is exactly equal to the string \"open_sesame\", print \"Access Granted\". Otherwise, print \"Access Denied\".", "mission2_placeholder": 'password = "test" # Sample value\n\n# Your if/else code here',
+            "button_test_mission_2": "Test Mission 2",
+            "mission3_title": "Mission 3: Even or Odd?", "mission3_desc": "Given a variable `value`, write an `if/else` statement using the modulo operator (`%`). If `value % 2` equals 0, print \"Even\". Otherwise, print \"Odd\".", "mission3_placeholder": 'value = 4 # Sample value\n\n# Your if/else code here using %',
+            "button_test_mission_3": "Test Mission 3",
+            "feedback_mission_success": "Mission Accomplished! Passed tests.", "feedback_mission_syntax_error": "Syntax Error. Check colons, indentation.",
+            "feedback_mission_fail_test": "Logic Error. Failed test case (e.g., Input: {input}, Expected: '{expected}', Got: '{got}'). Check condition/prints.",
+            "feedback_mission1_hint": "Condition should be `number > 0`. Print \"Positive\" or \"Not positive\".",
+            "feedback_mission2_hint": "Condition should be `password == \"open_sesame\"`. Print \"Access Granted\" or \"Access Denied\".",
+            "feedback_mission3_hint": "Condition should be `value % 2 == 0`. Print \"Even\" or \"Odd\".",
+            "feedback_missions_summary_all_done": "All {totalMissions} missions complete! You're mastering decisions!", "feedback_missions_summary_progress": "Completed {completedCount} of {totalMissions} missions. Keep choosing the right path!",
+            // Completion
+            "completion_title": "Module 7 Practice Complete!", "completion_desc": "Great job practicing `if/else` statements! You're getting better at controlling the flow of your code.<br> Ready for more complex decisions? Try the <strong>Advanced Practice</strong> for Module 7!",
+            "button_view_theory": "View Theory Again", "button_start_advanced": "Start Advanced Practice", "button_back_menu": "Back to Course Menu"
+        },
+        pt: {
+            "page_title": "Módulo 7: Lidando com Alternativas - else",
+            "tooltip_click_identify": "Clique para identificar esta parte",
+            "nav_theory": "Ver Teoria", "nav_advanced": "Prática Avançada", "nav_menu": "Menu do Curso",
+            "nav_anatomy": "Anatomia", "nav_predict": "Prever Caminho", "nav_build": "Construir", "nav_simulator": "Simulador", "nav_missions": "Missões",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title": "Módulo 7: Zona de Prática - Decisões!", "header_subtitle": "Vamos praticar tomar decisões no código com `if` e `else`.",
+            // Anatomy
+            "anatomy_title": "Anatomia de uma Declaração `if/else`", "anatomy_desc": "Esta estrutura permite que o código escolha entre dois caminhos. Clique nas partes destacadas abaixo para entender suas funções.",
+            "anatomy_status_initial": "Identifique todas as 5 partes!", "anatomy_status_progress": "Identificadas {count} de {total} partes.", "anatomy_status_done": "Todas as partes identificadas!",
+            "anatomy_exp_if_keyword": "A palavra-chave `if`: Inicia a decisão. Verifica a condição ao lado dela.",
+            "anatomy_exp_condition": "A condição (`temperatura > 25`): Uma expressão que é Verdadeira ou Falsa.",
+            "anatomy_exp_if_body": "O corpo do bloco `if`: Código indentado abaixo do `if`. Executa apenas se a condição for Verdadeira.",
+            "anatomy_exp_else_keyword": "A palavra-chave `else`: Especifica o caminho alternativo.",
+            "anatomy_exp_else_body": "O corpo do bloco `else`: Código indentado abaixo do `else`. Executa apenas se a condição do `if` for Falsa.",
+            "anatomy_code_string_hot": "\"Está quente!\"",
+            "anatomy_code_string_cool": "\"Está fresco.\"",
+            "feedback_anatomy_correct": "Excelente! Você dissecou a estrutura if/else!",
+            // Predict Path
+            "predict_title": "Prever o Caminho", "predict_desc": "Olhe para o código e o valor da variável. Qual bloco de código (`if` ou `else`) será executado? Clique no botão correto.",
+            "predict_variable_label": "Valor da variável:",
+            "predict_code_pass": "\"Aprovado\"", "predict_code_fail": "\"Reprovado\"",
+            "button_predict_if": "Bloco `if` executa", "button_predict_else": "Bloco `else` executa",
+            "feedback_predict_correct": "Correto! Como {variableValue} torna a condição `{condition}` Verdadeira, o bloco `if` executa.",
+            "feedback_predict_correct_else": "Correto! Como {variableValue} torna a condição `{condition}` Falsa, o bloco `else` executa.",
+            "feedback_predict_incorrect": "Não exatamente. Como {variableValue} torna a condição `{condition}` {truthValue}, o bloco `{correctBlock}` deveria executar.",
+            "feedback_predict_true": "Verdadeira", "feedback_predict_false": "Falsa", "feedback_predict_if_block": "if", "feedback_predict_else_block": "else",
+             // Build-an-Else
+            "build_title": "Construa uma Declaração `if/else`", "build_desc": "Arraste as peças para a área escura para construir uma declaração `if/else` que verifica se `count` é 0. Imprima \"Vazio\" se for, e \"Não Vazio\" caso contrário. Ordem e palavras-chave importam! (A indentação é mostrada visualmente, mas não estritamente forçada pelo posicionamento).",
+            "build_drop_placeholder": "Solte as peças aqui na ordem correta...",
+            "build_piece_if": "if", "build_piece_else": "else", "build_piece_condition_count": "count == 0", "build_piece_colon": ":",
+            "build_piece_print": "print()", "build_piece_string_empty": "\"Vazio\"", "build_piece_string_not_empty": "\"Não Vazio\"",
+            "build_piece_indent": "indentar", // Representa o conceito
+            "button_check_build": "Verificar Meu Código", "button_reset_build": "Reiniciar",
+            "feedback_build_correct": "Estrutura perfeita!", "feedback_build_almost": "Quase lá! Verifique a ordem das palavras-chave, condição, dois-pontos ou declarações print.",
+            "feedback_build_incorrect": "Não está certo. Revise a estrutura `if/else`: `if condicao:\n    codigo_indentado\nelse:\n    codigo_indentado`.",
+            "feedback_build_missing_if": "Faltando a palavra-chave `if` ou está no lugar errado.",
+            "feedback_build_missing_condition": "Faltando a condição (`count == 0`) ou está no lugar errado.",
+            "feedback_build_missing_colon_if": "Faltando os dois-pontos `:` após a condição `if`.",
+            "feedback_build_missing_print_if": "Faltando `print(\"Vazio\")` no bloco `if`.",
+            "feedback_build_missing_else": "Faltando a palavra-chave `else` ou está no lugar errado.",
+            "feedback_build_missing_colon_else": "Faltando os dois-pontos `:` após a palavra-chave `else`.",
+            "feedback_build_missing_print_else": "Faltando `print(\"Não Vazio\")` no bloco `else`.",
+            // Simulator
+            "simulator_title": "Sua Vez: Tome uma Decisão", "simulator_desc": "Escreva uma declaração `if/else` no editor. Verifique se uma variável chamada `age` (idade) é 18 ou maior. Se for, imprima \"Adulto\". Caso contrário, imprima \"Menor\". Nós testaremos para você!",
+            "simulator_editor_label": "Editor de Código:", "simulator_editor_placeholder": 'age = 20 # Valor de exemplo (testaremos outros)\nif age >= 18:\n    print("Adulto")\nelse:\n    print("Menor")',
+            "button_run_sim": "Executar Simulação", "simulator_output_label": "Saída Simulada (com caso de teste age=20):", "simulator_output_placeholder": "A saída aparecerá aqui...",
+            "feedback_sim_success": "Simulação bem-sucedida! Seu código imprime corretamente '{output}' para age = {testAge}.",
+            "feedback_sim_wrong_output": "Código executou, mas imprimiu '{output}'. Esperado '{expectedOutput}' para age = {testAge}. Verifique sua condição ou prints.",
+            "feedback_sim_error": "Erro de Sintaxe: Verifique a estrutura do seu código (if/else, dois-pontos, indentação).",
+            "feedback_sim_no_if": "Faltando declaração `if`.", "feedback_sim_no_else": "Faltando declaração `else`.", "feedback_sim_no_condition": "Condição ausente ou inválida (ex: `age >= 18`).",
+            "feedback_sim_no_print": "Faltando chamadas `print()` dentro dos blocos.", "feedback_sim_indentation": "Erro de indentação detectado. Código dentro do `if` e `else` deve ser indentado.",
+            "feedback_sim_empty": "O editor está vazio.",
+            // Mini Missions
+            "missions_title": "Mini Missões: Decisões!", "missions_desc": "Hora de alguns desafios rápidos de codificação usando `if/else`. Complete as tarefas abaixo.",
+            "mission1_title": "Missão 1: Positivo ou Não?", "mission1_desc": "Dada uma variável `number`, escreva uma declaração `if/else`. Se `number` for maior que 0, imprima \"Positivo\". Caso contrário, imprima \"Não positivo\".", "mission1_placeholder": 'number = 5 # Valor de exemplo\n\n# Seu código if/else aqui',
+            "button_test_mission_1": "Testar Missão 1",
+            "mission2_title": "Missão 2: Acesso Permitido?", "mission2_desc": "Dada uma variável `password`, escreva uma declaração `if/else`. Se `password` for exatamente igual à string \"open_sesame\", imprima \"Acesso Permitido\". Caso contrário, imprima \"Acesso Negado\".", "mission2_placeholder": 'password = "teste" # Valor de exemplo\n\n# Seu código if/else aqui',
+            "button_test_mission_2": "Testar Missão 2",
+            "mission3_title": "Missão 3: Par ou Ímpar?", "mission3_desc": "Dada uma variável `value`, escreva uma declaração `if/else` usando o operador módulo (`%`). Se `value % 2` for igual a 0, imprima \"Par\". Caso contrário, imprima \"Ímpar\".", "mission3_placeholder": 'value = 4 # Valor de exemplo\n\n# Seu código if/else aqui usando %',
+            "button_test_mission_3": "Testar Missão 3",
+            "feedback_mission_success": "Missão Cumprida! Passou nos testes.", "feedback_mission_syntax_error": "Erro de Sintaxe. Verifique dois-pontos, indentação.",
+            "feedback_mission_fail_test": "Erro de Lógica. Falhou no caso de teste (ex: Entrada: {input}, Esperado: '{expected}', Obtido: '{got}'). Verifique condição/prints.",
+            "feedback_mission1_hint": "Condição deve ser `number > 0`. Imprima \"Positivo\" ou \"Não positivo\".",
+            "feedback_mission2_hint": "Condição deve ser `password == \"open_sesame\"`. Imprima \"Acesso Permitido\" ou \"Acesso Negado\".",
+            "feedback_mission3_hint": "Condição deve ser `value % 2 == 0`. Imprima \"Par\" ou \"Ímpar\".",
+            "feedback_missions_summary_all_done": "Todas as {totalMissions} missões completas! Você está dominando as decisões!", "feedback_missions_summary_progress": "Completou {completedCount} de {totalMissions} missões. Continue escolhendo o caminho certo!",
+            // Completion
+            "completion_title": "Prática do Módulo 7 Completa!", "completion_desc": "Ótimo trabalho praticando declarações `if/else`! Você está ficando melhor em controlar o fluxo do seu código.<br> Pronto para decisões mais complexas? Tente a <strong>Prática Avançada</strong> do Módulo 7!",
+            "button_view_theory": "Ver Teoria Novamente", "button_start_advanced": "Iniciar Prática Avançada", "button_back_menu": "Voltar ao Menu do Curso"
+        },
+        zh: {
+            "page_title": "模块 7：处理替代方案 - else",
+            "tooltip_click_identify": "点击识别此部分",
+            "nav_theory": "查看理论", "nav_advanced": "高级练习", "nav_menu": "课程菜单",
+            "nav_anatomy": "剖析", "nav_predict": "预测路径", "nav_build": "构建", "nav_simulator": "模拟器", "nav_missions": "任务",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title": "模块 7：练习区 - 决策！", "header_subtitle": "让我们用 `if` 和 `else` 来练习在代码中做选择。",
+            // Anatomy
+            "anatomy_title": "剖析 `if/else` 语句", "anatomy_desc": "这个结构让代码可以在两条路径之间进行选择。点击下面高亮的部分来理解它们的作用。",
+            "anatomy_status_initial": "识别所有 5 个部分！", "anatomy_status_progress": "已识别 {count} / {total} 个部分。", "anatomy_status_done": "所有部分已识别！",
+            "anatomy_exp_if_keyword": "`if` 关键字：开始决策。检查旁边的条件。",
+            "anatomy_exp_condition": "条件 (`temperature > 25`)：一个结果为 True 或 False 的表达式。",
+            "anatomy_exp_if_body": "`if` 块主体：`if` 下方缩进的代码。仅在条件为 True 时运行。",
+            "anatomy_exp_else_keyword": "`else` 关键字：指定备选路径。",
+            "anatomy_exp_else_body": "`else` 块主体：`else` 下方缩进的代码。仅在 `if` 条件为 False 时运行。",
+            "anatomy_code_string_hot": "\"很热！\"",
+            "anatomy_code_string_cool": "\"很凉爽。\"",
+            "feedback_anatomy_correct": "太棒了！你成功剖析了 if/else 结构！",
+            // Predict Path
+            "predict_title": "预测路径", "predict_desc": "查看代码和变量的值。哪个代码块（`if` 或 `else`）会运行？点击正确的按钮。",
+            "predict_variable_label": "变量值：",
+            "predict_code_pass": "\"通过\"", "predict_code_fail": "\"失败\"",
+            "button_predict_if": "`if` 块运行", "button_predict_else": "`else` 块运行",
+            "feedback_predict_correct": "正确！因为 {variableValue} 使得条件 `{condition}` 为 True，所以 `if` 块运行。",
+            "feedback_predict_correct_else": "正确！因为 {variableValue} 使得条件 `{condition}` 为 False，所以 `else` 块运行。",
+            "feedback_predict_incorrect": "不太对。因为 {variableValue} 使得条件 `{condition}` 为 {truthValue}，所以应该运行 `{correctBlock}` 块。",
+            "feedback_predict_true": "True", "feedback_predict_false": "False", "feedback_predict_if_block": "if", "feedback_predict_else_block": "else",
+             // Build-an-Else
+            "build_title": "构建 `if/else` 语句", "build_desc": "将碎片拖到深色区域，构建一个 `if/else` 语句来检查 `count` 是否为 0。如果是，则打印 “Empty”，否则打印 “Not Empty”。顺序和关键字很重要！（缩进只是视觉展示，拖放位置不严格强制）。",
+            "build_drop_placeholder": "按正确顺序将碎片拖放到此处...",
+            "build_piece_if": "if", "build_piece_else": "else", "build_piece_condition_count": "count == 0", "build_piece_colon": ":",
+            "build_piece_print": "print()", "build_piece_string_empty": "\"Empty\"", "build_piece_string_not_empty": "\"Not Empty\"",
+            "build_piece_indent": "缩进", // 代表概念
+            "button_check_build": "检查我的代码", "button_reset_build": "重置",
+            "feedback_build_correct": "结构完美！", "feedback_build_almost": "差不多了！检查关键字、条件、冒号或 print 语句的顺序。",
+            "feedback_build_incorrect": "不太对。回顾 `if/else` 结构：`if condition:\n    indented_code\nelse:\n    indented_code`。",
+            "feedback_build_missing_if": "缺少 `if` 关键字或位置错误。",
+            "feedback_build_missing_condition": "缺少条件 (`count == 0`) 或位置错误。",
+            "feedback_build_missing_colon_if": "缺少 `if` 条件后的冒号 `:`。",
+            "feedback_build_missing_print_if": "`if` 块中缺少 `print(\"Empty\")`。",
+            "feedback_build_missing_else": "缺少 `else` 关键字或位置错误。",
+            "feedback_build_missing_colon_else": "缺少 `else` 关键字后的冒号 `:`。",
+            "feedback_build_missing_print_else": "`else` 块中缺少 `print(\"Not Empty\")`。",
+            // Simulator
+            "simulator_title": "轮到你了：做出决策", "simulator_desc": "在编辑器中编写一个 `if/else` 语句。检查名为 `age` 的变量是否大于或等于 18。如果是，则打印 “Adult”。否则，打印 “Minor”。我们会为你测试！",
+            "simulator_editor_label": "代码编辑器：", "simulator_editor_placeholder": 'age = 20 # 示例值（我们会测试其他值）\nif age >= 18:\n    print("Adult")\nelse:\n    print("Minor")',
+            "button_run_sim": "运行模拟", "simulator_output_label": "模拟输出（测试用例 age=20）：", "simulator_output_placeholder": "输出将显示在此处...",
+            "feedback_sim_success": "模拟成功！你的代码对于 age = {testAge} 正确打印了 '{output}'。",
+            "feedback_sim_wrong_output": "代码运行了，但打印了 '{output}'。对于 age = {testAge}，期望输出是 '{expectedOutput}'。检查你的条件或 print 语句。",
+            "feedback_sim_error": "语法错误：检查你的代码结构（if/else、冒号、缩进）。",
+            "feedback_sim_no_if": "缺少 `if` 语句。", "feedback_sim_no_else": "缺少 `else` 语句。", "feedback_sim_no_condition": "缺少或无效的条件（例如 `age >= 18`）。",
+            "feedback_sim_no_print": "块内部缺少 `print()` 调用。", "feedback_sim_indentation": "检测到缩进错误。`if` 和 `else` 内部的代码必须缩进。",
+            "feedback_sim_empty": "编辑器是空的。",
+            // Mini Missions
+            "missions_title": "迷你任务：决策！", "missions_desc": "是时候用 `if/else` 进行一些快速编码挑战了。完成以下任务。",
+            "mission1_title": "任务 1：正数还是非正数？", "mission1_desc": "给定一个变量 `number`，编写一个 `if/else` 语句。如果 `number` 大于 0，打印 “Positive”。否则，打印 “Not positive”。", "mission1_placeholder": 'number = 5 # 示例值\n\n# 在此编写你的 if/else 代码',
+            "button_test_mission_1": "测试任务 1",
+            "mission2_title": "任务 2：允许访问吗？", "mission2_desc": "给定一个变量 `password`，编写一个 `if/else` 语句。如果 `password` 完全等于字符串 “open_sesame”，打印 “Access Granted”。否则，打印 “Access Denied”。", "mission2_placeholder": 'password = "test" # 示例值\n\n# 在此编写你的 if/else 代码',
+            "button_test_mission_2": "测试任务 2",
+            "mission3_title": "任务 3：偶数还是奇数？", "mission3_desc": "给定一个变量 `value`，使用模运算符（`%`）编写一个 `if/else` 语句。如果 `value % 2` 等于 0，打印 “Even”。否则，打印 “Odd”。", "mission3_placeholder": 'value = 4 # 示例值\n\n# 在此使用 % 编写你的 if/else 代码',
+            "button_test_mission_3": "测试任务 3",
+            "feedback_mission_success": "任务完成！通过测试。", "feedback_mission_syntax_error": "语法错误。检查冒号、缩进。",
+            "feedback_mission_fail_test": "逻辑错误。未通过测试用例（例如，输入：{input}，期望：'{expected}'，得到：'{got}'）。检查条件/打印。",
+            "feedback_mission1_hint": "条件应为 `number > 0`。打印 “Positive” 或 “Not positive”。",
+            "feedback_mission2_hint": "条件应为 `password == \"open_sesame\"`。打印 “Access Granted” 或 “Access Denied”。",
+            "feedback_mission3_hint": "条件应为 `value % 2 == 0`。打印 “Even” 或 “Odd”。",
+            "feedback_missions_summary_all_done": "所有 {totalMissions} 个任务已完成！你正在掌握决策！", "feedback_missions_summary_progress": "已完成 {completedCount} / {totalMissions} 个任务。继续选择正确的路径！",
+            // Completion
+            "completion_title": "模块 7 练习完成！", "completion_desc": "做得好，练习了 `if/else` 语句！你越来越擅长控制代码流程了。<br> 准备好迎接更复杂的决策了吗？试试模块 7 的<strong>高级练习</strong>吧！",
+            "button_view_theory": "再次查看理论", "button_start_advanced": "开始高级练习", "button_back_menu": "返回课程菜单"
+        }
+    };
+
+
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // --- Language Management Functions (Copied from Module 0) ---
+        function getStoredLanguage() { /* ... Same as Module 0 ... */
+            const storedLang = localStorage.getItem('userLanguage');
+            if (storedLang && translations[storedLang]) return storedLang;
+            const browserLang = navigator.language || navigator.userLanguage;
+            if (browserLang.startsWith('pt')) return 'pt';
+            if (browserLang.startsWith('zh')) return 'zh';
+            return 'en'; // Default to English
+        }
+
+        function setLanguage(lang) { /* ... Adapted for Module 7 Activities ... */
+            if (!translations[lang]) lang = 'en'; // Fallback
+            localStorage.setItem('userLanguage', lang);
+            document.documentElement.lang = lang;
+            translatePage(lang); // Apply generic translations first
+
+            const langSelect = document.getElementById('languageSelect');
+            if (langSelect) langSelect.value = lang;
+
+            // Re-initialize or update language-dependent interactive content for Module 7
+            if (anatomyIfElseSection) setupIfElseAnatomy();
+            if (predictPathSection) setupPredictPathActivity(); // Reset prediction text/state
+            if (buildAnElseSection) setupBuildElseListeners(); // Repopulate pieces
+            // Simulators and Missions usually only need placeholder/label updates handled by translatePage
+            // but we might need to update summary text
+            if (missionsElseSection && typeof updateMissionElseSummary === 'function') {
+                updateMissionElseSummary();
+            }
+        }
+
+        function getTranslation(key, lang, replacements = {}) { /* ... Same as Module 0 ... */
+            let text = translations[lang]?.[key] ?? translations['en']?.[key] ?? `[${key}]`;
+            for (const placeholder in replacements) {
+                const regex = new RegExp(`\\{${placeholder}\\}`, 'g');
+                text = text.replace(regex, replacements[placeholder]);
+            }
+            return text;
+        }
+
+        function translatePage(lang) { /* ... Same as Module 0 ... */
+            if (!translations[lang]) lang = 'en';
+            document.querySelectorAll('[data-translate]').forEach(el => {
+                const key = el.getAttribute('data-translate');
+                const translation = getTranslation(key, lang);
+                 if (el.tagName === 'TITLE') { document.title = translation; }
+                 else if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') { /* Placeholders handled below */ }
+                 else if (el.tagName === 'OPTION') { el.textContent = translation; }
+                 else {
+                     if (translation.includes('<') && translation.includes('>')) { el.innerHTML = translation; }
+                     else { el.textContent = translation; }
+                 }
+            });
+            document.querySelectorAll('[data-translate-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-translate-placeholder');
+                el.setAttribute('placeholder', getTranslation(key, lang));
+            });
+             document.querySelectorAll('[data-translate-title]').forEach(el => {
+                 const key = el.getAttribute('data-translate-title');
+                 el.setAttribute('title', getTranslation(key, lang));
+             });
+        }
+
+        const initialLang = getStoredLanguage();
+
+        // --- Minimal Nav Logic (Copied from Module 0) ---
+        const navToggleButton = document.getElementById('minimal-nav-toggle');
+        const navPanel = document.getElementById('minimal-nav-panel');
+        const body = document.body;
+        if (navToggleButton && navPanel) { /* ... Same event listeners as Module 0 ... */
+            navToggleButton.addEventListener('click', (event) => { event.stopPropagation(); body.classList.toggle('nav-active'); navToggleButton.setAttribute('aria-expanded', body.classList.contains('nav-active')); });
+            document.addEventListener('click', (event) => { if (body.classList.contains('nav-active') && !navPanel.contains(event.target) && event.target !== navToggleButton && !navToggleButton.contains(event.target) ) { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); } });
+            navPanel.querySelectorAll('a').forEach(link => { link.addEventListener('click', () => { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); }); });
+            document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && body.classList.contains('nav-active')) { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); } });
+            navToggleButton.setAttribute('aria-expanded', 'false');
+        }
+
+        // --- Language Switcher Setup (Copied from Module 0) ---
+        const langSelect = document.getElementById('languageSelect');
+        if (langSelect) {
+            langSelect.addEventListener('change', (e) => setLanguage(e.target.value));
+        }
+
+        // --- Helper Function for Feedback (Copied from Module 0) ---
+        function showFeedback(elementId, messageKey, type = 'info', replacements = {}) { /* ... Same as Module 0 ... */
+            const feedbackEl = document.getElementById(elementId);
+            if (!feedbackEl) { console.error(`Feedback element not found: ${elementId}`); return; }
+            const currentLang = getStoredLanguage();
+            const translatedMessage = getTranslation(messageKey, currentLang, replacements);
+             if (translatedMessage.includes('<') && translatedMessage.includes('>')) { feedbackEl.innerHTML = translatedMessage; }
+             else { feedbackEl.textContent = translatedMessage; }
+            feedbackEl.className = 'feedback-message'; // Reset classes
+            feedbackEl.classList.add('visible', type);
+            const interactiveArea = feedbackEl.closest('.interactive-area');
+            if (!interactiveArea) return;
+            interactiveArea.classList.remove('success-glow-anim', 'shake-anim');
+            void interactiveArea.offsetWidth; // Trigger reflow
+            if (type === 'correct') { interactiveArea.classList.add('success-glow-anim'); }
+            else if (type === 'incorrect') { interactiveArea.classList.add('shake-anim'); }
+        }
+
+        // --- Activity 1: Anatomy of if/else ---
+        const anatomyIfElseSection = document.getElementById('anatomy-ifelse');
+        let ifElsePartExplanations = {};
+        const totalIfElseAnatomyParts = 5; // if, condition, if-body, else, else-body
+        let currentIfElseAnatomyListeners = [];
+
+        function setupIfElseAnatomy() {
+            if (!anatomyIfElseSection) return;
+            const currentLang = getStoredLanguage();
+            ifElsePartExplanations = {}; // Clear previous
+            document.querySelectorAll('#explanation-texts span[data-key]').forEach(span => {
+                const key = span.getAttribute('data-key');
+                // Use specific prefix convention if needed, e.g., 'anatomy_exp_if_keyword'
+                ifElsePartExplanations[key] = getTranslation(`anatomy_exp_${key}`, currentLang);
+            });
+
+            const parts = anatomyIfElseSection.querySelectorAll('.code-part');
+            const explanationsDiv = document.getElementById('anatomy-explanations');
+            const statusP = document.getElementById('anatomy-status');
+            const feedbackDiv = document.getElementById('anatomy-feedback');
+            let identifiedCount = 0;
+
+            // Remove old listeners
+             currentIfElseAnatomyListeners.forEach(({element, listener}) => element.removeEventListener('click', listener));
+             currentIfElseAnatomyListeners = [];
+
+            // Reset visual state
+            parts.forEach(p => p.classList.remove('identified'));
+            explanationsDiv.innerHTML = '';
+            statusP.innerHTML = getTranslation('anatomy_status_initial', currentLang, {total: totalIfElseAnatomyParts}); // Pass total for initial msg if needed
+            feedbackDiv.classList.remove('visible', 'correct', 'incorrect', 'info');
+
+            parts.forEach(part => {
+                const clickListener = () => {
+                    const partType = part.dataset.part;
+                    if (!part.classList.contains('identified') && partType && ifElsePartExplanations[partType]) {
+                        part.classList.add('identified');
+                        identifiedCount++;
+                        const p = document.createElement('p');
+                        p.classList.add('part-explanation');
+                        const icon = document.createElement('i'); icon.className = 'fas fa-check-circle';
+                        const strong = document.createElement('strong');
+                        const displayedTextElement = part.querySelector('span[class^="code-"], div[class^="code-"]'); // Check for span or div inside
+                        strong.textContent = (displayedTextElement ? displayedTextElement.textContent.trim().split('\n')[0] : part.textContent.trim().split('\n')[0]) + ': '; // Take first line if multi-line
+                        p.appendChild(icon); p.appendChild(strong);
+                        p.appendChild(document.createTextNode(ifElsePartExplanations[partType]));
+                        explanationsDiv.appendChild(p);
+
+                        statusP.innerHTML = getTranslation('anatomy_status_progress', currentLang, { count: identifiedCount, total: totalIfElseAnatomyParts });
+
+                        if (identifiedCount === totalIfElseAnatomyParts) {
+                            statusP.innerHTML = getTranslation('anatomy_status_done', currentLang);
+                            showFeedback('anatomy-feedback', 'feedback_anatomy_correct', 'correct');
+                        }
+                    } else if (!ifElsePartExplanations[partType]) {
+                        console.warn(`Explanation missing or part type invalid: ${partType}`);
+                    }
+                };
+                part.addEventListener('click', clickListener);
+                currentIfElseAnatomyListeners.push({ element: part, listener: clickListener });
+            });
+        }
+
+        // --- Activity 2: Predict the Path ---
+        const predictPathSection = document.getElementById('predict-path');
+        if (predictPathSection) {
+            const ifBtn = document.getElementById('predict-if-btn');
+            const elseBtn = document.getElementById('predict-else-btn');
+            const feedbackDiv = document.getElementById('predict-feedback');
+            const logicData = document.getElementById('predict-logic');
+            const variableDisplay = document.getElementById('predict-variable-value'); // To show value
+
+            function setupPredictPathActivity() {
+                // Reset state
+                feedbackDiv.classList.remove('visible', 'correct', 'incorrect');
+                ifBtn.disabled = false;
+                elseBtn.disabled = false;
+                ifBtn.classList.remove('success', 'secondary');
+                elseBtn.classList.remove('success', 'secondary');
+
+                // Currently fixed, could be randomized later
+                const varName = logicData.dataset.variableName;
+                const varValue = parseFloat(logicData.dataset.variableValue); // Assuming number for now
+                const conditionStr = logicData.dataset.condition;
+
+                // Simple evaluation (using Function constructor for basic safety, avoid full eval)
+                let conditionIsTrue;
+                try {
+                    const evaluateCondition = new Function(varName, `return ${conditionStr};`);
+                    conditionIsTrue = evaluateCondition(varValue);
+                } catch (e) {
+                    console.error("Error evaluating prediction condition:", e);
+                    conditionIsTrue = false; // Default on error
+                }
+
+                const correctPrediction = conditionIsTrue ? 'if' : 'else';
+                const currentLang = getStoredLanguage();
+                variableDisplay.textContent = `${varName} = ${varValue}`; // Update display
+
+                const handlePrediction = (event) => {
+                    const chosenPrediction = event.currentTarget.dataset.prediction;
+                    ifBtn.disabled = true;
+                    elseBtn.disabled = true;
+
+                    const replacements = {
+                         variableValue: `${varName} = ${varValue}`,
+                         condition: conditionStr,
+                         truthValue: getTranslation(conditionIsTrue ? 'feedback_predict_true' : 'feedback_predict_false', currentLang),
+                         correctBlock: getTranslation(correctPrediction === 'if' ? 'feedback_predict_if_block' : 'feedback_predict_else_block', currentLang)
+                     };
+
+                    if (chosenPrediction === correctPrediction) {
+                        const messageKey = conditionIsTrue ? 'feedback_predict_correct' : 'feedback_predict_correct_else';
+                        showFeedback('predict-feedback', messageKey, 'correct', replacements);
+                        event.currentTarget.classList.add('success');
+                    } else {
+                        showFeedback('predict-feedback', 'feedback_predict_incorrect', 'incorrect', replacements);
+                        event.currentTarget.classList.add('secondary'); // Mark wrong choice
+                        // Highlight correct button
+                        const correctBtn = correctPrediction === 'if' ? ifBtn : elseBtn;
+                        correctBtn.classList.add('success');
+                    }
+                };
+
+                // Remove old listeners before adding new ones
+                ifBtn.removeEventListener('click', handlePrediction);
+                elseBtn.removeEventListener('click', handlePrediction);
+                ifBtn.addEventListener('click', handlePrediction);
+                elseBtn.addEventListener('click', handlePrediction);
+            }
+        }
+
+
+        // --- Activity 3: Build-an-Else ---
+        const buildAnElseSection = document.getElementById('build-an-else');
+        let buildDropZone;
+
+        if (buildAnElseSection) {
+            const piecesContainer = document.getElementById('draggable-pieces');
+            buildDropZone = document.getElementById('build-drop-zone');
+            const checkBtn = document.getElementById('check-build-btn');
+            const resetBtn = document.getElementById('reset-build-btn');
+            const feedbackDiv = document.getElementById('build-feedback');
+
+             // Define pieces for if/else structure
+             const initialBuildElsePiecesData = [
+                 { key: 'build_piece_if', canonicalValue: 'if', displayValue: 'if', type: 'keyword-if' },
+                 { key: 'build_piece_else', canonicalValue: 'else', displayValue: 'else', type: 'keyword-else' },
+                 { key: 'build_piece_condition_count', canonicalValue: 'count == 0', displayValue: 'count == 0', type: 'condition' },
+                 { key: 'build_piece_colon', canonicalValue: ':', displayValue: ':', type: 'colon' },
+                 { key: 'build_piece_print', canonicalValue: 'print()', displayValue: 'print()', type: 'print' }, // Generic print
+                 { key: 'build_piece_string_empty', canonicalValue: '"Empty"', displayValue: '"Empty"', type: 'string' },
+                 { key: 'build_piece_string_not_empty', canonicalValue: '"Not Empty"', displayValue: '"Not Empty"', type: 'string' },
+                 // Placeholder for indentation concept - not directly draggable in this simple setup
+                 // { key: 'build_piece_indent', canonicalValue: 'indent', displayValue: 'indent', type: 'indent' }
+             ];
+
+            let draggedElement = null; let touchDragElement = null; let originalPiece = null; let startX, startY, offsetX, offsetY;
+
+            // Create piece element (using canonical value for data-value)
+            function createBuildElsePieceElement(pieceData, currentLang) {
+                const piece = document.createElement('span');
+                piece.classList.add('piece', 'code-font');
+                piece.draggable = true;
+                const displayText = pieceData.key ? getTranslation(pieceData.key, currentLang) : pieceData.displayValue;
+                piece.textContent = displayText;
+                piece.dataset.value = pieceData.canonicalValue; // Use canonical for logic/check
+                piece.dataset.type = pieceData.type;
+                if(pieceData.key) piece.dataset.transKey = pieceData.key; // Store key if exists
+
+                // Apply type-specific styles from CSS
+                piece.setAttribute('data-type', pieceData.type); // Ensure attribute is set for CSS selector
+
+                addDragListeners(piece); // Reuse drag listeners
+                addTouchListeners(piece); // Reuse touch listeners
+                return piece;
+             }
+
+            // Populate pieces area
+            function populateBuildElsePieces() {
+                 const currentLang = getStoredLanguage();
+                 piecesContainer.innerHTML = '';
+                 const shuffledPieces = [...initialBuildElsePiecesData].sort(() => Math.random() - 0.5);
+                 shuffledPieces.forEach(pData => {
+                     piecesContainer.appendChild(createBuildElsePieceElement(pData, currentLang));
+                 });
+             }
+
+            // Reset drop zone and feedback
+            function setupBuildElseListeners() {
+                 populateBuildElsePieces(); // Populate with current lang
+                 buildDropZone.innerHTML = ''; // Clear drop zone
+                 const placeholder = document.createElement('span');
+                 placeholder.id = 'build-drop-zone-placeholder';
+                 placeholder.dataset.translate = 'build_drop_placeholder';
+                 placeholder.textContent = getTranslation('build_drop_placeholder', getStoredLanguage());
+                 buildDropZone.appendChild(placeholder);
+                 feedbackDiv.classList.remove('visible', 'correct', 'incorrect', 'info');
+                 checkBtn.classList.remove('success');
+                 checkBtn.disabled = false;
+                 buildDropZone.classList.remove('over');
+             }
+
+             // Drag/Touch Listeners (Mostly reused from Module 0, ensure target is piecesContainer)
+             function addDragListeners(element) { /* ... Same as Module 0 ... */
+                 element.addEventListener('dragstart', (e) => { if (e.target.closest('#build-drop-zone')) { e.preventDefault(); return; } draggedElement = element; element.classList.add('ghosting'); e.dataTransfer.effectAllowed = 'move'; try { e.dataTransfer.setData('text/plain', element.dataset.value); } catch (err) {} });
+                 element.addEventListener('dragend', () => { if (draggedElement && draggedElement.parentNode) { draggedElement.classList.remove('ghosting'); } draggedElement = null; buildDropZone.classList.remove('over'); });
+             }
+             function handleTouchStart(e) { /* ... Adapted slightly for buildDropZone ... */
+                 if (touchDragElement || e.target.closest('#build-drop-zone')) return; originalPiece = e.target.closest('.piece'); if (!originalPiece || !piecesContainer.contains(originalPiece)) return; const touch = e.targetTouches[0]; startX = touch.clientX; startY = touch.clientY; const rect = originalPiece.getBoundingClientRect(); offsetX = startX - rect.left; offsetY = startY - rect.top; touchDragElement = originalPiece.cloneNode(true); touchDragElement.classList.add('dragging'); touchDragElement.style.position = 'fixed'; touchDragElement.style.left = `${startX - offsetX}px`; touchDragElement.style.top = `${startY - offsetY}px`; touchDragElement.style.width = `${rect.width}px`; touchDragElement.style.height = `${rect.height}px`; document.body.appendChild(touchDragElement); originalPiece.classList.add('ghosting'); e.preventDefault();
+             }
+             function handleTouchMove(e) { /* ... Adapted slightly for buildDropZone ... */
+                 if (!touchDragElement) return; e.preventDefault(); const touch = e.targetTouches[0]; const currentX = touch.clientX; const currentY = touch.clientY; touchDragElement.style.left = `${currentX - offsetX}px`; touchDragElement.style.top = `${currentY - offsetY}px`; touchDragElement.style.display = 'none'; const elemBelow = document.elementFromPoint(currentX, currentY); touchDragElement.style.display = ''; const isOverDropZone = elemBelow === buildDropZone || buildDropZone.contains(elemBelow); buildDropZone.classList.toggle('over', isOverDropZone);
+             }
+             function handleTouchEnd(e) { /* ... Adapted slightly for buildDropZone ... */
+                 if (!touchDragElement || !originalPiece) return; const touch = e.changedTouches[0]; const finalX = touch.clientX; const finalY = touch.clientY; touchDragElement.style.display = 'none'; const elemBelow = document.elementFromPoint(finalX, finalY); touchDragElement.style.display = ''; const droppedInZone = elemBelow === buildDropZone || buildDropZone.contains(elemBelow); if (droppedInZone) { buildDropZone.querySelector('#build-drop-zone-placeholder')?.remove(); const droppedPiece = originalPiece.cloneNode(true); droppedPiece.classList.remove('ghosting'); droppedPiece.draggable = false; droppedPiece.style.cursor = 'default'; droppedPiece.removeEventListener('touchstart', handleTouchStart); droppedPiece.removeEventListener('touchmove', handleTouchMove); droppedPiece.removeEventListener('touchend', handleTouchEnd); buildDropZone.appendChild(droppedPiece); originalPiece.remove(); } else { originalPiece.classList.remove('ghosting'); } if (touchDragElement.parentNode === document.body) { document.body.removeChild(touchDragElement); } buildDropZone.classList.remove('over'); touchDragElement = null; originalPiece = null;
+             }
+             function addTouchListeners(element) { /* ... Same as Module 0 ... */
+                 element.addEventListener('touchstart', handleTouchStart, { passive: false }); element.addEventListener('touchmove', handleTouchMove, { passive: false }); element.addEventListener('touchend', handleTouchEnd);
+             }
+
+            // Drop Zone Listeners (Adapted for buildDropZone)
+            buildDropZone.addEventListener('dragover', (e) => { e.preventDefault(); buildDropZone.classList.add('over'); });
+            buildDropZone.addEventListener('dragleave', () => { buildDropZone.classList.remove('over'); });
+            buildDropZone.addEventListener('drop', (e) => {
+                 e.preventDefault(); buildDropZone.classList.remove('over');
+                 if (draggedElement && piecesContainer.contains(draggedElement)) {
+                     buildDropZone.querySelector('#build-drop-zone-placeholder')?.remove();
+                     const droppedPiece = draggedElement; droppedPiece.classList.remove('ghosting'); droppedPiece.draggable = false; droppedPiece.style.cursor = 'default';
+                     // Simple append, order matters based on drop sequence
+                     buildDropZone.appendChild(droppedPiece);
+                     draggedElement = null;
+                 }
+             });
+
+            // Check button logic for if/else structure (simplified order check)
+            checkBtn.addEventListener('click', () => {
+                 const droppedPieces = Array.from(buildDropZone.querySelectorAll('.piece'));
+                 const sequenceValues = droppedPieces.map(p => p.dataset.value); // Use canonical values
+
+                 // Define the target sequence (simplified - ignores indentation pieces)
+                 const correctSequence = [
+                     'if', 'count == 0', ':',
+                     'print()', '"Empty"', // Assume print and string are associated
+                     'else', ':',
+                     'print()', '"Not Empty"' // Assume print and string are associated
+                 ];
+
+                 // Basic structural check (order and presence)
+                 let correct = true;
+                 let feedbackKey = 'feedback_build_correct';
+
+                 if (sequenceValues.length !== correctSequence.length) {
+                     correct = false;
+                 } else {
+                     // Check if sequence contains the correct elements in some reasonable order
+                     // This is a simplified check. A real parser would be needed for full validation.
+                     const has = (val) => sequenceValues.includes(val);
+                     const pos = (val) => sequenceValues.indexOf(val);
+
+                     if (!has('if') || pos('if') !== 0) { correct = false; feedbackKey = 'feedback_build_missing_if'; }
+                     else if (!has('count == 0') || pos('count == 0') !== 1) { correct = false; feedbackKey = 'feedback_build_missing_condition'; }
+                     else if (!has(':') || pos(':') !== 2) { correct = false; feedbackKey = 'feedback_build_missing_colon_if'; }
+                     else if (!has('print()') || pos('print()') !== 3) { correct = false; feedbackKey = 'feedback_build_missing_print_if'; } // Very simplistic check
+                     else if (!has('"Empty"') || pos('"Empty"') !== 4) { correct = false; feedbackKey = 'feedback_build_missing_print_if'; }
+                     else if (!has('else') || pos('else') !== 5) { correct = false; feedbackKey = 'feedback_build_missing_else'; }
+                     else if (sequenceValues[6] !== ':') { correct = false; feedbackKey = 'feedback_build_missing_colon_else'; } // Use index as second ':' is identical
+                     else if (sequenceValues[7] !== 'print()') { correct = false; feedbackKey = 'feedback_build_missing_print_else'; } // Very simplistic check
+                     else if (!has('"Not Empty"') || pos('"Not Empty"') !== 8) { correct = false; feedbackKey = 'feedback_build_missing_print_else'; }
+                 }
+
+
+                 if (correct) {
+                     showFeedback('build-feedback', feedbackKey, 'correct');
+                     checkBtn.classList.add('success');
+                     checkBtn.disabled = true;
+                 } else {
+                     // If specific error not caught, use general messages
+                     if (feedbackKey === 'feedback_build_correct') { // Only happens if length check failed initially
+                          feedbackKey = droppedPieces.length > 0 ? 'feedback_build_almost' : 'feedback_build_incorrect';
+                     }
+                     showFeedback('build-feedback', feedbackKey, 'incorrect');
+                     checkBtn.classList.remove('success');
+                 }
+            });
+            resetBtn.addEventListener('click', setupBuildElseListeners);
+        }
+
+
+        // --- Activity 4: Code Simulator (Decision Maker) ---
+        const simDecisionSection = document.getElementById('code-simulator-decision');
+        if(simDecisionSection) {
+            const editor = document.getElementById('sim-editor-input');
+            const outputArea = document.getElementById('sim-output');
+            const runBtn = document.getElementById('run-sim-btn');
+            const feedbackDiv = document.getElementById('sim-feedback');
+
+            runBtn.addEventListener('click', () => {
+                 const userCode = editor.value; // Don't trim yet, need structure
+                 let placeholder = outputArea.querySelector('.placeholder');
+                 outputArea.innerHTML = ''; // Clear previous output
+                 if (!placeholder) {
+                     placeholder = document.createElement('span');
+                     placeholder.className = 'placeholder';
+                     placeholder.dataset.translate = 'simulator_output_placeholder';
+                 }
+                 placeholder.textContent = getTranslation('simulator_output_placeholder', getStoredLanguage());
+                 feedbackDiv.classList.remove('visible', 'correct', 'incorrect', 'info');
+
+                 if (userCode.trim() === '') {
+                     outputArea.appendChild(placeholder);
+                     showFeedback('sim-feedback', 'feedback_sim_empty', 'info');
+                     return;
+                 }
+
+                 // Basic Syntax Checks (Regex are fragile for Python syntax)
+                 const hasIf = /^\s*if\s+.+:/m.test(userCode);
+                 const hasElse = /^\s*else\s*:/m.test(userCode);
+                 const hasIfPrint = /^\s*if\s+.+:\s*\n\s+print\(.+\)/m.test(userCode);
+                 const hasElsePrint = /^\s*else\s*:\s*\n\s+print\(.+\)/m.test(userCode);
+                 const hasAgeCondition = /if\s+age\s*(>=|>)\s*18\s*:/m.test(userCode);
+
+                 // Test Case
+                 const testAge = 20;
+                 const expectedOutput = "Adult"; // For age = 20
+
+                 // Simulate Execution (Very basic - extracts print content if structure looks okay)
+                 let actualOutput = null;
+                 let simulationError = false;
+                 let errorKey = 'feedback_sim_error'; // Generic error
+
+                 if (!hasIf) { simulationError = true; errorKey = 'feedback_sim_no_if'; }
+                 else if (!hasAgeCondition) { simulationError = true; errorKey = 'feedback_sim_no_condition'; }
+                 else if (!hasElse) { simulationError = true; errorKey = 'feedback_sim_no_else'; }
+                 else if (!hasIfPrint) { simulationError = true; errorKey = 'feedback_sim_no_print'; /* Or Indentation */ }
+                 else if (!hasElsePrint) { simulationError = true; errorKey = 'feedback_sim_no_print'; /* Or Indentation */ }
+                 else {
+                     try {
+                        // Attempt to find the printed strings based on the test case
+                        // This is NOT a real execution environment
+                        const ifBlockMatch = userCode.match(/if\s+age\s*(>=|>)\s*18\s*:\s*\n\s+print\(\s*(["'])(.*?)\2\s*\)/m);
+                        const elseBlockMatch = userCode.match(/else\s*:\s*\n\s+print\(\s*(["'])(.*?)\2\s*\)/m);
+
+                        if (ifBlockMatch && elseBlockMatch) {
+                           if (testAge >= 18) {
+                                actualOutput = ifBlockMatch[3];
+                           } else {
+                                actualOutput = elseBlockMatch[3];
+                           }
+                        } else {
+                            simulationError = true; // Structure likely wrong despite regex passes
+                            errorKey = 'feedback_sim_error';
+                        }
+
+                     } catch (e) {
+                         console.error("Simulation parsing error:", e);
+                         simulationError = true;
+                         errorKey = 'feedback_sim_error';
+                     }
+                 }
+
+
+                 if (simulationError) {
+                     outputArea.appendChild(placeholder);
+                     showFeedback('sim-feedback', errorKey, 'incorrect');
+                 } else if (actualOutput !== null) {
+                     const outputLine = document.createElement('span');
+                     outputLine.classList.add('output-line');
+                     outputLine.textContent = `> ${actualOutput}`;
+                     outputArea.appendChild(outputLine);
+
+                     if (actualOutput === expectedOutput) {
+                         showFeedback('sim-feedback', 'feedback_sim_success', 'correct', { output: actualOutput, testAge: testAge });
+                     } else {
+                         showFeedback('sim-feedback', 'feedback_sim_wrong_output', 'incorrect', { output: actualOutput, expectedOutput: expectedOutput, testAge: testAge });
+                     }
+                 } else {
+                     // Should not happen if simulationError is false, but as a fallback
+                     outputArea.appendChild(placeholder);
+                     showFeedback('sim-feedback', 'feedback_sim_error', 'incorrect');
+                 }
+             });
+        }
+
+
+        // --- Activity 5: Mini Missions (if/else) ---
+        const missionsElseSection = document.getElementById('mini-missions-else');
+        let updateMissionElseSummary; // Define scope
+
+        if (missionsElseSection) {
+            const missionRunButtons = missionsElseSection.querySelectorAll('.mission-run-btn');
+            const summaryFeedback = document.getElementById('missions-summary-feedback');
+            const totalMissions = missionsElseSection.querySelectorAll('.mission').length;
+            let completedMissionsCount = 0;
+
+            updateMissionElseSummary = function() { // Assign function
+                 completedMissionsCount = missionsElseSection.querySelectorAll('.mission[data-completed="true"]').length;
+                 const currentLang = getStoredLanguage();
+                 if (completedMissionsCount === totalMissions) {
+                     showFeedback('missions-summary-feedback', 'feedback_missions_summary_all_done', 'correct', { totalMissions: totalMissions });
+                 } else if (completedMissionsCount > 0) {
+                     showFeedback('missions-summary-feedback', 'feedback_missions_summary_progress', 'info', { completedCount: completedMissionsCount, totalMissions: totalMissions });
+                 } else {
+                     summaryFeedback.classList.remove('visible', 'correct', 'incorrect', 'info');
+                 }
+            }
+
+            missionRunButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const missionId = button.dataset.missionId;
+                    const missionDiv = document.getElementById(`mission-${missionId}`);
+                    if (!missionDiv) return;
+                    const editor = missionDiv.querySelector('.mission-editor');
+                    const outputArea = missionDiv.querySelector('.mission-output');
+                    const feedbackDivId = `mission-feedback-${missionId}`;
+                    const feedbackDiv = document.getElementById(feedbackDivId);
+                    const statusIcon = missionDiv.querySelector('.mission-status i');
+                    const userCode = editor.value;
+                    outputArea.innerHTML = ''; // Clear output
+                    let success = false;
+                    let feedbackMessageKey = 'feedback_mission_syntax_error';
+                    let feedbackType = 'incorrect';
+                    let feedbackReplacements = {};
+                    let testPassed = true;
+
+                    // --- Basic Validation Logic ---
+                    // This is highly simplified and doesn't run real Python.
+                    // It checks for keywords and expected output strings based on test cases.
+                    try {
+                        let testCases = [];
+                        let checkLogic = (code, inputVar, expectedIf, expectedElse) => { return null; }; // Placeholder
+
+                        if (missionId === '1') { // Positive or Not?
+                            testCases = [{number: 5, expected: "Positive"}, {number: 0, expected: "Not positive"}, {number: -3, expected: "Not positive"}];
+                            checkLogic = (code, inputVar, expectedIf, expectedElse) => {
+                                const number = inputVar.number;
+                                const expected = (number > 0) ? expectedIf : expectedElse;
+                                const ifMatch = code.match(/if\s+number\s*>\s*0\s*:\s*\n\s+print\(\s*(["']?)Positive\1\s*\)/m);
+                                const elseMatch = code.match(/else\s*:\s*\n\s+print\(\s*(["']?)Not positive\1\s*\)/m);
+                                if (!ifMatch || !elseMatch) return { pass: false, got: "Structure/Print Mismatch", expected: expected };
+                                return { pass: true, got: (number > 0 ? "Positive" : "Not positive"), expected: expected }; // Simulate output
+                            };
+                            feedbackMessageKey = 'feedback_mission1_hint'; // Hint if fails
+                        } else if (missionId === '2') { // Access Granted?
+                             testCases = [{password: "open_sesame", expected: "Access Granted"}, {password: "wrong", expected: "Access Denied"}, {password: "", expected: "Access Denied"}];
+                            checkLogic = (code, inputVar, expectedIf, expectedElse) => {
+                                const password = inputVar.password;
+                                const expected = (password === "open_sesame") ? expectedIf : expectedElse;
+                                const ifMatch = code.match(/if\s+password\s*==\s*(["'])open_sesame\1\s*:\s*\n\s+print\(\s*(["']?)Access Granted\2\s*\)/m);
+                                const elseMatch = code.match(/else\s*:\s*\n\s+print\(\s*(["']?)Access Denied\2\s*\)/m);
+                                if (!ifMatch || !elseMatch) return { pass: false, got: "Structure/Print Mismatch", expected: expected };
+                                return { pass: true, got: (password === "open_sesame" ? "Access Granted" : "Access Denied"), expected: expected };
+                            };
+                            feedbackMessageKey = 'feedback_mission2_hint';
+                        } else if (missionId === '3') { // Even or Odd?
+                             testCases = [{value: 4, expected: "Even"}, {value: 7, expected: "Odd"}, {value: 0, expected: "Even"}];
+                             checkLogic = (code, inputVar, expectedIf, expectedElse) => {
+                                const value = inputVar.value;
+                                const expected = (value % 2 === 0) ? expectedIf : expectedElse;
+                                const ifMatch = code.match(/if\s+value\s*%\s*2\s*==\s*0\s*:\s*\n\s+print\(\s*(["']?)Even\1\s*\)/m);
+                                const elseMatch = code.match(/else\s*:\s*\n\s+print\(\s*(["']?)Odd\1\s*\)/m);
+                                if (!ifMatch || !elseMatch) return { pass: false, got: "Structure/Print Mismatch", expected: expected };
+                                return { pass: true, got: (value % 2 === 0 ? "Even" : "Odd"), expected: expected };
+                            };
+                            feedbackMessageKey = 'feedback_mission3_hint';
+                        }
+
+                        // Run tests
+                        let firstFail = null;
+                        outputArea.innerHTML = ''; // Clear before showing test results
+                        for (const testCase of testCases) {
+                            const expectedIf = testCases[0].expected; // Assume first case covers 'if' goal
+                            const expectedElse = testCases.find(tc => tc.expected !== expectedIf)?.expected ?? "Unknown"; // Find an 'else' goal
+                            const result = checkLogic(userCode, testCase, expectedIf, expectedElse);
+
+                            const outputLine = document.createElement('span');
+                            outputLine.classList.add('output-line');
+                            const testInputString = Object.entries(testCase).filter(([key]) => key !== 'expected').map(([key, val]) => `${key}=${typeof val === 'string' ? `"${val}"` : val}`).join(', ');
+                            if(result.got === result.expected) {
+                                outputLine.textContent = `Test (Input: ${testInputString}): Passed ✔ (Output: ${result.got})`;
+                                outputLine.style.color = 'var(--success-color)';
+                            } else {
+                                testPassed = false;
+                                if (!firstFail) firstFail = { input: testInputString, expected: result.expected, got: result.got };
+                                outputLine.textContent = `Test (Input: ${testInputString}): Failed ❌ (Expected: '${result.expected}', Got: '${result.got || 'Error'}')`;
+                                outputLine.style.color = 'var(--error-color)';
+                            }
+                             outputArea.appendChild(outputLine);
+                        }
+                        success = testPassed; // Overall success requires all tests to pass
+
+                        if(success) {
+                             feedbackMessageKey = 'feedback_mission_success';
+                             feedbackType = 'correct';
+                        } else {
+                            feedbackMessageKey = 'feedback_mission_fail_test'; // Overwrite hint with fail message
+                            feedbackType = 'incorrect';
+                            feedbackReplacements = firstFail || {};
+                        }
+
+                    } catch (error) {
+                        console.error("Mission validation error:", error);
+                        success = false;
+                        testPassed = false;
+                        feedbackMessageKey = 'feedback_mission_syntax_error'; // Default to syntax on error
+                        outputArea.textContent = 'Error during validation.';
+                    }
+                    // --- End Validation ---
+
+                    if (success) {
+                        statusIcon.className = 'fas fa-check-circle';
+                        missionDiv.dataset.completed = 'true';
+                    } else {
+                        statusIcon.className = 'fas fa-times-circle';
+                        missionDiv.dataset.completed = 'false';
+                    }
+                    showFeedback(feedbackDivId, feedbackMessageKey, feedbackType, feedbackReplacements);
+                    updateMissionElseSummary();
+                });
+            });
+            updateMissionElseSummary(); // Initial call
+        }
+
+
+        // --- Fade-in animations on scroll (Copied from Module 0) ---
+        const fadeElements = document.querySelectorAll('.fade-in');
+        const animateOnScroll = () => { /* ... Same as Module 0 ... */
+             const windowHeight = window.innerHeight;
+             fadeElements.forEach(el => { if (el.style.opacity === '1') return; const rect = el.getBoundingClientRect(); if (rect.top < windowHeight - 80 && rect.bottom >= 50) { el.style.opacity = '1'; el.style.transform = 'translateY(0)'; } });
+        };
+        const scrollHandler = () => window.requestAnimationFrame(animateOnScroll);
+        window.addEventListener('scroll', scrollHandler);
+
+
+        // --- Initial Language Application and Activity Setups ---
+        setLanguage(initialLang); // Apply language FIRST
+        animateOnScroll(); // Trigger initial animation check
+
+        // Call initial setups for Module 7 activities *after* language is set
+        if (anatomyIfElseSection) setupIfElseAnatomy(); // Already called by setLanguage, but safe to call again
+        if (predictPathSection) setupPredictPathActivity();
+        if (buildAnElseSection) setupBuildElseListeners(); // Already called by setLanguage
+        // Simulator and Missions are primarily event-driven
+
+    }); // End DOMContentLoaded
+    </script>
+
+</body>
+</html>

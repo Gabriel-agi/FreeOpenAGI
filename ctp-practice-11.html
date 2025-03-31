@@ -1,0 +1,1527 @@
+<!DOCTYPE html>
+<!-- Language set by JS -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Title set by JS -->
+    <title data-translate="page_title">Module 11: List Modification Practice</title>
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* --- Base Styles & Variables --- */
+        :root {
+            --primary-color: #007bff; /* Keep primary blue */
+            --secondary-color: #6c757d;
+            --background-light: #f8f9fa;
+            --background-medium: #e9ecef;
+            --background-dark: #343a40;
+            --text-light: #f8f9fa;
+            --text-dark: #212529;
+            --accent-color: #ffc107; /* Yellow */
+            --success-color: #28a745; /* Green */
+            --error-color: #dc3545;   /* Red */
+            --info-color: #17a2b8;    /* Teal */
+            --list-color-base: #e83e8c; /* Pinkish for lists */
+            --list-color-add: #20c997; /* Teal-Green for add */
+            --list-color-remove: #fd7e14; /* Orange for remove */
+            --list-color-replace: #6610f2; /* Indigo for replace */
+            --border-radius: 8px;
+            --transition-speed: 0.3s;
+            --font-body: 'Roboto', sans-serif;
+            --font-title: 'Orbitron', sans-serif;
+            --selection-highlight-bg: rgba(0, 123, 255, 0.1);
+            --selection-highlight-border: rgba(0, 123, 255, 0.4);
+            /* Colors matching news.html for consistency in switcher */
+            --nav-primary: #6e48aa;
+            --nav-success: #4cc9f0;
+            --nav-dark: #1a1a2e;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; font-size: 16px; }
+        body {
+            font-family: var(--font-body); line-height: 1.7;
+            background-color: var(--background-light); color: var(--text-dark);
+            overflow-x: hidden;
+        }
+
+        /* --- Utility Classes --- */
+        .container { max-width: 960px; margin: 0 auto; padding: 0 15px; }
+        .text-center { text-align: center; }
+        .highlight { color: var(--primary-color); font-weight: bold; }
+        .code-font { font-family: 'Courier New', Courier, monospace; }
+        .hidden { display: none !important; }
+        .button-group {
+            margin-top: 2rem;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1rem;
+        }
+
+        /* --- Advanced Animations (Same as Module 0) --- */
+        .fade-in { opacity: 0; transform: translateY(20px); animation: fadeInAnimation 0.8s ease-out forwards; }
+        .fade-in.delay-1 { animation-delay: 0.2s; }
+        .fade-in.delay-2 { animation-delay: 0.4s; }
+        .fade-in.delay-3 { animation-delay: 0.6s; }
+        .fade-in.delay-4 { animation-delay: 0.8s; }
+        @keyframes fadeInAnimation { to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulseHeaderIcon {
+            0% { transform: scale(1); opacity: 0.1; filter: brightness(1); }
+            50% { transform: scale(1.05); opacity: 0.25; filter: brightness(1.2); }
+            100% { transform: scale(1); opacity: 0.1; filter: brightness(1); }
+        }
+        @keyframes successGlow {
+             0% { box-shadow: 0 0 3px rgba(40, 167, 69, 0.3); transform: scale(1); }
+             50% { box-shadow: 0 0 12px 5px rgba(40, 167, 69, 0.5); transform: scale(1.01); }
+             100% { box-shadow: 0 0 3px rgba(40, 167, 69, 0.3); transform: scale(1); }
+        }
+        .success-glow-anim { animation: successGlow 0.9s ease-out; }
+        @keyframes shake {
+          10%, 90% { transform: translate3d(-2px, 0, 0); } 20%, 80% { transform: translate3d(3px, 0, 0); }
+          30%, 50%, 70% { transform: translate3d(-5px, 0, 0); } 40%, 60% { transform: translate3d(5px, 0, 0); }
+        }
+        .shake-anim { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes iconAppearCorrect {
+            0% { transform: scale(0.5) rotate(-15deg); opacity: 0; }
+            60% { transform: scale(1.2) rotate(5deg); opacity: 1; }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        @keyframes iconAppearIncorrect {
+             0% { transform: scale(0.5) rotate(-15deg); opacity: 0; }
+             50% { transform: scale(1.2) rotate(10deg); opacity: 1; }
+             70% { transform: scale(0.9) rotate(-5deg); }
+             100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        @keyframes iconAppearMissed {
+             0% { transform: scale(0.8) rotateY(90deg); opacity: 0; }
+             100% { transform: scale(1) rotateY(0deg); opacity: 0.8; }
+        }
+        .action-button:active:not(:disabled) {
+            transform: translateY(1px) scale(0.98);
+            filter: brightness(0.95);
+        }
+        @keyframes listChangeHighlight {
+             0% { background-color: transparent; }
+             50% { background-color: rgba(255, 193, 7, 0.3); } /* Yellow flash */
+             100% { background-color: transparent; }
+        }
+        .list-change-anim { animation: listChangeHighlight 0.6s ease-out; }
+
+
+        /* --- Minimal Retractable Nav (Same as Module 0, including Language Switcher) --- */
+        .minimal-nav-button {
+            position: fixed; top: 15px; right: 15px; z-index: 1001;
+            background-color: rgba(52, 58, 64, 0.75); color: var(--text-light);
+            border: none; border-radius: var(--border-radius); padding: 8px 12px;
+            cursor: pointer; transition: background-color var(--transition-speed), opacity var(--transition-speed), transform var(--transition-speed);
+            font-size: 1.1rem; opacity: 0.6; box-shadow: 0 2px 5px rgba(0,0,0,0.2); line-height: 1;
+        }
+        .minimal-nav-button:hover { background-color: rgba(52, 58, 64, 0.95); opacity: 1; transform: scale(1.05); }
+        .minimal-nav {
+            position: fixed; top: 60px; right: 15px; z-index: 1000;
+            background-color: var(--background-dark); border-radius: var(--border-radius);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3); padding: 0.8rem; opacity: 0;
+            transform: translateY(-15px) scale(0.95); transform-origin: top right;
+            pointer-events: none; transition: opacity var(--transition-speed) ease, transform var(--transition-speed) ease;
+            min-width: 200px;
+        }
+        body.nav-active .minimal-nav { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+        .minimal-nav ul { list-style: none; margin: 0; padding: 0; }
+        .minimal-nav ul li { margin-bottom: 5px; }
+        .minimal-nav ul li:last-child { margin-bottom: 0; }
+        .minimal-nav ul li a {
+            display: flex; align-items: center; color: var(--text-light);
+            text-decoration: none; padding: 0.6rem 1rem; border-radius: 4px;
+            transition: background-color var(--transition-speed), color var(--transition-speed);
+            white-space: nowrap; font-weight: 400; font-size: 0.95rem;
+        }
+        .minimal-nav ul li a i.fas { margin-right: 10px; width: 1.2em; text-align: center; opacity: 0.8; transition: opacity var(--transition-speed); }
+        .minimal-nav ul li a:hover { background-color: var(--primary-color); color: var(--text-light); }
+        .minimal-nav ul li a:hover i.fas { opacity: 1; }
+        .minimal-nav .language-switcher-item { padding: 0.5rem 1rem; border-top: 1px solid var(--secondary-color); margin-top: 8px; padding-top: 13px; }
+        #languageSelect {
+            width: 100%; background: rgba(255,255,255,0.1); color: white;
+            border: 1px solid var(--nav-success); border-radius: 5px; padding: 6px 30px 6px 12px;
+            cursor: pointer; font-size: 0.9rem; appearance: none; -webkit-appearance: none; -moz-appearance: none;
+            background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%234CC9F0%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E');
+            background-repeat: no-repeat; background-position: right 10px center; background-size: 10px auto;
+            transition: background-color 0.3s ease;
+        }
+        #languageSelect:hover { background-color: rgba(255,255,255,0.15); }
+        #languageSelect option { background: var(--nav-dark); color: var(--text-light); }
+        /* --- End Minimal Retractable Nav --- */
+
+        /* --- Practice Header --- */
+        .practice-header {
+            background: linear-gradient(135deg, var(--list-color-base), var(--nav-primary)); /* Blend list/nav colors */
+            color: var(--text-light); padding: 3rem 0 4rem; text-align: center;
+            position: relative; overflow: hidden; border-bottom: 5px solid var(--accent-color);
+        }
+        .practice-header h1 { font-family: var(--font-title); font-size: 2.8rem; margin-bottom: 0.5rem; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); animation: fadeInAnimation 1s ease-out; }
+        .practice-header p { font-size: 1.1rem; font-weight: 300; opacity: 0.9; animation: fadeInAnimation 1s ease-out 0.3s forwards; opacity: 0; }
+        .header-icon { position: absolute; font-size: 4rem; color: var(--text-light); animation: pulseHeaderIcon 6s infinite ease-in-out alternate; }
+        .icon1 { top: 20%; left: 15%; animation-duration: 7s; transform: rotate(15deg); } /* List icon */
+        .icon2 { bottom: 15%; right: 20%; animation-duration: 5s; transform: rotate(-10deg);} /* Edit icon */
+
+        /* --- Practice Section Styling (Same as Module 0) --- */
+        .practice-section { padding: 3rem 0; background-color: var(--background-medium); border-bottom: 1px solid #d6d8db; }
+        .practice-section:nth-child(odd) { background-color: var(--background-light); }
+        .practice-section:last-of-type { border-bottom: none; }
+        .practice-section h2 { font-family: var(--font-title); font-size: 1.8rem; color: var(--primary-color); margin-bottom: 1rem; text-align: center; }
+        .practice-section .section-description { text-align: center; margin-bottom: 2.5rem; color: var(--secondary-color); font-size: 1.05rem; max-width: 700px; margin-left: auto; margin-right: auto; }
+
+        /* --- General Interactive Elements (Same as Module 0) --- */
+        .interactive-area { background-color: #fff; padding: 2rem; border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.08); margin-top: 1.5rem; position: relative; transition: box-shadow 0.5s ease-out; }
+        .feedback-message { padding: 0.8rem 1rem; margin-top: 1rem; border-radius: var(--border-radius); font-weight: bold; text-align: center; opacity: 0; max-height: 0; overflow: hidden; transition: opacity var(--transition-speed) ease, max-height var(--transition-speed) ease, margin-top var(--transition-speed) ease; }
+        .feedback-message.visible { opacity: 1; max-height: 100px; margin-top: 1.5rem; }
+        .feedback-message.correct { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .feedback-message.incorrect { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .feedback-message.info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .feedback-message .fas { margin: 0 3px; }
+        .action-button {
+             display: inline-block; padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold;
+             color: var(--text-light); background-color: var(--primary-color); border: none;
+             border-radius: var(--border-radius); cursor: pointer;
+             transition: background-color var(--transition-speed), transform var(--transition-speed), filter var(--transition-speed), box-shadow var(--transition-speed);
+             margin-top: 1rem; vertical-align: middle; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+             text-decoration: none;
+        }
+        .action-button:hover:not(:disabled) { background-color: #0056b3; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+        .action-button:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none; box-shadow: none; opacity: 0.7; }
+        .action-button.success { background-color: var(--success-color); }
+        .action-button.success:hover:not(:disabled) { background-color: #218838; }
+        .action-button.secondary { background-color: var(--secondary-color); }
+        .action-button.secondary:hover:not(:disabled) { background-color: #5a6268; }
+        /* Code styling (Same as Module 0) */
+        .code-block { background-color: var(--background-dark); color: var(--text-light); padding: 1.5rem; border-radius: var(--border-radius); font-family: var(--code-font); font-size: 1rem; position: relative; overflow-x: auto; margin: 1rem 0; }
+        .code-keyword { color: #569cd6; } .code-string { color: #ce9178; } .code-comment { color: #6a9955; } .code-function { color: #dcdcaa; } .code-paren { color: #ffd700; } .code-number { color: #b5cea8; } .code-operator { color: #d4d4d4; } .code-method { color: #9cdcfe; }
+
+        /* --- NEW: Common List Display Styles --- */
+        .list-display { font-size: 1.1rem; padding: 10px; border-radius: 4px; background-color: rgba(232, 62, 140, 0.1); border: 1px solid rgba(232, 62, 140, 0.3); color: var(--list-color-base); font-weight: bold; }
+        .list-item { display: inline-block; margin: 0 5px; padding: 2px 6px; background-color: rgba(255,255,255,0.1); border-radius: 3px; }
+        .list-item-string { color: var(--code-string); }
+        .list-item-number { color: var(--code-number); }
+
+        /* --- Activity 1: Method Match --- */
+        #method-match .match-area { display: flex; flex-wrap: wrap; gap: 1.5rem; justify-content: space-around; margin-top: 1rem; }
+        #method-match .match-column { flex-basis: 45%; min-width: 250px; }
+        #method-match .match-column h4 { font-size: 1.1rem; margin-bottom: 0.8rem; text-align: center; color: var(--secondary-color); border-bottom: 2px solid var(--background-medium); padding-bottom: 5px;}
+        .match-item, .match-target { padding: 12px 15px; margin-bottom: 10px; border-radius: var(--border-radius); transition: background-color var(--transition-speed), transform var(--transition-speed), box-shadow var(--transition-speed); user-select: none; -webkit-user-select: none; }
+        .match-item { background-color: var(--primary-color); color: var(--text-light); cursor: grab; font-family: var(--code-font); font-weight: bold; border: 1px solid #0056b3; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .match-item:active { cursor: grabbing; }
+        .match-item.dragging { opacity: 0.6 !important; transform: scale(1.05) rotate(3deg); position: fixed !important; pointer-events: none !important; z-index: 1000 !important; cursor: grabbing !important; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+        .match-item.ghosting { opacity: 0.3; }
+        .match-target { background-color: var(--background-light); border: 2px dashed var(--secondary-color); min-height: 50px; display: flex; align-items: center; justify-content: center; text-align: center; color: var(--secondary-color); font-size: 0.95rem; transition: border-color var(--transition-speed), background-color var(--transition-speed); }
+        .match-target.over { border-color: var(--accent-color); background-color: rgba(255,193,7,0.1); }
+        .match-target .match-item { cursor: default; margin: 0; box-shadow: none; transform: none; width: 100%; } /* Fit dropped item */
+        .match-target.filled { border-style: solid; border-color: var(--success-color); background-color: #e9f7ef; }
+        .match-target.filled .placeholder-text { display: none; }
+
+        /* --- Activity 2: List Modifier --- */
+        #list-modifier .list-visualizer { margin-bottom: 1.5rem; padding: 1rem; background-color: var(--background-dark); border-radius: var(--border-radius); }
+        #list-modifier .current-list-display { font-family: var(--code-font); color: var(--text-light); font-size: 1.1rem; text-align: center; padding: 10px; border-radius: 5px; border: 1px dashed var(--secondary-color); margin-bottom: 1rem;}
+        #list-modifier .controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; align-items: end;}
+        #list-modifier .control-group { background-color: var(--background-light); padding: 1rem; border-radius: var(--border-radius); border: 1px solid var(--background-medium); text-align: center;}
+        #list-modifier .control-group label { display: block; margin-bottom: 0.5rem; font-weight: bold; font-size: 0.9rem; color: var(--secondary-color); }
+        #list-modifier .control-group input[type="text"], #list-modifier .control-group input[type="number"] { width: 90%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-family: var(--code-font); font-size: 0.95rem; margin-bottom: 0.5rem; text-align: center; }
+        #list-modifier .control-group .action-button { width: 90%; padding: 0.6rem 1rem; font-size: 0.9rem; margin-top: 0.5rem; }
+        #list-modifier .btn-append { background-color: var(--list-color-add); } #list-modifier .btn-append:hover:not(:disabled) { background-color: #1a9a7a; }
+        #list-modifier .btn-insert { background-color: var(--list-color-add); } #list-modifier .btn-insert:hover:not(:disabled) { background-color: #1a9a7a; }
+        #list-modifier .btn-remove { background-color: var(--list-color-remove); } #list-modifier .btn-remove:hover:not(:disabled) { background-color: #d96d0e; }
+        #list-modifier .btn-pop { background-color: var(--list-color-remove); } #list-modifier .btn-pop:hover:not(:disabled) { background-color: #d96d0e; }
+        #list-modifier .btn-del { background-color: var(--list-color-remove); } #list-modifier .btn-del:hover:not(:disabled) { background-color: #d96d0e; }
+        #list-modifier .btn-reset { background-color: var(--secondary-color); } #list-modifier .btn-reset:hover:not(:disabled) { background-color: #5a6268; }
+        #modifier-feedback { margin-top: 1rem; font-style: italic; text-align: center; color: var(--info-color); }
+
+
+        /* --- Activity 3: Predict the List --- */
+        #predict-list .code-snippet { background-color: var(--background-dark); color: var(--text-light); padding: 1.5rem; border-radius: var(--border-radius); font-family: var(--code-font); font-size: 1rem; margin-bottom: 1.5rem; }
+        #predict-list label { display: block; font-weight: bold; margin-bottom: 8px; }
+        #predict-list input[type="text"] { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-family: var(--code-font); font-size: 1rem; margin-bottom: 1rem; }
+
+        /* --- Activity 4: Choose the Right Tool --- */
+        #choose-tool .scenario { background-color: var(--background-medium); padding: 1rem 1.5rem; border-radius: var(--border-radius); margin-bottom: 1.5rem; border-left: 5px solid var(--info-color); }
+        #choose-tool .scenario p { margin: 0; font-size: 1.1rem; }
+        #choose-tool .tool-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
+        .tool-option { background-color: var(--background-light); border: 2px solid var(--secondary-color); border-radius: var(--border-radius); padding: 1rem; text-align: center; cursor: pointer; transition: all var(--transition-speed) ease; font-family: var(--code-font); font-weight: bold; }
+        .tool-option:hover { background-color: var(--background-medium); border-color: var(--primary-color); transform: translateY(-3px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .tool-option.selected { border-color: var(--primary-color); background-color: var(--selection-highlight-bg); color: var(--primary-color); }
+        .tool-option.correct { border-color: var(--success-color); background-color: #d4edda; color: #155724; transform: scale(1.02); cursor: default; }
+        .tool-option.incorrect { border-color: var(--error-color); background-color: #f8d7da; color: #721c24; animation: shake 0.4s ease-in-out; cursor: default; }
+        .tool-option.disabled { cursor: not-allowed; opacity: 0.7; pointer-events: none; }
+        #tool-feedback { margin-top: 1.5rem; }
+
+        /* --- Activity 5: List Challenges (Mini Missions - adjusted) --- */
+        #list-challenges .mission { padding: 1.5rem; border: 1px solid #d6d8db; border-radius: var(--border-radius); margin-bottom: 1.5rem; background-color: var(--background-light); position: relative; }
+        .mission-status { position: absolute; top: 10px; right: 10px; font-size: 1.5rem; transition: transform 0.3s ease; }
+        .mission-status .fa-check-circle { color: var(--success-color); transform-origin: center; }
+        .mission-status .fa-times-circle { color: var(--error-color); }
+        .mission-status .fa-question-circle { color: var(--secondary-color); }
+        .mission[data-completed="true"] .mission-status .fa-check-circle { animation: iconAppearCorrect 0.6s ease-out; }
+        #list-challenges .mission-editor { width: 100%; min-height: 100px; background-color: var(--background-dark); color: var(--text-light); border: 1px solid var(--secondary-color); border-radius: var(--border-radius); padding: 1rem; font-family: var(--code-font); font-size: 1rem; line-height: 1.5; resize: vertical; margin-top: 1rem; }
+        /* No separate output area needed if we check code directly or ask for print */
+        .initial-list-display { margin-top: 1rem; font-style: italic; color: var(--secondary-color); font-family: var(--code-font); }
+        .expected-list-display { margin-top: 0.5rem; font-style: italic; color: var(--info-color); font-family: var(--code-font); }
+
+        /* --- Final Section (Same as Module 0) --- */
+        .completion-section { padding: 4rem 0; text-align: center; }
+        .completion-section .icon { font-size: 4rem; color: var(--success-color); margin-bottom: 1rem; display: inline-block; opacity: 0; animation: iconAppearCorrect 1s ease-out 0.5s forwards; }
+        .completion-section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); }
+        .completion-section p { font-size: 1.1rem; margin-top: 1rem; color: var(--secondary-color); }
+
+        /* --- Responsive Design (Adjustments similar to Module 0) --- */
+        @media (max-width: 768px) {
+            html { font-size: 15px; }
+            .practice-header h1 { font-size: 2.2rem; }
+            .practice-section h2 { font-size: 1.6rem; }
+            .interactive-area { padding: 1.5rem; }
+            #method-match .match-area { flex-direction: column; gap: 1rem;}
+            #list-modifier .controls { grid-template-columns: 1fr; } /* Stack controls */
+            #choose-tool .tool-options { grid-template-columns: 1fr; }
+            .button-group { flex-direction: column; align-items: center; }
+            .minimal-nav { min-width: 180px; }
+            .minimal-nav ul li a { padding: 0.6rem 0.8rem; }
+            #languageSelect { font-size: 0.85rem; padding: 5px 25px 5px 10px;}
+        }
+        @media (max-width: 480px) {
+            html { font-size: 14px; }
+            .practice-header h1 { font-size: 1.8rem; }
+            .practice-header p { font-size: 1rem; }
+            .practice-section h2 { font-size: 1.4rem; }
+            .interactive-area { padding: 1rem; }
+            .action-button { font-size: 0.9rem; padding: 0.7rem 1.2rem; width: 90%; max-width: 300px;}
+            .match-item, .match-target { padding: 10px 12px; }
+            #list-modifier .control-group input[type="text"], #list-modifier .control-group input[type="number"] { width: 100%; }
+             #list-modifier .control-group .action-button { width: 100%; }
+            #predict-list input[type="text"] { font-size: 0.9rem; }
+            #list-challenges .mission-editor { min-height: 90px; font-size: 0.95rem;}
+            .button-group a.action-button { width: 90%; max-width: 300px; margin-bottom: 0.5rem; }
+            .minimal-nav-button { top: 10px; right: 10px; padding: 6px 10px; font-size: 1rem; }
+            .minimal-nav { top: 48px; right: 10px; min-width: 160px; }
+            .minimal-nav ul li a { padding: 0.5rem 0.7rem; font-size: 0.9rem;}
+            .minimal-nav ul li a i.fas { margin-right: 8px; }
+            #languageSelect { font-size: 0.8rem; padding: 4px 20px 4px 8px;}
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ========= Minimal Nav Handle ========= -->
+    <button id="minimal-nav-toggle" class="minimal-nav-button" aria-label="Toggle Navigation Menu">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- ========= Minimal Nav Panel (with Language Switcher) ========= -->
+    <nav id="minimal-nav-panel" class="minimal-nav">
+        <ul>
+            <!-- *** MODIFIED Links for Module 11 *** -->
+            <li><a href="ctp-theory-11.html"><i class="fas fa-book-open fa-fw"></i> <span data-translate="nav_theory">View Theory</span></a></li>
+            <li><a href="ctp-advanced-11.html"><i class="fas fa-flask fa-fw"></i> <span data-translate="nav_advanced">Advanced Practice</span></a></li>
+            <li><a href="ctp-dashboard.html"><i class="fas fa-list fa-fw"></i> <span data-translate="nav_menu">Course Menu</span></a></li>
+            <hr style="border: none; border-top: 1px solid var(--secondary-color); margin: 8px 0;">
+            <!-- *** MODIFIED Links for Module 11 Activities *** -->
+            <li><a href="#method-match"><i class="fas fa-equals fa-fw"></i> <span data-translate="nav_match">Match</span></a></li>
+            <li><a href="#list-modifier"><i class="fas fa-edit fa-fw"></i> <span data-translate="nav_modifier">Modifier</span></a></li>
+            <li><a href="#predict-list"><i class="fas fa-magic fa-fw"></i> <span data-translate="nav_predict">Predict</span></a></li>
+            <li><a href="#choose-tool"><i class="fas fa-tools fa-fw"></i> <span data-translate="nav_tool">Tool Choice</span></a></li>
+            <li><a href="#list-challenges"><i class="fas fa-tasks fa-fw"></i> <span data-translate="nav_challenges">Challenges</span></a></li>
+            <!-- Language Switcher Item -->
+            <li class="language-switcher-item">
+                 <select id="languageSelect" aria-label="Select Language">
+                     <option value="en" data-translate="lang_en">🇬🇧 English</option>
+                     <option value="pt" data-translate="lang_pt">🇧🇷 Português</option>
+                     <option value="zh" data-translate="lang_zh">🇨🇳 中文</option>
+                 </select>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- ========= Header ========= -->
+    <header class="practice-header">
+        <i class="fas fa-list-ul header-icon icon1"></i>
+        <i class="fas fa-pencil-alt header-icon icon2"></i>
+        <div class="container">
+            <!-- *** MODIFIED Title for Module 11 *** -->
+            <h1 data-translate="header_title">Module 11: Modifying Lists</h1>
+            <p data-translate="header_subtitle">Practice changing lists: adding, removing, and updating elements.</p>
+        </div>
+    </header>
+
+    <!-- ========= Main Content ========= -->
+    <main>
+        <!-- ========= Activity 1: Method Match ========= -->
+        <section id="method-match" class="practice-section">
+             <div class="container">
+                 <h2 class="fade-in"><i class="fas fa-equals"></i> <span data-translate="match_title">Method Match</span></h2>
+                 <p class="section-description fade-in delay-1" data-translate="match_desc">
+                     Lists are <strong data-translate="mutability_term">Mutable</strong>! Drag the Python code (left) to match its description (right).
+                 </p>
+                 <div class="interactive-area fade-in delay-2">
+                     <div class="match-area">
+                         <div class="match-column" id="match-methods">
+                             <h4 data-translate="match_col_methods">Code / Method</h4>
+                             <!-- Methods populated by JS -->
+                         </div>
+                         <div class="match-column" id="match-descriptions">
+                             <h4 data-translate="match_col_desc">Description / Effect</h4>
+                             <!-- Descriptions (Targets) populated by JS -->
+                         </div>
+                     </div>
+                     <div class="text-center">
+                         <button id="check-match-btn" class="action-button" data-translate="button_check_match">Check Matches</button>
+                         <button id="reset-match-btn" class="action-button secondary" data-translate="button_reset">Reset</button>
+                     </div>
+                     <div id="match-feedback" class="feedback-message"></div>
+                 </div>
+             </div>
+        </section>
+
+        <!-- ========= Activity 2: List Modifier ========= -->
+        <section id="list-modifier" class="practice-section">
+            <div class="container">
+                <h2 class="fade-in"><i class="fas fa-edit"></i> <span data-translate="modifier_title">Interactive List Modifier</span></h2>
+                <p class="section-description fade-in delay-1" data-translate="modifier_desc">
+                    See list methods in action! Use the controls below to modify the list. Watch how it changes.
+                </p>
+                <div class="interactive-area fade-in delay-2">
+                    <div class="list-visualizer">
+                        <p style="text-align: center; color: var(--text-light); margin-bottom: 0.5rem;" data-translate="modifier_current_list">Current List:</p>
+                        <div id="current-list-display" class="current-list-display code-font">
+                            <!-- List displayed by JS -->
+                        </div>
+                    </div>
+                    <div class="controls">
+                        <!-- Append -->
+                        <div class="control-group">
+                            <label for="append-value" data-translate="modifier_append_label">Append Item:</label>
+                            <input type="text" id="append-value" data-translate-placeholder="modifier_value_placeholder" placeholder="Value">
+                            <button class="action-button btn-append" data-action="append" data-translate="modifier_append_button">.append()</button>
+                        </div>
+                        <!-- Insert -->
+                        <div class="control-group">
+                            <label for="insert-index" data-translate="modifier_insert_label">Insert Item:</label>
+                            <input type="number" id="insert-index" data-translate-placeholder="modifier_index_placeholder" placeholder="Index" min="0">
+                            <input type="text" id="insert-value" data-translate-placeholder="modifier_value_placeholder" placeholder="Value">
+                            <button class="action-button btn-insert" data-action="insert" data-translate="modifier_insert_button">.insert()</button>
+                        </div>
+                        <!-- Remove -->
+                        <div class="control-group">
+                             <label for="remove-value" data-translate="modifier_remove_label">Remove by Value:</label>
+                             <input type="text" id="remove-value" data-translate-placeholder="modifier_value_placeholder" placeholder="Value">
+                            <button class="action-button btn-remove" data-action="remove" data-translate="modifier_remove_button">.remove()</button>
+                        </div>
+                        <!-- Pop -->
+                        <div class="control-group">
+                             <label for="pop-index" data-translate="modifier_pop_label">Remove by Index (Pop):</label>
+                             <input type="number" id="pop-index" data-translate-placeholder="modifier_index_opt_placeholder" placeholder="Index (optional)">
+                            <button class="action-button btn-pop" data-action="pop" data-translate="modifier_pop_button">.pop()</button>
+                        </div>
+                        <!-- Del -->
+                        <div class="control-group">
+                             <label for="del-index" data-translate="modifier_del_label">Remove by Index (Del):</label>
+                             <input type="number" id="del-index" data-translate-placeholder="modifier_index_placeholder" placeholder="Index" min="0">
+                            <button class="action-button btn-del" data-action="del" data-translate="modifier_del_button">del list[index]</button>
+                        </div>
+                        <!-- Reset -->
+                        <div class="control-group">
+                            <label data-translate="modifier_reset_label">Reset List:</label>
+                            <button id="reset-modifier-list" class="action-button btn-reset secondary" data-translate="button_reset">Reset List</button>
+                        </div>
+                    </div>
+                    <div id="modifier-feedback" class="feedback-message"></div>
+                     <!-- Add a small note about mutability -->
+                    <p style="font-size: 0.9rem; text-align: center; margin-top: 1.5rem; color: var(--secondary-color);" data-translate="mutability_note">
+                        Notice how the *original* list is changed directly. That's <strong data-translate="mutability_term">Mutability</strong>!
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========= Activity 3: Predict the List ========= -->
+       <section id="predict-list" class="practice-section">
+            <div class="container">
+                <h2 class="fade-in"><i class="fas fa-magic"></i> <span data-translate="predict_title">Predict the Final List</span></h2>
+                <p class="section-description fade-in delay-1" data-translate="predict_desc">
+                    Read the Python code below. What will the list `data` look like *after* all the operations? Type your prediction exactly (e.g., <code class="code-font">[1, 'new', 3]</code>).
+                </p>
+                <div class="interactive-area fade-in delay-2">
+                    <div id="predict-code-snippet" class="code-snippet">
+                        <!-- Code snippet populated by JS -->
+                    </div>
+                    <label for="prediction-input" data-translate="predict_label">Your Prediction:</label>
+                    <input type="text" id="prediction-input" class="code-font" data-translate-placeholder="predict_placeholder" placeholder="e.g., ['a', 'b', 'c']">
+                    <div class="text-center">
+                        <button id="check-prediction-btn" class="action-button" data-translate="button_check_prediction">Check Prediction</button>
+                         <button id="next-prediction-btn" class="action-button secondary hidden" data-translate="button_next_challenge">Next Challenge</button>
+                    </div>
+                    <div id="prediction-feedback" class="feedback-message"></div>
+                </div>
+            </div>
+       </section>
+
+         <!-- ========= Activity 4: Choose the Right Tool ========= -->
+        <section id="choose-tool" class="practice-section">
+            <div class="container">
+                <h2 class="fade-in"><i class="fas fa-tools"></i> <span data-translate="tool_title">Choose the Right Tool</span></h2>
+                <p class="section-description fade-in delay-1" data-translate="tool_desc">
+                    For each task described below, click the best Python tool (method or statement) to accomplish it.
+                </p>
+                <div class="interactive-area fade-in delay-2">
+                    <div id="tool-scenario" class="scenario">
+                        <p><!-- Scenario text populated by JS --></p>
+                    </div>
+                    <div id="tool-options" class="tool-options">
+                         <!-- Options populated by JS -->
+                    </div>
+                    <div id="tool-feedback" class="feedback-message" style="margin-top: 1.5rem;"></div>
+                    <div class="text-center">
+                        <button id="next-tool-btn" class="action-button secondary hidden" data-translate="button_next_task">Next Task</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+         <!-- ========= Activity 5: List Challenges (Mini Missions) ========= -->
+        <section id="list-challenges" class="practice-section">
+             <div class="container">
+                  <h2 class="fade-in"><i class="fas fa-tasks"></i> <span data-translate="challenges_title">List Challenges</span></h2>
+                 <p class="section-description fade-in delay-1" data-translate="challenges_desc">
+                     Apply your knowledge! Write Python code to solve these list modification challenges. Check your solution after writing the code.
+                 </p>
+                 <div class="interactive-area fade-in delay-2">
+                     <!-- Challenge 1: Append -->
+                     <div class="mission" id="challenge-1" data-completed="false">
+                         <span class="mission-status"><i class="fas fa-question-circle"></i></span>
+                         <h4 data-translate="challenge1_title">Challenge 1: Add to End</h4>
+                         <p data-translate="challenge1_desc">You have the list below. Write one line of Python code to add the string <code class="code-font code-string">"d"</code> to the end of the list `items`.</p>
+                         <p class="initial-list-display" data-translate="challenge_initial_list">Initial list: <code class="code-font">items = ['a', 'b', 'c']</code></p>
+                         <textarea class="sim-editor mission-editor" rows="3" data-translate-placeholder="challenge1_placeholder" placeholder="Your code for items here..."></textarea>
+                         <div class="text-center"> <button class="action-button mission-run-btn" data-challenge-id="1" data-translate="button_check_challenge">Check Challenge 1</button> </div>
+                         <div id="challenge-feedback-1" class="feedback-message mission-feedback"></div>
+                     </div>
+                     <!-- Challenge 2: Insert -->
+                     <div class="mission" id="challenge-2" data-completed="false">
+                          <span class="mission-status"><i class="fas fa-question-circle"></i></span>
+                         <h4 data-translate="challenge2_title">Challenge 2: Insert at Start</h4>
+                         <p data-translate="challenge2_desc">Start with the list below. Add the number <code class="code-font code-number">0</code> to the very beginning (index 0) of the list `nums`.</p>
+                         <p class="initial-list-display" data-translate="challenge_initial_list">Initial list: <code class="code-font">nums = [1, 2, 3]</code></p>
+                         <textarea class="sim-editor mission-editor" rows="3" data-translate-placeholder="challenge2_placeholder" placeholder="Your code for nums here..."></textarea>
+                          <div class="text-center"> <button class="action-button mission-run-btn" data-challenge-id="2" data-translate="button_check_challenge">Check Challenge 2</button> </div>
+                         <div id="challenge-feedback-2" class="feedback-message mission-feedback"></div>
+                     </div>
+                     <!-- Challenge 3: Remove -->
+                     <div class="mission" id="challenge-3" data-completed="false">
+                          <span class="mission-status"><i class="fas fa-question-circle"></i></span>
+                         <h4 data-translate="challenge3_title">Challenge 3: Remove by Value</h4>
+                         <p data-translate="challenge3_desc">From the list `mix` below, remove the first occurrence of the value <code class="code-font code-string">"remove_me"</code>.</p>
+                          <p class="initial-list-display" data-translate="challenge_initial_list">Initial list: <code class="code-font">mix = [10, "hello", "remove_me", 20]</code></p>
+                         <textarea class="sim-editor mission-editor" rows="3" data-translate-placeholder="challenge3_placeholder" placeholder="Your code for mix here..."></textarea>
+                          <div class="text-center"> <button class="action-button mission-run-btn" data-challenge-id="3" data-translate="button_check_challenge">Check Challenge 3</button> </div>
+                         <div id="challenge-feedback-3" class="feedback-message mission-feedback"></div>
+                     </div>
+                     <!-- Challenge 4: Del/Pop Index -->
+                      <div class="mission" id="challenge-4" data-completed="false">
+                          <span class="mission-status"><i class="fas fa-question-circle"></i></span>
+                         <h4 data-translate="challenge4_title">Challenge 4: Remove by Index</h4>
+                         <p data-translate="challenge4_desc">Given the list `elements`, remove the item at index <code class="code-font code-number">2</code> (which is <code class="code-font code-string">"C"</code>) using either <code class="code-font code-keyword">del</code> or the <code class="code-font code-method">.pop()</code> method.</p>
+                          <p class="initial-list-display" data-translate="challenge_initial_list">Initial list: <code class="code-font">elements = ["A", "B", "C", "D"]</code></p>
+                         <textarea class="sim-editor mission-editor" rows="3" data-translate-placeholder="challenge4_placeholder" placeholder="Your code for elements here..."></textarea>
+                          <div class="text-center"> <button class="action-button mission-run-btn" data-challenge-id="4" data-translate="button_check_challenge">Check Challenge 4</button> </div>
+                         <div id="challenge-feedback-4" class="feedback-message mission-feedback"></div>
+                     </div>
+                     <!-- Challenge 5: Slice Replacement -->
+                      <div class="mission" id="challenge-5" data-completed="false">
+                          <span class="mission-status"><i class="fas fa-question-circle"></i></span>
+                         <h4 data-translate="challenge5_title">Challenge 5: Replace with Slice</h4>
+                         <p data-translate="challenge5_desc">Start with the list `letters`. Replace the elements from index 1 up to (but not including) index 3 (i.e., <code class="code-font">['b', 'c']</code>) with the new list <code class="code-font">['X', 'Y']</code> using slicing.</p>
+                          <p class="initial-list-display" data-translate="challenge_initial_list">Initial list: <code class="code-font">letters = ['a', 'b', 'c', 'd']</code></p>
+                          <p class="expected-list-display" data-translate="challenge_expected_list">Expected result: <code class="code-font">['a', 'X', 'Y', 'd']</code></p>
+                         <textarea class="sim-editor mission-editor" rows="3" data-translate-placeholder="challenge5_placeholder" placeholder="Your code for letters here..."></textarea>
+                          <div class="text-center"> <button class="action-button mission-run-btn" data-challenge-id="5" data-translate="button_check_challenge">Check Challenge 5</button> </div>
+                         <div id="challenge-feedback-5" class="feedback-message mission-feedback"></div>
+                     </div>
+
+                     <div id="challenges-summary-feedback" class="feedback-message" style="margin-top: 2rem;"></div>
+                 </div>
+             </div>
+        </section>
+
+         <!-- ========= Completion Section ========= -->
+        <section class="completion-section">
+            <div class="container">
+                <div class="icon fade-in" style="animation: iconAppearCorrect 1s ease-out 0.5s forwards;">
+                    <i class="fas fa-star"></i> <i class="fas fa-list-check"></i> <i class="fas fa-star"></i>
+                </div>
+                <!-- *** MODIFIED Title/Text for Module 11 *** -->
+                <h2 class="fade-in delay-1" data-translate="completion_title">Module 11 Practice Complete!</h2>
+                <p class="fade-in delay-2" data-translate="completion_desc">
+                    Excellent! You've practiced manipulating lists and seen mutability in action. <br>
+                    Ready for more? Try the <strong>Advanced Practice</strong> for Module 11!
+                </p>
+                <div class="button-group">
+                    <!-- *** MODIFIED Links for Module 11 *** -->
+                    <a href="ctp-theory-11.html" class="action-button secondary fade-in delay-3"><i class="fas fa-book-open"></i> <span data-translate="button_view_theory">View Theory Again</span></a>
+                    <a href="ctp-advanced-11.html" class="action-button success fade-in delay-3"><i class="fas fa-arrow-right"></i> <span data-translate="button_start_advanced">Start Advanced Practice</span></a>
+                    <a href="ctp-dashboard.html" class="action-button secondary fade-in delay-4"><i class="fas fa-list"></i> <span data-translate="button_back_menu">Back to Course Menu</span></a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ========= Script ========= -->
+    <script>
+    // --- Translations Object ---
+    const translations = {
+        en: {
+            "page_title": "Module 11: List Modification Practice",
+            "nav_theory": "View Theory", "nav_advanced": "Advanced Practice", "nav_menu": "Course Menu",
+            "nav_match": "Match", "nav_modifier": "Modifier", "nav_predict": "Predict", "nav_tool": "Tool Choice", "nav_challenges": "Challenges",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title": "Module 11: Modifying Lists", "header_subtitle": "Practice changing lists: adding, removing, and updating elements.",
+            "mutability_term": "Mutable", "mutability_note": "Notice how the *original* list is changed directly. That's Mutability!",
+            "match_title": "Method Match", "match_desc": "Lists are Mutable! Drag the Python code (left) to match its description (right).",
+            "match_col_methods": "Code / Method", "match_col_desc": "Description / Effect",
+            "match_method_append": ".append(item)", "match_desc_append": "Adds 'item' to the very end.",
+            "match_method_insert": ".insert(index, item)", "match_desc_insert": "Adds 'item' at a specific 'index'.",
+            "match_method_remove": ".remove(value)", "match_desc_remove": "Removes the first occurrence of 'value'.",
+            "match_method_pop": ".pop(index)", "match_desc_pop": "Removes item at 'index' (or last if no index).",
+            "match_method_del": "del list[index]", "match_desc_del": "Removes item at 'index' using 'del'.",
+            "match_method_slice": "list[s:e] = new", "match_desc_slice": "Replaces items from index 's' to 'e' with 'new'.",
+            "match_target_placeholder": "Drop matching code here...",
+            "button_check_match": "Check Matches", "button_reset": "Reset",
+            "feedback_match_correct": "All matched correctly! <i class='fas fa-check-double'></i>", "feedback_match_incorrect": "Some matches are incorrect. Try again!", "feedback_match_empty": "Drag methods to descriptions.",
+            "modifier_title": "Interactive List Modifier", "modifier_desc": "See list methods in action! Use the controls below to modify the list. Watch how it changes.",
+            "modifier_current_list": "Current List:",
+            "modifier_append_label": "Append Item:", "modifier_insert_label": "Insert Item:", "modifier_remove_label": "Remove by Value:", "modifier_pop_label": "Remove by Index (Pop):", "modifier_del_label": "Remove by Index (Del):", "modifier_reset_label": "Reset List:",
+            "modifier_value_placeholder": "Value", "modifier_index_placeholder": "Index", "modifier_index_opt_placeholder": "Index (optional)",
+            "modifier_append_button": ".append()", "modifier_insert_button": ".insert()", "modifier_remove_button": ".remove()", "modifier_pop_button": ".pop()", "modifier_del_button": "del list[index]",
+            "feedback_modifier_append": "Appended '{value}'.", "feedback_modifier_insert": "Inserted '{value}' at index {index}.", "feedback_modifier_remove": "Removed first '{value}'.", "feedback_modifier_remove_fail": "Value '{value}' not found.",
+            "feedback_modifier_pop": "Popped '{value}' from index {index}.", "feedback_modifier_pop_last": "Popped last item '{value}'.", "feedback_modifier_pop_fail": "Pop index {index} out of range.",
+            "feedback_modifier_del": "Deleted item at index {index}.", "feedback_modifier_del_fail": "Delete index {index} out of range.",
+            "feedback_modifier_reset": "List reset.", "feedback_modifier_invalid_input": "Invalid input.",
+            "predict_title": "Predict the Final List", "predict_desc": "Read the Python code below. What will the list `data` look like *after* all the operations? Type your prediction exactly (e.g., [1, 'new', 3]).",
+            "predict_label": "Your Prediction:", "predict_placeholder": "e.g., ['a', 'b', 'c']",
+            "button_check_prediction": "Check Prediction", "button_next_challenge": "Next Challenge",
+            "feedback_predict_correct": "Exactly right! <i class='fas fa-bullseye'></i>", "feedback_predict_incorrect": "Not quite. The correct list was: {correct_list}. Check the operations carefully.", "feedback_predict_invalid": "Invalid format. Use square brackets and commas, e.g., [1, 'a', 2].", "feedback_predict_empty": "Please enter your prediction.",
+            "tool_title": "Choose the Right Tool", "tool_desc": "For each task described below, click the best Python tool (method or statement) to accomplish it.",
+            "tool_scenario_1": "Task: Add the element 'Z' to the end of a list called `my_list`.", "tool_correct_1": "my_list.append('Z')",
+            "tool_scenario_2": "Task: Insert the number 100 at index 1 in `my_list`.", "tool_correct_2": "my_list.insert(1, 100)",
+            "tool_scenario_3": "Task: Remove the first item that has the value 'spam' from `my_list`.", "tool_correct_3": "my_list.remove('spam')",
+            "tool_scenario_4": "Task: Remove the item at index 3 from `my_list`.", "tool_correct_4": "del my_list[3]", // Can also be pop(3)
+            "tool_scenario_5": "Task: Remove the last item from `my_list` and store it in a variable.", "tool_correct_5": "last = my_list.pop()",
+            "tool_scenario_6": "Task: Replace the second and third items (index 1 and 2) of `my_list` with `[99, 88]`.", "tool_correct_6": "my_list[1:3] = [99, 88]",
+            "tool_option_append": ".append()", "tool_option_insert": ".insert()", "tool_option_remove": ".remove()", "tool_option_pop_index": ".pop(index)", "tool_option_pop_noindex": ".pop()", "tool_option_del": "del list[index]", "tool_option_slice": "list[s:e] = new",
+            "button_next_task": "Next Task",
+            "feedback_tool_correct": "Correct! <i class='fas fa-check'></i> That's the right tool for the job.", "feedback_tool_incorrect": "Incorrect. <i class='fas fa-times'></i> Think about what that tool actually does.", "feedback_tool_pop_del_alt": "Correct! <i class='fas fa-check'></i> `.pop(index)` would also work here.",
+            "challenges_title": "List Challenges", "challenges_desc": "Apply your knowledge! Write Python code to solve these list modification challenges. Check your solution after writing the code.",
+            "challenge_initial_list": "Initial list:", "challenge_expected_list": "Expected result:", "button_check_challenge": "Check Challenge",
+            "challenge1_title": "Challenge 1: Add to End", "challenge1_desc": "You have the list below. Write one line of Python code to add the string \"d\" to the end of the list `items`.", "challenge1_placeholder": "items...",
+            "challenge2_title": "Challenge 2: Insert at Start", "challenge2_desc": "Start with the list below. Add the number 0 to the very beginning (index 0) of the list `nums`.", "challenge2_placeholder": "nums...",
+            "challenge3_title": "Challenge 3: Remove by Value", "challenge3_desc": "From the list `mix` below, remove the first occurrence of the value \"remove_me\".", "challenge3_placeholder": "mix...",
+            "challenge4_title": "Challenge 4: Remove by Index", "challenge4_desc": "Given the list `elements`, remove the item at index 2 (which is \"C\") using either `del` or the `.pop()` method.", "challenge4_placeholder": "elements...",
+            "challenge5_title": "Challenge 5: Replace with Slice", "challenge5_desc": "Start with the list `letters`. Replace the elements from index 1 up to (but not including) index 3 (i.e., ['b', 'c']) with the new list ['X', 'Y'] using slicing.", "challenge5_placeholder": "letters...",
+            "feedback_challenge_success": "Challenge Complete!", "feedback_challenge_incorrect": "Not quite right. Check your code syntax and logic.",
+            "feedback_challenge1_hint": "Use the method that adds to the end.", "feedback_challenge2_hint": "Use the method that inserts at a specific index.", "feedback_challenge3_hint": "Use the method that removes based on value.", "feedback_challenge4_hint": "Use `del list[index]` or `.pop(index)`.", "feedback_challenge5_hint": "Use slice assignment like `list[start:end] = ...`.",
+            "feedback_challenges_summary_all_done": "All {totalChallenges} challenges complete! List master!", "feedback_challenges_summary_progress": "Completed {completedCount} of {totalChallenges} challenges. Keep practicing!",
+            "completion_title": "Module 11 Practice Complete!", "completion_desc": "Excellent! You've practiced manipulating lists and seen mutability in action. <br> Ready for more? Try the <strong>Advanced Practice</strong> for Module 11!",
+            "button_view_theory": "View Theory Again", "button_start_advanced": "Start Advanced Practice", "button_back_menu": "Back to Course Menu"
+        },
+        pt: {
+            "page_title": "Módulo 11: Prática de Modificação de Listas",
+            "nav_theory": "Ver Teoria", "nav_advanced": "Prática Avançada", "nav_menu": "Menu do Curso",
+            "nav_match": "Combinar", "nav_modifier": "Modificador", "nav_predict": "Prever", "nav_tool": "Escolher Ferramenta", "nav_challenges": "Desafios",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title": "Módulo 11: Modificando Listas", "header_subtitle": "Pratique alterar listas: adicionar, remover e atualizar elementos.",
+            "mutability_term": "Mutável", "mutability_note": "Note como a lista *original* é alterada diretamente. Isso é Mutabilidade!",
+            "match_title": "Combinar Método", "match_desc": "Listas são Mutáveis! Arraste o código Python (esquerda) para combinar com sua descrição (direita).",
+            "match_col_methods": "Código / Método", "match_col_desc": "Descrição / Efeito",
+            "match_method_append": ".append(item)", "match_desc_append": "Adiciona 'item' no final.",
+            "match_method_insert": ".insert(indice, item)", "match_desc_insert": "Adiciona 'item' em um 'indice' específico.",
+            "match_method_remove": ".remove(valor)", "match_desc_remove": "Remove a primeira ocorrência de 'valor'.",
+            "match_method_pop": ".pop(indice)", "match_desc_pop": "Remove item no 'indice' (ou último se sem índice).",
+            "match_method_del": "del lista[indice]", "match_desc_del": "Remove item no 'indice' usando 'del'.",
+            "match_method_slice": "lista[i:f] = nova", "match_desc_slice": "Substitui itens do índice 'i' até 'f' por 'nova'.",
+            "match_target_placeholder": "Solte o código correspondente aqui...",
+            "button_check_match": "Verificar Combinações", "button_reset": "Reiniciar",
+            "feedback_match_correct": "Tudo combinado corretamente! <i class='fas fa-check-double'></i>", "feedback_match_incorrect": "Algumas combinações estão incorretas. Tente novamente!", "feedback_match_empty": "Arraste os métodos para as descrições.",
+            "modifier_title": "Modificador de Lista Interativo", "modifier_desc": "Veja os métodos de lista em ação! Use os controles abaixo para modificar a lista. Observe como ela muda.",
+            "modifier_current_list": "Lista Atual:",
+            "modifier_append_label": "Anexar Item:", "modifier_insert_label": "Inserir Item:", "modifier_remove_label": "Remover por Valor:", "modifier_pop_label": "Remover por Índice (Pop):", "modifier_del_label": "Remover por Índice (Del):", "modifier_reset_label": "Reiniciar Lista:",
+            "modifier_value_placeholder": "Valor", "modifier_index_placeholder": "Índice", "modifier_index_opt_placeholder": "Índice (opcional)",
+            "modifier_append_button": ".append()", "modifier_insert_button": ".insert()", "modifier_remove_button": ".remove()", "modifier_pop_button": ".pop()", "modifier_del_button": "del lista[indice]",
+            "feedback_modifier_append": "Anexado '{value}'.", "feedback_modifier_insert": "Inserido '{value}' no índice {index}.", "feedback_modifier_remove": "Removido primeiro '{value}'.", "feedback_modifier_remove_fail": "Valor '{value}' não encontrado.",
+            "feedback_modifier_pop": "Removido '{value}' do índice {index} (pop).", "feedback_modifier_pop_last": "Removido último item '{value}' (pop).", "feedback_modifier_pop_fail": "Índice {index} (pop) fora do intervalo.",
+            "feedback_modifier_del": "Deletado item no índice {index}.", "feedback_modifier_del_fail": "Índice {index} (del) fora do intervalo.",
+            "feedback_modifier_reset": "Lista reiniciada.", "feedback_modifier_invalid_input": "Entrada inválida.",
+            "predict_title": "Preveja a Lista Final", "predict_desc": "Leia o código Python abaixo. Como a lista `data` ficará *após* todas as operações? Digite sua previsão exatamente (ex: [1, 'novo', 3]).",
+            "predict_label": "Sua Previsão:", "predict_placeholder": "ex: ['a', 'b', 'c']",
+            "button_check_prediction": "Verificar Previsão", "button_next_challenge": "Próximo Desafio",
+            "feedback_predict_correct": "Exatamente correto! <i class='fas fa-bullseye'></i>", "feedback_predict_incorrect": "Não exatamente. A lista correta era: {correct_list}. Verifique as operações com cuidado.", "feedback_predict_invalid": "Formato inválido. Use colchetes e vírgulas, ex: [1, 'a', 2].", "feedback_predict_empty": "Por favor, insira sua previsão.",
+            "tool_title": "Escolha a Ferramenta Certa", "tool_desc": "Para cada tarefa descrita abaixo, clique na melhor ferramenta Python (método ou instrução) para realizá-la.",
+            "tool_scenario_1": "Tarefa: Adicionar o elemento 'Z' ao final de uma lista chamada `minha_lista`.", "tool_correct_1": "minha_lista.append('Z')",
+            "tool_scenario_2": "Tarefa: Inserir o número 100 no índice 1 em `minha_lista`.", "tool_correct_2": "minha_lista.insert(1, 100)",
+            "tool_scenario_3": "Tarefa: Remover o primeiro item que tem o valor 'spam' de `minha_lista`.", "tool_correct_3": "minha_lista.remove('spam')",
+            "tool_scenario_4": "Tarefa: Remover o item no índice 3 de `minha_lista`.", "tool_correct_4": "del minha_lista[3]",
+            "tool_scenario_5": "Tarefa: Remover o último item de `minha_lista` e armazená-lo em uma variável.", "tool_correct_5": "ultimo = minha_lista.pop()",
+            "tool_scenario_6": "Tarefa: Substituir o segundo e terceiro itens (índice 1 e 2) de `minha_lista` por `[99, 88]`.", "tool_correct_6": "minha_lista[1:3] = [99, 88]",
+            "tool_option_append": ".append()", "tool_option_insert": ".insert()", "tool_option_remove": ".remove()", "tool_option_pop_index": ".pop(indice)", "tool_option_pop_noindex": ".pop()", "tool_option_del": "del lista[indice]", "tool_option_slice": "lista[i:f] = nova",
+            "button_next_task": "Próxima Tarefa",
+            "feedback_tool_correct": "Correto! <i class='fas fa-check'></i> Essa é a ferramenta certa.", "feedback_tool_incorrect": "Incorreto. <i class='fas fa-times'></i> Pense no que essa ferramenta realmente faz.", "feedback_tool_pop_del_alt": "Correto! <i class='fas fa-check'></i> `.pop(indice)` também funcionaria aqui.",
+            "challenges_title": "Desafios de Lista", "challenges_desc": "Aplique seu conhecimento! Escreva código Python para resolver esses desafios de modificação de lista. Verifique sua solução após escrever o código.",
+            "challenge_initial_list": "Lista inicial:", "challenge_expected_list": "Resultado esperado:", "button_check_challenge": "Verificar Desafio",
+            "challenge1_title": "Desafio 1: Adicionar ao Final", "challenge1_desc": "Você tem a lista abaixo. Escreva uma linha de código Python para adicionar a string \"d\" ao final da lista `items`.", "challenge1_placeholder": "items...",
+            "challenge2_title": "Desafio 2: Inserir no Início", "challenge2_desc": "Comece com a lista abaixo. Adicione o número 0 bem no início (índice 0) da lista `nums`.", "challenge2_placeholder": "nums...",
+            "challenge3_title": "Desafio 3: Remover por Valor", "challenge3_desc": "Da lista `mix` abaixo, remova a primeira ocorrência do valor \"remove_me\".", "challenge3_placeholder": "mix...",
+            "challenge4_title": "Desafio 4: Remover por Índice", "challenge4_desc": "Dada a lista `elements`, remova o item no índice 2 (que é \"C\") usando `del` ou o método `.pop()`.", "challenge4_placeholder": "elements...",
+            "challenge5_title": "Desafio 5: Substituir com Fatia", "challenge5_desc": "Comece com a lista `letters`. Substitua os elementos do índice 1 até (mas não incluindo) o índice 3 (ou seja, ['b', 'c']) pela nova lista ['X', 'Y'] usando fatiamento.", "challenge5_placeholder": "letters...",
+            "feedback_challenge_success": "Desafio Completo!", "feedback_challenge_incorrect": "Não está certo. Verifique a sintaxe e a lógica do seu código.",
+            "feedback_challenge1_hint": "Use o método que adiciona ao final.", "feedback_challenge2_hint": "Use o método que insere em um índice específico.", "feedback_challenge3_hint": "Use o método que remove baseado no valor.", "feedback_challenge4_hint": "Use `del lista[indice]` ou `.pop(indice)`.", "feedback_challenge5_hint": "Use atribuição de fatia como `lista[inicio:fim] = ...`.",
+            "feedback_challenges_summary_all_done": "Todos os {totalChallenges} desafios completos! Mestre das listas!", "feedback_challenges_summary_progress": "Completou {completedCount} de {totalChallenges} desafios. Continue praticando!",
+            "completion_title": "Prática do Módulo 11 Completa!", "completion_desc": "Excelente! Você praticou a manipulação de listas e viu a mutabilidade em ação. <br> Pronto para mais? Experimente a <strong>Prática Avançada</strong> do Módulo 11!",
+            "button_view_theory": "Ver Teoria Novamente", "button_start_advanced": "Iniciar Prática Avançada", "button_back_menu": "Voltar ao Menu do Curso"
+        },
+        zh: {
+            "page_title": "模块 11：列表修改练习",
+            "nav_theory": "查看理论", "nav_advanced": "高级练习", "nav_menu": "课程菜单",
+            "nav_match": "匹配", "nav_modifier": "修改器", "nav_predict": "预测", "nav_tool": "选择工具", "nav_challenges": "挑战",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title": "模块 11：修改列表", "header_subtitle": "练习更改列表：添加、删除和更新元素。",
+            "mutability_term": "可变的", "mutability_note": "注意*原始*列表是如何被直接更改的。这就是可变性！",
+            "match_title": "方法匹配", "match_desc": "列表是可变的！拖动 Python 代码（左）以匹配其描述（右）。",
+            "match_col_methods": "代码 / 方法", "match_col_desc": "描述 / 效果",
+            "match_method_append": ".append(item)", "match_desc_append": "将 'item' 添加到列表末尾。",
+            "match_method_insert": ".insert(index, item)", "match_desc_insert": "在指定的 'index' 处添加 'item'。",
+            "match_method_remove": ".remove(value)", "match_desc_remove": "删除第一个出现的 'value'。",
+            "match_method_pop": ".pop(index)", "match_desc_pop": "删除 'index' 处的项（如果无索引则删除最后一个）。",
+            "match_method_del": "del list[index]", "match_desc_del": "使用 'del' 删除 'index' 处的项。",
+            "match_method_slice": "list[s:e] = new", "match_desc_slice": "将索引 's' 到 'e' 的项替换为 'new'。",
+            "match_target_placeholder": "将匹配的代码拖到此处...",
+            "button_check_match": "检查匹配", "button_reset": "重置",
+            "feedback_match_correct": "全部匹配正确！ <i class='fas fa-check-double'></i>", "feedback_match_incorrect": "部分匹配不正确。请重试！", "feedback_match_empty": "请将方法拖到描述上。",
+            "modifier_title": "交互式列表修改器", "modifier_desc": "亲身体验列表方法！使用下面的控件修改列表。观察它是如何变化的。",
+            "modifier_current_list": "当前列表：",
+            "modifier_append_label": "追加项：", "modifier_insert_label": "插入项：", "modifier_remove_label": "按值删除：", "modifier_pop_label": "按索引删除 (Pop)：", "modifier_del_label": "按索引删除 (Del)：", "modifier_reset_label": "重置列表：",
+            "modifier_value_placeholder": "值", "modifier_index_placeholder": "索引", "modifier_index_opt_placeholder": "索引 (可选)",
+            "modifier_append_button": ".append()", "modifier_insert_button": ".insert()", "modifier_remove_button": ".remove()", "modifier_pop_button": ".pop()", "modifier_del_button": "del list[index]",
+            "feedback_modifier_append": "已追加 '{value}'。", "feedback_modifier_insert": "已在索引 {index} 处插入 '{value}'。", "feedback_modifier_remove": "已删除第一个 '{value}'。", "feedback_modifier_remove_fail": "未找到值 '{value}'。",
+            "feedback_modifier_pop": "已从索引 {index} 弹出 '{value}'。", "feedback_modifier_pop_last": "已弹出最后一项 '{value}'。", "feedback_modifier_pop_fail": "弹出索引 {index} 超出范围。",
+            "feedback_modifier_del": "已删除索引 {index} 处的项。", "feedback_modifier_del_fail": "删除索引 {index} 超出范围。",
+            "feedback_modifier_reset": "列表已重置。", "feedback_modifier_invalid_input": "输入无效。",
+            "predict_title": "预测最终列表", "predict_desc": "阅读下面的 Python 代码。在所有操作*之后*，列表 `data` 会是什么样子？请精确输入你的预测（例如：[1, 'new', 3]）。",
+            "predict_label": "你的预测：", "predict_placeholder": "例如：['a', 'b', 'c']",
+            "button_check_prediction": "检查预测", "button_next_challenge": "下一个挑战",
+            "feedback_predict_correct": "完全正确！ <i class='fas fa-bullseye'></i>", "feedback_predict_incorrect": "不太对。正确的列表是：{correct_list}。请仔细检查操作。", "feedback_predict_invalid": "格式无效。请使用方括号和逗号，例如：[1, 'a', 2]。", "feedback_predict_empty": "请输入你的预测。",
+            "tool_title": "选择正确的工具", "tool_desc": "针对下面描述的每个任务，单击最佳的 Python 工具（方法或语句）来完成它。",
+            "tool_scenario_1": "任务：将元素 'Z' 添加到名为 `my_list` 的列表末尾。", "tool_correct_1": "my_list.append('Z')",
+            "tool_scenario_2": "任务：在 `my_list` 的索引 1 处插入数字 100。", "tool_correct_2": "my_list.insert(1, 100)",
+            "tool_scenario_3": "任务：从 `my_list` 中删除第一个值为 'spam' 的项。", "tool_correct_3": "my_list.remove('spam')",
+            "tool_scenario_4": "任务：从 `my_list` 中删除索引 3 处的项。", "tool_correct_4": "del my_list[3]",
+            "tool_scenario_5": "任务：从 `my_list` 中删除最后一项并将其存储在一个变量中。", "tool_correct_5": "last = my_list.pop()",
+            "tool_scenario_6": "任务：将 `my_list` 的第二和第三项（索引 1 和 2）替换为 `[99, 88]`。", "tool_correct_6": "my_list[1:3] = [99, 88]",
+            "tool_option_append": ".append()", "tool_option_insert": ".insert()", "tool_option_remove": ".remove()", "tool_option_pop_index": ".pop(index)", "tool_option_pop_noindex": ".pop()", "tool_option_del": "del list[index]", "tool_option_slice": "list[s:e] = new",
+            "button_next_task": "下一个任务",
+            "feedback_tool_correct": "正确！ <i class='fas fa-check'></i> 这是完成任务的正确工具。", "feedback_tool_incorrect": "不正确。 <i class='fas fa-times'></i> 想想那个工具实际做了什么。", "feedback_tool_pop_del_alt": "正确！<i class='fas fa-check'></i> `.pop(index)` 在这里也适用。",
+            "challenges_title": "列表挑战", "challenges_desc": "运用你的知识！编写 Python 代码来解决这些列表修改挑战。编写代码后检查你的解决方案。",
+            "challenge_initial_list": "初始列表：", "challenge_expected_list": "预期结果：", "button_check_challenge": "检查挑战",
+            "challenge1_title": "挑战 1：添加到末尾", "challenge1_desc": "你有下面的列表。编写一行 Python 代码，将字符串 \"d\" 添加到列表 `items` 的末尾。", "challenge1_placeholder": "items...",
+            "challenge2_title": "挑战 2：在开头插入", "challenge2_desc": "从下面的列表开始。将数字 0 添加到列表 `nums` 的最开头（索引 0）。", "challenge2_placeholder": "nums...",
+            "challenge3_title": "挑战 3：按值删除", "challenge3_desc": "从下面的列表 `mix` 中，删除第一个值为 \"remove_me\" 的项。", "challenge3_placeholder": "mix...",
+            "challenge4_title": "挑战 4：按索引删除", "challenge4_desc": "给定列表 `elements`，使用 `del` 或 `.pop()` 方法删除索引 2 处的项（即 \"C\"）。", "challenge4_placeholder": "elements...",
+            "challenge5_title": "挑战 5：用切片替换", "challenge5_desc": "从列表 `letters` 开始。使用切片将索引 1 到索引 3（不包括 3）的元素（即 ['b', 'c']）替换为新列表 ['X', 'Y']。", "challenge5_placeholder": "letters...",
+            "feedback_challenge_success": "挑战完成！", "feedback_challenge_incorrect": "不太对。检查你的代码语法和逻辑。",
+            "feedback_challenge1_hint": "使用添加到末尾的方法。", "feedback_challenge2_hint": "使用在特定索引处插入的方法。", "feedback_challenge3_hint": "使用根据值删除的方法。", "feedback_challenge4_hint": "使用 `del list[index]` 或 `.pop(index)`。", "feedback_challenge5_hint": "使用像 `list[start:end] = ...` 这样的切片赋值。",
+            "feedback_challenges_summary_all_done": "所有 {totalChallenges} 个挑战已完成！列表大师！", "feedback_challenges_summary_progress": "已完成 {completedCount} / {totalChallenges} 个挑战。继续练习！",
+            "completion_title": "模块 11 练习完成！", "completion_desc": "太棒了！你练习了操作列表，并亲眼见证了可变性。<br> 准备好学习更多内容了吗？试试模块 11 的<strong>高级练习</strong>！",
+            "button_view_theory": "再次查看理论", "button_start_advanced": "开始高级练习", "button_back_menu": "返回课程菜单"
+        }
+    };
+
+
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // --- Language Management Functions (Same as Module 0) ---
+        function getStoredLanguage() { /* ... copy from Module 0 ... */
+            const storedLang = localStorage.getItem('userLanguage');
+            if (storedLang && translations[storedLang]) return storedLang;
+            const browserLang = navigator.language || navigator.userLanguage;
+            if (browserLang.startsWith('pt')) return 'pt';
+            if (browserLang.startsWith('zh')) return 'zh';
+            return 'en';
+        }
+
+        function setLanguage(lang) { /* ... copy from Module 0, ensure it calls functions below ... */
+            if (!translations[lang]) lang = 'en';
+            localStorage.setItem('userLanguage', lang);
+            document.documentElement.lang = lang;
+            translatePage(lang);
+
+            const langSelect = document.getElementById('languageSelect');
+            if (langSelect) langSelect.value = lang;
+
+            // Re-initialize or update language-dependent interactive content
+            if (document.getElementById('method-match')) setupMethodMatch();
+            if (document.getElementById('list-modifier')) setupListModifier(); // Reset list visualizer text
+            if (document.getElementById('predict-list')) setupPredictionActivity(); // Load new snippet maybe? Or just translate text.
+            if (document.getElementById('choose-tool')) setupToolChoice(); // Load new scenario maybe? Or just translate text.
+            if (document.getElementById('list-challenges')) { // Update challenge text, placeholders, etc.
+                setupListChallenges(); // Resets feedback etc.
+                if (typeof updateChallengeSummary === 'function') updateChallengeSummary();
+            }
+        }
+
+        function getTranslation(key, lang, replacements = {}) { /* ... copy from Module 0 ... */
+            let text = translations[lang]?.[key] ?? translations['en']?.[key] ?? `[${key}]`;
+            for (const placeholder in replacements) {
+                const regex = new RegExp(`\\{${placeholder}\\}`, 'g');
+                text = text.replace(regex, replacements[placeholder]);
+            }
+            return text;
+        }
+
+        function translatePage(lang) { /* ... copy from Module 0 ... */
+             if (!translations[lang]) lang = 'en';
+             document.querySelectorAll('[data-translate]').forEach(el => {
+                 const key = el.getAttribute('data-translate');
+                 const translation = getTranslation(key, lang);
+                  if (el.tagName === 'TITLE') { document.title = translation; }
+                  else if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') { /* Skip placeholders */ }
+                  else if (el.tagName === 'OPTION') { el.textContent = translation; }
+                  else {
+                     if (translation.includes('<') && translation.includes('>')) { el.innerHTML = translation; }
+                     else { el.textContent = translation; }
+                  }
+             });
+             document.querySelectorAll('[data-translate-placeholder]').forEach(el => {
+                 const key = el.getAttribute('data-translate-placeholder');
+                 const translation = getTranslation(key, lang);
+                 el.setAttribute('placeholder', translation);
+             });
+             document.querySelectorAll('[data-translate-title]').forEach(el => {
+                  const key = el.getAttribute('data-translate-title');
+                  const translation = getTranslation(key, lang);
+                  el.setAttribute('title', translation);
+             });
+        }
+
+        // --- Initialize Language ---
+        const initialLang = getStoredLanguage();
+        // setLanguage called later
+
+        // --- Minimal Nav Logic (Same as Module 0) ---
+        const navToggleButton = document.getElementById('minimal-nav-toggle');
+        const navPanel = document.getElementById('minimal-nav-panel');
+        const body = document.body;
+        if (navToggleButton && navPanel) { /* ... copy from Module 0 ... */
+            navToggleButton.addEventListener('click', (event) => { event.stopPropagation(); body.classList.toggle('nav-active'); navToggleButton.setAttribute('aria-expanded', body.classList.contains('nav-active')); });
+            document.addEventListener('click', (event) => { if (body.classList.contains('nav-active') && !navPanel.contains(event.target) && event.target !== navToggleButton && !navToggleButton.contains(event.target) ) { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); } });
+            navPanel.querySelectorAll('a').forEach(link => { link.addEventListener('click', () => { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); }); });
+            document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && body.classList.contains('nav-active')) { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); } });
+            navToggleButton.setAttribute('aria-expanded', 'false');
+        }
+
+        // --- Language Switcher Setup (Same as Module 0) ---
+        const langSelect = document.getElementById('languageSelect');
+        if (langSelect) {
+            langSelect.addEventListener('change', (e) => setLanguage(e.target.value));
+        }
+
+        // --- Helper Function for Feedback (Same as Module 0) ---
+        function showFeedback(elementId, messageKey, type = 'info', replacements = {}) { /* ... copy from Module 0 ... */
+            const feedbackEl = document.getElementById(elementId);
+            if (!feedbackEl) { console.error(`Feedback element not found: ${elementId}`); return; }
+            const currentLang = getStoredLanguage();
+            const translatedMessage = getTranslation(messageKey, currentLang, replacements);
+             if (translatedMessage.includes('<') && translatedMessage.includes('>')) { feedbackEl.innerHTML = translatedMessage; }
+             else { feedbackEl.textContent = translatedMessage; }
+            feedbackEl.className = 'feedback-message'; // Reset classes first
+            feedbackEl.classList.add('visible', type);
+            const interactiveArea = feedbackEl.closest('.interactive-area');
+            if (!interactiveArea) return;
+            interactiveArea.classList.remove('success-glow-anim', 'shake-anim');
+            void interactiveArea.offsetWidth; // Trigger reflow
+            if (type === 'correct') { interactiveArea.classList.add('success-glow-anim'); }
+            else if (type === 'incorrect') { interactiveArea.classList.add('shake-anim'); }
+        }
+        function hideFeedback(elementId) {
+             const feedbackEl = document.getElementById(elementId);
+             if (feedbackEl) {
+                 feedbackEl.classList.remove('visible', 'correct', 'incorrect', 'info');
+                 feedbackEl.style.maxHeight = '0'; // Ensure it collapses
+                 feedbackEl.style.marginTop = '0'; // Ensure margin collapses
+             }
+        }
+
+
+        // --- Activity 1: Method Match ---
+        const methodMatchSection = document.getElementById('method-match');
+        if (methodMatchSection) {
+            const methodsContainer = document.getElementById('match-methods');
+            const descriptionsContainer = document.getElementById('match-descriptions');
+            const checkBtn = document.getElementById('check-match-btn');
+            const resetBtn = document.getElementById('reset-match-btn');
+            const feedbackDiv = document.getElementById('match-feedback');
+            let draggedItem = null;
+            let touchDragElement = null, originalPiece = null, startX, startY, offsetX, offsetY;
+
+            const matchPairsData = [
+                { methodKey: 'match_method_append', descKey: 'match_desc_append', id: 'append' },
+                { methodKey: 'match_method_insert', descKey: 'match_desc_insert', id: 'insert' },
+                { methodKey: 'match_method_remove', descKey: 'match_desc_remove', id: 'remove' },
+                { methodKey: 'match_method_pop', descKey: 'match_desc_pop', id: 'pop' },
+                { methodKey: 'match_method_del', descKey: 'match_desc_del', id: 'del' },
+                { methodKey: 'match_method_slice', descKey: 'match_desc_slice', id: 'slice' },
+            ];
+
+            function setupMethodMatch() {
+                const currentLang = getStoredLanguage();
+                methodsContainer.innerHTML = `<h4 data-translate="match_col_methods">${getTranslation('match_col_methods', currentLang)}</h4>`;
+                descriptionsContainer.innerHTML = `<h4 data-translate="match_col_desc">${getTranslation('match_col_desc', currentLang)}</h4>`;
+                hideFeedback('match-feedback');
+                checkBtn.disabled = false;
+                checkBtn.classList.remove('success');
+
+                const shuffledMethods = [...matchPairsData].sort(() => Math.random() - 0.5);
+                const shuffledDescriptions = [...matchPairsData].sort(() => Math.random() - 0.5);
+
+                shuffledMethods.forEach(pair => {
+                    const methodEl = document.createElement('div');
+                    methodEl.classList.add('match-item');
+                    methodEl.draggable = true;
+                    methodEl.textContent = getTranslation(pair.methodKey, currentLang);
+                    methodEl.dataset.matchId = pair.id;
+                    addDragListeners(methodEl);
+                    addTouchListeners(methodEl); // Add touch listeners
+                    methodsContainer.appendChild(methodEl);
+                });
+
+                shuffledDescriptions.forEach(pair => {
+                    const targetEl = document.createElement('div');
+                    targetEl.classList.add('match-target');
+                    targetEl.dataset.matchId = pair.id;
+                    const placeholder = document.createElement('span');
+                    placeholder.classList.add('placeholder-text');
+                    placeholder.textContent = getTranslation('match_target_placeholder', currentLang);
+                    const descText = document.createElement('span');
+                    descText.style.fontWeight = 'normal'; // Description text normal weight
+                    descText.style.marginLeft = '5px';
+                    descText.textContent = ` - ${getTranslation(pair.descKey, currentLang)}`;
+                    targetEl.appendChild(placeholder);
+                    targetEl.appendChild(descText); // Add description text next to placeholder
+                    addDropListeners(targetEl);
+                    descriptionsContainer.appendChild(targetEl);
+                });
+            }
+
+            function addDragListeners(element) {
+                 element.addEventListener('dragstart', (e) => {
+                     if (e.target.closest('.match-target')) { e.preventDefault(); return; } // Don't drag from target
+                     draggedItem = element;
+                     element.classList.add('ghosting');
+                     e.dataTransfer.effectAllowed = 'move';
+                     try { e.dataTransfer.setData('text/plain', element.dataset.matchId); } catch (err) {}
+                 });
+                 element.addEventListener('dragend', () => {
+                     if (draggedItem && draggedItem.classList.contains('ghosting')) {
+                         draggedItem.classList.remove('ghosting');
+                     }
+                     document.querySelectorAll('.match-target.over').forEach(t => t.classList.remove('over'));
+                     draggedItem = null;
+                 });
+            }
+
+            // Touch event handlers (similar to Module 0 Build-a-Print)
+             function handleTouchStart(e) {
+                 if (touchDragElement || e.target.closest('.match-target')) return;
+                 originalPiece = e.target.closest('.match-item');
+                 if (!originalPiece || !methodsContainer.contains(originalPiece)) return;
+                 const touch = e.targetTouches[0]; startX = touch.clientX; startY = touch.clientY;
+                 const rect = originalPiece.getBoundingClientRect(); offsetX = startX - rect.left; offsetY = startY - rect.top;
+                 touchDragElement = originalPiece.cloneNode(true); touchDragElement.classList.add('dragging');
+                 touchDragElement.style.position = 'fixed'; touchDragElement.style.left = `${startX - offsetX}px`; touchDragElement.style.top = `${startY - offsetY}px`;
+                 touchDragElement.style.width = `${rect.width}px`; touchDragElement.style.height = `${rect.height}px`;
+                 document.body.appendChild(touchDragElement);
+                 originalPiece.classList.add('ghosting'); e.preventDefault();
+             }
+             function handleTouchMove(e) {
+                 if (!touchDragElement) return; e.preventDefault();
+                 const touch = e.targetTouches[0]; const currentX = touch.clientX; const currentY = touch.clientY;
+                 touchDragElement.style.left = `${currentX - offsetX}px`; touchDragElement.style.top = `${currentY - offsetY}px`;
+                 touchDragElement.style.display = 'none'; const elemBelow = document.elementFromPoint(currentX, currentY); touchDragElement.style.display = '';
+                 document.querySelectorAll('.match-target.over').forEach(t => t.classList.remove('over'));
+                 const dropTarget = elemBelow?.closest('.match-target');
+                 if(dropTarget && !dropTarget.querySelector('.match-item')) { // Only highlight if empty
+                     dropTarget.classList.add('over');
+                 }
+             }
+             function handleTouchEnd(e) {
+                 if (!touchDragElement || !originalPiece) return;
+                 const touch = e.changedTouches[0]; const finalX = touch.clientX; const finalY = touch.clientY;
+                 touchDragElement.style.display = 'none'; const elemBelow = document.elementFromPoint(finalX, finalY); touchDragElement.style.display = '';
+                 const dropTarget = elemBelow?.closest('.match-target');
+                 document.querySelectorAll('.match-target.over').forEach(t => t.classList.remove('over'));
+
+                 if (dropTarget && !dropTarget.querySelector('.match-item')) { // Dropped in empty target
+                     const droppedPiece = originalPiece.cloneNode(true);
+                     droppedPiece.classList.remove('ghosting');
+                     droppedPiece.draggable = false;
+                     droppedPiece.style.cursor = 'default';
+                     droppedPiece.removeEventListener('touchstart', handleTouchStart); // Remove touch from dropped clone
+                     droppedPiece.removeEventListener('touchmove', handleTouchMove);
+                     droppedPiece.removeEventListener('touchend', handleTouchEnd);
+                     dropTarget.innerHTML = ''; // Clear placeholder and description text
+                     dropTarget.appendChild(droppedPiece); // Add the item
+                     dropTarget.classList.add('filled');
+                     originalPiece.remove(); // Remove original from source list
+                 } else {
+                     originalPiece.classList.remove('ghosting'); // Return if not dropped correctly
+                 }
+
+                 if (touchDragElement.parentNode === document.body) { document.body.removeChild(touchDragElement); }
+                 touchDragElement = null; originalPiece = null;
+             }
+            function addTouchListeners(element) {
+                 element.addEventListener('touchstart', handleTouchStart, { passive: false });
+                 element.addEventListener('touchmove', handleTouchMove, { passive: false });
+                 element.addEventListener('touchend', handleTouchEnd);
+            }
+
+
+            function addDropListeners(target) {
+                target.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    if (!target.querySelector('.match-item')) { // Only allow drop if empty
+                       target.classList.add('over');
+                    }
+                });
+                target.addEventListener('dragleave', () => target.classList.remove('over'));
+                target.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    target.classList.remove('over');
+                    if (!target.querySelector('.match-item') && draggedItem && methodsContainer.contains(draggedItem)) {
+                        const droppedItem = draggedItem;
+                        droppedItem.classList.remove('ghosting');
+                        droppedItem.draggable = false; // Make it non-draggable once dropped
+                        droppedItem.style.cursor = 'default';
+                        target.innerHTML = ''; // Clear placeholder and description text
+                        target.appendChild(droppedItem);
+                        target.classList.add('filled');
+                        draggedItem = null;
+                    }
+                });
+            }
+
+            checkBtn.addEventListener('click', () => {
+                let allCorrect = true;
+                let filledCount = 0;
+                descriptionsContainer.querySelectorAll('.match-target').forEach(target => {
+                    const placedItem = target.querySelector('.match-item');
+                    if (placedItem) {
+                        filledCount++;
+                        if (placedItem.dataset.matchId !== target.dataset.matchId) {
+                            allCorrect = false;
+                            target.style.borderColor = 'var(--error-color)'; // Visual hint
+                            placedItem.style.backgroundColor = 'var(--error-color)';
+                        } else {
+                           target.style.borderColor = 'var(--success-color)'; // Visual hint
+                           placedItem.style.backgroundColor = 'var(--success-color)';
+                        }
+                    } else {
+                        // Empty target means not all matched
+                        allCorrect = false;
+                         target.style.borderColor = 'var(--secondary-color)'; // Reset border
+                    }
+                });
+
+                if (allCorrect && filledCount === matchPairsData.length) {
+                    showFeedback('match-feedback', 'feedback_match_correct', 'correct');
+                    checkBtn.disabled = true;
+                    checkBtn.classList.add('success');
+                } else if (filledCount > 0) {
+                    showFeedback('match-feedback', 'feedback_match_incorrect', 'incorrect');
+                     checkBtn.classList.remove('success');
+                } else {
+                     showFeedback('match-feedback', 'feedback_match_empty', 'info');
+                      checkBtn.classList.remove('success');
+                }
+            });
+
+            resetBtn.addEventListener('click', setupMethodMatch);
+            // setupMethodMatch(); // Initial call moved to end
+        }
+
+
+        // --- Activity 2: List Modifier ---
+        const listModifierSection = document.getElementById('list-modifier');
+        if (listModifierSection) {
+            const listDisplay = document.getElementById('current-list-display');
+            const controlsDiv = listModifierSection.querySelector('.controls');
+            const feedbackDiv = document.getElementById('modifier-feedback');
+            const appendValueInput = document.getElementById('append-value');
+            const insertIndexInput = document.getElementById('insert-index');
+            const insertValueInput = document.getElementById('insert-value');
+            const removeValueInput = document.getElementById('remove-value');
+            const popIndexInput = document.getElementById('pop-index');
+            const delIndexInput = document.getElementById('del-index');
+            const resetBtn = document.getElementById('reset-modifier-list');
+
+            let currentList = [];
+            const initialList = ['a', 10, 'b', 20]; // Initial state
+
+            function renderList() {
+                listDisplay.innerHTML = ''; // Clear previous
+                listDisplay.appendChild(document.createTextNode('['));
+                currentList.forEach((item, index) => {
+                    const span = document.createElement('span');
+                    span.classList.add('list-item');
+                    if (typeof item === 'string') {
+                        span.textContent = `"${item}"`;
+                        span.classList.add('list-item-string');
+                    } else if (typeof item === 'number') {
+                        span.textContent = item;
+                        span.classList.add('list-item-number');
+                    } else {
+                         span.textContent = String(item); // Fallback
+                    }
+                    listDisplay.appendChild(span);
+                    if (index < currentList.length - 1) {
+                        listDisplay.appendChild(document.createTextNode(', '));
+                    }
+                });
+                listDisplay.appendChild(document.createTextNode(']'));
+                listDisplay.classList.add('list-change-anim');
+                setTimeout(() => listDisplay.classList.remove('list-change-anim'), 600); // Duration of animation
+                 // Reset input fields related to indices to prevent easy reuse of invalid ones
+                 popIndexInput.value = '';
+                 delIndexInput.value = '';
+                 insertIndexInput.value = '';
+            }
+
+            function setupListModifier() {
+                currentList = [...initialList]; // Reset to initial state (copy)
+                renderList();
+                hideFeedback('modifier-feedback');
+                 // Clear value inputs too
+                 appendValueInput.value = '';
+                 insertValueInput.value = '';
+                 removeValueInput.value = '';
+            }
+
+            controlsDiv.addEventListener('click', (e) => {
+                 if (e.target.tagName === 'BUTTON' && e.target.dataset.action) {
+                     const action = e.target.dataset.action;
+                     let value, index;
+                     let success = true;
+                     let feedbackKey = '';
+                     let feedbackParams = {};
+                     const currentLang = getStoredLanguage();
+
+                     try {
+                        hideFeedback('modifier-feedback'); // Hide previous feedback
+                        switch(action) {
+                            case 'append':
+                                value = appendValueInput.value;
+                                if (value.trim() === '') { success = false; feedbackKey = 'feedback_modifier_invalid_input'; break; }
+                                // Try to convert to number if possible, else keep as string
+                                const numValueAppend = Number(value);
+                                currentList.push(isNaN(numValueAppend) ? value : numValueAppend);
+                                feedbackKey = 'feedback_modifier_append';
+                                feedbackParams = { value: value };
+                                appendValueInput.value = ''; // Clear input
+                                break;
+                            case 'insert':
+                                index = parseInt(insertIndexInput.value, 10);
+                                value = insertValueInput.value;
+                                if (isNaN(index) || index < 0 || value.trim() === '') { success = false; feedbackKey = 'feedback_modifier_invalid_input'; break; }
+                                if (index > currentList.length) index = currentList.length; // Allow inserting at the end
+                                const numValueInsert = Number(value);
+                                currentList.splice(index, 0, isNaN(numValueInsert) ? value : numValueInsert);
+                                feedbackKey = 'feedback_modifier_insert';
+                                feedbackParams = { value: value, index: index };
+                                insertIndexInput.value = ''; insertValueInput.value = ''; // Clear inputs
+                                break;
+                            case 'remove':
+                                value = removeValueInput.value;
+                                if (value.trim() === '') { success = false; feedbackKey = 'feedback_modifier_invalid_input'; break; }
+                                const numValueRemove = Number(value);
+                                const valueToRemove = isNaN(numValueRemove) ? value : numValueRemove;
+                                const removeIndex = currentList.indexOf(valueToRemove);
+                                if (removeIndex === -1) {
+                                    success = false;
+                                    feedbackKey = 'feedback_modifier_remove_fail';
+                                    feedbackParams = { value: value };
+                                } else {
+                                    currentList.splice(removeIndex, 1);
+                                    feedbackKey = 'feedback_modifier_remove';
+                                    feedbackParams = { value: value };
+                                    removeValueInput.value = ''; // Clear input
+                                }
+                                break;
+                             case 'pop':
+                                 index = popIndexInput.value.trim() === '' ? currentList.length - 1 : parseInt(popIndexInput.value, 10);
+                                 if (isNaN(index) || index < -currentList.length || index >= currentList.length ) { // Python allows negative index
+                                     success = false;
+                                     feedbackKey = 'feedback_modifier_pop_fail';
+                                     feedbackParams = { index: popIndexInput.value }; // Show original input in error
+                                 } else {
+                                     const poppedValue = currentList.splice(index, 1)[0]; // Use splice to remove and get value
+                                     const displayIndex = (index < 0) ? index + currentList.length + 1: index; // Calculate positive index for feedback if negative was used
+                                     feedbackKey = popIndexInput.value.trim() === '' ? 'feedback_modifier_pop_last' : 'feedback_modifier_pop';
+                                     feedbackParams = { value: (typeof poppedValue === 'string' ? `"${poppedValue}"` : poppedValue), index: displayIndex };
+                                      popIndexInput.value = ''; // Clear input
+                                 }
+                                 break;
+                            case 'del':
+                                index = parseInt(delIndexInput.value, 10);
+                                if (isNaN(index) || index < 0 || index >= currentList.length) {
+                                     success = false;
+                                     feedbackKey = 'feedback_modifier_del_fail';
+                                     feedbackParams = { index: index };
+                                } else {
+                                    currentList.splice(index, 1);
+                                    feedbackKey = 'feedback_modifier_del';
+                                    feedbackParams = { index: index };
+                                    delIndexInput.value = ''; // Clear input
+                                }
+                                break;
+                         }
+                    } catch (error) {
+                        success = false;
+                        feedbackKey = 'feedback_modifier_invalid_input'; // Generic error
+                        console.error("List modifier error:", error);
+                    }
+
+                    if (feedbackKey) {
+                         showFeedback('modifier-feedback', feedbackKey, success ? 'info' : 'incorrect', feedbackParams);
+                    }
+                    if (success) { renderList(); } // Only re-render on successful modification
+                }
+            });
+
+            resetBtn.addEventListener('click', setupListModifier);
+            // setupListModifier(); // Initial call moved to end
+        }
+
+        // --- Activity 3: Predict the List ---
+        const predictListSection = document.getElementById('predict-list');
+        if (predictListSection) {
+            const codeSnippetDiv = document.getElementById('predict-code-snippet');
+            const predictionInput = document.getElementById('prediction-input');
+            const checkBtn = document.getElementById('check-prediction-btn');
+            const nextBtn = document.getElementById('next-prediction-btn');
+            const feedbackDiv = document.getElementById('prediction-feedback');
+
+            const predictionChallenges = [
+                {
+                    code: `data = [1, 2, 3]\ndata.append(4)\ndata.insert(1, 'x')`,
+                    correctAnswer: `[1, 'x', 2, 3, 4]` // String representation needed for comparison
+                },
+                {
+                    code: `data = ['a', 'b', 'c', 'd']\ndel data[1]\ndata.remove('d')`,
+                    correctAnswer: `['a', 'c']`
+                },
+                {
+                    code: `data = [10, 20, 30, 40, 50]\npopped = data.pop(2)\ndata[0:2] = [1, 2]`, // Note: popped value ignored for prediction
+                    correctAnswer: `[1, 2, 40, 50]`
+                },
+                 {
+                    code: `data = ['start']\ndata.insert(0, 'go')\ndata.append('end')\ndata.pop()`,
+                     correctAnswer: `['go', 'start']`
+                 },
+                {
+                    code: `data = [5, 6, 7, 8]\ndata[1:1] = [10, 11] # Insert using slice\ndel data[3]`, // Insert at index 1, then delete original index 3 (which is 8)
+                    correctAnswer: `[5, 10, 11, 7]`
+                }
+            ];
+            let currentChallengeIndex = 0;
+
+            function loadPredictionChallenge(index) {
+                const challenge = predictionChallenges[index];
+                // Basic syntax highlighting (can be improved)
+                 const highlightedCode = challenge.code
+                     .replace(/(\bdel\b|\bprint\b)/g, '<span class="code-keyword">$1</span>')
+                     .replace(/(\.append\(|\.insert\(|\.remove\(|\.pop\()/g, '<span class="code-method">$1</span>')
+                     .replace(/([\[\]])/g, '<span class="code-paren">$1</span>')
+                     .replace(/('.*?'|".*?")/g, '<span class="code-string">$1</span>')
+                     .replace(/(\b\d+\b)/g, '<span class="code-number">$1</span>');
+
+                 codeSnippetDiv.innerHTML = highlightedCode.replace(/\n/g, '<br>'); // Use innerHTML for spans
+                predictionInput.value = '';
+                hideFeedback('prediction-feedback');
+                checkBtn.disabled = false;
+                checkBtn.classList.remove('success');
+                nextBtn.classList.add('hidden');
+            }
+
+            function setupPredictionActivity() {
+                currentChallengeIndex = Math.floor(Math.random() * predictionChallenges.length); // Start random
+                loadPredictionChallenge(currentChallengeIndex);
+            }
+
+            checkBtn.addEventListener('click', () => {
+                const userAnswer = predictionInput.value.trim().replace(/\s+/g, ''); // Remove spaces for comparison
+                const correctAnswer = predictionChallenges[currentChallengeIndex].correctAnswer.replace(/\s+/g, '');
+                const currentLang = getStoredLanguage();
+
+                if (userAnswer === '') {
+                    showFeedback('prediction-feedback', 'feedback_predict_empty', 'info');
+                    return;
+                }
+
+                 // Basic validation for list format
+                 if (!userAnswer.startsWith('[') || !userAnswer.endsWith(']')) {
+                    showFeedback('prediction-feedback', 'feedback_predict_invalid', 'incorrect');
+                     return;
+                 }
+
+
+                if (userAnswer === correctAnswer) {
+                    showFeedback('prediction-feedback', 'feedback_predict_correct', 'correct');
+                    checkBtn.disabled = true;
+                    checkBtn.classList.add('success');
+                    nextBtn.classList.remove('hidden');
+                } else {
+                     showFeedback('prediction-feedback', 'feedback_predict_incorrect', 'incorrect', { correct_list: `<code class="code-font">${predictionChallenges[currentChallengeIndex].correctAnswer}</code>` });
+                    checkBtn.disabled = false; // Allow retry on same challenge
+                    nextBtn.classList.add('hidden');
+                }
+            });
+
+            nextBtn.addEventListener('click', () => {
+                currentChallengeIndex = (currentChallengeIndex + 1) % predictionChallenges.length;
+                loadPredictionChallenge(currentChallengeIndex);
+            });
+
+            // setupPredictionActivity(); // Initial call moved to end
+        }
+
+         // --- Activity 4: Choose the Right Tool ---
+         const chooseToolSection = document.getElementById('choose-tool');
+         if (chooseToolSection) {
+             const scenarioDiv = document.getElementById('tool-scenario').querySelector('p');
+             const optionsContainer = document.getElementById('tool-options');
+             const feedbackDiv = document.getElementById('tool-feedback');
+             const nextBtn = document.getElementById('next-tool-btn');
+
+             const toolScenarios = [
+                 { scenarioKey: 'tool_scenario_1', correctKey: 'tool_option_append', options: ['append', 'insert', 'remove'] },
+                 { scenarioKey: 'tool_scenario_2', correctKey: 'tool_option_insert', options: ['append', 'insert', 'slice'] },
+                 { scenarioKey: 'tool_scenario_3', correctKey: 'tool_option_remove', options: ['pop_index', 'remove', 'del'] },
+                 { scenarioKey: 'tool_scenario_4', correctKey: 'tool_option_del', altCorrectKey: 'tool_option_pop_index', options: ['remove', 'pop_noindex', 'del'] }, // del or pop(index)
+                 { scenarioKey: 'tool_scenario_5', correctKey: 'tool_option_pop_noindex', options: ['del', 'pop_noindex', 'remove'] }, // pop() specifically returns value
+                 { scenarioKey: 'tool_scenario_6', correctKey: 'tool_option_slice', options: ['insert', 'slice', 'append'] },
+             ];
+             const toolOptionMap = { // Map keys to actual display text keys
+                 'append': 'tool_option_append', 'insert': 'tool_option_insert', 'remove': 'tool_option_remove',
+                 'pop_index': 'tool_option_pop_index', 'pop_noindex': 'tool_option_pop_noindex',
+                 'del': 'tool_option_del', 'slice': 'tool_option_slice'
+             };
+              let currentToolIndex = 0;
+              let blockClicks = false;
+
+              function loadToolScenario(index) {
+                 const challenge = toolScenarios[index];
+                 const currentLang = getStoredLanguage();
+                 scenarioDiv.textContent = getTranslation(challenge.scenarioKey, currentLang);
+                 optionsContainer.innerHTML = '';
+                 blockClicks = false;
+
+                 const shuffledOptions = [...challenge.options].sort(() => Math.random() - 0.5);
+
+                 shuffledOptions.forEach(optionKey => {
+                     const optionDiv = document.createElement('div');
+                     optionDiv.classList.add('tool-option');
+                     optionDiv.textContent = getTranslation(toolOptionMap[optionKey], currentLang);
+                     optionDiv.dataset.optionKey = optionKey; // Store the short key
+                      optionDiv.addEventListener('click', handleToolSelection);
+                     optionsContainer.appendChild(optionDiv);
+                 });
+
+                 hideFeedback('tool-feedback');
+                 nextBtn.classList.add('hidden');
+              }
+
+              function handleToolSelection(event) {
+                 if (blockClicks) return;
+                 blockClicks = true; // Prevent multiple clicks
+
+                 const selectedOptionDiv = event.currentTarget;
+                 const selectedKey = selectedOptionDiv.dataset.optionKey;
+                 const challenge = toolScenarios[currentToolIndex];
+                 const correctKeyShort = challenge.correctKey.replace('tool_option_', ''); // Get short key like 'append'
+                 const altCorrectKeyShort = challenge.altCorrectKey ? challenge.altCorrectKey.replace('tool_option_', '') : null;
+
+                  optionsContainer.querySelectorAll('.tool-option').forEach(opt => {
+                      opt.classList.add('disabled'); // Disable all options visually
+                  });
+
+                 if (selectedKey === correctKeyShort || selectedKey === altCorrectKeyShort) {
+                     selectedOptionDiv.classList.add('correct');
+                     // Provide specific feedback if the alternative was chosen for Q4
+                     const feedbackKey = (selectedKey === altCorrectKeyShort && correctKeyShort === 'del') ? 'feedback_tool_pop_del_alt' : 'feedback_tool_correct';
+                      showFeedback('tool-feedback', feedbackKey, 'correct');
+                     nextBtn.classList.remove('hidden');
+                 } else {
+                     selectedOptionDiv.classList.add('incorrect');
+                     showFeedback('tool-feedback', 'feedback_tool_incorrect', 'incorrect');
+                     // Highlight the correct answer(s) after a delay
+                     setTimeout(() => {
+                          optionsContainer.querySelectorAll('.tool-option').forEach(opt => {
+                              const optKey = opt.dataset.optionKey;
+                              if (optKey === correctKeyShort || optKey === altCorrectKeyShort) {
+                                  if (!opt.classList.contains('incorrect')) { // Don't mark correct if user already chose wrong
+                                    opt.classList.add('correct');
+                                    opt.style.transition = 'background-color 0.5s ease, border-color 0.5s ease'; // Smooth highlight
+                                  }
+                              }
+                          });
+                         nextBtn.classList.remove('hidden'); // Show next button even if wrong
+                     }, 600); // Delay before showing correct answer
+                 }
+              }
+
+              function setupToolChoice() {
+                   currentToolIndex = Math.floor(Math.random() * toolScenarios.length);
+                   loadToolScenario(currentToolIndex);
+              }
+
+              nextBtn.addEventListener('click', () => {
+                  currentToolIndex = (currentToolIndex + 1) % toolScenarios.length;
+                  loadToolScenario(currentToolIndex);
+              });
+
+             // setupToolChoice(); // Initial call moved to end
+         }
+
+
+        // --- Activity 5: List Challenges (Mini Missions) ---
+        const challengesSection = document.getElementById('list-challenges');
+        let updateChallengeSummary; // Define scope
+        if (challengesSection) {
+            const missionRunButtons = challengesSection.querySelectorAll('.mission-run-btn');
+            const summaryFeedback = document.getElementById('challenges-summary-feedback');
+            const totalChallenges = challengesSection.querySelectorAll('.mission').length;
+            let completedChallengesCount = 0;
+
+            updateChallengeSummary = function() {
+                 completedChallengesCount = challengesSection.querySelectorAll('.mission[data-completed="true"]').length;
+                 const currentLang = getStoredLanguage();
+                 if (completedChallengesCount === totalChallenges) {
+                     showFeedback('challenges-summary-feedback', 'feedback_challenges_summary_all_done', 'correct', { totalChallenges: totalChallenges });
+                 } else if (completedChallengesCount > 0) {
+                      showFeedback('challenges-summary-feedback', 'feedback_challenges_summary_progress', 'info', { completedCount: completedChallengesCount, totalChallenges: totalChallenges });
+                 } else {
+                     summaryFeedback.classList.remove('visible', 'correct', 'incorrect', 'info');
+                 }
+            }
+
+            // Simple code validation using regex/string checks
+            function validateChallengeCode(challengeId, code) {
+                code = code.trim();
+                 switch (challengeId) {
+                     case '1': // Append 'd' to items
+                         return /items\.append\(\s*["']d["']\s*\)/.test(code);
+                     case '2': // Insert 0 at index 0 in nums
+                         return /nums\.insert\(\s*0\s*,\s*0\s*\)/.test(code);
+                     case '3': // Remove 'remove_me' from mix
+                         return /mix\.remove\(\s*["']remove_me["']\s*\)/.test(code);
+                     case '4': // Remove index 2 from elements (del or pop)
+                         return /(del\s+elements\s*\[\s*2\s*\])|(elements\.pop\(\s*2\s*\))/.test(code);
+                     case '5': // Replace slice [1:3] with ['X', 'Y'] in letters
+                         // Regex for slice assignment is trickier, check parts
+                          return /letters\s*\[\s*1\s*:\s*3\s*\]\s*=\s*\[\s*["']X["']\s*,\s*["']Y["']\s*\]/.test(code.replace(/\s+/g,' ')); // Normalize spacing
+                     default: return false;
+                 }
+            }
+
+            missionRunButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const challengeId = button.dataset.challengeId;
+                    const missionDiv = document.getElementById(`challenge-${challengeId}`);
+                    if (!missionDiv) return;
+                    const editor = missionDiv.querySelector('.mission-editor');
+                    const feedbackDivId = `challenge-feedback-${challengeId}`;
+                    const feedbackDiv = document.getElementById(feedbackDivId);
+                    const statusIcon = missionDiv.querySelector('.mission-status i');
+                    const code = editor.value;
+                    let success = false;
+                    let feedbackKey = 'feedback_challenge_incorrect'; // Default to incorrect
+                    let feedbackType = 'incorrect';
+                    const hintKeys = { // Map IDs to hint keys
+                        '1': 'feedback_challenge1_hint', '2': 'feedback_challenge2_hint',
+                        '3': 'feedback_challenge3_hint', '4': 'feedback_challenge4_hint',
+                        '5': 'feedback_challenge5_hint'
+                    };
+
+                    hideFeedback(feedbackDivId); // Clear previous feedback
+
+                    if (validateChallengeCode(challengeId, code)) {
+                         success = true;
+                         feedbackKey = 'feedback_challenge_success';
+                         feedbackType = 'correct';
+                         statusIcon.className = 'fas fa-check-circle';
+                         missionDiv.dataset.completed = 'true';
+                    } else {
+                         feedbackKey = hintKeys[challengeId] || 'feedback_challenge_incorrect'; // Provide specific hint or generic error
+                         feedbackType = 'incorrect';
+                         statusIcon.className = 'fas fa-times-circle';
+                         missionDiv.dataset.completed = 'false';
+                    }
+
+                    showFeedback(feedbackDivId, feedbackKey, feedbackType);
+                    updateChallengeSummary();
+                 });
+            });
+
+            function setupListChallenges() {
+                // Reset visual state if needed (e.g., clear feedback)
+                challengesSection.querySelectorAll('.mission').forEach(m => {
+                     const id = m.id.split('-')[1];
+                     hideFeedback(`challenge-feedback-${id}`);
+                     // Optionally reset icon/completed status if needed on full language change/reset
+                     // const statusIcon = m.querySelector('.mission-status i');
+                     // statusIcon.className = 'fas fa-question-circle';
+                     // m.dataset.completed = 'false';
+                });
+                 if (typeof updateChallengeSummary === 'function') updateChallengeSummary();
+            }
+            // updateChallengeSummary(); // Initial call moved to end
+        }
+
+
+        // --- Fade-in animations on scroll (Same as Module 0) ---
+        const fadeElements = document.querySelectorAll('.fade-in');
+        const animateOnScroll = () => { /* ... copy from Module 0 ... */
+            const windowHeight = window.innerHeight;
+            fadeElements.forEach(el => {
+                if (el.style.opacity === '1') return; // Already visible
+                const rect = el.getBoundingClientRect();
+                 // Check if element is within viewport bounds (adjusted threshold)
+                 if (rect.top < windowHeight - 50 && rect.bottom >= 50) {
+                    el.style.opacity = '1';
+                    el.style.transform = 'translateY(0)';
+                 }
+            });
+        };
+        const scrollHandler = () => window.requestAnimationFrame(animateOnScroll);
+        window.addEventListener('scroll', scrollHandler);
+
+        // --- Initial Setup Calls ---
+        setLanguage(initialLang); // Apply language FIRST, which calls sub-setups
+        animateOnScroll(); // Trigger initial animation check AFTER content is potentially loaded
+
+        // Call updateChallengeSummary explicitly after initial setup if needed
+         if (challengesSection && typeof updateChallengeSummary === 'function') {
+            updateChallengeSummary();
+         }
+
+    }); // End DOMContentLoaded
+    </script>
+
+</body>
+</html>

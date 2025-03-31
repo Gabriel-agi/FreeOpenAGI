@@ -1,0 +1,1181 @@
+<!DOCTYPE html>
+<!-- Language set by JS -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Title set by JS -->
+    <title data-translate="page_title">Module 26: Importing Modules Practice</title>
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* --- Base Styles & Variables --- */
+        :root {
+            --primary-color: #007bff; /* Blue */
+            --secondary-color: #6c757d; /* Grey */
+            --background-light: #f8f9fa;
+            --background-medium: #e9ecef;
+            --background-dark: #343a40;
+            --text-light: #f8f9fa;
+            --text-dark: #212529;
+            --accent-color: #fd7e14; /* Orange - Suitable for modules/imports */
+            --success-color: #28a745; /* Green */
+            --error-color: #dc3545;   /* Red */
+            --info-color: #17a2b8;    /* Teal */
+            --border-radius: 8px;
+            --transition-speed: 0.3s;
+            --font-body: 'Roboto', sans-serif;
+            --font-title: 'Orbitron', sans-serif;
+            --selection-highlight-bg: rgba(0, 123, 255, 0.1);
+            --selection-highlight-border: rgba(0, 123, 255, 0.4);
+            /* Colors matching news.html for consistency in switcher potentially */
+            --nav-primary: #6e48aa;
+            --nav-success: #4cc9f0;
+            --nav-dark: #1a1a2e;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; font-size: 16px; }
+        body {
+            font-family: var(--font-body); line-height: 1.7;
+            background-color: var(--background-light); color: var(--text-dark);
+            overflow-x: hidden;
+        }
+
+        /* --- Utility Classes --- */
+        .container { max-width: 960px; margin: 0 auto; padding: 0 15px; }
+        .text-center { text-align: center; }
+        .highlight { color: var(--primary-color); font-weight: bold; }
+        .code-font { font-family: 'Courier New', Courier, monospace; }
+        .hidden { display: none !important; }
+        .button-group { /* For navigation buttons */
+            margin-top: 2rem;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1rem;
+        }
+
+        /* --- Advanced Animations --- */
+        .fade-in { opacity: 0; transform: translateY(20px); animation: fadeInAnimation 0.8s ease-out forwards; }
+        .fade-in.delay-1 { animation-delay: 0.2s; }
+        .fade-in.delay-2 { animation-delay: 0.4s; }
+        .fade-in.delay-3 { animation-delay: 0.6s; }
+        .fade-in.delay-4 { animation-delay: 0.8s; }
+        @keyframes fadeInAnimation { to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulseHeaderIcon {
+            0% { transform: scale(1); opacity: 0.1; filter: brightness(1); }
+            50% { transform: scale(1.05); opacity: 0.25; filter: brightness(1.2); }
+            100% { transform: scale(1); opacity: 0.1; filter: brightness(1); }
+        }
+        @keyframes successGlow {
+             0% { box-shadow: 0 0 3px rgba(40, 167, 69, 0.3); transform: scale(1); }
+             50% { box-shadow: 0 0 12px 5px rgba(40, 167, 69, 0.5); transform: scale(1.01); }
+             100% { box-shadow: 0 0 3px rgba(40, 167, 69, 0.3); transform: scale(1); }
+        }
+        .success-glow-anim { animation: successGlow 0.9s ease-out; }
+        @keyframes shake {
+          10%, 90% { transform: translate3d(-2px, 0, 0); } 20%, 80% { transform: translate3d(3px, 0, 0); }
+          30%, 50%, 70% { transform: translate3d(-5px, 0, 0); } 40%, 60% { transform: translate3d(5px, 0, 0); }
+        }
+        .shake-anim { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes iconAppearCorrect {
+            0% { transform: scale(0.5) rotate(-15deg); opacity: 0; }
+            60% { transform: scale(1.2) rotate(5deg); opacity: 1; }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        @keyframes iconAppearIncorrect {
+             0% { transform: scale(0.5) rotate(-15deg); opacity: 0; }
+             50% { transform: scale(1.2) rotate(10deg); opacity: 1; }
+             70% { transform: scale(0.9) rotate(-5deg); }
+             100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        /* No missed icon needed for these activities */
+        .action-button:active:not(:disabled) {
+            transform: translateY(1px) scale(0.98);
+            filter: brightness(0.95);
+        }
+
+
+        /* --- Minimal Retractable Nav (with Language Switcher Integration) --- */
+        .minimal-nav-button {
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            z-index: 1001; /* Above the panel */
+            background-color: rgba(52, 58, 64, 0.75);
+            color: var(--text-light);
+            border: none;
+            border-radius: var(--border-radius);
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: background-color var(--transition-speed), opacity var(--transition-speed), transform var(--transition-speed);
+            font-size: 1.1rem;
+            opacity: 0.6;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            line-height: 1;
+        }
+        .minimal-nav-button:hover {
+            background-color: rgba(52, 58, 64, 0.95);
+            opacity: 1;
+            transform: scale(1.05);
+        }
+        .minimal-nav {
+            position: fixed;
+            top: 60px;
+            right: 15px;
+            z-index: 1000;
+            background-color: var(--background-dark);
+            border-radius: var(--border-radius);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            padding: 0.8rem;
+            opacity: 0;
+            transform: translateY(-15px) scale(0.95);
+            transform-origin: top right;
+            pointer-events: none;
+            transition: opacity var(--transition-speed) ease, transform var(--transition-speed) ease;
+            min-width: 200px;
+        }
+        body.nav-active .minimal-nav {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+            pointer-events: auto;
+        }
+        .minimal-nav ul {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+        .minimal-nav ul li {
+            /* Add spacing between items */
+            margin-bottom: 5px;
+        }
+        .minimal-nav ul li:last-child {
+             margin-bottom: 0;
+        }
+        .minimal-nav ul li a {
+            display: flex;
+            align-items: center;
+            color: var(--text-light);
+            text-decoration: none;
+            padding: 0.6rem 1rem; /* Slightly reduced padding */
+            border-radius: 4px;
+            transition: background-color var(--transition-speed), color var(--transition-speed);
+            white-space: nowrap;
+            font-weight: 400;
+            font-size: 0.95rem; /* Slightly smaller font */
+        }
+        .minimal-nav ul li a i.fas {
+            margin-right: 10px;
+            width: 1.2em;
+            text-align: center;
+            opacity: 0.8;
+            transition: opacity var(--transition-speed);
+        }
+        .minimal-nav ul li a:hover {
+            background-color: var(--primary-color);
+            color: var(--text-light);
+        }
+        .minimal-nav ul li a:hover i.fas {
+            opacity: 1;
+        }
+        /* Language Switcher Styles (Adapted from news.html) */
+        .minimal-nav .language-switcher-item {
+            padding: 0.5rem 1rem; /* Padding around the select */
+            border-top: 1px solid var(--secondary-color); /* Separator */
+            margin-top: 8px;
+            padding-top: 13px;
+        }
+        #languageSelect {
+            width: 100%; /* Take full width of its list item container */
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border: 1px solid var(--nav-success); /* Use success color from news */
+            border-radius: 5px;
+            padding: 6px 30px 6px 12px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%234CC9F0%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E');
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            background-size: 10px auto;
+            transition: background-color 0.3s ease;
+        }
+        #languageSelect:hover {
+             background-color: rgba(255,255,255,0.15);
+        }
+        #languageSelect option {
+             background: var(--nav-dark); /* Use dark from news */
+             color: var(--text-light);
+        }
+        /* --- End Minimal Retractable Nav --- */
+
+
+        /* --- Practice Header --- */
+        /* Using accent color for header border */
+        .practice-header { background: linear-gradient(135deg, var(--primary-color), #0056b3); color: var(--text-light); padding: 3rem 0 4rem; text-align: center; position: relative; overflow: hidden; border-bottom: 5px solid var(--accent-color); }
+        .practice-header h1 { font-family: var(--font-title); font-size: 2.8rem; margin-bottom: 0.5rem; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); animation: fadeInAnimation 1s ease-out; }
+        .practice-header p { font-size: 1.1rem; font-weight: 300; opacity: 0.9; animation: fadeInAnimation 1s ease-out 0.3s forwards; opacity: 0; }
+        .header-icon { position: absolute; font-size: 4rem; color: var(--text-light); animation: pulseHeaderIcon 6s infinite ease-in-out alternate; }
+        .icon1 { top: 20%; left: 15%; animation-duration: 7s; } /* Box/Package */
+        .icon2 { bottom: 15%; right: 20%; animation-duration: 5s; } /* Puzzle/Cog */
+
+        /* --- Practice Section Styling --- */
+        .practice-section { padding: 3rem 0; background-color: var(--background-medium); border-bottom: 1px solid #d6d8db; }
+        .practice-section:nth-child(odd) { background-color: var(--background-light); }
+        .practice-section:last-of-type { border-bottom: none; }
+        .practice-section h2 { font-family: var(--font-title); font-size: 1.8rem; color: var(--primary-color); margin-bottom: 1rem; text-align: center; }
+        .practice-section .section-description { text-align: center; margin-bottom: 2.5rem; color: var(--secondary-color); font-size: 1.05rem; max-width: 700px; margin-left: auto; margin-right: auto; }
+
+        /* --- General Interactive Elements --- */
+        .interactive-area { background-color: #fff; padding: 2rem; border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.08); margin-top: 1.5rem; position: relative; transition: box-shadow 0.5s ease-out; }
+        .feedback-message { padding: 0.8rem 1rem; margin-top: 1rem; border-radius: var(--border-radius); font-weight: bold; text-align: center; opacity: 0; max-height: 0; overflow: hidden; transition: opacity var(--transition-speed) ease, max-height var(--transition-speed) ease, margin-top var(--transition-speed) ease; }
+        .feedback-message.visible { opacity: 1; max-height: 100px; margin-top: 1.5rem; }
+        .feedback-message.correct { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .feedback-message.incorrect { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .feedback-message.info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .feedback-message .fas { margin: 0 3px; } /* Spacing for icons in feedback */
+        .action-button {
+             display: inline-block; padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold;
+             color: var(--text-light); background-color: var(--primary-color); border: none;
+             border-radius: var(--border-radius); cursor: pointer;
+             transition: background-color var(--transition-speed), transform var(--transition-speed), filter var(--transition-speed), box-shadow var(--transition-speed);
+             margin-top: 1rem; vertical-align: middle; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+             text-decoration: none; /* For <a> tags styled as buttons */
+        }
+        .action-button:hover:not(:disabled) { background-color: #0056b3; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+        .action-button:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none; box-shadow: none; opacity: 0.7; }
+        .action-button.success { background-color: var(--success-color); }
+        .action-button.success:hover:not(:disabled) { background-color: #218838; }
+        .action-button.secondary { background-color: var(--secondary-color); }
+        .action-button.secondary:hover:not(:disabled) { background-color: #5a6268; }
+        /* Code styling */
+        .code-block { background-color: var(--background-dark); color: var(--text-light); padding: 1.5rem; border-radius: var(--border-radius); font-family: var(--code-font); font-size: 1rem; position: relative; overflow-x: auto; margin: 1rem 0; }
+        .code-keyword { color: #569cd6; } /* Blue */
+        .code-string { color: #ce9178; } /* Orange/Brown */
+        .code-comment { color: #6a9955; } /* Green */
+        .code-function { color: #dcdcaa; } /* Yellow/Green */
+        .code-paren { color: #ffd700; } /* Gold */
+        .code-number { color: #b5cea8; } /* Light Green */
+        .code-module { color: #4ec9b0; } /* Teal */
+        .code-dot { color: #9cdcfe; } /* Light blue */
+
+        /* --- Activity 1: Anatomy of Import --- */
+        #anatomy-import .code-part { cursor: pointer; border-bottom: 2px dashed rgba(255, 255, 255, 0.3); transition: background-color var(--transition-speed), border-bottom-color var(--transition-speed); padding: 0 2px; display: inline-block; }
+        #anatomy-import .code-part:hover { background-color: rgba(255, 255, 255, 0.15); border-bottom-color: var(--accent-color); }
+        #anatomy-import .code-part.identified { background-color: rgba(40, 167, 69, 0.3); border-bottom: 2px solid var(--success-color); cursor: default; }
+        .part-explanation { font-size: 0.95rem; color: var(--info-color); border-left: 3px solid var(--info-color); padding: 5px 10px; margin-top: 0.5rem; background-color: rgba(23, 162, 184, 0.05); }
+        #anatomy-status { margin-top: 1rem; font-style: italic; color: var(--secondary-color); }
+
+        /* --- Activity 2 & 3: Simulators --- */
+        .sim-editor { width: 100%; min-height: 80px; background-color: var(--background-dark); color: var(--text-light); border: 1px solid var(--secondary-color); border-radius: var(--border-radius); padding: 1rem; font-family: var(--code-font); font-size: 1rem; line-height: 1.5; resize: vertical; margin-bottom: 1rem; }
+        .sim-output-area { margin-top: 1rem; min-height: 50px; background-color: #1a1a1a; border: 1px solid #444; border-radius: var(--border-radius); padding: 1rem; color: var(--accent-color); font-family: var(--code-font); font-size: 1.05rem; white-space: pre-wrap; word-wrap: break-word; }
+        .sim-output-area .placeholder { color: var(--secondary-color); font-style: italic; font-size: 0.9rem; }
+        .sim-output-area .output-line { display: block; margin-bottom: 0.3em; }
+        .sim-output-area .output-line:last-child { margin-bottom: 0; }
+
+        /* Specific styles for Math Toolkit input */
+        #math-simulator .input-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+        #math-simulator label { font-weight: bold; }
+        #math-simulator input[type="number"] {
+            padding: 8px 12px;
+            border: 1px solid var(--secondary-color);
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            font-family: var(--font-body);
+            max-width: 120px; /* Adjust as needed */
+        }
+
+        /* Specific styles for Random Choices radio/select */
+         #random-practice .prediction-group {
+             margin-top: 1.5rem;
+             padding: 1rem;
+             background-color: var(--background-light);
+             border: 1px dashed var(--secondary-color);
+             border-radius: var(--border-radius);
+         }
+         #random-practice .prediction-group label {
+             display: block;
+             margin-bottom: 0.8rem;
+             font-weight: bold;
+             color: var(--primary-color);
+         }
+         #random-practice .prediction-options {
+             display: flex;
+             flex-direction: column;
+             gap: 0.5rem;
+         }
+         #random-practice .prediction-options label {
+             font-weight: normal;
+             color: var(--text-dark);
+             display: flex;
+             align-items: center;
+             cursor: pointer;
+         }
+         #random-practice .prediction-options input[type="radio"] {
+             margin-right: 8px;
+             accent-color: var(--primary-color); /* Color the radio button */
+             cursor: pointer;
+         }
+
+
+        /* --- Activity 4: Fix the Import (Mini Mission Style) --- */
+        #fix-the-import .mission { padding: 1.5rem; border: 1px solid #d6d8db; border-radius: var(--border-radius); margin-bottom: 1.5rem; background-color: var(--background-light); position: relative; }
+        .mission-status { position: absolute; top: 10px; right: 10px; font-size: 1.5rem; transition: transform 0.3s ease; }
+        .mission-status .fa-check-circle { color: var(--success-color); transform-origin: center; }
+        .mission-status .fa-times-circle { color: var(--error-color); }
+        .mission-status .fa-question-circle { color: var(--secondary-color); }
+        .mission[data-completed="true"] .mission-status .fa-check-circle { animation: iconAppearCorrect 0.6s ease-out; }
+        #fix-the-import .mission-editor { width: 100%; min-height: 100px; background-color: var(--background-dark); color: var(--text-light); border: 1px solid var(--secondary-color); border-radius: var(--border-radius); padding: 1rem; font-family: var(--code-font); font-size: 1rem; line-height: 1.5; resize: vertical; margin-top: 1rem; }
+        #fix-the-import .mission-output { margin-top: 1rem; min-height: 30px; background-color: #1a1a1a; border: 1px solid #444; border-radius: var(--border-radius); padding: 0.8rem; color: var(--accent-color); font-family: var(--code-font); font-size: 1rem; white-space: pre-wrap; word-wrap: break-word; }
+        #fix-the-import .error-highlight { /* Style for highlighting errors in editor */
+            background-color: rgba(220, 53, 69, 0.2); /* Light red background */
+            outline: 1px dashed var(--error-color);
+            display: block; /* Ensure it takes block space */
+        }
+
+        /* --- Final Section --- */
+        .completion-section { padding: 4rem 0; text-align: center; }
+        .completion-section .icon {
+            font-size: 4rem; color: var(--success-color); margin-bottom: 1rem;
+            display: inline-block;
+            opacity: 0; /* Start hidden for animation */
+            animation: iconAppearCorrect 1s ease-out 0.5s forwards; /* Use icon animation */
+        }
+        .completion-section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); }
+        .completion-section p { font-size: 1.1rem; margin-top: 1rem; color: var(--secondary-color); }
+
+        /* --- Responsive Design --- */
+        @media (max-width: 768px) {
+            html { font-size: 15px; }
+            .practice-header h1 { font-size: 2.2rem; }
+            .practice-section h2 { font-size: 1.6rem; }
+            .interactive-area { padding: 1.5rem; }
+            .sim-editor, .sim-output-area { font-size: 0.95rem; }
+            #math-simulator .input-group { flex-direction: column; align-items: flex-start; }
+            #math-simulator input[type="number"] { max-width: none; width: 100%; }
+             /* Adjust nav panel if needed */
+            .minimal-nav { min-width: 180px; }
+            .minimal-nav ul li a { padding: 0.6rem 0.8rem; }
+            #languageSelect { font-size: 0.85rem; padding: 5px 25px 5px 10px;}
+        }
+        @media (max-width: 480px) {
+            html { font-size: 14px; }
+            .practice-header h1 { font-size: 1.8rem; }
+            .practice-header p { font-size: 1rem; }
+            .practice-section h2 { font-size: 1.4rem; }
+            .interactive-area { padding: 1rem; }
+            .action-button { font-size: 0.9rem; padding: 0.7rem 1.2rem; width: 90%; max-width: 300px;}
+            .sim-editor, .sim-output-area { font-size: 0.9rem; }
+            #fix-the-import .mission-editor { min-height: 90px; font-size: 0.95rem;}
+            #fix-the-import .mission-output { font-size: 0.95rem;}
+            .button-group a.action-button { width: 90%; max-width: 300px; margin-bottom: 0.5rem; }
+            /* Adjust Nav */
+             .minimal-nav-button { top: 10px; right: 10px; padding: 6px 10px; font-size: 1rem; }
+             .minimal-nav { top: 48px; right: 10px; min-width: 160px; }
+             .minimal-nav ul li a { padding: 0.5rem 0.7rem; font-size: 0.9rem;}
+             .minimal-nav ul li a i.fas { margin-right: 8px; }
+             #languageSelect { font-size: 0.8rem; padding: 4px 20px 4px 8px;}
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ========= Minimal Nav Handle ========= -->
+    <button id="minimal-nav-toggle" class="minimal-nav-button" aria-label="Toggle Navigation Menu">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- ========= Minimal Nav Panel (with Language Switcher) ========= -->
+    <nav id="minimal-nav-panel" class="minimal-nav">
+        <ul>
+            <!-- MODULE 26 Links -->
+            <li><a href="ctp-theory-26.html"><i class="fas fa-book-open fa-fw"></i> <span data-translate="nav_theory">View Theory</span></a></li>
+            <li><a href="ctp-advanced-26.html"><i class="fas fa-flask fa-fw"></i> <span data-translate="nav_advanced">Advanced Practice</span></a></li>
+            <li><a href="ctp-dashboard.html"><i class="fas fa-list fa-fw"></i> <span data-translate="nav_menu">Course Menu</span></a></li>
+            <hr style="border: none; border-top: 1px solid var(--secondary-color); margin: 8px 0;">
+            <!-- Activity Links -->
+            <li><a href="#anatomy-import"><i class="fas fa-microscope fa-fw"></i> <span data-translate="nav_anatomy">Anatomy</span></a></li>
+            <li><a href="#math-simulator"><i class="fas fa-calculator fa-fw"></i> <span data-translate="nav_math">Math Toolkit</span></a></li>
+            <li><a href="#random-practice"><i class="fas fa-dice fa-fw"></i> <span data-translate="nav_random">Random Choices</span></a></li>
+            <li><a href="#fix-the-import"><i class="fas fa-wrench fa-fw"></i> <span data-translate="nav_fix">Fix Code</span></a></li>
+            <!-- Language Switcher Item -->
+            <li class="language-switcher-item">
+                 <select id="languageSelect" aria-label="Select Language">
+                     <option value="en" data-translate="lang_en">🇬🇧 English</option>
+                     <option value="pt" data-translate="lang_pt">🇧🇷 Português</option>
+                     <option value="zh" data-translate="lang_zh">🇨🇳 中文</option>
+                 </select>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- ========= Header ========= -->
+    <header class="practice-header">
+        <i class="fas fa-box-open header-icon icon1"></i> <!-- Changed icon -->
+        <i class="fas fa-cogs header-icon icon2"></i> <!-- Changed icon -->
+        <div class="container">
+            <!-- MODULE 26 Text -->
+            <h1 data-translate="header_title">Module 26: Importing Modules</h1>
+            <p data-translate="header_subtitle">Unlock pre-built powers: Learn to import and use Python modules.</p>
+        </div>
+    </header>
+
+    <!-- ========= Main Content ========= -->
+    <main>
+        <!-- ========= Activity 1: Anatomy of Import ========= -->
+        <section id="anatomy-import" class="practice-section">
+             <div class="container">
+                 <h2 class="fade-in"><i class="fas fa-microscope"></i> <span data-translate="anatomy_title">Anatomy of Importing</span></h2>
+                 <p class="section-description fade-in delay-1" data-translate="anatomy_desc">
+                     Modules give us ready-made tools. Click each part below to understand how we bring in (`import`) and use a function (`sqrt`) from the `math` module.
+                 </p>
+                 <div class="interactive-area fade-in delay-2">
+                     <div class="code-block">
+                         <span class="code-part" data-part="import-keyword" data-translate-title="tooltip_click_identify" title="Click to identify this part"><span class="code-keyword">import</span></span><!--
+                         --> <span class="code-part" data-part="module-name" data-translate-title="tooltip_click_identify" title="Click to identify this part"><span class="code-module">math</span></span><br> <!-- Newline for clarity -->
+                         <span class="code-part" data-part="module-access" data-translate-title="tooltip_click_identify" title="Click to identify this part"><span class="code-module">math</span></span><!--
+                         --><span class="code-part" data-part="dot-access" data-translate-title="tooltip_click_identify" title="Click to identify this part"><span class="code-dot">.</span></span><!--
+                         --><span class="code-part" data-part="function-name" data-translate-title="tooltip_click_identify" title="Click to identify this part"><span class="code-function">sqrt</span></span><!--
+                         --><span class="code-part" data-part="parentheses-open" data-translate-title="tooltip_click_identify" title="Click to identify this part"><span class="code-paren">(</span></span><!--
+                         --><span class="code-part" data-part="argument-value" data-translate-title="tooltip_click_identify" title="Click to identify this part"><span class="code-number">16</span></span><!--
+                         --><span class="code-part" data-part="parentheses-close" data-translate-title="tooltip_click_identify" title="Click to identify this part"><span class="code-paren">)</span></span>
+                         <span class="code-comment" data-translate="anatomy_code_comment"> # Calculate square root</span>
+                     </div>
+                     <div id="anatomy-explanations"></div>
+                     <p id="anatomy-status" data-translate="anatomy_status_initial">Identify all 8 parts!</p>
+                     <div id="anatomy-feedback" class="feedback-message"></div>
+                     <!-- Hidden elements for storing translated explanation parts -->
+                     <div id="explanation-texts" style="display: none;">
+                        <span data-key="import-keyword" data-translate="anatomy_exp_import">The `import` keyword: Tells Python to load a module.</span>
+                        <span data-key="module-name" data-translate="anatomy_exp_module">Module name (`math`): The specific collection of tools we want.</span>
+                        <span data-key="module-access" data-translate="anatomy_exp_access">Using the module name (`math`): We specify *which* module's tool we need.</span>
+                        <span data-key="dot-access" data-translate="anatomy_exp_dot">The dot (`.`): Accesses something *inside* the module.</span>
+                        <span data-key="function-name" data-translate="anatomy_exp_function">Function name (`sqrt`): The specific tool (function) from the `math` module.</span>
+                        <span data-key="parentheses-open" data-translate="anatomy_exp_paren_open">Opening parenthesis `(`: Starts the input(s) for the function.</span>
+                        <span data-key="argument-value" data-translate="anatomy_exp_argument">Argument (`16`): The value the `sqrt` function will work on.</span>
+                        <span data-key="parentheses-close" data-translate="anatomy_exp_paren_close">Closing parenthesis `)`: Ends the input(s) for the function.</span>
+                     </div>
+                 </div>
+             </div>
+        </section>
+
+        <!-- ========= Activity 2: Math Toolkit ========= -->
+        <section id="math-simulator" class="practice-section">
+             <div class="container">
+                 <h2 class="fade-in"><i class="fas fa-calculator"></i> <span data-translate="math_title">Math Toolkit</span></h2>
+                 <p class="section-description fade-in delay-1" data-translate="math_desc">
+                     The `math` module is full of useful functions. Import `math`, then use `math.sqrt()` to find the square root and `math.ceil()` to round *up* the number entered below. Print both results on separate lines.
+                 </p>
+                 <div class="interactive-area fade-in delay-2">
+                     <div class="input-group">
+                         <label for="math-input-number" data-translate="math_input_label">Number to use:</label>
+                         <input type="number" id="math-input-number" value="19.5" step="0.1">
+                     </div>
+                     <label for="math-editor-input" style="font-weight: bold; display:block; margin-bottom: 8px;" data-translate="math_editor_label">Code Editor:</label>
+                     <textarea id="math-editor-input" class="sim-editor" rows="5" data-translate-placeholder="math_editor_placeholder" placeholder='import math\n\n# Get the number (imagine this happens automatically)\nmy_num = 19.5\n\n# Calculate and print sqrt\nprint(...)\n\n# Calculate and print ceil\nprint(...)'></textarea>
+                     <div class="text-center">
+                          <button id="run-math-sim-btn" class="action-button" data-translate="button_run_sim">Run Simulation</button>
+                     </div>
+                     <label for="math-sim-output" style="font-weight: bold; display:block; margin-top: 1.5rem; margin-bottom: 8px;" data-translate="math_output_label">Simulated Output:</label>
+                     <div id="math-sim-output" class="sim-output-area">
+                         <span class="placeholder" data-translate="math_output_placeholder">Output will appear here...</span>
+                     </div>
+                     <div id="math-sim-feedback" class="feedback-message"></div>
+                 </div>
+             </div>
+        </section>
+
+         <!-- ========= Activity 3: Random Choices ========= -->
+        <section id="random-practice" class="practice-section">
+             <div class="container">
+                 <h2 class="fade-in"><i class="fas fa-dice"></i> <span data-translate="random_title">Random Choices</span></h2>
+                 <p class="section-description fade-in delay-1" data-translate="random_desc">
+                     The `random` module helps introduce unpredictability. Import `random`, then use `random.randint(1, 10)` to get a random integer and `random.choice(['red', 'green', 'blue'])` to pick a random color. Print both on separate lines.
+                 </p>
+                 <div class="interactive-area fade-in delay-2">
+                     <label for="random-editor-input" style="font-weight: bold; display:block; margin-bottom: 8px;" data-translate="random_editor_label">Code Editor:</label>
+                     <textarea id="random-editor-input" class="sim-editor" rows="6" data-translate-placeholder="random_editor_placeholder" placeholder="import random\n\ncolors = ['red', 'green', 'blue']\n\n# Get and print random integer\nprint(...)\n\n# Get and print random color\nprint(...)"></textarea>
+                     <div class="text-center">
+                          <button id="run-random-sim-btn" class="action-button" data-translate="button_run_sim">Run Simulation</button>
+                     </div>
+                     <label for="random-sim-output" style="font-weight: bold; display:block; margin-top: 1.5rem; margin-bottom: 8px;" data-translate="random_output_label">Simulated Output (will vary!):</label>
+                     <div id="random-sim-output" class="sim-output-area">
+                         <span class="placeholder" data-translate="random_output_placeholder">Output will appear here...</span>
+                     </div>
+                     <div id="random-sim-feedback" class="feedback-message"></div>
+                 </div>
+             </div>
+        </section>
+
+
+         <!-- ========= Activity 4: Fix the Import ========= -->
+        <section id="fix-the-import" class="practice-section">
+             <div class="container">
+                  <h2 class="fade-in"><i class="fas fa-wrench"></i> <span data-translate="fix_title">Fix the Import Errors</span></h2>
+                 <p class="section-description fade-in delay-1" data-translate="fix_desc">
+                     Sometimes imports go wrong! Find and fix the errors in the code below so it correctly imports `math` and prints the square root of 81. Check the output carefully.
+                 </p>
+                 <div class="interactive-area fade-in delay-2">
+                     <!-- Using mission structure for consistency -->
+                     <div class="mission" id="mission-fix" data-completed="false">
+                         <span class="mission-status"><i class="fas fa-question-circle"></i></span>
+                         <h4 data-translate="fix_mission_subtitle">Mission: Correct Import & Usage</h4>
+                         <p data-translate="fix_mission_goal">Goal: Import `math` and print `math.sqrt(81)` (which should be 9.0).</p>
+                         <textarea id="fix-editor-input" class="sim-editor mission-editor" rows="4" data-translate-placeholder="fix_editor_placeholder" placeholder='Fix the code here...'>imprt math
+
+result = math.squareroot(81)
+print(Result)</textarea>
+                         <div class="text-center"> <button id="run-fix-btn" class="action-button mission-run-btn" data-mission-id="fix" data-translate="button_test_mission">Test Code</button> </div>
+                         <div id="fix-mission-output" class="sim-output-area mission-output"></div>
+                         <div id="mission-feedback-fix" class="feedback-message mission-feedback"></div>
+                     </div>
+                     <div id="missions-summary-feedback" class="feedback-message hidden"></div> <!-- Can be reused if more missions added -->
+                 </div>
+             </div>
+        </section>
+
+
+         <!-- ========= Completion Section ========= -->
+        <section class="completion-section">
+            <div class="container">
+                <div class="icon fade-in" style="animation: iconAppearCorrect 1s ease-out 0.5s forwards;">
+                    <i class="fas fa-star"></i> <i class="fas fa-project-diagram"></i> <i class="fas fa-star"></i> <!-- Changed icon -->
+                </div>
+                <!-- MODULE 26 Text -->
+                <h2 class="fade-in delay-1" data-translate="completion_title">Module 26 Practice Complete!</h2>
+                <p class="fade-in delay-2" data-translate="completion_desc">
+                    Great job importing and using modules! You're leveraging Python's powerful ecosystem. Abstraction and Reusability in action! <br>
+                    Ready for more? Try the <strong>Advanced Practice</strong> for Module 26.
+                </p>
+                <div class="button-group">
+                    <!-- MODULE 26 Links -->
+                    <a href="ctp-theory-26.html" class="action-button secondary fade-in delay-3"><i class="fas fa-book-open"></i> <span data-translate="button_view_theory">View Theory Again</span></a>
+                    <a href="ctp-advanced-26.html" class="action-button success fade-in delay-3"><i class="fas fa-arrow-right"></i> <span data-translate="button_start_advanced">Start Advanced Practice</span></a>
+                    <a href="ctp-dashboard.html" class="action-button secondary fade-in delay-4"><i class="fas fa-list"></i> <span data-translate="button_back_menu">Back to Course Menu</span></a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ========= Script ========= -->
+    <script>
+    // --- Translations Object ---
+    const translations = {
+        en: {
+            "page_title": "Module 26: Importing Modules Practice",
+            "tooltip_click_identify": "Click to identify this part",
+            "nav_theory": "View Theory", "nav_advanced": "Advanced Practice", "nav_menu": "Course Menu",
+            "nav_anatomy": "Anatomy", "nav_math": "Math Toolkit", "nav_random": "Random Choices", "nav_fix": "Fix Code",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title": "Module 26: Importing Modules", "header_subtitle": "Unlock pre-built powers: Learn to import and use Python modules.",
+            "anatomy_title": "Anatomy of Importing", "anatomy_desc": "Modules give us ready-made tools. Click each part below to understand how we bring in (`import`) and use a function (`sqrt`) from the `math` module.",
+            "anatomy_status_initial": "Identify all 8 parts!", "anatomy_status_progress": "Identified {count} of {total} parts.", "anatomy_status_done": "All parts identified!",
+            "anatomy_exp_import": "The `import` keyword: Tells Python to load a module.",
+            "anatomy_exp_module": "Module name (`math`): The specific collection of tools we want.",
+            "anatomy_exp_access": "Using the module name (`math`): We specify *which* module's tool we need.",
+            "anatomy_exp_dot": "The dot (`.`): Accesses something *inside* the module.",
+            "anatomy_exp_function": "Function name (`sqrt`): The specific tool (function) from the `math` module.",
+            "anatomy_exp_paren_open": "Opening parenthesis `(`: Starts the input(s) for the function.",
+            "anatomy_exp_argument": "Argument (`16`): The value the `sqrt` function will work on.",
+            "anatomy_exp_paren_close": "Closing parenthesis `)`: Ends the input(s) for the function.",
+            "anatomy_code_comment": "# Calculate square root",
+            "feedback_anatomy_correct": "Excellent! You've dissected how to import and use module functions!",
+            "math_title": "Math Toolkit", "math_desc": "The `math` module is full of useful functions. Import `math`, then use `math.sqrt()` to find the square root and `math.ceil()` to round *up* the number entered below. Print both results on separate lines.",
+            "math_input_label": "Number to use:",
+            "math_editor_label": "Code Editor:", "math_editor_placeholder": "import math\n\n# Get the number (imagine this happens automatically)\nmy_num = 19.5\n\n# Calculate and print sqrt\nprint(...)\n\n# Calculate and print ceil\nprint(...)",
+            "button_run_sim": "Run Simulation",
+            "math_output_label": "Simulated Output:", "math_output_placeholder": "Output will appear here...",
+            "feedback_math_success": "Simulation successful! Correct calculations shown.",
+            "feedback_math_no_import": "Don't forget to `import math` at the beginning!",
+            "feedback_math_no_sqrt": "Missing or incorrect call to `math.sqrt(number)`.",
+            "feedback_math_no_ceil": "Missing or incorrect call to `math.ceil(number)`.",
+            "feedback_math_no_print": "Make sure you `print()` both results on separate lines.",
+            "feedback_math_wrong_output": "Check your calculations or print statements. Expected sqrt and ceil.",
+            "feedback_sim_general_error": "Check your syntax. Look for typos like `math.sqrt(...)`.",
+            "random_title": "Random Choices", "random_desc": "The `random` module helps introduce unpredictability. Import `random`, then use `random.randint(1, 10)` to get a random integer and `random.choice(['red', 'green', 'blue'])` to pick a random color. Print both on separate lines.",
+            "random_editor_label": "Code Editor:", "random_editor_placeholder": "import random\n\ncolors = ['red', 'green', 'blue']\n\n# Get and print random integer\nprint(...)\n\n# Get and print random color\nprint(...)",
+            "random_output_label": "Simulated Output (will vary!):", "random_output_placeholder": "Output will appear here...",
+            "feedback_random_success": "Simulation successful! Shows a random integer (1-10) and a random color.",
+            "feedback_random_no_import": "Need to `import random` first!",
+            "feedback_random_no_randint": "Missing or incorrect call to `random.randint(1, 10)`.",
+            "feedback_random_no_choice": "Missing or incorrect call to `random.choice(list)`.",
+            "feedback_random_no_print": "Make sure you `print()` both results on separate lines.",
+            "feedback_random_wrong_output": "Check your function calls. Expected a number (1-10) and a color ('red', 'green', or 'blue').",
+            "fix_title": "Fix the Import Errors", "fix_desc": "Sometimes imports go wrong! Find and fix the errors in the code below so it correctly imports `math` and prints the square root of 81. Check the output carefully.",
+            "fix_mission_subtitle":"Mission: Correct Import & Usage", "fix_mission_goal": "Goal: Import `math` and print `math.sqrt(81)` (which should be 9.0).",
+            "fix_editor_placeholder": "Fix the code here...",
+            "button_test_mission": "Test Code",
+            "feedback_fix_success": "Mission Accomplished! Code fixed and produces 9.0.",
+            "feedback_fix_import_error": "Check the `import` statement. Is the keyword spelled correctly?",
+            "feedback_fix_function_error": "Check the function name. `math` has `sqrt`, not `squareroot`.",
+            "feedback_fix_case_error": "Python is case-sensitive. Check variable names like `Result` vs `result`.",
+            "feedback_fix_wrong_result": "The code runs, but the output isn't 9.0. Check the calculation.",
+            "feedback_fix_syntax_error": "General syntax error. Check spelling, parentheses, etc.",
+            "completion_title": "Module 26 Practice Complete!", "completion_desc": "Great job importing and using modules! You're leveraging Python's powerful ecosystem. Abstraction and Reusability in action! <br> Ready for more? Try the <strong>Advanced Practice</strong> for Module 26.",
+            "button_view_theory": "View Theory Again", "button_start_advanced": "Start Advanced Practice", "button_back_menu": "Back to Course Menu"
+        },
+        pt: {
+            "page_title": "Módulo 26: Prática de Importação de Módulos",
+            "tooltip_click_identify": "Clique para identificar esta parte",
+            "nav_theory": "Ver Teoria", "nav_advanced": "Prática Avançada", "nav_menu": "Menu do Curso",
+            "nav_anatomy": "Anatomia", "nav_math": "Kit Matemático", "nav_random": "Escolhas Aleatórias", "nav_fix": "Corrigir Código",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title": "Módulo 26: Importando Módulos", "header_subtitle": "Desbloqueie poderes pré-construídos: Aprenda a importar e usar módulos Python.",
+            "anatomy_title": "Anatomia da Importação", "anatomy_desc": "Módulos nos dão ferramentas prontas. Clique em cada parte abaixo para entender como trazemos (`import`) e usamos uma função (`sqrt`) do módulo `math`.",
+            "anatomy_status_initial": "Identifique todas as 8 partes!", "anatomy_status_progress": "Identificadas {count} de {total} partes.", "anatomy_status_done": "Todas as partes identificadas!",
+            "anatomy_exp_import": "A palavra-chave `import`: Diz ao Python para carregar um módulo.",
+            "anatomy_exp_module": "Nome do módulo (`math`): A coleção específica de ferramentas que queremos.",
+            "anatomy_exp_access": "Usando o nome do módulo (`math`): Especificamos *qual* ferramenta do módulo precisamos.",
+            "anatomy_exp_dot": "O ponto (`.`): Acessa algo *dentro* do módulo.",
+            "anatomy_exp_function": "Nome da função (`sqrt`): A ferramenta específica (função) do módulo `math`.",
+            "anatomy_exp_paren_open": "Parêntese de abertura `(`: Inicia a(s) entrada(s) para a função.",
+            "anatomy_exp_argument": "Argumento (`16`): O valor com o qual a função `sqrt` trabalhará.",
+            "anatomy_exp_paren_close": "Parêntese de fechamento `)`: Termina a(s) entrada(s) para a função.",
+            "anatomy_code_comment": "# Calcula a raiz quadrada",
+            "feedback_anatomy_correct": "Excelente! Você dissecou como importar e usar funções de módulos!",
+            "math_title": "Kit Matemático", "math_desc": "O módulo `math` está cheio de funções úteis. Importe `math`, use `math.sqrt()` para encontrar a raiz quadrada e `math.ceil()` para arredondar *para cima* o número inserido abaixo. Imprima ambos os resultados em linhas separadas.",
+            "math_input_label": "Número a usar:",
+            "math_editor_label": "Editor de Código:", "math_editor_placeholder": "import math\n\n# Pega o número (imagine que isso acontece automaticamente)\nmeu_num = 19.5\n\n# Calcula e imprime sqrt\nprint(...)\n\n# Calcula e imprime ceil\nprint(...)",
+            "button_run_sim": "Executar Simulação",
+            "math_output_label": "Saída Simulada:", "math_output_placeholder": "A saída aparecerá aqui...",
+            "feedback_math_success": "Simulação bem-sucedida! Cálculos corretos exibidos.",
+            "feedback_math_no_import": "Não se esqueça de `import math` no início!",
+            "feedback_math_no_sqrt": "Chamada ausente ou incorreta para `math.sqrt(numero)`.",
+            "feedback_math_no_ceil": "Chamada ausente ou incorreta para `math.ceil(numero)`.",
+            "feedback_math_no_print": "Certifique-se de usar `print()` para ambos os resultados em linhas separadas.",
+            "feedback_math_wrong_output": "Verifique seus cálculos ou declarações print. Esperado sqrt e ceil.",
+            "feedback_sim_general_error": "Verifique sua sintaxe. Procure por erros de digitação como `math.sqrt(...)`.",
+            "random_title": "Escolhas Aleatórias", "random_desc": "O módulo `random` ajuda a introduzir imprevisibilidade. Importe `random`, use `random.randint(1, 10)` para obter um inteiro aleatório e `random.choice(['red', 'green', 'blue'])` para escolher uma cor aleatória. Imprima ambos em linhas separadas.",
+            "random_editor_label": "Editor de Código:", "random_editor_placeholder": "import random\n\ncores = ['red', 'green', 'blue']\n\n# Obtém e imprime inteiro aleatório\nprint(...)\n\n# Obtém e imprime cor aleatória\nprint(...)",
+            "random_output_label": "Saída Simulada (vai variar!):", "random_output_placeholder": "A saída aparecerá aqui...",
+            "feedback_random_success": "Simulação bem-sucedida! Mostra um inteiro aleatório (1-10) e uma cor aleatória.",
+            "feedback_random_no_import": "Precisa `import random` primeiro!",
+            "feedback_random_no_randint": "Chamada ausente ou incorreta para `random.randint(1, 10)`.",
+            "feedback_random_no_choice": "Chamada ausente ou incorreta para `random.choice(lista)`.",
+            "feedback_random_no_print": "Certifique-se de usar `print()` para ambos os resultados em linhas separadas.",
+            "feedback_random_wrong_output": "Verifique suas chamadas de função. Esperado um número (1-10) e uma cor ('red', 'green', ou 'blue').",
+            "fix_title": "Corrija os Erros de Importação", "fix_desc": "Às vezes, as importações dão errado! Encontre e corrija os erros no código abaixo para que ele importe corretamente `math` e imprima a raiz quadrada de 81. Verifique a saída com atenção.",
+            "fix_mission_subtitle":"Missão: Corrigir Importação e Uso", "fix_mission_goal": "Objetivo: Importar `math` e imprimir `math.sqrt(81)` (que deve ser 9.0).",
+            "fix_editor_placeholder": "Corrija o código aqui...",
+            "button_test_mission": "Testar Código",
+            "feedback_fix_success": "Missão Cumprida! Código corrigido e produz 9.0.",
+            "feedback_fix_import_error": "Verifique a declaração `import`. A palavra-chave está escrita corretamente?",
+            "feedback_fix_function_error": "Verifique o nome da função. `math` tem `sqrt`, não `squareroot`.",
+            "feedback_fix_case_error": "Python diferencia maiúsculas de minúsculas. Verifique nomes de variáveis como `Result` vs `result`.",
+            "feedback_fix_wrong_result": "O código roda, mas a saída não é 9.0. Verifique o cálculo.",
+            "feedback_fix_syntax_error": "Erro geral de sintaxe. Verifique ortografia, parênteses, etc.",
+            "completion_title": "Prática do Módulo 26 Completa!", "completion_desc": "Ótimo trabalho importando e usando módulos! Você está aproveitando o poderoso ecossistema do Python. Abstração e Reutilização em ação! <br> Pronto para mais? Tente a <strong>Prática Avançada</strong> do Módulo 26.",
+            "button_view_theory": "Ver Teoria Novamente", "button_start_advanced": "Iniciar Prática Avançada", "button_back_menu": "Voltar ao Menu do Curso"
+        },
+        zh: {
+            "page_title": "模块 26：导入模块练习",
+            "tooltip_click_identify": "点击识别此部分",
+            "nav_theory": "查看理论", "nav_advanced": "高级练习", "nav_menu": "课程菜单",
+            "nav_anatomy": "剖析", "nav_math": "数学工具箱", "nav_random": "随机选择", "nav_fix": "修复代码",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title": "模块 26：导入模块", "header_subtitle": "解锁预构建的力量：学习导入和使用 Python 模块。",
+            "anatomy_title": "导入剖析", "anatomy_desc": "模块为我们提供了现成的工具。点击下面的每个部分，了解我们如何引入 (`import`) `math` 模块并使用其中的函数 (`sqrt`)。",
+            "anatomy_status_initial": "识别所有 8 个部分！", "anatomy_status_progress": "已识别 {count} / {total} 个部分。", "anatomy_status_done": "所有部分已识别！",
+            "anatomy_exp_import": "`import` 关键字：告诉 Python 加载一个模块。",
+            "anatomy_exp_module": "模块名 (`math`)：我们想要的特定工具集合。",
+            "anatomy_exp_access": "使用模块名 (`math`)：我们指定需要*哪个*模块的工具。",
+            "anatomy_exp_dot": "点 (`.`)：访问模块*内部*的成员。",
+            "anatomy_exp_function": "函数名 (`sqrt`)：`math` 模块中的特定工具（函数）。",
+            "anatomy_exp_paren_open": "左括号 `(`：开始函数的输入参数。",
+            "anatomy_exp_argument": "参数 (`16`)：`sqrt` 函数将处理的值。",
+            "anatomy_exp_paren_close": "右括号 `)`：结束函数的输入参数。",
+            "anatomy_code_comment": "# 计算平方根",
+            "feedback_anatomy_correct": "太棒了！你已经剖析了如何导入和使用模块函数！",
+            "math_title": "数学工具箱", "math_desc": "`math` 模块充满了有用的函数。导入 `math`，然后使用 `math.sqrt()` 计算平方根，使用 `math.ceil()` 对下方输入的数字进行向上取整。将两个结果分别打印在不同的行。",
+            "math_input_label": "要使用的数字：",
+            "math_editor_label": "代码编辑器：", "math_editor_placeholder": "import math\n\n# 获取数字（假设自动完成）\nmy_num = 19.5\n\n# 计算并打印 sqrt\nprint(...)\n\n# 计算并打印 ceil\nprint(...)",
+            "button_run_sim": "运行模拟",
+            "math_output_label": "模拟输出：", "math_output_placeholder": "输出将显示在此处...",
+            "feedback_math_success": "模拟成功！显示了正确的计算结果。",
+            "feedback_math_no_import": "别忘了在开头 `import math`！",
+            "feedback_math_no_sqrt": "缺少或错误的 `math.sqrt(数字)` 调用。",
+            "feedback_math_no_ceil": "缺少或错误的 `math.ceil(数字)` 调用。",
+            "feedback_math_no_print": "确保你用 `print()` 在不同行打印了两个结果。",
+            "feedback_math_wrong_output": "检查你的计算或打印语句。预期输出 sqrt 和 ceil 的结果。",
+            "feedback_sim_general_error": "检查你的语法。查找拼写错误，例如 `math.sqrt(...)`。",
+            "random_title": "随机选择", "random_desc": "`random` 模块有助于引入不可预测性。导入 `random`，然后使用 `random.randint(1, 10)` 获取一个随机整数，使用 `random.choice(['red', 'green', 'blue'])` 随机选择一种颜色。将两者分别打印在不同的行。",
+            "random_editor_label": "代码编辑器：", "random_editor_placeholder": "import random\n\ncolors = ['red', 'green', 'blue']\n\n# 获取并打印随机整数\nprint(...)\n\n# 获取并打印随机颜色\nprint(...)",
+            "random_output_label": "模拟输出（会变化！）：", "random_output_placeholder": "输出将显示在此处...",
+            "feedback_random_success": "模拟成功！显示了一个随机整数（1-10）和一个随机颜色。",
+            "feedback_random_no_import": "需要先 `import random`！",
+            "feedback_random_no_randint": "缺少或错误的 `random.randint(1, 10)` 调用。",
+            "feedback_random_no_choice": "缺少或错误的 `random.choice(列表)` 调用。",
+            "feedback_random_no_print": "确保你用 `print()` 在不同行打印了两个结果。",
+            "feedback_random_wrong_output": "检查你的函数调用。预期输出一个数字（1-10）和一种颜色（'red'、'green' 或 'blue'）。",
+            "fix_title": "修复导入错误", "fix_desc": "有时导入会出错！找出并修复下面代码中的错误，使其正确导入 `math` 并打印 81 的平方根。仔细检查输出。",
+            "fix_mission_subtitle":"任务：修正导入与使用", "fix_mission_goal": "目标：导入 `math` 并打印 `math.sqrt(81)`（结果应为 9.0）。",
+            "fix_editor_placeholder": "在此修复代码...",
+            "button_test_mission": "测试代码",
+            "feedback_fix_success": "任务完成！代码已修复并输出 9.0。",
+            "feedback_fix_import_error": "检查 `import` 语句。关键字拼写正确吗？",
+            "feedback_fix_function_error": "检查函数名称。`math` 模块包含 `sqrt`，而不是 `squareroot`。",
+            "feedback_fix_case_error": "Python 区分大小写。检查变量名，例如 `Result` 与 `result`。",
+            "feedback_fix_wrong_result": "代码运行了，但输出不是 9.0。检查计算过程。",
+            "feedback_fix_syntax_error": "通用语法错误。检查拼写、括号等。",
+            "completion_title": "模块 26 练习完成！", "completion_desc": "非常棒！你掌握了导入和使用模块。你正在利用 Python 强大的生态系统。抽象和可重用性在实践中！<br> 准备好迎接更多挑战了吗？试试模块 26 的<strong>高级练习</strong>。",
+            "button_view_theory": "再次查看理论", "button_start_advanced": "开始高级练习", "button_back_menu": "返回课程菜单"
+        }
+    };
+
+
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // --- Language Management Functions ---
+        function getStoredLanguage() { /* ... (same as Module 0) ... */
+            const storedLang = localStorage.getItem('userLanguage');
+            if (storedLang && translations[storedLang]) return storedLang;
+            const browserLang = navigator.language || navigator.userLanguage;
+            if (browserLang.startsWith('pt')) return 'pt';
+            if (browserLang.startsWith('zh')) return 'zh';
+            return 'en'; // Default to English
+        }
+
+        function setLanguage(lang) { /* ... (same basic logic as Module 0, ensures activities update) ... */
+            if (!translations[lang]) lang = 'en'; // Fallback
+            localStorage.setItem('userLanguage', lang);
+            document.documentElement.lang = lang;
+            translatePage(lang); // Apply generic translations first
+
+            // Update language selector dropdown
+            const langSelect = document.getElementById('languageSelect');
+            if (langSelect) {
+                langSelect.value = lang;
+            }
+
+            // Re-initialize or update language-dependent interactive content
+            if (anatomyImportSection) setupAnatomyActivity(); // Re-setup anatomy
+            if (mathSimSection) resetMathSimulator(); // Reset math sim UI elements/placeholders if needed
+            if (randomSimSection) resetRandomSimulator(); // Reset random sim UI elements/placeholders if needed
+            if (fixMissionSection) resetFixMission(); // Reset fix mission UI
+        }
+
+        function getTranslation(key, lang, replacements = {}) { /* ... (same as Module 0) ... */
+            let text = translations[lang]?.[key] ?? translations['en']?.[key] ?? `[${key}]`; // Fallback shows key
+            for (const placeholder in replacements) {
+                const regex = new RegExp(`\\{${placeholder}\\}`, 'g');
+                text = text.replace(regex, replacements[placeholder]);
+            }
+            return text;
+        }
+
+        function translatePage(lang) { /* ... (same as Module 0) ... */
+            if (!translations[lang]) lang = 'en';
+            document.querySelectorAll('[data-translate]').forEach(el => {
+                const key = el.getAttribute('data-translate');
+                const translation = getTranslation(key, lang);
+                 if (el.tagName === 'TITLE') { document.title = translation; }
+                 else if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') { /* Skip */ }
+                 else if (el.tagName === 'OPTION') { el.textContent = translation; }
+                 else {
+                    if (translation.includes('<') && translation.includes('>')) { el.innerHTML = translation; }
+                    else { el.textContent = translation; }
+                 }
+            });
+            document.querySelectorAll('[data-translate-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-translate-placeholder');
+                const translation = getTranslation(key, lang);
+                el.setAttribute('placeholder', translation);
+            });
+             document.querySelectorAll('[data-translate-title]').forEach(el => {
+                 const key = el.getAttribute('data-translate-title');
+                 const translation = getTranslation(key, lang);
+                 el.setAttribute('title', translation);
+             });
+        }
+
+        // --- Initialize Language ---
+        const initialLang = getStoredLanguage();
+        // setLanguage is called later
+
+        // --- Minimal Nav Logic ---
+        const navToggleButton = document.getElementById('minimal-nav-toggle');
+        const navPanel = document.getElementById('minimal-nav-panel');
+        const body = document.body;
+        if (navToggleButton && navPanel) { /* ... (same as Module 0) ... */
+            navToggleButton.addEventListener('click', (event) => { event.stopPropagation(); body.classList.toggle('nav-active'); navToggleButton.setAttribute('aria-expanded', body.classList.contains('nav-active')); });
+            document.addEventListener('click', (event) => { if (body.classList.contains('nav-active') && !navPanel.contains(event.target) && event.target !== navToggleButton && !navToggleButton.contains(event.target) ) { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); } });
+            navPanel.querySelectorAll('a').forEach(link => { link.addEventListener('click', () => { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); }); });
+            document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && body.classList.contains('nav-active')) { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); } });
+            navToggleButton.setAttribute('aria-expanded', 'false');
+        }
+
+        // --- Language Switcher Setup ---
+        const langSelect = document.getElementById('languageSelect');
+        if (langSelect) { /* ... (same as Module 0) ... */
+            langSelect.addEventListener('change', (e) => { setLanguage(e.target.value); });
+        }
+
+        // --- Helper Function for Feedback ---
+        function showFeedback(elementId, messageKey, type = 'info', replacements = {}) { /* ... (same as Module 0) ... */
+            const feedbackEl = document.getElementById(elementId);
+            if (!feedbackEl) { console.error(`Feedback element not found: ${elementId}`); return; }
+            const currentLang = getStoredLanguage();
+            const translatedMessage = getTranslation(messageKey, currentLang, replacements);
+             if (translatedMessage.includes('<') && translatedMessage.includes('>')) { feedbackEl.innerHTML = translatedMessage; }
+             else { feedbackEl.textContent = translatedMessage; }
+            feedbackEl.className = 'feedback-message'; // Reset classes first
+             feedbackEl.classList.add('visible', type);
+            const interactiveArea = feedbackEl.closest('.interactive-area');
+            if (!interactiveArea) return;
+            interactiveArea.classList.remove('success-glow-anim', 'shake-anim');
+            void interactiveArea.offsetWidth; // Trigger reflow
+            if (type === 'correct') { interactiveArea.classList.add('success-glow-anim'); }
+            else if (type === 'incorrect') { interactiveArea.classList.add('shake-anim'); }
+        }
+
+        // --- Activity 1: Code Anatomy (Adapted for Import) ---
+        const anatomyImportSection = document.getElementById('anatomy-import');
+        let partExplanations = {};
+        const totalAnatomyParts = 8; // Updated count
+        let currentAnatomyListeners = [];
+
+        function setupAnatomyActivity() {
+            if (!anatomyImportSection) return;
+            const currentLang = getStoredLanguage();
+            partExplanations = {}; // Clear previous explanations
+             document.querySelectorAll('#explanation-texts span[data-key]').forEach(span => {
+                const key = span.getAttribute('data-key');
+                // Assuming explanation keys follow pattern `anatomy_exp_{key}`
+                partExplanations[key] = getTranslation(`anatomy_exp_${key.replace(/-/g, '_')}`, currentLang); // Fetch explanation
+             });
+
+            const codeBlock = anatomyImportSection.querySelector('.code-block');
+            const parts = codeBlock.querySelectorAll('.code-part');
+            const explanationsDiv = document.getElementById('anatomy-explanations');
+            const statusP = document.getElementById('anatomy-status');
+            const feedbackDiv = document.getElementById('anatomy-feedback');
+            let identifiedCount = 0;
+
+            // Remove old listeners
+            currentAnatomyListeners.forEach(({element, listener}) => {
+                element.removeEventListener('click', listener);
+            });
+            currentAnatomyListeners = [];
+
+            // Reset visual state
+            parts.forEach(p => p.classList.remove('identified'));
+            explanationsDiv.innerHTML = '';
+            statusP.innerHTML = getTranslation('anatomy_status_initial', currentLang); // Set initial status text
+            feedbackDiv.classList.remove('visible', 'correct', 'incorrect', 'info');
+
+            parts.forEach(part => {
+                const clickListener = () => {
+                    const partType = part.dataset.part;
+                    if (!part.classList.contains('identified') && partType && partExplanations[partType]) {
+                        part.classList.add('identified');
+                        identifiedCount++;
+                        const p = document.createElement('p');
+                        p.classList.add('part-explanation');
+                        const icon = document.createElement('i');
+                        icon.className = 'fas fa-check-circle'; icon.style.color = 'var(--success-color)';
+                        const strong = document.createElement('strong');
+                        const displayedTextElement = part.querySelector('span[class^="code-"]');
+                        strong.textContent = (displayedTextElement ? displayedTextElement.textContent.trim() : part.textContent.trim()) + ': ';
+                        p.appendChild(icon); p.appendChild(strong);
+                        p.appendChild(document.createTextNode(partExplanations[partType]));
+                        explanationsDiv.appendChild(p);
+
+                        statusP.innerHTML = getTranslation('anatomy_status_progress', currentLang, { count: identifiedCount, total: totalAnatomyParts });
+
+                        if (identifiedCount === totalAnatomyParts) {
+                            statusP.innerHTML = getTranslation('anatomy_status_done', currentLang);
+                            showFeedback('anatomy-feedback', 'feedback_anatomy_correct', 'correct');
+                        }
+                    } else if (!partExplanations[partType]) {
+                        console.warn(`Explanation missing or part type invalid/already identified: ${partType}`);
+                    }
+                };
+                part.addEventListener('click', clickListener);
+                currentAnatomyListeners.push({ element: part, listener: clickListener });
+            });
+        }
+        // Initial setup call moved to end
+
+        // --- Activity 2: Math Toolkit Simulator ---
+        const mathSimSection = document.getElementById('math-simulator');
+        if(mathSimSection) {
+            const editor = document.getElementById('math-editor-input');
+            const outputArea = document.getElementById('math-sim-output');
+            const runBtn = document.getElementById('run-math-sim-btn');
+            const feedbackDiv = document.getElementById('math-sim-feedback');
+            const numberInput = document.getElementById('math-input-number');
+
+            function resetMathSimulator() {
+                outputArea.innerHTML = `<span class="placeholder" data-translate="math_output_placeholder">${getTranslation('math_output_placeholder', getStoredLanguage())}</span>`;
+                feedbackDiv.classList.remove('visible', 'correct', 'incorrect', 'info');
+            }
+
+            runBtn.addEventListener('click', () => {
+                 const code = editor.value; // Keep whitespace for line checks
+                 const numberToUse = parseFloat(numberInput.value);
+                 resetMathSimulator(); // Clear previous output/feedback
+                 const currentLang = getStoredLanguage();
+
+                 // Basic checks
+                 if (!code.includes('import math')) {
+                     showFeedback('math-sim-feedback', 'feedback_math_no_import', 'incorrect'); return;
+                 }
+                 if (isNaN(numberToUse)) {
+                     showFeedback('math-sim-feedback', 'feedback_sim_general_error', 'incorrect'); // Or a specific message for invalid input number
+                     return;
+                 }
+
+                 // Simulate finding the print lines for sqrt and ceil
+                 let sqrtOutput = null;
+                 let ceilOutput = null;
+                 const sqrtRegex = /print\s*\(\s*math\.sqrt\s*\(\s*([0-9.]+|[a-zA-Z_][a-zA-Z0-9_]*)\s*\)\s*\)/;
+                 const ceilRegex = /print\s*\(\s*math\.ceil\s*\(\s*([0-9.]+|[a-zA-Z_][a-zA-Z0-9_]*)\s*\)\s*\)/;
+
+                 // Crude simulation - check if the patterns exist
+                 const sqrtMatch = code.match(sqrtRegex);
+                 const ceilMatch = code.match(ceilRegex);
+
+                 if (sqrtMatch) {
+                    // Very simple simulation: assume it used the input number
+                    sqrtOutput = Math.sqrt(numberToUse);
+                 }
+                  if (ceilMatch) {
+                    // Very simple simulation: assume it used the input number
+                    ceilOutput = Math.ceil(numberToUse);
+                 }
+
+                 // Display simulated output
+                 if (sqrtOutput !== null || ceilOutput !== null) {
+                      outputArea.innerHTML = ''; // Clear placeholder
+                     if (sqrtOutput !== null) {
+                         const line1 = document.createElement('span');
+                         line1.classList.add('output-line');
+                         line1.textContent = `> ${sqrtOutput}`;
+                         outputArea.appendChild(line1);
+                     }
+                     if (ceilOutput !== null) {
+                         const line2 = document.createElement('span');
+                         line2.classList.add('output-line');
+                         line2.textContent = `> ${ceilOutput}`;
+                         outputArea.appendChild(line2);
+                     }
+                 } else {
+                     outputArea.innerHTML = `<span class="placeholder" data-translate="math_output_placeholder">${getTranslation('math_output_placeholder', currentLang)}</span>`;
+                 }
+
+                 // Provide feedback
+                 if (sqrtMatch && ceilMatch && sqrtOutput !== null && ceilOutput !== null) {
+                     showFeedback('math-sim-feedback', 'feedback_math_success', 'correct');
+                 } else if (!sqrtMatch) {
+                     showFeedback('math-sim-feedback', 'feedback_math_no_sqrt', 'incorrect');
+                 } else if (!ceilMatch) {
+                     showFeedback('math-sim-feedback', 'feedback_math_no_ceil', 'incorrect');
+                 } else {
+                     showFeedback('math-sim-feedback', 'feedback_math_wrong_output', 'incorrect'); // Generic if structure seems ok but simulation failed
+                 }
+            });
+        }
+
+
+        // --- Activity 3: Random Choices Simulator ---
+        const randomSimSection = document.getElementById('random-practice');
+        if(randomSimSection) {
+            const editor = document.getElementById('random-editor-input');
+            const outputArea = document.getElementById('random-sim-output');
+            const runBtn = document.getElementById('run-random-sim-btn');
+            const feedbackDiv = document.getElementById('random-sim-feedback');
+            const colors = ['red', 'green', 'blue']; // Define possible choices
+
+             function resetRandomSimulator() {
+                 outputArea.innerHTML = `<span class="placeholder" data-translate="random_output_placeholder">${getTranslation('random_output_placeholder', getStoredLanguage())}</span>`;
+                 feedbackDiv.classList.remove('visible', 'correct', 'incorrect', 'info');
+             }
+
+            runBtn.addEventListener('click', () => {
+                 const code = editor.value;
+                 resetRandomSimulator();
+                 const currentLang = getStoredLanguage();
+
+                 // Basic checks
+                 if (!code.includes('import random')) {
+                     showFeedback('random-sim-feedback', 'feedback_random_no_import', 'incorrect'); return;
+                 }
+
+                 // Simulate finding the print lines for randint and choice
+                 let randomIntOutput = null;
+                 let randomChoiceOutput = null;
+                 const randintRegex = /print\s*\(\s*random\.randint\s*\(\s*1\s*,\s*10\s*\)\s*\)/;
+                 const choiceRegex = /print\s*\(\s*random\.choice\s*\(\s*([a-zA-Z_][a-zA-Z0-9_]*|\[.*?\])\s*\)\s*\)/; // Allow variable or literal list
+
+                 const randintMatch = code.match(randintRegex);
+                 const choiceMatch = code.match(choiceRegex);
+
+                 if (randintMatch) {
+                     randomIntOutput = Math.floor(Math.random() * 10) + 1; // JS simulation
+                 }
+                  if (choiceMatch) {
+                     // Simple simulation: Pick from the predefined list
+                     randomChoiceOutput = colors[Math.floor(Math.random() * colors.length)];
+                 }
+
+                 // Display simulated output
+                 if (randomIntOutput !== null || randomChoiceOutput !== null) {
+                      outputArea.innerHTML = ''; // Clear placeholder
+                     if (randomIntOutput !== null) {
+                         const line1 = document.createElement('span');
+                         line1.classList.add('output-line');
+                         line1.textContent = `> ${randomIntOutput}`;
+                         outputArea.appendChild(line1);
+                     }
+                     if (randomChoiceOutput !== null) {
+                         const line2 = document.createElement('span');
+                         line2.classList.add('output-line');
+                         line2.textContent = `> ${randomChoiceOutput}`;
+                         outputArea.appendChild(line2);
+                     }
+                 } else {
+                      outputArea.innerHTML = `<span class="placeholder" data-translate="random_output_placeholder">${getTranslation('random_output_placeholder', currentLang)}</span>`;
+                 }
+
+                  // Provide feedback
+                 if (randintMatch && choiceMatch && randomIntOutput !== null && randomChoiceOutput !== null) {
+                     showFeedback('random-sim-feedback', 'feedback_random_success', 'correct');
+                 } else if (!randintMatch) {
+                     showFeedback('random-sim-feedback', 'feedback_random_no_randint', 'incorrect');
+                 } else if (!choiceMatch) {
+                     showFeedback('random-sim-feedback', 'feedback_random_no_choice', 'incorrect');
+                 } else {
+                     showFeedback('random-sim-feedback', 'feedback_random_wrong_output', 'incorrect');
+                 }
+            });
+        }
+
+        // --- Activity 4: Fix the Import (Mission Style) ---
+        const fixMissionSection = document.getElementById('fix-the-import');
+        if (fixMissionSection) {
+             const missionDiv = document.getElementById('mission-fix');
+             const editor = document.getElementById('fix-editor-input');
+             const outputArea = document.getElementById('fix-mission-output');
+             const feedbackDiv = document.getElementById('mission-feedback-fix');
+             const runBtn = document.getElementById('run-fix-btn');
+             const statusIcon = missionDiv.querySelector('.mission-status i');
+
+             function resetFixMission() {
+                 // Reset editor to initial broken state? Or keep user's edits? Let's keep edits for now.
+                 // editor.value = 'imprt math\n\nresult = math.squareroot(81)\nprint(Result)'; // Uncomment to reset editor too
+                 outputArea.innerHTML = '';
+                 feedbackDiv.classList.remove('visible', 'correct', 'incorrect', 'info');
+                 statusIcon.className = 'fas fa-question-circle';
+                 missionDiv.dataset.completed = 'false';
+             }
+
+             runBtn.addEventListener('click', () => {
+                 const code = editor.value;
+                 const currentLang = getStoredLanguage();
+                 outputArea.innerHTML = '';
+                 feedbackDiv.classList.remove('visible');
+                 let success = false;
+                 let feedbackKey = 'feedback_fix_syntax_error'; // Default error
+
+                 // Simulate checks for common errors & success
+                 if (!code.match(/import\s+math/i)) { // Check for correct import keyword (case-insensitive for common typo)
+                     feedbackKey = 'feedback_fix_import_error';
+                     if (code.match(/imprt/i)) feedbackKey = 'feedback_fix_import_error'; // More specific if typo is obvious
+                 } else if (code.match(/math\.squareroot/i)) { // Check for wrong function name
+                     feedbackKey = 'feedback_fix_function_error';
+                 } else if (!code.match(/math\.sqrt\s*\(\s*81\s*\)/i)) { // Check for correct function call with 81
+                     feedbackKey = 'feedback_fix_function_error'; // Could be wrong arg or name
+                 } else if (code.match(/print\s*\(.*Result.*\)/)) { // Check for case error in print
+                      feedbackKey = 'feedback_fix_case_error';
+                 } else if (code.match(/print\s*\(\s*result\s*\)/i) && code.match(/result\s*=\s*math\.sqrt\s*\(\s*81\s*\)/i)) {
+                     // If structure looks correct, simulate the output
+                     success = true;
+                     outputArea.textContent = '> 9.0'; // Correct output
+                     feedbackKey = 'feedback_fix_success';
+                 } else {
+                      // If it passes basic checks but isn't the expected structure, maybe wrong variable used in print?
+                      // Try a very basic simulation:
+                      try {
+                          // VERY UNSAFE in real scenario, but ok for this controlled simulation
+                          // We expect `import math`, `result = math.sqrt(81)`, `print(result)`
+                          let simulatedResult;
+                          if (code.includes('import math') && code.includes('math.sqrt(81)')) {
+                              // Assume assignment works somehow
+                              simulatedResult = 9.0;
+                              // Check if print(result) exists
+                              if (code.match(/print\s*\(\s*(.*?)\s*\)/)) {
+                                   // Very rough check if it tries to print something that would result in 9.0
+                                   outputArea.textContent = `> ${simulatedResult}`;
+                                   if (Math.abs(simulatedResult - 9.0) < 0.001) {
+                                        success = true;
+                                        feedbackKey = 'feedback_fix_success';
+                                   } else {
+                                       feedbackKey = 'feedback_fix_wrong_result';
+                                   }
+                              } else {
+                                  feedbackKey = 'feedback_fix_syntax_error'; // Missing print
+                              }
+                          }
+                      } catch (e) {
+                          feedbackKey = 'feedback_fix_syntax_error';
+                          outputArea.textContent = `Simulation Error`;
+                      }
+                 }
+
+                 // Update UI based on success/failure
+                 if (success) {
+                     showFeedback('mission-feedback-fix', feedbackKey, 'correct');
+                     statusIcon.className = 'fas fa-check-circle';
+                     missionDiv.dataset.completed = 'true';
+                 } else {
+                     showFeedback('mission-feedback-fix', feedbackKey, 'incorrect');
+                     statusIcon.className = 'fas fa-times-circle';
+                     missionDiv.dataset.completed = 'false';
+                     // Optional: Highlight incorrect lines - more complex JS needed here
+                 }
+             });
+        }
+
+
+        // --- Fade-in animations on scroll ---
+        const fadeElements = document.querySelectorAll('.fade-in');
+        const animateOnScroll = () => { /* ... (same as Module 0) ... */
+            const windowHeight = window.innerHeight;
+            fadeElements.forEach(el => {
+                if (el.style.opacity === '1') return; // Already visible
+                const rect = el.getBoundingClientRect();
+                if (rect.top < windowHeight - 80 && rect.bottom >= 50) {
+                    el.style.opacity = '1';
+                    el.style.transform = 'translateY(0)';
+                }
+            });
+        };
+        const scrollHandler = () => window.requestAnimationFrame(animateOnScroll);
+        window.addEventListener('scroll', scrollHandler);
+
+
+        // --- Initial Language Application and Activity Setups ---
+        setLanguage(initialLang); // Apply language FIRST
+        animateOnScroll(); // Trigger initial animation check
+
+        // Initial setups are now called within setLanguage, ensuring they run after translation
+
+    }); // End DOMContentLoaded
+    </script>
+
+</body>
+</html>

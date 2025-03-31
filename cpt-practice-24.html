@@ -1,0 +1,1454 @@
+<!DOCTYPE html>
+<!-- Language set by JS -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Title set by JS -->
+    <title data-translate="page_title">Module 24: Python Practice - Writing Files</title>
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* --- Base Styles & Variables (Mostly unchanged from Module 0) --- */
+        :root {
+            --primary-color: #007bff; /* Blue */
+            --secondary-color: #6c757d; /* Grey */
+            --background-light: #f8f9fa;
+            --background-medium: #e9ecef;
+            --background-dark: #343a40;
+            --text-light: #f8f9fa;
+            --text-dark: #212529;
+            --accent-color: #ffc107; /* Yellow */
+            --success-color: #28a745; /* Green */
+            --error-color: #dc3545;   /* Red */
+            --info-color: #17a2b8;    /* Teal */
+            --file-color: #fd7e14; /* Orange - for file elements */
+            --border-radius: 8px;
+            --transition-speed: 0.3s;
+            --font-body: 'Roboto', sans-serif;
+            --font-title: 'Orbitron', sans-serif;
+            --selection-highlight-bg: rgba(0, 123, 255, 0.1);
+            --selection-highlight-border: rgba(0, 123, 255, 0.4);
+            /* Colors matching news.html for consistency */
+            --nav-primary: #6e48aa;
+            --nav-success: #4cc9f0;
+            --nav-dark: #1a1a2e;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; font-size: 16px; }
+        body {
+            font-family: var(--font-body); line-height: 1.7;
+            background-color: var(--background-light); color: var(--text-dark);
+            overflow-x: hidden;
+        }
+
+        /* --- Utility Classes (Unchanged) --- */
+        .container { max-width: 960px; margin: 0 auto; padding: 0 15px; }
+        .text-center { text-align: center; }
+        .highlight { color: var(--primary-color); font-weight: bold; }
+        .code-font { font-family: 'Courier New', Courier, monospace; }
+        .hidden { display: none !important; }
+        .button-group { margin-top: 2rem; display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; }
+
+        /* --- Advanced Animations (Unchanged) --- */
+        .fade-in { opacity: 0; transform: translateY(20px); animation: fadeInAnimation 0.8s ease-out forwards; }
+        .fade-in.delay-1 { animation-delay: 0.2s; }
+        .fade-in.delay-2 { animation-delay: 0.4s; }
+        .fade-in.delay-3 { animation-delay: 0.6s; }
+        .fade-in.delay-4 { animation-delay: 0.8s; }
+        @keyframes fadeInAnimation { to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulseHeaderIcon {
+            0% { transform: scale(1); opacity: 0.1; filter: brightness(1); }
+            50% { transform: scale(1.05); opacity: 0.25; filter: brightness(1.2); }
+            100% { transform: scale(1); opacity: 0.1; filter: brightness(1); }
+        }
+        @keyframes successGlow {
+             0% { box-shadow: 0 0 3px rgba(40, 167, 69, 0.3); transform: scale(1); }
+             50% { box-shadow: 0 0 12px 5px rgba(40, 167, 69, 0.5); transform: scale(1.01); }
+             100% { box-shadow: 0 0 3px rgba(40, 167, 69, 0.3); transform: scale(1); }
+        }
+        .success-glow-anim { animation: successGlow 0.9s ease-out; }
+        @keyframes shake {
+          10%, 90% { transform: translate3d(-2px, 0, 0); } 20%, 80% { transform: translate3d(3px, 0, 0); }
+          30%, 50%, 70% { transform: translate3d(-5px, 0, 0); } 40%, 60% { transform: translate3d(5px, 0, 0); }
+        }
+        .shake-anim { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes iconAppearCorrect {
+            0% { transform: scale(0.5) rotate(-15deg); opacity: 0; }
+            60% { transform: scale(1.2) rotate(5deg); opacity: 1; }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        @keyframes iconAppearIncorrect {
+             0% { transform: scale(0.5) rotate(-15deg); opacity: 0; }
+             50% { transform: scale(1.2) rotate(10deg); opacity: 1; }
+             70% { transform: scale(0.9) rotate(-5deg); }
+             100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+         @keyframes iconAppearMissed { /* Reused for Mode Matcher */
+             0% { transform: scale(0.8) rotateY(90deg); opacity: 0; }
+             100% { transform: scale(1) rotateY(0deg); opacity: 0.8; }
+        }
+        .action-button:active:not(:disabled) {
+            transform: translateY(1px) scale(0.98);
+            filter: brightness(0.95);
+        }
+
+
+        /* --- Minimal Retractable Nav (Unchanged) --- */
+        .minimal-nav-button { position: fixed; top: 15px; right: 15px; z-index: 1001; background-color: rgba(52, 58, 64, 0.75); color: var(--text-light); border: none; border-radius: var(--border-radius); padding: 8px 12px; cursor: pointer; transition: background-color var(--transition-speed), opacity var(--transition-speed), transform var(--transition-speed); font-size: 1.1rem; opacity: 0.6; box-shadow: 0 2px 5px rgba(0,0,0,0.2); line-height: 1; }
+        .minimal-nav-button:hover { background-color: rgba(52, 58, 64, 0.95); opacity: 1; transform: scale(1.05); }
+        .minimal-nav { position: fixed; top: 60px; right: 15px; z-index: 1000; background-color: var(--background-dark); border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.3); padding: 0.8rem; opacity: 0; transform: translateY(-15px) scale(0.95); transform-origin: top right; pointer-events: none; transition: opacity var(--transition-speed) ease, transform var(--transition-speed) ease; min-width: 200px; }
+        body.nav-active .minimal-nav { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+        .minimal-nav ul { list-style: none; margin: 0; padding: 0; }
+        .minimal-nav ul li { margin-bottom: 5px; }
+        .minimal-nav ul li:last-child { margin-bottom: 0; }
+        .minimal-nav ul li a { display: flex; align-items: center; color: var(--text-light); text-decoration: none; padding: 0.6rem 1rem; border-radius: 4px; transition: background-color var(--transition-speed), color var(--transition-speed); white-space: nowrap; font-weight: 400; font-size: 0.95rem; }
+        .minimal-nav ul li a i.fas { margin-right: 10px; width: 1.2em; text-align: center; opacity: 0.8; transition: opacity var(--transition-speed); }
+        .minimal-nav ul li a:hover { background-color: var(--primary-color); color: var(--text-light); }
+        .minimal-nav ul li a:hover i.fas { opacity: 1; }
+        /* Language Switcher Styles (Unchanged) */
+        .minimal-nav .language-switcher-item { padding: 0.5rem 1rem; border-top: 1px solid var(--secondary-color); margin-top: 8px; padding-top: 13px; }
+        #languageSelect { width: 100%; background: rgba(255,255,255,0.1); color: white; border: 1px solid var(--nav-success); border-radius: 5px; padding: 6px 30px 6px 12px; cursor: pointer; font-size: 0.9rem; appearance: none; -webkit-appearance: none; -moz-appearance: none; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%234CC9F0%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right 10px center; background-size: 10px auto; transition: background-color 0.3s ease; }
+        #languageSelect:hover { background-color: rgba(255,255,255,0.15); }
+        #languageSelect option { background: var(--nav-dark); color: var(--text-light); }
+        /* --- End Minimal Retractable Nav --- */
+
+
+        /* --- Practice Header (Adapted) --- */
+        .practice-header { background: linear-gradient(135deg, var(--file-color), #c6640f); color: var(--text-light); padding: 3rem 0 4rem; text-align: center; position: relative; overflow: hidden; border-bottom: 5px solid var(--primary-color); } /* Use file color */
+        .practice-header h1 { font-family: var(--font-title); font-size: 2.8rem; margin-bottom: 0.5rem; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); animation: fadeInAnimation 1s ease-out; }
+        .practice-header p { font-size: 1.1rem; font-weight: 300; opacity: 0.9; animation: fadeInAnimation 1s ease-out 0.3s forwards; opacity: 0; }
+        .header-icon { position: absolute; font-size: 4rem; color: var(--text-light); animation: pulseHeaderIcon 6s infinite ease-in-out alternate; }
+        .icon1 { top: 20%; left: 15%; animation-duration: 7s; } /* Changed icon */
+        .icon2 { bottom: 15%; right: 20%; animation-duration: 5s; } /* Changed icon */
+
+        /* --- Practice Section Styling (Unchanged) --- */
+        .practice-section { padding: 3rem 0; background-color: var(--background-medium); border-bottom: 1px solid #d6d8db; }
+        .practice-section:nth-child(odd) { background-color: var(--background-light); }
+        .practice-section:last-of-type { border-bottom: none; }
+        .practice-section h2 { font-family: var(--font-title); font-size: 1.8rem; color: var(--primary-color); margin-bottom: 1rem; text-align: center; }
+        .practice-section .section-description { text-align: center; margin-bottom: 2.5rem; color: var(--secondary-color); font-size: 1.05rem; max-width: 700px; margin-left: auto; margin-right: auto; }
+        .practice-section .cs-concept { /* For highlighting CS concepts */
+            display: inline-block; background-color: var(--background-medium); color: var(--secondary-color);
+            font-size: 0.85rem; padding: 0.2rem 0.6rem; border-radius: 10px; margin-left: 5px;
+            border: 1px solid #ccc; font-family: var(--font-body); font-weight: 400;
+        }
+
+        /* --- General Interactive Elements (Unchanged) --- */
+        .interactive-area { background-color: #fff; padding: 2rem; border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.08); margin-top: 1.5rem; position: relative; transition: box-shadow 0.5s ease-out; }
+        .feedback-message { padding: 0.8rem 1rem; margin-top: 1rem; border-radius: var(--border-radius); font-weight: bold; text-align: center; opacity: 0; max-height: 0; overflow: hidden; transition: opacity var(--transition-speed) ease, max-height var(--transition-speed) ease, margin-top var(--transition-speed) ease; }
+        .feedback-message.visible { opacity: 1; max-height: 100px; margin-top: 1.5rem; }
+        .feedback-message.correct { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .feedback-message.incorrect { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .feedback-message.info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .feedback-message .fas { margin: 0 3px; }
+        .action-button { display: inline-block; padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold; color: var(--text-light); background-color: var(--primary-color); border: none; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), transform var(--transition-speed), filter var(--transition-speed), box-shadow var(--transition-speed); margin-top: 1rem; vertical-align: middle; box-shadow: 0 2px 5px rgba(0,0,0,0.1); text-decoration: none; }
+        .action-button:hover:not(:disabled) { background-color: #0056b3; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+        .action-button:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none; box-shadow: none; opacity: 0.7; }
+        .action-button.success { background-color: var(--success-color); }
+        .action-button.success:hover:not(:disabled) { background-color: #218838; }
+        .action-button.secondary { background-color: var(--secondary-color); }
+        .action-button.secondary:hover:not(:disabled) { background-color: #5a6268; }
+        /* Code styling (Unchanged) */
+        .code-block { background-color: var(--background-dark); color: var(--text-light); padding: 1.5rem; border-radius: var(--border-radius); font-family: var(--code-font); font-size: 1rem; position: relative; overflow-x: auto; margin: 1rem 0; }
+        .code-keyword { color: #569cd6; } .code-string { color: #ce9178; } .code-comment { color: #6a9955; } .code-function { color: #dcdcaa; } .code-paren { color: #ffd700; } .code-variable { color: #9cdcfe; } .code-method { color: #dcdcaa; } .code-operator { color: #d4d4d4; } .code-mode { color: var(--file-color); font-weight: bold; } /* New style for mode */
+
+        /* --- Activity 1: File Writing Anatomy (Adapted) --- */
+        #file-anatomy .code-part { cursor: pointer; border-bottom: 2px dashed rgba(255, 255, 255, 0.3); transition: background-color var(--transition-speed), border-bottom-color var(--transition-speed); padding: 0 2px; display: inline-block; }
+        #file-anatomy .code-part:hover { background-color: rgba(255, 255, 255, 0.15); border-bottom-color: var(--accent-color); }
+        #file-anatomy .code-part.identified { background-color: rgba(40, 167, 69, 0.3); border-bottom: 2px solid var(--success-color); cursor: default; }
+        #file-anatomy .part-explanation { font-size: 0.95rem; color: var(--info-color); border-left: 3px solid var(--info-color); padding: 5px 10px; margin-top: 0.5rem; background-color: rgba(23, 162, 184, 0.05); }
+        #anatomy-status { margin-top: 1rem; font-style: italic; color: var(--secondary-color); }
+
+        /* --- Activity 2: Build-a-Write (Adapted) --- */
+        #build-write .draggable-pieces { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 1.5rem; padding: 1rem; background-color: var(--background-light); border: 1px dashed var(--secondary-color); border-radius: var(--border-radius); justify-content: center; user-select: none; -webkit-user-select: none; -ms-user-select: none; }
+        .piece { display: inline-block; padding: 8px 12px; background-color: var(--primary-color); color: var(--text-light); border-radius: 4px; cursor: grab; font-family: var(--code-font); font-size: 1rem; transition: background-color var(--transition-speed), transform var(--transition-speed), opacity 0.1s ease, box-shadow var(--transition-speed); border: 1px solid #0056b3; touch-action: none; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .piece:active { cursor: grabbing; }
+        .piece.dragging { opacity: 0.6 !important; transform: scale(1.05) rotate(3deg); position: fixed !important; pointer-events: none !important; z-index: 1000 !important; cursor: grabbing !important; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+        .piece.ghosting { opacity: 0.3; }
+        .piece[data-type="keyword"] { background-color: #569cd6; border-color:#457da8; } /* Keyword color */
+        .piece[data-type="function"], .piece[data-type="method"] { background-color: #b4ad6c; border-color:#a09a60; } /* Function/Method color */
+        .piece[data-type="string"], .piece[data-type="filename"] { background-color: #b17a62; border-color:#9d6c56; } /* String color */
+        .piece[data-type="variable"] { background-color: #88c4e0; border-color:#74a8c0; } /* Variable color */
+        .piece[data-type="mode"] { background-color: var(--file-color); border-color:#d06910; } /* Mode color */
+        #build-drop-zone { min-height: 60px; background-color: var(--background-dark); border: 3px dashed var(--secondary-color); border-radius: var(--border-radius); padding: 15px; display: flex; align-items: center; gap: 5px; flex-wrap: wrap; transition: border-color var(--transition-speed), background-color var(--transition-speed), box-shadow var(--transition-speed); }
+        #build-drop-zone.over { border-color: var(--accent-color); background-color: #495057; box-shadow: inset 0 0 10px rgba(255,193,7,0.2); }
+        #build-drop-zone .piece { cursor: default; margin: 0; touch-action: auto; box-shadow: none; }
+        #build-drop-zone-placeholder { color: var(--secondary-color); font-style: italic; width: 100%; text-align: center;}
+
+         /* --- Activity 3: File Simulator (Adapted) --- */
+        #file-simulator .sim-editor { width: 100%; min-height: 100px; background-color: var(--background-dark); color: var(--text-light); border: 1px solid var(--secondary-color); border-radius: var(--border-radius); padding: 1rem; font-family: var(--code-font); font-size: 1rem; line-height: 1.5; resize: vertical; }
+        #file-simulator .sim-output-area { margin-top: 1rem; min-height: 80px; background-color: #1a1a1a; border: 1px solid #444; border-radius: var(--border-radius); padding: 1rem; color: var(--text-light); /* Output text color */ font-family: var(--font-body); /* Use regular font for file content */ font-size: 1rem; white-space: pre-wrap; word-wrap: break-word; }
+        #file-simulator .sim-output-area .placeholder { color: var(--secondary-color); font-style: italic; font-size: 0.9rem; }
+        #file-simulator .sim-output-area .output-line { display: block; border-bottom: 1px dotted #555; padding-bottom: 3px; margin-bottom: 3px; }
+        #file-simulator .sim-output-area .output-line:last-child { border-bottom: none; padding-bottom: 0; margin-bottom: 0; }
+        #file-simulator .sim-output-area .filename-header { font-weight: bold; color: var(--file-color); margin-bottom: 5px; display: block; font-family: var(--code-font); font-size: 0.9rem;}
+
+
+        /* --- Activity 4: Match the Mode (New Activity) --- */
+        #mode-matcher .mode-scenario { border: 1px solid #d6d8db; border-radius: var(--border-radius); padding: 1.5rem; margin-bottom: 1.5rem; background-color: var(--background-light); position: relative;}
+        #mode-matcher .scenario-text { margin-bottom: 1rem; color: var(--text-dark); }
+        #mode-matcher .mode-options { display: flex; justify-content: center; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; }
+        #mode-matcher .mode-option {
+            padding: 0.8rem 1.5rem; background-color: var(--background-dark); color: var(--text-light);
+            border-radius: var(--border-radius); cursor: pointer; font-family: var(--code-font);
+            font-size: 1.1rem; font-weight: bold; border: 2px solid transparent;
+            transition: background-color var(--transition-speed), border-color var(--transition-speed), transform var(--transition-speed);
+            user-select: none; -webkit-user-select: none;
+        }
+        #mode-matcher .mode-option:hover { background-color: #495057; }
+        #mode-matcher .mode-option.selected-visual { border-color: var(--accent-color); background-color: #5a6268; }
+        #mode-matcher .mode-option.correct-choice { border-color: var(--success-color); background-color: #218838;}
+        #mode-matcher .mode-option.incorrect-choice { border-color: var(--error-color); background-color: #bd2130;}
+        #mode-matcher .mode-feedback-icon {
+            position: absolute; top: 10px; right: 10px; font-size: 1.5rem;
+            transition: transform 0.3s ease; opacity: 0;
+        }
+        #mode-matcher .mode-feedback-icon.visible { opacity: 1; }
+        #mode-matcher .mode-feedback-icon .fa-check { color: var(--success-color); animation: iconAppearCorrect 0.5s ease-out forwards; }
+        #mode-matcher .mode-feedback-icon .fa-times { color: var(--error-color); animation: iconAppearIncorrect 0.6s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards; }
+        #mode-matcher .mode-option.checked-state { cursor: default; }
+
+        /* --- Activity 5: File Mini Missions (Adapted) --- */
+        #file-missions .mission { padding: 1.5rem; border: 1px solid #d6d8db; border-radius: var(--border-radius); margin-bottom: 1.5rem; background-color: var(--background-light); position: relative; }
+        .mission-status { position: absolute; top: 10px; right: 10px; font-size: 1.5rem; transition: transform 0.3s ease; }
+        .mission-status .fa-check-circle { color: var(--success-color); transform-origin: center; }
+        .mission-status .fa-times-circle { color: var(--error-color); }
+        .mission-status .fa-question-circle { color: var(--secondary-color); }
+        .mission[data-completed="true"] .mission-status .fa-check-circle { animation: iconAppearCorrect 0.6s ease-out; }
+        #file-missions .mission-editor { width: 100%; min-height: 100px; background-color: var(--background-dark); color: var(--text-light); border: 1px solid var(--secondary-color); border-radius: var(--border-radius); padding: 1rem; font-family: var(--code-font); font-size: 1rem; line-height: 1.5; resize: vertical; margin-top: 1rem; }
+        #file-missions .mission-output { /* Simulated file output */
+            margin-top: 1rem; min-height: 30px; background-color: #1a1a1a; border: 1px solid #444;
+            border-radius: var(--border-radius); padding: 0.8rem; color: var(--text-light); /* Content color */
+            font-family: var(--font-body); /* Regular font for content */ font-size: 1rem; white-space: pre-wrap; word-wrap: break-word;
+        }
+         #file-missions .mission-output .filename-header { font-weight: bold; color: var(--file-color); margin-bottom: 5px; display: block; font-family: var(--code-font); font-size: 0.9rem;}
+         #file-missions .mission-output .output-line { display: block; } /* Simple display */
+
+        /* --- Final Section (Adapted Icon) --- */
+        .completion-section { padding: 4rem 0; text-align: center; }
+        .completion-section .icon {
+            font-size: 4rem; color: var(--success-color); margin-bottom: 1rem;
+            display: inline-block;
+            opacity: 0;
+            animation: iconAppearCorrect 1s ease-out 0.5s forwards;
+        }
+        .completion-section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); }
+        .completion-section p { font-size: 1.1rem; margin-top: 1rem; color: var(--secondary-color); }
+
+        /* --- Responsive Design (Mostly Unchanged) --- */
+        @media (max-width: 768px) {
+            html { font-size: 15px; }
+            .practice-header h1 { font-size: 2.2rem; }
+            .practice-section h2 { font-size: 1.6rem; }
+            .interactive-area { padding: 1.5rem; }
+            #build-write .draggable-pieces { padding: 0.8rem; }
+            .piece { padding: 6px 10px; font-size: 0.95rem; }
+            #build-drop-zone { min-height: 50px; padding: 10px; }
+            #mode-matcher .mode-option { padding: 0.7rem 1.2rem; font-size: 1rem;}
+            .button-group { flex-direction: column; align-items: center; }
+            .minimal-nav { min-width: 180px; }
+            .minimal-nav ul li a { padding: 0.6rem 0.8rem; }
+            #languageSelect { font-size: 0.85rem; padding: 5px 25px 5px 10px;}
+        }
+        @media (max-width: 480px) {
+            html { font-size: 14px; }
+            .practice-header h1 { font-size: 1.8rem; }
+            .practice-header p { font-size: 1rem; }
+            .practice-section h2 { font-size: 1.4rem; }
+            .interactive-area { padding: 1rem; }
+            .action-button { font-size: 0.9rem; padding: 0.7rem 1.2rem; width: 90%; max-width: 300px;}
+            #file-simulator .sim-editor, #file-simulator .sim-output-area { font-size: 0.9rem; }
+            #mode-matcher .mode-option { padding: 0.6rem 1rem; font-size: 0.9rem;}
+            #file-missions .mission-editor { min-height: 90px; font-size: 0.95rem;}
+            #file-missions .mission-output { font-size: 0.95rem;}
+            .button-group a.action-button { width: 90%; max-width: 300px; margin-bottom: 0.5rem; }
+            .minimal-nav-button { top: 10px; right: 10px; padding: 6px 10px; font-size: 1rem; }
+            .minimal-nav { top: 48px; right: 10px; min-width: 160px; }
+            .minimal-nav ul li a { padding: 0.5rem 0.7rem; font-size: 0.9rem;}
+            .minimal-nav ul li a i.fas { margin-right: 8px; }
+            #languageSelect { font-size: 0.8rem; padding: 4px 20px 4px 8px;}
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ========= Minimal Nav Handle ========= -->
+    <button id="minimal-nav-toggle" class="minimal-nav-button" aria-label="Toggle Navigation Menu">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- ========= Minimal Nav Panel (with Language Switcher) - Adapted Links ========= -->
+    <nav id="minimal-nav-panel" class="minimal-nav">
+        <ul>
+            <!-- *** MODIFIED Module Number *** -->
+            <li><a href="ctp-theory-24.html"><i class="fas fa-book-open fa-fw"></i> <span data-translate="nav_theory">View Theory</span></a></li>
+            <li><a href="ctp-advanced-24.html"><i class="fas fa-flask fa-fw"></i> <span data-translate="nav_advanced">Advanced Practice</span></a></li>
+            <li><a href="ctp-dashboard.html"><i class="fas fa-list fa-fw"></i> <span data-translate="nav_menu">Course Menu</span></a></li>
+            <hr style="border: none; border-top: 1px solid var(--secondary-color); margin: 8px 0;">
+            <!-- In-page links adapted -->
+            <li><a href="#file-anatomy"><i class="fas fa-microscope fa-fw"></i> <span data-translate="nav_anatomy">Anatomy</span></a></li>
+            <li><a href="#build-write"><i class="fas fa-puzzle-piece fa-fw"></i> <span data-translate="nav_build">Build</span></a></li>
+            <li><a href="#file-simulator"><i class="fas fa-keyboard fa-fw"></i> <span data-translate="nav_simulator">Simulator</span></a></li>
+            <li><a href="#mode-matcher"><i class="fas fa-exchange-alt fa-fw"></i> <span data-translate="nav_mode">Mode Matcher</span></a></li>
+            <li><a href="#file-missions"><i class="fas fa-rocket fa-fw"></i> <span data-translate="nav_missions">Missions</span></a></li>
+            <!-- Language Switcher Item (Unchanged) -->
+            <li class="language-switcher-item">
+                 <select id="languageSelect" aria-label="Select Language">
+                     <option value="en" data-translate="lang_en">🇬🇧 English</option>
+                     <option value="pt" data-translate="lang_pt">🇧🇷 Português</option>
+                     <option value="zh" data-translate="lang_zh">🇨🇳 中文</option>
+                 </select>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- ========= Header (Adapted) ========= -->
+    <header class="practice-header">
+        <!-- *** MODIFIED Icons *** -->
+        <i class="fas fa-file-alt header-icon icon1"></i>
+        <i class="fas fa-save header-icon icon2"></i>
+        <div class="container">
+            <!-- *** MODIFIED Text *** -->
+            <h1 data-translate="header_title">Module 24: Writing to Files</h1>
+            <p data-translate="header_subtitle">Learn how to save data for later use by writing it to files.</p>
+        </div>
+    </header>
+
+    <!-- ========= Main Content ========= -->
+    <main>
+        <!-- ========= Activity 1: Anatomy of File Writing (Adapted) ========= -->
+        <section id="file-anatomy" class="practice-section">
+             <div class="container">
+                 <h2 class="fade-in"><i class="fas fa-microscope"></i> <span data-translate="anatomy_title">Anatomy of Writing a File</span></h2>
+                 <p class="section-description fade-in delay-1" data-translate="anatomy_desc">
+                     Click on each part of the code below. This pattern ensures files are handled safely.
+                     It's fundamental for <span class="cs-concept" data-translate="cs_io">I/O</span> and <span class="cs-concept" data-translate="cs_persistence">Data Persistence</span>.
+                 </p>
+                 <div class="interactive-area fade-in delay-2">
+                     <div class="code-block">
+                        <span class="code-part" data-part="with-keyword" data-translate-title="tooltip_click_identify" title="Click to identify this part"><span class="code-keyword">with</span></span> <span class="code-part" data-part="open-function" data-translate-title="tooltip_click_identify" title="Click to identify this part"><span class="code-function">open</span></span><span class="code-part" data-part="parentheses-open1" data-translate-title="tooltip_click_identify" title="Click to identify this part"><span class="code-paren">(</span></span><!--
+                        --><span class="code-part" data-part="filename" data-translate-title="tooltip_click_identify" title="Click to identify this part"><span class="code-string" data-translate="anatomy_code_filename">'data.txt'</span></span><span class="code-operator">,</span> <span class="code-part" data-part="mode" data-translate-title="tooltip_click_identify" title="Click to identify this part"><span class="code-string code-mode" data-translate="anatomy_code_mode">'w'</span></span><span class="code-part" data-part="parentheses-close1" data-translate-title="tooltip_click_identify" title="Click to identify this part"><span class="code-paren">)</span></span> <span class="code-part" data-part="as-keyword" data-translate-title="tooltip_click_identify" title="Click to identify this part"><span class="code-keyword">as</span></span> <span class="code-part" data-part="file-variable" data-translate-title="tooltip_click_identify" title="Click to identify this part"><span class="code-variable">outfile</span></span><span class="code-operator">:</span><br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="code-part" data-part="write-method" data-translate-title="tooltip_click_identify" title="Click to identify this part"><span class="code-variable">outfile</span><span class="code-operator">.</span><span class="code-method">write</span></span><span class="code-part" data-part="parentheses-open2" data-translate-title="tooltip_click_identify" title="Click to identify this part"><span class="code-paren">(</span></span><span class="code-part" data-part="data-string" data-translate-title="tooltip_click_identify" title="Click to identify this part"><span class="code-string" data-translate="anatomy_code_string">"First line of data.\n"</span></span><span class="code-part" data-part="parentheses-close2" data-translate-title="tooltip_click_identify" title="Click to identify this part"><span class="code-paren">)</span></span>
+                     </div>
+                     <div id="anatomy-explanations"></div>
+                     <p id="anatomy-status" data-translate="anatomy_status_initial">Identify all parts!</p>
+                     <div id="anatomy-feedback" class="feedback-message"></div>
+                     <!-- Hidden elements for storing translated explanation parts -->
+                     <div id="explanation-texts" style="display: none;">
+                        <span data-key="with-keyword" data-translate="anatomy_exp_with">`with`: Manages setup/cleanup, ensuring the file is closed automatically.</span>
+                        <span data-key="open-function" data-translate="anatomy_exp_open">`open()`: Function to access a file on your system.</span>
+                        <span data-key="parentheses-open1" data-translate="anatomy_exp_paren_open1">`(`: Starts arguments for `open()`.</span>
+                        <span data-key="filename" data-translate="anatomy_exp_filename">Filename (string): Specifies which file to open.</span>
+                        <span data-key="mode" data-translate="anatomy_exp_mode">Mode (`'w'`): 'w' for write (creates/overwrites), 'a' for append.</span>
+                        <span data-key="parentheses-close1" data-translate="anatomy_exp_paren_close1">`)`: Ends arguments for `open()`.</span>
+                        <span data-key="as-keyword" data-translate="anatomy_exp_as">`as`: Assigns the opened file object to a variable.</span>
+                        <span data-key="file-variable" data-translate="anatomy_exp_variable">File variable (`outfile`): Used to interact with the opened file.</span>
+                        <span data-key="write-method" data-translate="anatomy_exp_write">`.write()`: Method to write string data into the file.</span>
+                        <span data-key="parentheses-open2" data-translate="anatomy_exp_paren_open2">`(`: Starts argument for `.write()`.</span>
+                        <span data-key="data-string" data-translate="anatomy_exp_string">Data (string): The text to be written. `\n` means newline.</span>
+                        <span data-key="parentheses-close2" data-translate="anatomy_exp_paren_close2">`)`: Ends argument for `.write()`.</span>
+                     </div>
+                 </div>
+             </div>
+        </section>
+
+        <!-- ========= Activity 2: Build-a-Write Statement (Adapted) ========= -->
+        <section id="build-write" class="practice-section">
+             <div class="container">
+                 <h2 class="fade-in"><i class="fas fa-puzzle-piece"></i> <span data-translate="build_title">Build-a-Write Statement</span></h2>
+                 <p class="section-description fade-in delay-1" data-translate="build_desc">
+                     Drag the pieces into the dark grey area to construct a valid `with open(...)` statement
+                     that writes the text "Log Entry\n" to a file named `app.log` using write mode (`'w'`).
+                 </p>
+                 <div class="interactive-area fade-in delay-2">
+                     <div id="draggable-pieces" class="draggable-pieces">
+                         <!-- Pieces populated by JS -->
+                     </div>
+                     <div id="build-drop-zone" class="code-font">
+                         <span id="build-drop-zone-placeholder" data-translate="build_drop_placeholder">Drop pieces here...</span>
+                     </div>
+                     <div class="text-center">
+                         <button id="check-build-btn" class="action-button" data-translate="button_check_build">Check My Code</button>
+                         <button id="reset-build-btn" class="action-button secondary" data-translate="button_reset_build">Reset</button>
+                     </div>
+                     <div id="build-feedback" class="feedback-message"></div>
+                 </div>
+             </div>
+        </section>
+
+         <!-- ========= Activity 3: File Simulator (Adapted) ========= -->
+        <section id="file-simulator" class="practice-section">
+             <div class="container">
+                 <h2 class="fade-in"><i class="fas fa-keyboard"></i> <span data-translate="simulator_title">File Writing Simulator</span></h2>
+                 <p class="section-description fade-in delay-1" data-translate="simulator_desc">
+                     Type Python code in the editor to write to a simulated file named `sim_output.txt`.
+                     Use `with open('sim_output.txt', 'w') as f:` or `'a'` mode.
+                     The "Simulated File Content" area shows what *would* be in the file.
+                 </p>
+                 <div class="interactive-area fade-in delay-2">
+                     <label for="sim-editor-input" style="font-weight: bold; display:block; margin-bottom: 8px;" data-translate="simulator_editor_label">Code Editor:</label>
+                     <textarea id="sim-editor-input" class="sim-editor" rows="5" data-translate-placeholder="simulator_editor_placeholder" placeholder='Example:\nwith open("sim_output.txt", "w") as f:\n    f.write("Hello, simulated file!\n")'></textarea>
+                     <div class="text-center">
+                          <button id="run-sim-btn" class="action-button" data-translate="button_run_sim">Run Simulation</button>
+                          <button id="clear-sim-file-btn" class="action-button secondary" data-translate="button_clear_sim_file">Clear Simulated File</button>
+                     </div>
+                     <label for="sim-output" style="font-weight: bold; display:block; margin-top: 1.5rem; margin-bottom: 8px;" data-translate="simulator_output_label">Simulated File Content:</label>
+                     <div id="sim-output" class="sim-output-area">
+                         <span class="placeholder" data-translate="simulator_output_placeholder">File content will appear here...</span>
+                     </div>
+                     <div id="sim-feedback" class="feedback-message"></div>
+                 </div>
+             </div>
+        </section>
+
+         <!-- ========= Activity 4: Match the Mode (New Activity) ========= -->
+        <section id="mode-matcher" class="practice-section">
+            <div class="container">
+                <h2 class="fade-in"><i class="fas fa-exchange-alt"></i> <span data-translate="mode_title">Match the Mode: 'w' vs 'a'</span></h2>
+                <p class="section-description fade-in delay-1" data-translate="mode_desc">
+                    Choose the correct file opening mode (`'w'` for write/overwrite, `'a'` for append) for each scenario. Click your choice, then check.
+                </p>
+                <div class="interactive-area fade-in delay-2">
+                    <div id="mode-scenarios-container">
+                        <!-- Scenarios will be generated by JS -->
+                    </div>
+                     <div class="text-center">
+                         <button id="check-modes-btn" class="action-button" data-translate="button_check_modes">Check Modes</button>
+                         <button id="reset-modes-btn" class="action-button secondary hidden" data-translate="button_try_again">Try Again</button>
+                     </div>
+                     <div id="modes-feedback" class="feedback-message"></div>
+                </div>
+            </div>
+        </section>
+
+         <!-- ========= Activity 5: File Mini Missions (Adapted) ========= -->
+        <section id="file-missions" class="practice-section">
+             <div class="container">
+                  <h2 class="fade-in"><i class="fas fa-rocket"></i> <span data-translate="missions_title">File Writing Mini Missions!</span></h2>
+                 <p class="section-description fade-in delay-1" data-translate="missions_desc">
+                     Complete these coding tasks. The simulated output will show the content of `mission_log.txt`. Remember `\n` for new lines!
+                 </p>
+                 <div class="interactive-area fade-in delay-2">
+                     <!-- Mission 1 -->
+                     <div class="mission" id="mission-1" data-completed="false">
+                         <span class="mission-status"><i class="fas fa-question-circle"></i></span>
+                         <h4 data-translate="mission1_title">Mission 1: First Entry</h4>
+                         <p data-translate="mission1_desc">Write the single line "System Initialized." (including the period and a newline `\n`) to `mission_log.txt`. Use `with` and write mode (`'w'`).</p>
+                         <textarea class="sim-editor mission-editor" rows="4" data-translate-placeholder="mission1_placeholder" placeholder='with open("mission_log.txt", "w") as f:\n    # Your code here'></textarea>
+                         <div class="text-center"> <button class="action-button mission-run-btn" data-mission-id="1" data-translate="button_test_mission">Test Mission</button> </div>
+                         <div class="sim-output-area mission-output"></div>
+                         <div id="mission-feedback-1" class="feedback-message mission-feedback"></div>
+                     </div>
+                     <!-- Mission 2 -->
+                     <div class="mission" id="mission-2" data-completed="false">
+                          <span class="mission-status"><i class="fas fa-question-circle"></i></span>
+                         <h4 data-translate="mission2_title">Mission 2: Add an Event</h4>
+                         <p data-translate="mission2_desc">Append the line "User logged in." (including period and newline `\n`) to `mission_log.txt`. Use `with` and append mode (`'a'`). This should add to the previous content.</p>
+                         <textarea class="sim-editor mission-editor" rows="4" data-translate-placeholder="mission2_placeholder" placeholder='with open("mission_log.txt", "a") as f:\n    # Your code here'></textarea>
+                          <div class="text-center"> <button class="action-button mission-run-btn" data-mission-id="2" data-translate="button_test_mission">Test Mission</button> </div>
+                         <div class="sim-output-area mission-output"></div>
+                         <div id="mission-feedback-2" class="feedback-message mission-feedback"></div>
+                     </div>
+                     <!-- Mission 3 -->
+                     <div class="mission" id="mission-3" data-completed="false">
+                          <span class="mission-status"><i class="fas fa-question-circle"></i></span>
+                         <h4 data-translate="mission3_title">Mission 3: Multiple Lines, New File</h4>
+                         <p data-translate="mission3_desc">Create a *new* file named `config.txt` (use write mode `'w'`). Write the following two lines exactly (each ending with `\n`):<br>`setting1=true`<br>`setting2=false`</p>
+                         <textarea class="sim-editor mission-editor" rows="5" data-translate-placeholder="mission3_placeholder" placeholder='with open("config.txt", "w") as config_file:\n    config_file.write("...")\n    config_file.write("...")'></textarea>
+                          <div class="text-center"> <button class="action-button mission-run-btn" data-mission-id="3" data-translate="button_test_mission">Test Mission</button> </div>
+                         <div class="sim-output-area mission-output"></div>
+                         <div id="mission-feedback-3" class="feedback-message mission-feedback"></div>
+                     </div>
+                     <div id="missions-summary-feedback" class="feedback-message" style="margin-top: 2rem;"></div>
+                 </div>
+             </div>
+        </section>
+
+         <!-- ========= Completion Section (Adapted) ========= -->
+        <section class="completion-section">
+            <div class="container">
+                <!-- *** MODIFIED Icon *** -->
+                <div class="icon fade-in" style="animation: iconAppearCorrect 1s ease-out 0.5s forwards;">
+                    <i class="fas fa-save"></i> <i class="fas fa-check-double"></i> <i class="fas fa-file-export"></i>
+                </div>
+                <h2 class="fade-in delay-1" data-translate="completion_title">Module 24 Practice Complete!</h2>
+                <p class="fade-in delay-2" data-translate="completion_desc">
+                    Great work! You've practiced writing data to files, a crucial skill for saving results and configurations.<br>
+                    Ready for more? Try the <strong>Advanced Practice</strong> for Module 24!
+                </p>
+                <div class="button-group">
+                     <!-- *** MODIFIED Module Number *** -->
+                    <a href="ctp-theory-24.html" class="action-button secondary fade-in delay-3"><i class="fas fa-book-open"></i> <span data-translate="button_view_theory">View Theory Again</span></a>
+                    <a href="ctp-advanced-24.html" class="action-button success fade-in delay-3"><i class="fas fa-arrow-right"></i> <span data-translate="button_start_advanced">Start Advanced Practice</span></a>
+                    <a href="ctp-dashboard.html" class="action-button secondary fade-in delay-4"><i class="fas fa-list"></i> <span data-translate="button_back_menu">Back to Course Menu</span></a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ========= Script ========= -->
+    <script>
+    // --- Translations Object (Module 24) ---
+    const translations = {
+        en: {
+            "page_title": "Module 24: Python Practice - Writing Files",
+            "tooltip_click_identify": "Click to identify this part",
+            "nav_theory": "View Theory", "nav_advanced": "Advanced Practice", "nav_menu": "Course Menu",
+            "nav_anatomy": "Anatomy", "nav_build": "Build", "nav_simulator": "Simulator", "nav_mode": "Mode Matcher", "nav_missions": "Missions",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title": "Module 24: Writing to Files", "header_subtitle": "Learn how to save data for later use by writing it to files.",
+            "cs_io": "I/O", "cs_persistence": "Data Persistence",
+            "anatomy_title": "Anatomy of Writing a File", "anatomy_desc": "Click on each part of the code below. This pattern ensures files are handled safely. It's fundamental for I/O and Data Persistence.",
+            "anatomy_status_initial": "Identify all 12 parts!", "anatomy_status_progress": "Identified {count} of {total} parts.", "anatomy_status_done": "All parts identified!",
+            "anatomy_exp_with": "`with`: Manages setup/cleanup, ensuring the file is closed automatically.",
+            "anatomy_exp_open": "`open()`: Function to access a file on your system.",
+            "anatomy_exp_paren_open1": "`(`: Starts arguments for `open()`.",
+            "anatomy_exp_filename": "Filename (string): Specifies which file to open.",
+            "anatomy_exp_mode": "Mode (`'w'`): 'w' for write (creates/overwrites), 'a' for append.",
+            "anatomy_exp_paren_close1": "`)`: Ends arguments for `open()`.",
+            "anatomy_exp_as": "`as`: Assigns the opened file object to a variable.",
+            "anatomy_exp_variable": "File variable (`outfile`): Used to interact with the opened file.",
+            "anatomy_exp_write": "`.write()`: Method to write string data into the file.",
+            "anatomy_exp_paren_open2": "`(`: Starts argument for `.write()`.",
+            "anatomy_exp_string": "Data (string): The text to be written. `\\n` means newline.",
+            "anatomy_exp_paren_close2": "`)`: Ends argument for `.write()`.",
+            "anatomy_code_filename": "'data.txt'",
+            "anatomy_code_mode": "'w'",
+            "anatomy_code_string": "\"First line of data.\\n\"",
+            "feedback_anatomy_correct": "Excellent! You've dissected the file writing structure!",
+            "build_title": "Build-a-Write Statement", "build_desc": "Drag the pieces into the dark grey area to construct a valid `with open(...)` statement that writes the text \"Log Entry\\n\" to a file named `app.log` using write mode (`'w'`).",
+            "build_drop_placeholder": "Drop pieces here...",
+            "build_piece_with": "with", "build_piece_open": "open", "build_piece_paren_open": "(", "build_piece_paren_close": ")",
+            "build_piece_filename": "'app.log'", "build_piece_mode_w": "'w'", "build_piece_mode_a": "'a'", "build_piece_comma": ",",
+            "build_piece_as": "as", "build_piece_variable": "log_file", "build_piece_colon": ":",
+            "build_piece_write_call": "log_file.write", "build_piece_data": "\"Log Entry\\n\"", "build_piece_comment": "# Write a log",
+            "button_check_build": "Check My Code", "button_reset_build": "Reset",
+            "feedback_build_correct": "Perfect structure!", "feedback_build_almost": "Almost! Check piece order, mode, or indentation (implicitly).", "feedback_build_incorrect": "Not quite right. Review the `with open(...)` syntax.",
+            "simulator_title": "File Writing Simulator", "simulator_desc": "Type Python code in the editor to write to a simulated file named `sim_output.txt`. Use `with open('sim_output.txt', 'w') as f:` or `'a'` mode. The \"Simulated File Content\" area shows what *would* be in the file.",
+            "simulator_editor_label": "Code Editor:", "simulator_editor_placeholder": "Example:\nwith open(\"sim_output.txt\", \"w\") as f:\n    f.write(\"Hello, simulated file!\\n\")",
+            "button_run_sim": "Run Simulation", "button_clear_sim_file": "Clear Simulated File", "simulator_output_label": "Simulated File Content:", "simulator_output_placeholder": "File content will appear here...",
+            "simulator_filename_header": "File: {filename}",
+            "feedback_sim_success": "Simulation ran. Check simulated file content.", "feedback_sim_empty": "Editor is empty.",
+            "feedback_sim_no_with": "Use the `with` statement for safety.", "feedback_sim_no_open": "Missing `open()` function.", "feedback_sim_no_mode": "Specify a mode ('w' or 'a').", "feedback_sim_no_write": "Use the `.write()` method.", "feedback_sim_syntax": "Check syntax: `with open(...) as ...:` indentation, `.write(...)`.", "feedback_sim_cleared": "Simulated file content cleared.",
+            "mode_title": "Match the Mode: 'w' vs 'a'", "mode_desc": "Choose the correct file opening mode (`'w'` for write/overwrite, `'a'` for append) for each scenario. Click your choice, then check.",
+            "mode_scenario1_text": "You want to create a brand new configuration file and write the initial settings.", "mode_scenario1_correct": "w",
+            "mode_scenario2_text": "You need to add a new event timestamp to an existing log file without erasing previous logs.", "mode_scenario2_correct": "a",
+            "mode_scenario3_text": "You are saving user preferences for the first time.", "mode_scenario3_correct": "w",
+            "mode_scenario4_text": "You are updating a high score list by adding the latest score to the end.", "mode_scenario4_correct": "a",
+            "button_check_modes": "Check Modes", "button_try_again": "Try Again",
+            "feedback_modes_correct": "Perfect! You understand when to use 'w' and 'a'.", "feedback_modes_incorrect": "Not quite. {count} incorrect. Remember: 'w' overwrites, 'a' adds to the end. Review the marked <i class=\"fas fa-times\"></i> items.", "feedback_modes_select_all": "Please select a mode for each scenario first.",
+            "missions_title": "File Writing Mini Missions!", "missions_desc": "Complete these coding tasks. The simulated output will show the content of `mission_log.txt` or `config.txt`. Remember `\\n` for new lines!",
+            "mission_log_filename": "mission_log.txt", "config_filename": "config.txt", /* Filenames for mission output headers */
+            "mission1_title": "Mission 1: First Entry", "mission1_desc": "Write the single line \"System Initialized.\" (including the period and a newline `\\n`) to `mission_log.txt`. Use `with` and write mode (`'w'`).", "mission1_placeholder": "with open(\"mission_log.txt\", \"w\") as f:\n    # Your code here",
+            "mission2_title": "Mission 2: Add an Event", "mission2_desc": "Append the line \"User logged in.\" (including period and newline `\\n`) to `mission_log.txt`. Use `with` and append mode (`'a'`). This should add to the previous content.", "mission2_placeholder": "with open(\"mission_log.txt\", \"a\") as f:\n    # Your code here",
+            "mission3_title": "Mission 3: Multiple Lines, New File", "mission3_desc": "Create a *new* file named `config.txt` (use write mode `'w'`). Write the following two lines exactly (each ending with `\\n`):<br>`setting1=true`<br>`setting2=false`", "mission3_placeholder": "with open(\"config.txt\", \"w\") as config_file:\n    config_file.write(\"...\")\n    config_file.write(\"...\")",
+            "button_test_mission": "Test Mission", /* Re-used for all mission buttons */
+            "feedback_mission_success": "Mission Accomplished!", "feedback_mission_syntax_error": "Syntax/logic error.",
+            "feedback_mission_generic_hint": "Check `with open(...)`, mode, filename, `.write(...)` content, and `\\n`.",
+            "feedback_mission1_hint": "Use mode 'w', file 'mission_log.txt', write \"System Initialized.\\n\".",
+            "feedback_mission2_hint": "Use mode 'a', file 'mission_log.txt', write \"User logged in.\\n\".",
+            "feedback_mission3_hint": "Use mode 'w', file 'config.txt'. Write \"setting1=true\\n\" THEN \"setting2=false\\n\".",
+            "feedback_missions_summary_all_done": "All {totalMissions} missions complete! File master!", "feedback_missions_summary_progress": "Completed {completedCount} of {totalMissions} missions. Keep writing!",
+            "completion_title": "Module 24 Practice Complete!", "completion_desc": "Great work! You've practiced writing data to files, a crucial skill for saving results and configurations.<br> Ready for more? Try the <strong>Advanced Practice</strong> for Module 24!",
+            "button_view_theory": "View Theory Again", "button_start_advanced": "Start Advanced Practice", "button_back_menu": "Back to Course Menu"
+        },
+        pt: {
+            "page_title": "Módulo 24: Prática Python - Escrevendo Arquivos",
+            "tooltip_click_identify": "Clique para identificar esta parte",
+            "nav_theory": "Ver Teoria", "nav_advanced": "Prática Avançada", "nav_menu": "Menu do Curso",
+            "nav_anatomy": "Anatomia", "nav_build": "Construir", "nav_simulator": "Simulador", "nav_mode": "Escolher Modo", "nav_missions": "Missões",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title": "Módulo 24: Escrevendo em Arquivos", "header_subtitle": "Aprenda a salvar dados para uso posterior, escrevendo-os em arquivos.",
+            "cs_io": "E/S (I/O)", "cs_persistence": "Persistência de Dados",
+            "anatomy_title": "Anatomia da Escrita em Arquivo", "anatomy_desc": "Clique em cada parte do código abaixo. Este padrão garante que os arquivos sejam tratados com segurança. É fundamental para E/S e Persistência de Dados.",
+            "anatomy_status_initial": "Identifique todas as 12 partes!", "anatomy_status_progress": "Identificadas {count} de {total} partes.", "anatomy_status_done": "Todas as partes identificadas!",
+            "anatomy_exp_with": "`with`: Gerencia configuração/limpeza, garantindo que o arquivo seja fechado automaticamente.",
+            "anatomy_exp_open": "`open()`: Função para acessar um arquivo no seu sistema.",
+            "anatomy_exp_paren_open1": "`(`: Inicia os argumentos para `open()`.",
+            "anatomy_exp_filename": "Nome do arquivo (string): Especifica qual arquivo abrir.",
+            "anatomy_exp_mode": "Modo (`'w'`): 'w' para escrita (cria/sobrescreve), 'a' para anexar (append).",
+            "anatomy_exp_paren_close1": "`)`: Termina os argumentos para `open()`.",
+            "anatomy_exp_as": "`as`: Atribui o objeto de arquivo aberto a uma variável.",
+            "anatomy_exp_variable": "Variável de arquivo (`outfile`): Usada para interagir com o arquivo aberto.",
+            "anatomy_exp_write": "`.write()`: Método para escrever dados de string no arquivo.",
+            "anatomy_exp_paren_open2": "`(`: Inicia o argumento para `.write()`.",
+            "anatomy_exp_string": "Dados (string): O texto a ser escrito. `\\n` significa nova linha.",
+            "anatomy_exp_paren_close2": "`)`: Termina o argumento para `.write()`.",
+            "anatomy_code_filename": "'dados.txt'", // pt
+            "anatomy_code_mode": "'w'",
+            "anatomy_code_string": "\"Primeira linha de dados.\\n\"", // pt
+            "feedback_anatomy_correct": "Excelente! Você dissecou a estrutura de escrita de arquivo!",
+            "build_title": "Construa-uma-Escrita", "build_desc": "Arraste as peças para a área cinza escura para construir uma declaração `with open(...)` válida que escreva o texto \"Entrada de Log\\n\" em um arquivo chamado `app.log` usando o modo de escrita (`'w'`).",
+            "build_drop_placeholder": "Solte as peças aqui...",
+            "build_piece_with": "with", "build_piece_open": "open", "build_piece_paren_open": "(", "build_piece_paren_close": ")",
+            "build_piece_filename": "'app.log'", "build_piece_mode_w": "'w'", "build_piece_mode_a": "'a'", "build_piece_comma": ",",
+            "build_piece_as": "as", "build_piece_variable": "arq_log", "build_piece_colon": ":", // pt variable
+            "build_piece_write_call": "arq_log.write", "build_piece_data": "\"Entrada de Log\\n\"", "build_piece_comment": "# Escrever um log", // pt
+            "button_check_build": "Verificar Meu Código", "button_reset_build": "Reiniciar",
+            "feedback_build_correct": "Estrutura perfeita!", "feedback_build_almost": "Quase lá! Verifique a ordem das peças, modo ou indentação (implícita).", "feedback_build_incorrect": "Não está certo. Revise a sintaxe `with open(...)`.",
+            "simulator_title": "Simulador de Escrita em Arquivo", "simulator_desc": "Digite código Python no editor para escrever em um arquivo simulado chamado `sim_output.txt`. Use `with open('sim_output.txt', 'w') as f:` ou modo `'a'`. A área \"Conteúdo do Arquivo Simulado\" mostra o que *estaria* no arquivo.",
+            "simulator_editor_label": "Editor de Código:", "simulator_editor_placeholder": "Exemplo:\nwith open(\"sim_output.txt\", \"w\") as f:\n    f.write(\"Olá, arquivo simulado!\\n\")",
+            "button_run_sim": "Executar Simulação", "button_clear_sim_file": "Limpar Arquivo Simulado", "simulator_output_label": "Conteúdo do Arquivo Simulado:", "simulator_output_placeholder": "O conteúdo do arquivo aparecerá aqui...",
+            "simulator_filename_header": "Arquivo: {filename}",
+            "feedback_sim_success": "Simulação executada. Verifique o conteúdo do arquivo simulado.", "feedback_sim_empty": "O editor está vazio.",
+            "feedback_sim_no_with": "Use a declaração `with` por segurança.", "feedback_sim_no_open": "Faltando a função `open()`.", "feedback_sim_no_mode": "Especifique um modo ('w' ou 'a').", "feedback_sim_no_write": "Use o método `.write()`.", "feedback_sim_syntax": "Verifique a sintaxe: `with open(...) as ...:` indentação, `.write(...)`.", "feedback_sim_cleared": "Conteúdo do arquivo simulado limpo.",
+            "mode_title": "Escolha o Modo: 'w' vs 'a'", "mode_desc": "Escolha o modo correto de abertura de arquivo (`'w'` para escrever/sobrescrever, `'a'` para anexar) para cada cenário. Clique na sua escolha e verifique.",
+            "mode_scenario1_text": "Você quer criar um arquivo de configuração novo e escrever as configurações iniciais.", "mode_scenario1_correct": "w",
+            "mode_scenario2_text": "Você precisa adicionar um novo timestamp de evento a um arquivo de log existente sem apagar os logs anteriores.", "mode_scenario2_correct": "a",
+            "mode_scenario3_text": "Você está salvando as preferências do usuário pela primeira vez.", "mode_scenario3_correct": "w",
+            "mode_scenario4_text": "Você está atualizando uma lista de recordes adicionando a pontuação mais recente ao final.", "mode_scenario4_correct": "a",
+            "button_check_modes": "Verificar Modos", "button_try_again": "Tentar Novamente",
+            "feedback_modes_correct": "Perfeito! Você entende quando usar 'w' e 'a'.", "feedback_modes_incorrect": "Não exatamente. {count} incorreto(s). Lembre-se: 'w' sobrescreve, 'a' adiciona ao final. Revise os itens marcados com <i class=\"fas fa-times\"></i>.", "feedback_modes_select_all": "Por favor, selecione um modo para cada cenário primeiro.",
+            "missions_title": "Mini Missões de Escrita em Arquivo!", "missions_desc": "Complete estas tarefas de codificação. A saída simulada mostrará o conteúdo de `mission_log.txt` ou `config.txt`. Lembre-se do `\\n` para novas linhas!",
+            "mission_log_filename": "mission_log.txt", "config_filename": "config.txt",
+            "mission1_title": "Missão 1: Primeira Entrada", "mission1_desc": "Escreva a linha única \"Sistema Inicializado.\" (incluindo o ponto e uma nova linha `\\n`) em `mission_log.txt`. Use `with` e modo de escrita (`'w'`).", "mission1_placeholder": "with open(\"mission_log.txt\", \"w\") as f:\n    # Seu código aqui",
+            "mission2_title": "Missão 2: Adicionar um Evento", "mission2_desc": "Anexe a linha \"Usuário logado.\" (incluindo ponto e nova linha `\\n`) a `mission_log.txt`. Use `with` e modo de anexar (`'a'`). Isso deve adicionar ao conteúdo anterior.", "mission2_placeholder": "with open(\"mission_log.txt\", \"a\") as f:\n    # Seu código aqui",
+            "mission3_title": "Missão 3: Múltiplas Linhas, Novo Arquivo", "mission3_desc": "Crie um *novo* arquivo chamado `config.txt` (use modo de escrita `'w'`). Escreva as duas linhas seguintes exatamente (cada uma terminando com `\\n`):<br>`setting1=true`<br>`setting2=false`", "mission3_placeholder": "with open(\"config.txt\", \"w\") as config_file:\n    config_file.write(\"...\")\n    config_file.write(\"...\")",
+            "button_test_mission": "Testar Missão",
+            "feedback_mission_success": "Missão Cumprida!", "feedback_mission_syntax_error": "Erro de sintaxe/lógica.",
+            "feedback_mission_generic_hint": "Verifique `with open(...)`, modo, nome do arquivo, conteúdo de `.write(...)` e `\\n`.",
+            "feedback_mission1_hint": "Use modo 'w', arquivo 'mission_log.txt', escreva \"Sistema Inicializado.\\n\".",
+            "feedback_mission2_hint": "Use modo 'a', arquivo 'mission_log.txt', escreva \"Usuário logado.\\n\".",
+            "feedback_mission3_hint": "Use modo 'w', arquivo 'config.txt'. Escreva \"setting1=true\\n\" DEPOIS \"setting2=false\\n\".",
+            "feedback_missions_summary_all_done": "Todas as {totalMissions} missões completas! Mestre dos arquivos!", "feedback_missions_summary_progress": "Completou {completedCount} de {totalMissions} missões. Continue escrevendo!",
+            "completion_title": "Prática do Módulo 24 Completa!", "completion_desc": "Ótimo trabalho! Você praticou a escrita de dados em arquivos, uma habilidade crucial para salvar resultados e configurações.<br> Pronto para mais? Tente a <strong>Prática Avançada</strong> do Módulo 24!",
+            "button_view_theory": "Ver Teoria Novamente", "button_start_advanced": "Iniciar Prática Avançada", "button_back_menu": "Voltar ao Menu do Curso"
+        },
+        zh: {
+            "page_title": "模块 24：Python 练习 - 写入文件",
+            "tooltip_click_identify": "点击识别此部分",
+            "nav_theory": "查看理论", "nav_advanced": "高级练习", "nav_menu": "课程菜单",
+            "nav_anatomy": "剖析", "nav_build": "构建", "nav_simulator": "模拟器", "nav_mode": "模式匹配", "nav_missions": "任务",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title": "模块 24：写入文件", "header_subtitle": "学习如何通过将数据写入文件来保存以供后续使用。",
+            "cs_io": "输入/输出 (I/O)", "cs_persistence": "数据持久化",
+            "anatomy_title": "剖析文件写入", "anatomy_desc": "点击下面代码的每个部分。这种模式可确保安全地处理文件。这对于 I/O 和数据持久化至关重要。",
+            "anatomy_status_initial": "识别所有 12 个部分！", "anatomy_status_progress": "已识别 {count} / {total} 个部分。", "anatomy_status_done": "所有部分已识别！",
+            "anatomy_exp_with": "`with`: 管理设置/清理，确保文件自动关闭。",
+            "anatomy_exp_open": "`open()`: 访问系统上文件的函数。",
+            "anatomy_exp_paren_open1": "`(`: 开始 `open()` 的参数。",
+            "anatomy_exp_filename": "文件名 (字符串): 指定要打开的文件。",
+            "anatomy_exp_mode": "模式 (`'w'`): 'w' 表示写入 (创建/覆盖)，'a' 表示追加。",
+            "anatomy_exp_paren_close1": "`)`: 结束 `open()` 的参数。",
+            "anatomy_exp_as": "`as`: 将打开的文件对象分配给一个变量。",
+            "anatomy_exp_variable": "文件变量 (`outfile`): 用于与打开的文件交互。",
+            "anatomy_exp_write": "`.write()`: 将字符串数据写入文件的方法。",
+            "anatomy_exp_paren_open2": "`(`: 开始 `.write()` 的参数。",
+            "anatomy_exp_string": "数据 (字符串): 要写入的文本。`\\n` 表示换行。",
+            "anatomy_exp_paren_close2": "`)`: 结束 `.write()` 的参数。",
+            "anatomy_code_filename": "'data.txt'",
+            "anatomy_code_mode": "'w'",
+            "anatomy_code_string": "\"第一行数据。\\n\"", // zh
+            "feedback_anatomy_correct": "太棒了！你成功剖析了文件写入结构！",
+            "build_title": "构建写入语句", "build_desc": "将碎片拖到深灰色区域，构建一个有效的 `with open(...)` 语句，该语句使用写入模式 (`'w'`) 将文本 \"日志条目\\n\" 写入名为 `app.log` 的文件。",
+            "build_drop_placeholder": "将碎片拖放到此处...",
+            "build_piece_with": "with", "build_piece_open": "open", "build_piece_paren_open": "(", "build_piece_paren_close": ")",
+            "build_piece_filename": "'app.log'", "build_piece_mode_w": "'w'", "build_piece_mode_a": "'a'", "build_piece_comma": ",",
+            "build_piece_as": "as", "build_piece_variable": "log_file", "build_piece_colon": ":",
+            "build_piece_write_call": "log_file.write", "build_piece_data": "\"日志条目\\n\"", "build_piece_comment": "# 写入日志", // zh
+            "button_check_build": "检查我的代码", "button_reset_build": "重置",
+            "feedback_build_correct": "结构完美！", "feedback_build_almost": "差不多了！检查碎片的顺序、模式或缩进（隐含）。", "feedback_build_incorrect": "不太对。请检查 `with open(...)` 语法。",
+            "simulator_title": "文件写入模拟器", "simulator_desc": "在编辑器中输入 Python 代码以写入名为 `sim_output.txt` 的模拟文件。使用 `with open('sim_output.txt', 'w') as f:` 或 `'a'` 模式。“模拟文件内容”区域显示文件中*将*包含的内容。",
+            "simulator_editor_label": "代码编辑器：", "simulator_editor_placeholder": "示例：\nwith open(\"sim_output.txt\", \"w\") as f:\n    f.write(\"你好，模拟文件！\\n\")",
+            "button_run_sim": "运行模拟", "button_clear_sim_file": "清除模拟文件", "simulator_output_label": "模拟文件内容：", "simulator_output_placeholder": "文件内容将显示在此处...",
+            "simulator_filename_header": "文件：{filename}",
+            "feedback_sim_success": "模拟已运行。检查模拟文件内容。", "feedback_sim_empty": "编辑器是空的。",
+            "feedback_sim_no_with": "为安全起见，请使用 `with` 语句。", "feedback_sim_no_open": "缺少 `open()` 函数。", "feedback_sim_no_mode": "请指定模式（'w' 或 'a'）。", "feedback_sim_no_write": "请使用 `.write()` 方法。", "feedback_sim_syntax": "检查语法：`with open(...) as ...:` 缩进, `.write(...)`。", "feedback_sim_cleared": "模拟文件内容已清除。",
+            "mode_title": "模式匹配：'w' vs 'a'", "mode_desc": "为每个场景选择正确的文件打开模式（`'w'` 用于写入/覆盖，`'a'` 用于追加）。单击您的选择，然后检查。",
+            "mode_scenario1_text": "您想创建一个全新的配置文件并写入初始设置。", "mode_scenario1_correct": "w",
+            "mode_scenario2_text": "您需要将新的事件时间戳添加到现有日志文件中，而不擦除以前的日志。", "mode_scenario2_correct": "a",
+            "mode_scenario3_text": "您是第一次保存用户偏好设置。", "mode_scenario3_correct": "w",
+            "mode_scenario4_text": "您正在通过将最新分数添加到末尾来更新高分列表。", "mode_scenario4_correct": "a",
+            "button_check_modes": "检查模式", "button_try_again": "再试一次",
+            "feedback_modes_correct": "完美！您理解何时使用 'w' 和 'a'。", "feedback_modes_incorrect": "不完全正确。{count} 个错误。请记住：'w' 覆盖，'a' 添加到末尾。检查标记为 <i class=\"fas fa-times\"></i> 的项目。", "feedback_modes_select_all": "请先为每个场景选择一个模式。",
+            "missions_title": "文件写入迷你任务！", "missions_desc": "完成这些编码任务。模拟输出将显示 `mission_log.txt` 或 `config.txt` 的内容。记住用 `\\n` 换行！",
+            "mission_log_filename": "mission_log.txt", "config_filename": "config.txt",
+            "mission1_title": "任务 1：首次条目", "mission1_desc": "将单行 \"System Initialized.\"（包括句点和换行符 `\\n`）写入 `mission_log.txt`。使用 `with` 和写入模式 (`'w'`)。", "mission1_placeholder": "with open(\"mission_log.txt\", \"w\") as f:\n    # 您的代码在此处",
+            "mission2_title": "任务 2：添加事件", "mission2_desc": "将行 \"User logged in.\"（包括句点和换行符 `\\n`）追加到 `mission_log.txt`。使用 `with` 和追加模式 (`'a'`)。这应该添加到先前的内容中。", "mission2_placeholder": "with open(\"mission_log.txt\", \"a\") as f:\n    # 您的代码在此处",
+            "mission3_title": "任务 3：多行，新文件", "mission3_desc": "创建一个*新*文件，名为 `config.txt`（使用写入模式 `'w'`）。精确写入以下两行（每行以 `\\n` 结尾）：<br>`setting1=true`<br>`setting2=false`", "mission3_placeholder": "with open(\"config.txt\", \"w\") as config_file:\n    config_file.write(\"...\")\n    config_file.write(\"...\")",
+            "button_test_mission": "测试任务",
+            "feedback_mission_success": "任务完成！", "feedback_mission_syntax_error": "语法/逻辑错误。",
+            "feedback_mission_generic_hint": "检查 `with open(...)`、模式、文件名、`.write(...)` 的内容以及 `\\n`。",
+            "feedback_mission1_hint": "使用模式 'w'，文件 'mission_log.txt'，写入 \"System Initialized.\\n\"。",
+            "feedback_mission2_hint": "使用模式 'a'，文件 'mission_log.txt'，写入 \"User logged in.\\n\"。",
+            "feedback_mission3_hint": "使用模式 'w'，文件 'config.txt'。先写入 \"setting1=true\\n\"，然后写入 \"setting2=false\\n\"。",
+            "feedback_missions_summary_all_done": "所有 {totalMissions} 个任务已完成！文件大师！", "feedback_missions_summary_progress": "已完成 {completedCount} / {totalMissions} 个任务。继续写入！",
+            "completion_title": "模块 24 练习完成！", "completion_desc": "干得漂亮！您练习了将数据写入文件，这是保存结果和配置的关键技能。<br> 准备好迎接更多挑战了吗？试试模块 24 的<strong>高级练习</strong>！",
+            "button_view_theory": "再次查看理论", "button_start_advanced": "开始高级练习", "button_back_menu": "返回课程菜单"
+        }
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // --- Language Management Functions (Unchanged from Module 0) ---
+        function getStoredLanguage() {
+            const storedLang = localStorage.getItem('userLanguage');
+            if (storedLang && translations[storedLang]) return storedLang;
+            const browserLang = navigator.language || navigator.userLanguage;
+            if (browserLang.startsWith('pt')) return 'pt';
+            if (browserLang.startsWith('zh')) return 'zh';
+            return 'en'; // Default to English
+        }
+
+        function setLanguage(lang) {
+            if (!translations[lang]) lang = 'en'; // Fallback
+            localStorage.setItem('userLanguage', lang);
+            document.documentElement.lang = lang;
+            translatePage(lang); // Apply generic translations first
+
+            const langSelect = document.getElementById('languageSelect');
+            if (langSelect) langSelect.value = lang;
+
+            // Re-initialize or update language-dependent interactive content
+            if (anatomySection) setupAnatomyActivity();
+            if (buildSection) setupBuildListeners();
+            if (simSection) updateSimPlaceholders(); // Update simulator placeholders if needed
+            if (modeMatcherSection) setupModeMatcher(); // Re-render scenarios
+            if (missionsSection) { // Re-translate mission text & update summary
+                updateMissionSummary();
+            }
+        }
+
+        function getTranslation(key, lang, replacements = {}) {
+            let text = translations[lang]?.[key] ?? translations['en']?.[key] ?? `[${key}]`;
+            for (const placeholder in replacements) {
+                const regex = new RegExp(`\\{${placeholder}\\}`, 'g');
+                text = text.replace(regex, replacements[placeholder]);
+            }
+            return text;
+        }
+
+        function translatePage(lang) {
+            if (!translations[lang]) lang = 'en';
+            document.querySelectorAll('[data-translate]').forEach(el => {
+                const key = el.getAttribute('data-translate');
+                const translation = getTranslation(key, lang);
+                 if (el.tagName === 'TITLE') document.title = translation;
+                 else if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') { /* Placeholders handled below */ }
+                 else if (el.tagName === 'OPTION') el.textContent = translation;
+                 else {
+                    if (translation.includes('<') && translation.includes('>')) el.innerHTML = translation;
+                    else el.textContent = translation;
+                 }
+            });
+            document.querySelectorAll('[data-translate-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-translate-placeholder');
+                const translation = getTranslation(key, lang);
+                el.setAttribute('placeholder', translation);
+            });
+            document.querySelectorAll('[data-translate-title]').forEach(el => {
+                 const key = el.getAttribute('data-translate-title');
+                 const translation = getTranslation(key, lang);
+                 el.setAttribute('title', translation);
+             });
+        }
+
+        const initialLang = getStoredLanguage();
+
+        // --- Minimal Nav Logic (Unchanged from Module 0) ---
+        const navToggleButton = document.getElementById('minimal-nav-toggle');
+        const navPanel = document.getElementById('minimal-nav-panel');
+        const body = document.body;
+        if (navToggleButton && navPanel) {
+            navToggleButton.addEventListener('click', (event) => { event.stopPropagation(); body.classList.toggle('nav-active'); navToggleButton.setAttribute('aria-expanded', body.classList.contains('nav-active')); });
+            document.addEventListener('click', (event) => { if (body.classList.contains('nav-active') && !navPanel.contains(event.target) && event.target !== navToggleButton && !navToggleButton.contains(event.target) ) { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); } });
+            navPanel.querySelectorAll('a').forEach(link => { link.addEventListener('click', () => { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); }); });
+            document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && body.classList.contains('nav-active')) { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); } });
+            navToggleButton.setAttribute('aria-expanded', 'false');
+        }
+
+        // --- Language Switcher Setup (Unchanged from Module 0) ---
+        const langSelect = document.getElementById('languageSelect');
+        if (langSelect) { langSelect.addEventListener('change', (e) => setLanguage(e.target.value)); }
+
+        // --- Helper Function for Feedback (Unchanged from Module 0) ---
+        function showFeedback(elementId, messageKey, type = 'info', replacements = {}) {
+            const feedbackEl = document.getElementById(elementId);
+            if (!feedbackEl) { console.error(`Feedback element not found: ${elementId}`); return; }
+            const currentLang = getStoredLanguage();
+            const translatedMessage = getTranslation(messageKey, currentLang, replacements);
+             if (translatedMessage.includes('<') && translatedMessage.includes('>')) feedbackEl.innerHTML = translatedMessage;
+             else feedbackEl.textContent = translatedMessage;
+            feedbackEl.className = 'feedback-message';
+            feedbackEl.classList.add('visible', type);
+            const interactiveArea = feedbackEl.closest('.interactive-area');
+            if (!interactiveArea) return;
+            interactiveArea.classList.remove('success-glow-anim', 'shake-anim');
+            void interactiveArea.offsetWidth;
+            if (type === 'correct') interactiveArea.classList.add('success-glow-anim');
+            else if (type === 'incorrect') interactiveArea.classList.add('shake-anim');
+        }
+
+        // --- Activity 1: File Writing Anatomy (Adapted) ---
+        const anatomySection = document.getElementById('file-anatomy');
+        let partExplanations = {};
+        const totalAnatomyParts = 12; // Updated count
+        let currentAnatomyListeners = [];
+
+        function setupAnatomyActivity() {
+            if (!anatomySection) return;
+            const anatomyCode = anatomySection.querySelector('.code-block');
+            if (!anatomyCode) return;
+            const currentLang = getStoredLanguage();
+            partExplanations = {};
+             document.querySelectorAll('#explanation-texts span[data-key]').forEach(span => {
+                const key = span.getAttribute('data-key');
+                const translationKey = `anatomy_exp_${key.replace(/-/g, '_')}`; // Convert hyphen to underscore for key lookup
+                partExplanations[key] = getTranslation(translationKey, currentLang);
+             });
+
+            const parts = anatomyCode.querySelectorAll('.code-part');
+            const explanationsDiv = document.getElementById('anatomy-explanations');
+            const statusP = document.getElementById('anatomy-status');
+            const feedbackDiv = document.getElementById('anatomy-feedback');
+            let identifiedCount = 0;
+
+            currentAnatomyListeners.forEach(({element, listener}) => element.removeEventListener('click', listener));
+            currentAnatomyListeners = [];
+
+            parts.forEach(p => p.classList.remove('identified'));
+            explanationsDiv.innerHTML = '';
+            // Use totalAnatomyParts variable here
+            statusP.innerHTML = getTranslation('anatomy_status_initial', currentLang).replace('{total}', totalAnatomyParts);
+            feedbackDiv.classList.remove('visible', 'correct', 'incorrect', 'info');
+
+            parts.forEach(part => {
+                const clickListener = () => {
+                    const partType = part.dataset.part;
+                    if (!part.classList.contains('identified') && partType && partExplanations[partType]) {
+                        part.classList.add('identified');
+                        identifiedCount++;
+                        const p = document.createElement('p');
+                        p.classList.add('part-explanation');
+                        p.innerHTML = `<i class="fas fa-check-circle" style="color: var(--success-color);"></i> <strong>${part.textContent.trim()}:</strong> ${partExplanations[partType]}`;
+                        explanationsDiv.appendChild(p);
+
+                        statusP.innerHTML = getTranslation('anatomy_status_progress', currentLang, { count: identifiedCount, total: totalAnatomyParts });
+
+                        if (identifiedCount === totalAnatomyParts) {
+                            statusP.innerHTML = getTranslation('anatomy_status_done', currentLang);
+                            showFeedback('anatomy-feedback', 'feedback_anatomy_correct', 'correct');
+                        }
+                    }
+                };
+                part.addEventListener('click', clickListener);
+                currentAnatomyListeners.push({ element: part, listener: clickListener });
+            });
+        }
+
+
+        // --- Activity 2: Build-a-Write (Adapted) ---
+        const buildSection = document.getElementById('build-write');
+        let buildDropZone;
+        if (buildSection) {
+            const piecesContainer = document.getElementById('draggable-pieces');
+            buildDropZone = document.getElementById('build-drop-zone'); // Use unique ID
+            const checkBtn = document.getElementById('check-build-btn');
+            const resetBtn = document.getElementById('reset-build-btn');
+            const feedbackDiv = document.getElementById('build-feedback');
+
+             const initialPiecesData = [ // Updated for file writing
+                 { key: 'build_piece_with', canonicalValue: 'with', type: 'keyword' },
+                 { key: 'build_piece_open', canonicalValue: 'open', type: 'function' },
+                 { key: 'build_piece_paren_open', canonicalValue: '(', type: 'paren-open' },
+                 { key: 'build_piece_paren_close', canonicalValue: ')', type: 'paren-close' },
+                 { key: 'build_piece_filename', canonicalValue: "'app.log'", type: 'filename' },
+                 { key: 'build_piece_mode_w', canonicalValue: "'w'", type: 'mode' },
+                 { key: 'build_piece_mode_a', canonicalValue: "'a'", type: 'mode' }, // Include 'a' as distractor
+                 { key: 'build_piece_comma', canonicalValue: ',', type: 'separator' },
+                 { key: 'build_piece_as', canonicalValue: 'as', type: 'keyword' },
+                 { key: 'build_piece_variable', canonicalValue: 'log_file', type: 'variable' },
+                 { key: 'build_piece_colon', canonicalValue: ':', type: 'separator' },
+                 { key: 'build_piece_write_call', canonicalValue: 'log_file.write', type: 'method' }, // Assumes variable name 'log_file'
+                 { key: 'build_piece_data', canonicalValue: '"Log Entry\\n"', type: 'string' },
+                 { key: 'build_piece_comment', canonicalValue: '# Write a log', type: 'comment' } // Optional distractor
+             ];
+
+            let draggedElement = null; let touchDragElement = null; let originalPiece = null; let startX, startY, offsetX, offsetY;
+
+            function createPieceElement(pieceData, currentLang) {
+                const piece = document.createElement('span');
+                piece.classList.add('piece', 'code-font');
+                piece.draggable = true;
+                const displayText = getTranslation(pieceData.key, currentLang); // Use key for display
+                piece.textContent = displayText;
+                piece.dataset.value = pieceData.canonicalValue;
+                piece.dataset.type = pieceData.type;
+                if(pieceData.key) piece.dataset.transKey = pieceData.key; // Keep track of translation key
+                // Apply type-specific styles (new types added in CSS)
+                piece.classList.add(`piece-type-${pieceData.type}`);
+
+                addDragListeners(piece);
+                addTouchListeners(piece);
+                return piece;
+             }
+
+            function populatePieces() {
+                 const currentLang = getStoredLanguage();
+                 piecesContainer.innerHTML = '';
+                 const shuffledPieces = [...initialPiecesData].sort(() => Math.random() - 0.5);
+                 shuffledPieces.forEach(pData => {
+                     piecesContainer.appendChild(createPieceElement(pData, currentLang));
+                 });
+             }
+
+            function setupBuildListeners() {
+                 populatePieces();
+                 buildDropZone.innerHTML = '';
+                 const placeholder = document.createElement('span');
+                 placeholder.id = 'build-drop-zone-placeholder'; // Use unique ID
+                 placeholder.dataset.translate = 'build_drop_placeholder';
+                 placeholder.textContent = getTranslation('build_drop_placeholder', getStoredLanguage());
+                 buildDropZone.appendChild(placeholder);
+                 feedbackDiv.classList.remove('visible', 'correct', 'incorrect', 'info');
+                 checkBtn.classList.remove('success');
+                 checkBtn.disabled = false;
+                 buildDropZone.classList.remove('over');
+             }
+
+             // --- Drag and Touch Logic (mostly unchanged, using updated vars) ---
+            function addDragListeners(element) {
+                element.addEventListener('dragstart', (e) => {
+                    if (e.target.closest('#build-drop-zone')) { e.preventDefault(); return; } // Check correct dropzone ID
+                    draggedElement = element; element.classList.add('ghosting'); e.dataTransfer.effectAllowed = 'move';
+                    try { e.dataTransfer.setData('text/plain', element.dataset.value); } catch (err) {}
+                 });
+                element.addEventListener('dragend', () => {
+                    if (draggedElement && draggedElement.parentNode) draggedElement.classList.remove('ghosting');
+                    draggedElement = null; buildDropZone.classList.remove('over');
+                 });
+             }
+             function handleTouchStart(e) {
+                if (touchDragElement || e.target.closest('#build-drop-zone')) return;
+                originalPiece = e.target.closest('.piece');
+                if (!originalPiece || !piecesContainer.contains(originalPiece)) return;
+                const touch = e.targetTouches[0]; startX = touch.clientX; startY = touch.clientY;
+                const rect = originalPiece.getBoundingClientRect(); offsetX = startX - rect.left; offsetY = startY - rect.top;
+                touchDragElement = originalPiece.cloneNode(true); touchDragElement.classList.add('dragging');
+                touchDragElement.style.cssText = `position: fixed; left: ${startX - offsetX}px; top: ${startY - offsetY}px; width: ${rect.width}px; height: ${rect.height}px; z-index: 1000; pointer-events: none;`;
+                document.body.appendChild(touchDragElement); originalPiece.classList.add('ghosting'); e.preventDefault();
+             }
+             function handleTouchMove(e) {
+                 if (!touchDragElement) return; e.preventDefault();
+                 const touch = e.targetTouches[0]; const currentX = touch.clientX; const currentY = touch.clientY;
+                 touchDragElement.style.left = `${currentX - offsetX}px`; touchDragElement.style.top = `${currentY - offsetY}px`;
+                 touchDragElement.style.visibility = 'hidden'; const elemBelow = document.elementFromPoint(currentX, currentY); touchDragElement.style.visibility = 'visible';
+                 const isOverDropZone = elemBelow === buildDropZone || buildDropZone.contains(elemBelow);
+                 buildDropZone.classList.toggle('over', isOverDropZone);
+             }
+             function handleTouchEnd(e) {
+                 if (!touchDragElement || !originalPiece) return;
+                 const touch = e.changedTouches[0]; const finalX = touch.clientX; const finalY = touch.clientY;
+                 touchDragElement.style.visibility = 'hidden'; const elemBelow = document.elementFromPoint(finalX, finalY); touchDragElement.style.visibility = 'visible';
+                 const droppedInZone = elemBelow === buildDropZone || buildDropZone.contains(elemBelow);
+                 if (droppedInZone) {
+                     buildDropZone.querySelector('#build-drop-zone-placeholder')?.remove();
+                     const droppedPiece = originalPiece.cloneNode(true); droppedPiece.classList.remove('ghosting'); droppedPiece.draggable = false; droppedPiece.style.cursor = 'default';
+                     droppedPiece.removeEventListener('touchstart', handleTouchStart); droppedPiece.removeEventListener('touchmove', handleTouchMove); droppedPiece.removeEventListener('touchend', handleTouchEnd);
+                     buildDropZone.appendChild(droppedPiece); originalPiece.remove();
+                 } else { originalPiece.classList.remove('ghosting'); }
+                 if (touchDragElement.parentNode === document.body) document.body.removeChild(touchDragElement);
+                 buildDropZone.classList.remove('over'); touchDragElement = null; originalPiece = null;
+             }
+            function addTouchListeners(element) {
+                 element.addEventListener('touchstart', handleTouchStart, { passive: false });
+                 element.addEventListener('touchmove', handleTouchMove, { passive: false });
+                 element.addEventListener('touchend', handleTouchEnd);
+             }
+
+            buildDropZone.addEventListener('dragover', (e) => { e.preventDefault(); buildDropZone.classList.add('over'); });
+            buildDropZone.addEventListener('dragleave', () => { buildDropZone.classList.remove('over'); });
+            buildDropZone.addEventListener('drop', (e) => {
+                 e.preventDefault(); buildDropZone.classList.remove('over');
+                 if (draggedElement && piecesContainer.contains(draggedElement)) {
+                     buildDropZone.querySelector('#build-drop-zone-placeholder')?.remove();
+                     const droppedPiece = draggedElement; droppedPiece.classList.remove('ghosting'); droppedPiece.draggable = false; droppedPiece.style.cursor = 'default';
+                     buildDropZone.appendChild(droppedPiece); draggedElement = null;
+                 }
+             });
+
+            checkBtn.addEventListener('click', () => {
+                 const droppedPieces = Array.from(buildDropZone.querySelectorAll('.piece'));
+                 // Target: with open ( 'app.log' , 'w' ) as log_file : log_file.write ( "Log Entry\n" )
+                 // Note: Indentation is visual only, check sequence of core parts
+                 const canonicalSequence = droppedPieces.map(p => p.dataset.value).join(' ');
+                 const targetSequence = "with open ( 'app.log' , 'w' ) as log_file : log_file.write ( \"Log Entry\\n\" )"; // Note spaces
+
+                 if (canonicalSequence === targetSequence) {
+                     showFeedback('build-feedback', 'feedback_build_correct', 'correct');
+                     checkBtn.classList.add('success'); checkBtn.disabled = true;
+                 } else if (canonicalSequence.includes('with') && canonicalSequence.includes('open') && canonicalSequence.includes('.write')) {
+                     showFeedback('build-feedback', 'feedback_build_almost', 'incorrect');
+                     checkBtn.classList.remove('success');
+                 } else {
+                     showFeedback('build-feedback', 'feedback_build_incorrect', 'incorrect');
+                     checkBtn.classList.remove('success');
+                 }
+            });
+            resetBtn.addEventListener('click', setupBuildListeners);
+        }
+
+        // --- Activity 3: File Simulator (Adapted) ---
+        const simSection = document.getElementById('file-simulator');
+        let simulatedFileContent = {}; // Store content keyed by filename
+
+        function updateSimPlaceholders() { // Helper to update placeholders on lang change
+            if (!simSection) return;
+            const currentLang = getStoredLanguage();
+            const editor = document.getElementById('sim-editor-input');
+            const outputArea = document.getElementById('sim-output');
+            const placeholder = outputArea.querySelector('.placeholder');
+            if (editor) editor.placeholder = getTranslation('simulator_editor_placeholder', currentLang);
+            if (placeholder) placeholder.textContent = getTranslation('simulator_output_placeholder', currentLang);
+        }
+
+        function displaySimulatedFileContent(filename = 'sim_output.txt') {
+             const outputArea = document.getElementById('sim-output');
+             if (!outputArea) return;
+             outputArea.innerHTML = ''; // Clear previous output
+
+             const currentLang = getStoredLanguage();
+             const header = document.createElement('span');
+             header.classList.add('filename-header');
+             header.textContent = getTranslation('simulator_filename_header', currentLang, { filename: filename });
+             outputArea.appendChild(header);
+
+             const content = simulatedFileContent[filename] || '';
+             if (content) {
+                 content.split('\n').forEach((lineText, index, arr) => {
+                     if (index === arr.length - 1 && lineText === '') return; // Don't show trailing empty line visually
+                     const line = document.createElement('span');
+                     line.classList.add('output-line');
+                     // Replace literal \n with actual newline for display (or use pre-wrap)
+                     line.textContent = lineText; // Assuming CSS white-space: pre-wrap handles newlines
+                     outputArea.appendChild(line);
+                 });
+             } else {
+                 const placeholder = document.createElement('span');
+                 placeholder.className = 'placeholder';
+                 placeholder.dataset.translate = 'simulator_output_placeholder';
+                 placeholder.textContent = getTranslation('simulator_output_placeholder', currentLang);
+                 outputArea.appendChild(placeholder);
+             }
+        }
+
+        if(simSection) {
+            const editor = document.getElementById('sim-editor-input');
+            const runBtn = document.getElementById('run-sim-btn');
+            const clearBtn = document.getElementById('clear-sim-file-btn');
+            const feedbackDiv = document.getElementById('sim-feedback');
+            const simFilename = 'sim_output.txt'; // Define the target filename
+
+            runBtn.addEventListener('click', () => {
+                 const code = editor.value; // Don't trim yet, need indentation
+                 feedbackDiv.classList.remove('visible', 'correct', 'incorrect', 'info');
+
+                 // Basic Regex to find the with block, filename, mode, and write calls
+                 // This is a simplified simulation, not a full Python parser.
+                 const withRegex = /with\s+open\s*\(\s*(["'])(.*?)\1\s*,\s*(["'])(w|a)\3\s*\)\s+as\s+(\w+)\s*:/;
+                 const writeRegex = /(\w+)\.write\s*\(\s*(["'])(.*?)\2\s*\)/g; // Global flag to find all writes
+
+                 const withMatch = code.match(withRegex);
+
+                 if (code.trim() === '') {
+                     showFeedback('sim-feedback', 'feedback_sim_empty', 'info');
+                     displaySimulatedFileContent(simFilename); // Show current state even if empty run
+                 } else if (withMatch) {
+                     const matchedFilename = withMatch[2];
+                     const mode = withMatch[4];
+                     const fileVar = withMatch[5];
+
+                     if (matchedFilename !== simFilename) {
+                         // Handle if user tries to write to a different file (optional feedback)
+                         console.warn(`Simulator only supports writing to '${simFilename}'.`);
+                          // Maybe add feedback? For now, just ignore writes to other files.
+                          displaySimulatedFileContent(simFilename);
+                          showFeedback('sim-feedback', 'feedback_sim_syntax', 'incorrect'); // Generic syntax feedback
+                          return;
+                     }
+
+                     // Simulate mode effect
+                     if (mode === 'w') {
+                         simulatedFileContent[simFilename] = ''; // Overwrite
+                     } // 'a' mode keeps existing content
+
+                     // Find code inside the 'with' block (very basic indentation check)
+                     const withBlockContent = code.substring(withMatch.index + withMatch[0].length);
+                     let writeMatch;
+                     let contentToWrite = '';
+                     let foundWrite = false;
+
+                     while ((writeMatch = writeRegex.exec(withBlockContent)) !== null) {
+                        // Basic check: is the variable used in write() the same as in 'as'?
+                        // And basic indentation check (must start with whitespace)
+                        if (writeMatch[1] === fileVar && /^\s+/.test(withBlockContent.substring(0, writeMatch.index))) {
+                            contentToWrite += writeMatch[3]; // Concatenate all written strings
+                            foundWrite = true;
+                        }
+                    }
+
+                     if (foundWrite) {
+                         // Append the collected content to the simulated file
+                         simulatedFileContent[simFilename] = (simulatedFileContent[simFilename] || '') + contentToWrite;
+                         showFeedback('sim-feedback', 'feedback_sim_success', 'correct');
+                     } else if (!code.includes('.write')) {
+                         showFeedback('sim-feedback', 'feedback_sim_no_write', 'incorrect');
+                     } else {
+                         // If .write exists but wasn't matched correctly (e.g., wrong variable, indentation)
+                          showFeedback('sim-feedback', 'feedback_sim_syntax', 'incorrect');
+                     }
+
+                 } else { // Syntax errors if 'with open' pattern doesn't match
+                     if (!code.includes('with')) showFeedback('sim-feedback', 'feedback_sim_no_with', 'incorrect');
+                     else if (!code.includes('open')) showFeedback('sim-feedback', 'feedback_sim_no_open', 'incorrect');
+                     else if (!code.includes("'w'") && !code.includes("'a'")) showFeedback('sim-feedback', 'feedback_sim_no_mode', 'incorrect');
+                     else showFeedback('sim-feedback', 'feedback_sim_syntax', 'incorrect');
+                 }
+                 displaySimulatedFileContent(simFilename); // Update display after simulation
+             });
+
+             clearBtn.addEventListener('click', () => {
+                 simulatedFileContent[simFilename] = ''; // Clear the specific file
+                 displaySimulatedFileContent(simFilename);
+                 feedbackDiv.classList.remove('visible');
+                 showFeedback('sim-feedback', 'feedback_sim_cleared', 'info');
+             });
+
+             // Initial display
+             displaySimulatedFileContent(simFilename);
+             updateSimPlaceholders();
+        }
+
+
+        // --- Activity 4: Match the Mode (New Logic) ---
+        const modeMatcherSection = document.getElementById('mode-matcher');
+        if (modeMatcherSection) {
+            const scenariosContainer = document.getElementById('mode-scenarios-container');
+            const checkBtn = document.getElementById('check-modes-btn');
+            const resetBtn = document.getElementById('reset-modes-btn');
+            const feedbackDiv = document.getElementById('modes-feedback');
+
+            const modeScenarios = [
+                { id: 1, textKey: 'mode_scenario1_text', correctModeKey: 'mode_scenario1_correct' },
+                { id: 2, textKey: 'mode_scenario2_text', correctModeKey: 'mode_scenario2_correct' },
+                { id: 3, textKey: 'mode_scenario3_text', correctModeKey: 'mode_scenario3_correct' },
+                { id: 4, textKey: 'mode_scenario4_text', correctModeKey: 'mode_scenario4_correct' },
+            ];
+            let currentModeListeners = [];
+
+            function createModeScenarioElement(scenarioData, currentLang) {
+                const scenarioDiv = document.createElement('div');
+                scenarioDiv.classList.add('mode-scenario');
+                scenarioDiv.dataset.scenarioId = scenarioData.id;
+                scenarioDiv.dataset.correctMode = getTranslation(scenarioData.correctModeKey, currentLang); // Store correct mode
+
+                const textP = document.createElement('p');
+                textP.classList.add('scenario-text');
+                textP.textContent = getTranslation(scenarioData.textKey, currentLang);
+
+                const optionsDiv = document.createElement('div');
+                optionsDiv.classList.add('mode-options');
+
+                const modeW = document.createElement('div');
+                modeW.classList.add('mode-option'); modeW.textContent = "'w'"; modeW.dataset.mode = 'w';
+                const modeA = document.createElement('div');
+                modeA.classList.add('mode-option'); modeA.textContent = "'a'"; modeA.dataset.mode = 'a';
+
+                const iconPlaceholder = document.createElement('span');
+                 iconPlaceholder.classList.add('mode-feedback-icon');
+
+                optionsDiv.appendChild(modeW);
+                optionsDiv.appendChild(modeA);
+                scenarioDiv.appendChild(textP);
+                scenarioDiv.appendChild(optionsDiv);
+                scenarioDiv.appendChild(iconPlaceholder);
+
+                 // Add listeners for selection
+                 const clickListener = (event) => {
+                     const selectedOption = event.target.closest('.mode-option');
+                     if (!selectedOption || scenarioDiv.classList.contains('checked-state')) return; // Ignore if already checked or not an option
+                     // Deselect other option in the same scenario
+                     const otherOption = selectedOption.dataset.mode === 'w' ? modeA : modeW;
+                     otherOption.classList.remove('selected-visual');
+                     // Toggle selection
+                     selectedOption.classList.toggle('selected-visual');
+                     scenarioDiv.dataset.selectedMode = selectedOption.classList.contains('selected-visual') ? selectedOption.dataset.mode : '';
+                 };
+                 optionsDiv.addEventListener('click', clickListener);
+                 currentModeListeners.push({element: optionsDiv, listener: clickListener});
+
+                return scenarioDiv;
+            }
+
+            function setupModeMatcher() {
+                const currentLang = getStoredLanguage();
+                // Clean up old listeners first
+                currentModeListeners.forEach(({element, listener}) => element.removeEventListener('click', listener));
+                currentModeListeners = [];
+
+                scenariosContainer.innerHTML = '';
+                modeScenarios.forEach(scenarioData => {
+                    scenariosContainer.appendChild(createModeScenarioElement(scenarioData, currentLang));
+                });
+                feedbackDiv.classList.remove('visible', 'correct', 'incorrect', 'info');
+                resetBtn.classList.add('hidden');
+                checkBtn.disabled = false;
+                checkBtn.classList.remove('success');
+            }
+
+            checkBtn.addEventListener('click', () => {
+                let allSelected = true;
+                let incorrectCount = 0;
+                const scenarioDivs = scenariosContainer.querySelectorAll('.mode-scenario');
+                const currentLang = getStoredLanguage();
+
+                scenarioDivs.forEach(scenarioDiv => {
+                     const selectedMode = scenarioDiv.dataset.selectedMode;
+                     const correctMode = scenarioDiv.dataset.correctMode;
+                     const iconPlaceholder = scenarioDiv.querySelector('.mode-feedback-icon');
+                     const options = scenarioDiv.querySelectorAll('.mode-option');
+
+                     iconPlaceholder.innerHTML = ''; // Clear previous icon
+                     iconPlaceholder.classList.remove('visible');
+                     options.forEach(opt => opt.classList.add('checked-state')); // Prevent further clicks until reset
+                     scenarioDiv.classList.add('checked-state');
+
+
+                     if (!selectedMode) {
+                         allSelected = false;
+                         options.forEach(opt => opt.classList.remove('selected-visual', 'correct-choice', 'incorrect-choice'));
+                     } else {
+                         const selectedOption = scenarioDiv.querySelector(`.mode-option[data-mode="${selectedMode}"]`);
+                         if (selectedMode === correctMode) {
+                             selectedOption?.classList.add('correct-choice');
+                             const icon = document.createElement('i'); icon.className = 'fas fa-check'; iconPlaceholder.appendChild(icon); iconPlaceholder.classList.add('visible');
+                         } else {
+                             selectedOption?.classList.add('incorrect-choice');
+                             incorrectCount++;
+                             const icon = document.createElement('i'); icon.className = 'fas fa-times'; iconPlaceholder.appendChild(icon); iconPlaceholder.classList.add('visible');
+                         }
+                     }
+                });
+
+                if (!allSelected) {
+                    showFeedback('modes-feedback', 'feedback_modes_select_all', 'info');
+                    checkBtn.classList.remove('success');
+                    resetBtn.classList.add('hidden'); // Keep hidden if not all selected
+                    checkBtn.disabled = false; // Allow checking again after selecting
+                    // Re-enable clicking on unchecked scenarios
+                    scenarioDivs.forEach(scenarioDiv => {
+                       if (!scenarioDiv.dataset.selectedMode) {
+                            scenarioDiv.classList.remove('checked-state');
+                            scenarioDiv.querySelectorAll('.mode-option').forEach(opt => opt.classList.remove('checked-state'));
+                       }
+                    });
+                } else if (incorrectCount === 0) {
+                    showFeedback('modes-feedback', 'feedback_modes_correct', 'correct');
+                    checkBtn.classList.add('success');
+                    checkBtn.disabled = true;
+                    resetBtn.classList.add('hidden');
+                } else {
+                    showFeedback('modes-feedback', 'feedback_modes_incorrect', 'incorrect', { count: incorrectCount });
+                    checkBtn.classList.remove('success');
+                    checkBtn.disabled = true; // Disable check after incorrect attempt
+                    resetBtn.classList.remove('hidden'); // Show try again
+                }
+            });
+
+            resetBtn.addEventListener('click', setupModeMatcher);
+            // Initial setup call moved to end
+        }
+
+        // --- Activity 5: File Mini Missions (Adapted) ---
+        const missionsSection = document.getElementById('file-missions');
+        let updateMissionSummary; // Define function scope
+        let missionSimulatedFiles = {}; // Separate simulation state for missions
+
+        function displayMissionFileContent(missionId, filename) {
+            const missionDiv = document.getElementById(`mission-${missionId}`);
+            if (!missionDiv) return;
+            const outputArea = missionDiv.querySelector('.mission-output');
+            if (!outputArea) return;
+            outputArea.innerHTML = ''; // Clear previous
+
+             const currentLang = getStoredLanguage();
+             const header = document.createElement('span');
+             header.classList.add('filename-header');
+             // Use specific translated keys for mission filenames
+             const filenameKey = filename === 'mission_log.txt' ? 'mission_log_filename' : 'config_filename';
+             header.textContent = getTranslation('simulator_filename_header', currentLang, { filename: getTranslation(filenameKey, currentLang) });
+             outputArea.appendChild(header);
+
+            const fileKey = `${missionId}-${filename}`; // Unique key per mission and file
+            const content = missionSimulatedFiles[fileKey] || '';
+
+            if (content) {
+                 content.split('\n').forEach((lineText, index, arr) => {
+                     if (index === arr.length - 1 && lineText === '') return;
+                     const line = document.createElement('span');
+                     line.classList.add('output-line');
+                     line.textContent = lineText;
+                     outputArea.appendChild(line);
+                 });
+             }
+             // No placeholder needed here, empty output area is fine
+        }
+
+
+        if (missionsSection) {
+            const missionRunButtons = missionsSection.querySelectorAll('.mission-run-btn');
+            const summaryFeedback = document.getElementById('missions-summary-feedback');
+            const totalMissions = missionsSection.querySelectorAll('.mission').length;
+            let completedMissionsCount = 0;
+
+            updateMissionSummary = function() { // Assign function
+                 completedMissionsCount = missionsSection.querySelectorAll('.mission[data-completed="true"]').length;
+                 const currentLang = getStoredLanguage();
+                 if (completedMissionsCount === totalMissions) {
+                     showFeedback('missions-summary-feedback', 'feedback_missions_summary_all_done', 'correct', { totalMissions: totalMissions });
+                 } else if (completedMissionsCount > 0) {
+                     showFeedback('missions-summary-feedback', 'feedback_missions_summary_progress', 'info', { completedCount: completedMissionsCount, totalMissions: totalMissions });
+                 } else {
+                     summaryFeedback.classList.remove('visible', 'correct', 'incorrect', 'info');
+                 }
+            }
+
+            missionRunButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const missionId = button.dataset.missionId;
+                    const missionDiv = document.getElementById(`mission-${missionId}`);
+                    if (!missionDiv) return;
+                    const editor = missionDiv.querySelector('.mission-editor');
+                    const feedbackDivId = `mission-feedback-${missionId}`;
+                    const feedbackDiv = document.getElementById(feedbackDivId);
+                    if (!feedbackDiv) { console.error(`Feedback div ${feedbackDivId} not found`); return; }
+                    const statusIcon = missionDiv.querySelector('.mission-status i');
+                    const code = editor.value; // Keep indentation
+                    let success = false;
+                    let feedbackMessageKey = 'feedback_mission_syntax_error';
+                    let feedbackType = 'incorrect';
+                    let specificHintKey = 'feedback_mission_generic_hint'; // Default hint
+                    let targetFilename = ''; // To know which file content to update/display
+
+                    // --- Mission Validation Logic ---
+                    try {
+                         // Basic Regex for mission validation (similar to simulator, but mission-specific)
+                         const withRegex = /with\s+open\s*\(\s*(["'])(.*?)\1\s*,\s*(["'])(w|a)\3\s*\)\s+as\s+(\w+)\s*:/;
+                         const writeRegex = /(\w+)\.write\s*\(\s*(["'])(.*?)\2\s*\)/g;
+                         const withMatch = code.match(withRegex);
+                         let writtenContent = ''; // Collect content written in this run
+
+                        if (withMatch) {
+                            const matchedFilename = withMatch[2];
+                            const mode = withMatch[4];
+                            const fileVar = withMatch[5];
+                            const withBlockContent = code.substring(withMatch.index + withMatch[0].length);
+                            let writeMatch;
+                            let writeCount = 0;
+
+                            while ((writeMatch = writeRegex.exec(withBlockContent)) !== null) {
+                                 if (writeMatch[1] === fileVar && /^\s+/.test(withBlockContent.substring(0, writeMatch.index))) {
+                                      writtenContent += writeMatch[3];
+                                      writeCount++;
+                                 }
+                            }
+
+                            const fileStateKey = `${missionId}-${matchedFilename}`; // Key for storing this mission's file state
+
+                            if (missionId === '1') {
+                                targetFilename = 'mission_log.txt';
+                                if (matchedFilename === targetFilename && mode === 'w' && writtenContent === "System Initialized.\n") {
+                                    success = true;
+                                    missionSimulatedFiles[fileStateKey] = writtenContent; // Set initial content
+                                } else { specificHintKey = 'feedback_mission1_hint'; }
+                            } else if (missionId === '2') {
+                                targetFilename = 'mission_log.txt';
+                                const prevFileStateKey = `1-${targetFilename}`; // Depends on mission 1 state
+                                if (matchedFilename === targetFilename && mode === 'a' && writtenContent === "User logged in.\n") {
+                                    success = true;
+                                     // Append to previous state (if exists)
+                                    missionSimulatedFiles[fileStateKey] = (missionSimulatedFiles[prevFileStateKey] || '') + writtenContent;
+                                } else { specificHintKey = 'feedback_mission2_hint'; }
+                            } else if (missionId === '3') {
+                                targetFilename = 'config.txt';
+                                const expectedContent = "setting1=true\nsetting2=false\n";
+                                if (matchedFilename === targetFilename && mode === 'w' && writtenContent === expectedContent && writeCount >= 2) { // Ensure both lines were written
+                                    success = true;
+                                     missionSimulatedFiles[fileStateKey] = writtenContent;
+                                } else { specificHintKey = 'feedback_mission3_hint'; }
+                            }
+                        } // else: withMatch failed, syntax error handled below
+                    } catch (error) { console.error("Mission validation error:", error); }
+                    // --- End Validation Logic ---
+
+                    if (success) {
+                        feedbackMessageKey = 'feedback_mission_success';
+                        feedbackType = 'correct';
+                        statusIcon.className = 'fas fa-check-circle';
+                        missionDiv.dataset.completed = 'true';
+                    } else {
+                        feedbackMessageKey = specificHintKey || feedbackMessageKey; // Use specific hint if available
+                        feedbackType = 'incorrect';
+                        statusIcon.className = 'fas fa-times-circle';
+                        missionDiv.dataset.completed = 'false';
+                         // Don't update file state on failure
+                    }
+                    showFeedback(feedbackDivId, feedbackMessageKey, feedbackType);
+                    if(targetFilename) { // Only display if a filename was determined
+                         displayMissionFileContent(missionId, targetFilename);
+                    }
+                    updateMissionSummary();
+                });
+            });
+             // Initialize mission outputs (show headers) and summary
+            missionsSection.querySelectorAll('.mission').forEach(m => {
+                const id = m.id.split('-')[1];
+                let filename = '';
+                if (id === '1' || id === '2') filename = 'mission_log.txt';
+                else if (id === '3') filename = 'config.txt';
+                if (filename) displayMissionFileContent(id, filename);
+            });
+            updateMissionSummary();
+        }
+
+
+        // --- Fade-in animations on scroll (Unchanged from Module 0) ---
+        const fadeElements = document.querySelectorAll('.fade-in');
+        const animateOnScroll = () => {
+             const windowHeight = window.innerHeight;
+             fadeElements.forEach(el => {
+                 if (el.style.opacity === '1') return; // Skip already visible
+                 const rect = el.getBoundingClientRect();
+                 if (rect.top < windowHeight - 80 && rect.bottom >= 50) { // Original threshold
+                     el.style.opacity = '1';
+                     el.style.transform = 'translateY(0)';
+                 }
+             });
+        };
+        const scrollHandler = () => window.requestAnimationFrame(animateOnScroll);
+        window.addEventListener('scroll', scrollHandler);
+
+
+        // --- Initial Language Application and Activity Setups ---
+        setLanguage(initialLang); // Apply language FIRST
+        animateOnScroll(); // Trigger initial animation check
+
+        // Call initial setups for activities *after* language is set
+        // These are now called within setLanguage to handle re-initialization on language change
+        // setupAnatomyActivity(); // Called by setLanguage
+        // setupBuildListeners();  // Called by setLanguage
+        // updateSimPlaceholders();// Called by setLanguage
+        // setupModeMatcher();     // Called by setLanguage
+        // Missions setup done inside its block & updated by setLanguage
+
+    }); // End DOMContentLoaded
+    </script>
+
+</body>
+</html>

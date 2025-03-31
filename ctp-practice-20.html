@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<!-- Language set by JS -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Title set by JS -->
+    <title data-translate="page_title">Module 20: Intro to Dictionaries Practice</title>
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* --- Base Styles & Variables --- */
+        :root {
+            --primary-color: #007bff; /* Blue */
+            --secondary-color: #6c757d; /* Grey */
+            --background-light: #f8f9fa;
+            --background-medium: #e9ecef;
+            --background-dark: #343a40;
+            --text-light: #f8f9fa;
+            --text-dark: #212529;
+            --accent-color: #ffc107; /* Yellow */
+            --success-color: #28a745; /* Green */
+            --error-color: #dc3545;   /* Red */
+            --info-color: #17a2b8;    /* Teal */
+            --dict-key-color: #9cdcfe; /* Light blue for keys */
+            --dict-value-color: #ce9178; /* Orange/brown for string values */
+            --dict-number-color: #b5cea8; /* Light green for number values */
+            --dict-syntax-color: #ffd700; /* Yellow for {}, :, , */
+            --border-radius: 8px;
+            --transition-speed: 0.3s;
+            --font-body: 'Roboto', sans-serif;
+            --font-title: 'Orbitron', sans-serif;
+            --selection-highlight-bg: rgba(0, 123, 255, 0.1);
+            --selection-highlight-border: rgba(0, 123, 255, 0.4);
+             /* Colors matching news.html for consistency in switcher */
+             --nav-primary: #6e48aa;
+             --nav-success: #4cc9f0;
+             --nav-dark: #1a1a2e;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; font-size: 16px; }
+        body {
+            font-family: var(--font-body); line-height: 1.7;
+            background-color: var(--background-light); color: var(--text-dark);
+            overflow-x: hidden;
+        }
+
+        /* --- Utility Classes --- */
+        .container { max-width: 960px; margin: 0 auto; padding: 0 15px; }
+        .text-center { text-align: center; }
+        .highlight { color: var(--primary-color); font-weight: bold; }
+        .code-font { font-family: 'Courier New', Courier, monospace; }
+        .hidden { display: none !important; }
+        .button-group { /* For navigation buttons */
+            margin-top: 2rem;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1rem;
+        }
+
+        /* --- Advanced Animations (Keep as is from Module 0) --- */
+        .fade-in { opacity: 0; transform: translateY(20px); animation: fadeInAnimation 0.8s ease-out forwards; }
+        .fade-in.delay-1 { animation-delay: 0.2s; }
+        .fade-in.delay-2 { animation-delay: 0.4s; }
+        .fade-in.delay-3 { animation-delay: 0.6s; }
+        .fade-in.delay-4 { animation-delay: 0.8s; }
+        @keyframes fadeInAnimation { to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulseHeaderIcon {
+            0% { transform: scale(1); opacity: 0.1; filter: brightness(1); }
+            50% { transform: scale(1.05); opacity: 0.25; filter: brightness(1.2); }
+            100% { transform: scale(1); opacity: 0.1; filter: brightness(1); }
+        }
+        @keyframes successGlow {
+             0% { box-shadow: 0 0 3px rgba(40, 167, 69, 0.3); transform: scale(1); }
+             50% { box-shadow: 0 0 12px 5px rgba(40, 167, 69, 0.5); transform: scale(1.01); }
+             100% { box-shadow: 0 0 3px rgba(40, 167, 69, 0.3); transform: scale(1); }
+        }
+        .success-glow-anim { animation: successGlow 0.9s ease-out; }
+        @keyframes shake {
+          10%, 90% { transform: translate3d(-2px, 0, 0); } 20%, 80% { transform: translate3d(3px, 0, 0); }
+          30%, 50%, 70% { transform: translate3d(-5px, 0, 0); } 40%, 60% { transform: translate3d(5px, 0, 0); }
+        }
+        .shake-anim { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes iconAppearCorrect {
+            0% { transform: scale(0.5) rotate(-15deg); opacity: 0; }
+            60% { transform: scale(1.2) rotate(5deg); opacity: 1; }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        @keyframes iconAppearIncorrect {
+             0% { transform: scale(0.5) rotate(-15deg); opacity: 0; }
+             50% { transform: scale(1.2) rotate(10deg); opacity: 1; }
+             70% { transform: scale(0.9) rotate(-5deg); }
+             100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        /* Add a simple state change animation */
+        @keyframes stateChangePulse {
+             0% { background-color: rgba(255, 193, 7, 0); } /* accent-color transparent */
+             50% { background-color: rgba(255, 193, 7, 0.15); }
+             100% { background-color: rgba(255, 193, 7, 0); }
+        }
+        .state-change-pulse { animation: stateChangePulse 0.8s ease-out; }
+
+
+        /* --- Minimal Retractable Nav (Keep as is from Module 0) --- */
+        .minimal-nav-button { position: fixed; top: 15px; right: 15px; z-index: 1001; background-color: rgba(52, 58, 64, 0.75); color: var(--text-light); border: none; border-radius: var(--border-radius); padding: 8px 12px; cursor: pointer; transition: background-color var(--transition-speed), opacity var(--transition-speed), transform var(--transition-speed); font-size: 1.1rem; opacity: 0.6; box-shadow: 0 2px 5px rgba(0,0,0,0.2); line-height: 1; }
+        .minimal-nav-button:hover { background-color: rgba(52, 58, 64, 0.95); opacity: 1; transform: scale(1.05); }
+        .minimal-nav { position: fixed; top: 60px; right: 15px; z-index: 1000; background-color: var(--background-dark); border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.3); padding: 0.8rem; opacity: 0; transform: translateY(-15px) scale(0.95); transform-origin: top right; pointer-events: none; transition: opacity var(--transition-speed) ease, transform var(--transition-speed) ease; min-width: 200px; }
+        body.nav-active .minimal-nav { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+        .minimal-nav ul { list-style: none; margin: 0; padding: 0; }
+        .minimal-nav ul li { margin-bottom: 5px; }
+        .minimal-nav ul li:last-child { margin-bottom: 0; }
+        .minimal-nav ul li a { display: flex; align-items: center; color: var(--text-light); text-decoration: none; padding: 0.6rem 1rem; border-radius: 4px; transition: background-color var(--transition-speed), color var(--transition-speed); white-space: nowrap; font-weight: 400; font-size: 0.95rem; }
+        .minimal-nav ul li a i.fas { margin-right: 10px; width: 1.2em; text-align: center; opacity: 0.8; transition: opacity var(--transition-speed); }
+        .minimal-nav ul li a:hover { background-color: var(--primary-color); color: var(--text-light); }
+        .minimal-nav ul li a:hover i.fas { opacity: 1; }
+        .minimal-nav .language-switcher-item { padding: 0.5rem 1rem; border-top: 1px solid var(--secondary-color); margin-top: 8px; padding-top: 13px; }
+        #languageSelect { width: 100%; background: rgba(255,255,255,0.1); color: white; border: 1px solid var(--nav-success); border-radius: 5px; padding: 6px 30px 6px 12px; cursor: pointer; font-size: 0.9rem; appearance: none; -webkit-appearance: none; -moz-appearance: none; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%234CC9F0%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right 10px center; background-size: 10px auto; transition: background-color 0.3s ease; }
+        #languageSelect:hover { background-color: rgba(255,255,255,0.15); }
+        #languageSelect option { background: var(--nav-dark); color: var(--text-light); }
+        /* --- End Minimal Retractable Nav --- */
+
+
+        /* --- Practice Header --- */
+        .practice-header { background: linear-gradient(135deg, var(--primary-color), #004887); color: var(--text-light); padding: 3rem 0 4rem; text-align: center; position: relative; overflow: hidden; border-bottom: 5px solid var(--accent-color); } /* Changed gradient */
+        .practice-header h1 { font-family: var(--font-title); font-size: 2.8rem; margin-bottom: 0.5rem; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); animation: fadeInAnimation 1s ease-out; }
+        .practice-header p { font-size: 1.1rem; font-weight: 300; opacity: 0.9; animation: fadeInAnimation 1s ease-out 0.3s forwards; opacity: 0; }
+        .header-icon { position: absolute; font-size: 4rem; color: var(--text-light); animation: pulseHeaderIcon 6s infinite ease-in-out alternate; }
+        .icon1 { top: 20%; left: 15%; animation-duration: 7s; } /* Can change icons e.g., fa-book, fa-sitemap */
+        .icon2 { bottom: 15%; right: 20%; animation-duration: 5s; }
+
+        /* --- Practice Section Styling (Keep as is) --- */
+        .practice-section { padding: 3rem 0; background-color: var(--background-medium); border-bottom: 1px solid #d6d8db; }
+        .practice-section:nth-child(odd) { background-color: var(--background-light); }
+        .practice-section:last-of-type { border-bottom: none; }
+        .practice-section h2 { font-family: var(--font-title); font-size: 1.8rem; color: var(--primary-color); margin-bottom: 1rem; text-align: center; }
+        .practice-section .section-description { text-align: center; margin-bottom: 2.5rem; color: var(--secondary-color); font-size: 1.05rem; max-width: 700px; margin-left: auto; margin-right: auto; }
+
+        /* --- General Interactive Elements (Keep as is) --- */
+        .interactive-area { background-color: #fff; padding: 2rem; border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.08); margin-top: 1.5rem; position: relative; transition: box-shadow 0.5s ease-out; }
+        .feedback-message { padding: 0.8rem 1rem; margin-top: 1rem; border-radius: var(--border-radius); font-weight: bold; text-align: center; opacity: 0; max-height: 0; overflow: hidden; transition: opacity var(--transition-speed) ease, max-height var(--transition-speed) ease, margin-top var(--transition-speed) ease; }
+        .feedback-message.visible { opacity: 1; max-height: 100px; margin-top: 1.5rem; }
+        .feedback-message.correct { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .feedback-message.incorrect { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .feedback-message.info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .feedback-message .fas { margin: 0 3px; }
+        .action-button { display: inline-block; padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold; color: var(--text-light); background-color: var(--primary-color); border: none; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), transform var(--transition-speed), filter var(--transition-speed), box-shadow var(--transition-speed); margin-top: 1rem; vertical-align: middle; box-shadow: 0 2px 5px rgba(0,0,0,0.1); text-decoration: none; }
+        .action-button:hover:not(:disabled) { background-color: #0056b3; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+        .action-button:active:not(:disabled) { transform: translateY(1px) scale(0.98); filter: brightness(0.95); }
+        .action-button:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none; box-shadow: none; opacity: 0.7; }
+        .action-button.success { background-color: var(--success-color); }
+        .action-button.success:hover:not(:disabled) { background-color: #218838; }
+        .action-button.secondary { background-color: var(--secondary-color); }
+        .action-button.secondary:hover:not(:disabled) { background-color: #5a6268; }
+        /* Code styling */
+        .code-block { background-color: var(--background-dark); color: var(--text-light); padding: 1.5rem; border-radius: var(--border-radius); font-family: var(--code-font); font-size: 1rem; position: relative; overflow-x: auto; margin: 1rem 0; }
+        .code-keyword { color: #569cd6; } /* Example for potential keyword highlighting */
+        .code-string { color: var(--dict-value-color); }
+        .code-number { color: var(--dict-number-color); }
+        .code-key { color: var(--dict-key-color); font-weight: bold;}
+        .code-syntax { color: var(--dict-syntax-color); }
+        .code-comment { color: #6a9955; }
+
+        /* --- Activity 1: Dictionary Anatomy --- */
+        #dict-anatomy .code-part { cursor: pointer; border-bottom: 2px dashed rgba(255, 255, 255, 0.3); transition: background-color var(--transition-speed), border-bottom-color var(--transition-speed); padding: 0 2px; display: inline-block; /* Use inline-block for proper spacing */ margin: 0 1px; }
+        #dict-anatomy .code-part:hover { background-color: rgba(255, 255, 255, 0.15); border-bottom-color: var(--accent-color); }
+        #dict-anatomy .code-part.identified { background-color: rgba(40, 167, 69, 0.3); border-bottom: 2px solid var(--success-color); cursor: default; }
+        .part-explanation { font-size: 0.95rem; color: var(--info-color); border-left: 3px solid var(--info-color); padding: 5px 10px; margin-top: 0.5rem; background-color: rgba(23, 162, 184, 0.05); }
+        #anatomy-status { margin-top: 1rem; font-style: italic; color: var(--secondary-color); }
+        #dict-anatomy-code .code-key { color: var(--dict-key-color); }
+        #dict-anatomy-code .code-string { color: var(--dict-value-color); }
+        #dict-anatomy-code .code-number { color: var(--dict-number-color); }
+        #dict-anatomy-code .code-syntax { color: var(--dict-syntax-color); }
+
+        /* --- Activity 2: Accessing Values --- */
+        #dict-access .access-challenge { background-color: var(--background-medium); padding: 1rem; border-radius: var(--border-radius); margin-bottom: 1.5rem; border: 1px solid #ccc; }
+        #dict-access .access-challenge code { background-color: var(--background-dark); color: var(--text-light); padding: 2px 5px; border-radius: 3px; }
+        #dict-access .access-input { width: 100%; background-color: var(--background-dark); color: var(--text-light); border: 1px solid var(--secondary-color); border-radius: var(--border-radius); padding: 0.8rem; font-family: var(--code-font); font-size: 1rem; line-height: 1.5; margin-top: 0.5rem; }
+        #dict-access .access-output-area { margin-top: 1rem; min-height: 40px; background-color: #1a1a1a; border: 1px solid #444; border-radius: var(--border-radius); padding: 0.8rem; color: var(--accent-color); font-family: var(--code-font); font-size: 1rem; white-space: pre-wrap; word-wrap: break-word; }
+        #dict-access .access-output-area .placeholder { color: var(--secondary-color); font-style: italic; }
+
+        /* --- Activity 3: Modifying Dictionaries --- */
+        #dict-modify .modify-step { margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px dashed var(--secondary-color); }
+        #dict-modify .modify-step:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+        #dict-modify .dict-state-display { background-color: var(--background-dark); color: var(--text-light); padding: 1rem; border-radius: var(--border-radius); font-family: var(--code-font); margin-bottom: 1rem; white-space: pre-wrap; }
+        #dict-modify .modify-editor { width: 100%; min-height: 60px; background-color: var(--background-dark); color: var(--text-light); border: 1px solid var(--secondary-color); border-radius: var(--border-radius); padding: 1rem; font-family: var(--code-font); font-size: 1rem; line-height: 1.5; resize: vertical; margin-top: 1rem; }
+        .step-status { font-weight: bold; color: var(--secondary-color); margin-bottom: 0.5rem; }
+        .step-status.completed { color: var(--success-color); }
+        .step-status .fas { margin-right: 5px; }
+
+        /* --- Activity 4: Mini Missions (Structure reused from Module 0) --- */
+        #mini-missions .mission { padding: 1.5rem; border: 1px solid #d6d8db; border-radius: var(--border-radius); margin-bottom: 1.5rem; background-color: var(--background-light); position: relative; }
+        .mission-status { position: absolute; top: 10px; right: 10px; font-size: 1.5rem; transition: transform 0.3s ease; }
+        .mission-status .fa-check-circle { color: var(--success-color); transform-origin: center; }
+        .mission-status .fa-times-circle { color: var(--error-color); }
+        .mission-status .fa-question-circle { color: var(--secondary-color); }
+        .mission[data-completed="true"] .mission-status .fa-check-circle { animation: iconAppearCorrect 0.6s ease-out; }
+        #mini-missions .mission-editor { width: 100%; min-height: 100px; background-color: var(--background-dark); color: var(--text-light); border: 1px solid var(--secondary-color); border-radius: var(--border-radius); padding: 1rem; font-family: var(--code-font); font-size: 1rem; line-height: 1.5; resize: vertical; margin-top: 1rem; }
+        #mini-missions .mission-output { margin-top: 1rem; min-height: 30px; background-color: #1a1a1a; border: 1px solid #444; border-radius: var(--border-radius); padding: 0.8rem; color: var(--accent-color); font-family: var(--code-font); font-size: 1rem; white-space: pre-wrap; word-wrap: break-word; }
+
+        /* --- Final Section (Keep as is) --- */
+        .completion-section { padding: 4rem 0; text-align: center; }
+        .completion-section .icon { font-size: 4rem; color: var(--success-color); margin-bottom: 1rem; display: inline-block; opacity: 0; animation: iconAppearCorrect 1s ease-out 0.5s forwards; }
+        .completion-section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); }
+        .completion-section p { font-size: 1.1rem; margin-top: 1rem; color: var(--secondary-color); }
+
+        /* --- Responsive Design (Keep as is from Module 0) --- */
+        @media (max-width: 768px) {
+            html { font-size: 15px; }
+            .practice-header h1 { font-size: 2.2rem; }
+            .practice-section h2 { font-size: 1.6rem; }
+            .interactive-area { padding: 1.5rem; }
+            .button-group { flex-direction: column; align-items: center; }
+            .minimal-nav { min-width: 180px; }
+            .minimal-nav ul li a { padding: 0.6rem 0.8rem; }
+            #languageSelect { font-size: 0.85rem; padding: 5px 25px 5px 10px;}
+            #dict-access .access-input, #dict-modify .modify-editor, #mini-missions .mission-editor { font-size: 0.95rem; }
+        }
+        @media (max-width: 480px) {
+            html { font-size: 14px; }
+            .practice-header h1 { font-size: 1.8rem; }
+            .practice-header p { font-size: 1rem; }
+            .practice-section h2 { font-size: 1.4rem; }
+            .interactive-area { padding: 1rem; }
+            .action-button { font-size: 0.9rem; padding: 0.7rem 1.2rem; width: 90%; max-width: 300px;}
+            .code-block, #dict-access .access-input, #dict-modify .modify-editor, #mini-missions .mission-editor, #mini-missions .mission-output { font-size: 0.9rem; }
+            .button-group a.action-button { width: 90%; max-width: 300px; margin-bottom: 0.5rem; }
+             /* Adjust Nav */
+             .minimal-nav-button { top: 10px; right: 10px; padding: 6px 10px; font-size: 1rem; }
+             .minimal-nav { top: 48px; right: 10px; min-width: 160px; }
+             .minimal-nav ul li a { padding: 0.5rem 0.7rem; font-size: 0.9rem;}
+             .minimal-nav ul li a i.fas { margin-right: 8px; }
+             #languageSelect { font-size: 0.8rem; padding: 4px 20px 4px 8px;}
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ========= Minimal Nav Handle ========= -->
+    <button id="minimal-nav-toggle" class="minimal-nav-button" aria-label="Toggle Navigation Menu">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- ========= Minimal Nav Panel (with Language Switcher) ========= -->
+    <nav id="minimal-nav-panel" class="minimal-nav">
+        <ul>
+            <!-- *** MODIFIED: Links point to module 20 *** -->
+            <li><a href="ctp-theory-20.html"><i class="fas fa-book-open fa-fw"></i> <span data-translate="nav_theory">View Theory</span></a></li>
+            <li><a href="ctp-advanced-20.html"><i class="fas fa-flask fa-fw"></i> <span data-translate="nav_advanced">Advanced Practice</span></a></li>
+            <li><a href="ctp-dashboard.html"><i class="fas fa-list fa-fw"></i> <span data-translate="nav_menu">Course Menu</span></a></li>
+            <hr style="border: none; border-top: 1px solid var(--secondary-color); margin: 8px 0;">
+            <!-- *** MODIFIED: Section links *** -->
+            <li><a href="#dict-anatomy"><i class="fas fa-microscope fa-fw"></i> <span data-translate="nav_anatomy">Anatomy</span></a></li>
+            <li><a href="#dict-access"><i class="fas fa-key fa-fw"></i> <span data-translate="nav_access">Access</span></a></li>
+            <li><a href="#dict-modify"><i class="fas fa-edit fa-fw"></i> <span data-translate="nav_modify">Modify</span></a></li>
+            <li><a href="#mini-missions"><i class="fas fa-rocket fa-fw"></i> <span data-translate="nav_missions">Missions</span></a></li>
+            <!-- Language Switcher Item -->
+            <li class="language-switcher-item">
+                 <select id="languageSelect" aria-label="Select Language">
+                     <option value="en" data-translate="lang_en">🇬🇧 English</option>
+                     <option value="pt" data-translate="lang_pt">🇧🇷 Português</option>
+                     <option value="zh" data-translate="lang_zh">🇨🇳 中文</option>
+                 </select>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- ========= Header ========= -->
+    <header class="practice-header">
+        <!-- Optional: Change icons to fa-book, fa-sitemap, fa-database -->
+        <i class="fas fa-sitemap header-icon icon1"></i>
+        <i class="fas fa-book header-icon icon2"></i>
+        <div class="container">
+             <!-- *** MODIFIED: Title for Module 20 *** -->
+            <h1 data-translate="header_title">Module 20: Dictionary Practice</h1>
+            <p data-translate="header_subtitle">Let's organize data with Python's dictionaries!</p>
+        </div>
+    </header>
+
+    <!-- ========= Main Content ========= -->
+    <main>
+        <!-- ========= Activity 1: Anatomy of a Dictionary ========= -->
+        <section id="dict-anatomy" class="practice-section">
+             <div class="container">
+                 <h2 class="fade-in"><i class="fas fa-microscope"></i> <span data-translate="anatomy_title">Anatomy of a Dictionary</span></h2>
+                 <p class="section-description fade-in delay-1" data-translate="anatomy_desc">
+                     Dictionaries store data in key-value pairs. Click each highlighted part of this example dictionary to learn its role.
+                 </p>
+                 <div class="interactive-area fade-in delay-2">
+                     <!-- *** MODIFIED: Code block for dictionary *** -->
+                     <div id="dict-anatomy-code" class="code-block">
+                        <span class="code-variable">student</span> = <!--
+                     --><span class="code-part code-syntax" data-part="lbrace" data-translate-title="tooltip_click_identify" title="Click to identify">{</span><!--
+                     --><span class="code-part code-key" data-part="key1" data-translate-title="tooltip_click_identify" title="Click to identify">'name'</span><!--
+                     --><span class="code-part code-syntax" data-part="colon1" data-translate-title="tooltip_click_identify" title="Click to identify">:</span><!--
+                     --> <span class="code-part code-string" data-part="value1" data-translate-title="tooltip_click_identify" title="Click to identify">'Alice'</span><!--
+                     --><span class="code-part code-syntax" data-part="comma" data-translate-title="tooltip_click_identify" title="Click to identify">,</span><!--
+                     --> <span class="code-part code-key" data-part="key2" data-translate-title="tooltip_click_identify" title="Click to identify">'age'</span><!--
+                     --><span class="code-part code-syntax" data-part="colon2" data-translate-title="tooltip_click_identify" title="Click to identify">:</span><!--
+                     --> <span class="code-part code-number" data-part="value2" data-translate-title="tooltip_click_identify" title="Click to identify">25</span><!--
+                     --><span class="code-part code-syntax" data-part="rbrace" data-translate-title="tooltip_click_identify" title="Click to identify">}</span>
+                     </div>
+                     <div id="anatomy-explanations"></div>
+                     <p id="anatomy-status" data-translate="anatomy_status_initial">Identify all 9 parts!</p>
+                     <div id="anatomy-feedback" class="feedback-message"></div>
+                     <!-- Hidden explanation texts -->
+                     <div id="explanation-texts" style="display: none;">
+                        <span data-key="lbrace" data-translate="dict_exp_lbrace">Opening Brace `{`: Marks the start of a dictionary.</span>
+                        <span data-key="key1" data-translate="dict_exp_key1">Key `'name'`: A unique identifier (usually a string) for a value.</span>
+                        <span data-key="colon1" data-translate="dict_exp_colon1">Colon `:`: Separates a key from its value.</span>
+                        <span data-key="value1" data-translate="dict_exp_value1">Value `'Alice'`: The data associated with the key 'name' (a string here).</span>
+                        <span data-key="comma" data-translate="dict_exp_comma">Comma `,`: Separates key-value pairs.</span>
+                        <span data-key="key2" data-translate="dict_exp_key2">Key `'age'`: Another unique identifier.</span>
+                        <span data-key="colon2" data-translate="dict_exp_colon2">Colon `:`: Separates the 'age' key from its value.</span>
+                        <span data-key="value2" data-translate="dict_exp_value2">Value `25`: The data for 'age' (a number here).</span>
+                        <span data-key="rbrace" data-translate="dict_exp_rbrace">Closing Brace `}`: Marks the end of the dictionary.</span>
+                     </div>
+                 </div>
+             </div>
+        </section>
+
+        <!-- ========= Activity 2: Accessing Values ========= -->
+        <section id="dict-access" class="practice-section">
+             <div class="container">
+                 <h2 class="fade-in"><i class="fas fa-key"></i> <span data-translate="access_title">Accessing Dictionary Values</span></h2>
+                 <p class="section-description fade-in delay-1" data-translate="access_desc">
+                     To get a value, use the dictionary name followed by the key in square brackets `[]`. Try it below!
+                 </p>
+                 <div class="interactive-area fade-in delay-2">
+                     <div class="access-challenge">
+                        <p data-translate="access_challenge_prompt">Given the dictionary:</p>
+                        <div class="code-block"><span class="code-variable">config</span> = {<span class="code-key">'theme'</span>: <span class="code-string">'dark'</span>, <span class="code-key">'version'</span>: <span class="code-number">1.2</span>, <span class="code-key">'active'</span>: <span class="code-keyword">True</span>}</div>
+                        <p><strong data-translate="access_challenge_task">Your task:</strong> Write the Python code to get the value associated with the key <code class="code-key">'version'</code>.</p>
+                     </div>
+                     <label for="access-input-field" style="font-weight: bold; display:block; margin-bottom: 8px;" data-translate="access_input_label">Your Code:</label>
+                     <input type="text" id="access-input-field" class="access-input code-font" data-translate-placeholder="access_input_placeholder" placeholder="e.g., dictionary_name['key_name']">
+                     <div class="text-center">
+                          <button id="check-access-btn" class="action-button" data-translate="button_check_access">Check Access Code</button>
+                     </div>
+                     <label for="access-output" style="font-weight: bold; display:block; margin-top: 1.5rem; margin-bottom: 8px;" data-translate="access_output_label">Simulated Result:</label>
+                     <div id="access-output" class="access-output-area">
+                         <span class="placeholder" data-translate="access_output_placeholder">Result will appear here...</span>
+                     </div>
+                     <div id="access-feedback" class="feedback-message"></div>
+                 </div>
+             </div>
+        </section>
+
+        <!-- ========= Activity 3: Modifying Dictionaries ========= -->
+        <section id="dict-modify" class="practice-section">
+             <div class="container">
+                 <h2 class="fade-in"><i class="fas fa-edit"></i> <span data-translate="modify_title">Adding & Updating Pairs</span></h2>
+                 <p class="section-description fade-in delay-1" data-translate="modify_desc">
+                     You can add new key-value pairs or change existing values using the `dictionary[key] = value` syntax. Follow the steps below.
+                 </p>
+                 <div class="interactive-area fade-in delay-2">
+                     <div class="code-block dict-state-display" id="modify-dict-display">
+                         # Initial Dictionary State will be shown here by JS
+                     </div>
+
+                     <!-- Step 1: Add -->
+                     <div class="modify-step" id="modify-step-1">
+                         <p class="step-status" id="step-1-status"><i class="fas fa-arrow-right"></i> <span data-translate="modify_step1_status">Step 1: Add a Pair</span></p>
+                         <p data-translate="modify_step1_desc">Add a new key <code class="code-key">'city'</code> with the string value <code class="code-string">'New York'</code> to the dictionary above.</p>
+                         <label for="modify-editor-1" class="hidden" data-translate="modify_editor_label_1">Editor for Step 1:</label>
+                         <textarea id="modify-editor-1" class="modify-editor" rows="2" data-translate-placeholder="modify_placeholder_add" placeholder="e.g., student['city'] = 'New York'"></textarea>
+                         <div class="text-center">
+                             <button id="run-modify-step-1" class="action-button" data-translate="button_run_step_1">Run Step 1</button>
+                         </div>
+                         <div id="modify-feedback-1" class="feedback-message"></div>
+                     </div>
+
+                     <!-- Step 2: Update -->
+                     <div class="modify-step hidden" id="modify-step-2">
+                         <p class="step-status" id="step-2-status"><i class="fas fa-arrow-right"></i> <span data-translate="modify_step2_status">Step 2: Update a Value</span></p>
+                         <p data-translate="modify_step2_desc">Now, update the value associated with the key <code class="code-key">'age'</code> to the number <code class="code-number">26</code>.</p>
+                         <label for="modify-editor-2" class="hidden" data-translate="modify_editor_label_2">Editor for Step 2:</label>
+                         <textarea id="modify-editor-2" class="modify-editor" rows="2" data-translate-placeholder="modify_placeholder_update" placeholder="e.g., student['age'] = 26"></textarea>
+                         <div class="text-center">
+                              <button id="run-modify-step-2" class="action-button" data-translate="button_run_step_2">Run Step 2</button>
+                         </div>
+                         <div id="modify-feedback-2" class="feedback-message"></div>
+                     </div>
+
+                     <div id="modify-complete-feedback" class="feedback-message" style="margin-top: 1.5rem;"></div>
+                 </div>
+             </div>
+        </section>
+
+         <!-- ========= Activity 4: Mini Missions ========= -->
+        <section id="mini-missions" class="practice-section">
+             <div class="container">
+                  <h2 class="fade-in"><i class="fas fa-rocket"></i> <span data-translate="missions_title">Dictionary Missions!</span></h2>
+                 <p class="section-description fade-in delay-1" data-translate="missions_desc">
+                     Combine your dictionary skills! Complete these tasks using the editor in each mission.
+                 </p>
+                 <div class="interactive-area fade-in delay-2">
+                     <!-- Mission 1: Create -->
+                     <div class="mission" id="mission-1" data-completed="false">
+                         <span class="mission-status"><i class="fas fa-question-circle"></i></span>
+                         <h4 data-translate="mission1_title">Mission 1: Create a Car Dictionary</h4>
+                         <p data-translate="mission1_desc">Create a dictionary named `my_car`. It should have a key <code class='code-key'>'make'</code> with value <code class='code-string'>'Tesla'</code> and a key <code class='code-key'>'model'</code> with value <code class='code-string'>'Model 3'</code>.</p>
+                         <textarea class="sim-editor mission-editor" rows="4" data-translate-placeholder="mission1_placeholder" placeholder="my_car = {'make': 'Tesla', ... }"></textarea>
+                         <div class="text-center"> <button class="action-button mission-run-btn" data-mission-id="1" data-translate="button_test_mission_1">Test Mission 1</button> </div>
+                         <div class="sim-output-area mission-output" data-translate="mission_output_placeholder">Output/State check appears here...</div>
+                         <div id="mission-feedback-1" class="feedback-message mission-feedback"></div>
+                     </div>
+                     <!-- Mission 2: Access -->
+                     <div class="mission" id="mission-2" data-completed="false">
+                          <span class="mission-status"><i class="fas fa-question-circle"></i></span>
+                         <h4 data-translate="mission2_title">Mission 2: Print the Name</h4>
+                         <p data-translate="mission2_desc">Assume a dictionary `user = {'id': 101, 'name': 'Bob', 'level': 5}` already exists. Write <strong>one line</strong> of code to `print()` the value of the <code class='code-key'>'name'</code> key.</p>
+                         <textarea class="sim-editor mission-editor" rows="4" data-translate-placeholder="mission2_placeholder" placeholder="print(user[...])"></textarea>
+                          <div class="text-center"> <button class="action-button mission-run-btn" data-mission-id="2" data-translate="button_test_mission_2">Test Mission 2</button> </div>
+                         <div class="sim-output-area mission-output" data-translate="mission_output_placeholder">Output/State check appears here...</div>
+                         <div id="mission-feedback-2" class="feedback-message mission-feedback"></div>
+                     </div>
+                     <!-- Mission 3: Modify -->
+                     <div class="mission" id="mission-3" data-completed="false">
+                          <span class="mission-status"><i class="fas fa-question-circle"></i></span>
+                         <h4 data-translate="mission3_title">Mission 3: Add and Update Settings</h4>
+                         <p data-translate="mission3_desc">Assume `settings = {'volume': 80, 'brightness': 65}` exists. Write code to <strong>first</strong> add a new key <code class='code-key'>'mode'</code> with the value <code class='code-string'>'eco'</code>, and <strong>then</strong> update the <code class='code-key'>'volume'</code> to <code class='code-number'>90</code>. (Two lines of code needed).</p>
+                         <textarea class="sim-editor mission-editor" rows="4" data-translate-placeholder="mission3_placeholder" placeholder="settings['mode'] = 'eco'\nsettings['volume'] = ..."></textarea>
+                          <div class="text-center"> <button class="action-button mission-run-btn" data-mission-id="3" data-translate="button_test_mission_3">Test Mission 3</button> </div>
+                         <div class="sim-output-area mission-output" data-translate="mission_output_placeholder">Output/State check appears here...</div>
+                         <div id="mission-feedback-3" class="feedback-message mission-feedback"></div>
+                     </div>
+                     <div id="missions-summary-feedback" class="feedback-message" style="margin-top: 2rem;"></div>
+                 </div>
+             </div>
+        </section>
+
+         <!-- ========= Completion Section ========= -->
+        <section class="completion-section">
+            <div class="container">
+                <div class="icon fade-in"> <!-- Animation stays the same -->
+                    <i class="fas fa-star"></i> <i class="fas fa-graduation-cap"></i> <i class="fas fa-star"></i>
+                </div>
+                 <!-- *** MODIFIED: Title and text for Module 20 *** -->
+                <h2 class="fade-in delay-1" data-translate="completion_title">Module 20 Practice Complete!</h2>
+                <p class="fade-in delay-2" data-translate="completion_desc">
+                    Well done! You've practiced creating, accessing, and modifying dictionaries – essential tools for organizing data.<br>
+                    Ready for more? Try the <strong>Advanced Practice</strong> for Module 20!
+                </p>
+                <div class="button-group">
+                    <!-- *** MODIFIED: Links point to module 20 *** -->
+                    <a href="ctp-theory-20.html" class="action-button secondary fade-in delay-3"><i class="fas fa-book-open"></i> <span data-translate="button_view_theory">View Theory Again</span></a>
+                    <a href="ctp-advanced-20.html" class="action-button success fade-in delay-3"><i class="fas fa-arrow-right"></i> <span data-translate="button_start_advanced">Start Advanced Practice</span></a>
+                    <a href="ctp-dashboard.html" class="action-button secondary fade-in delay-4"><i class="fas fa-list"></i> <span data-translate="button_back_menu">Back to Course Menu</span></a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ========= Script ========= -->
+    <script>
+    // --- Translations Object ---
+    // *** MODIFIED: Keys and content for Module 20 ***
+    const translations = {
+        en: {
+            "page_title": "Module 20: Intro to Dictionaries Practice",
+            "tooltip_click_identify": "Click to identify this part",
+            "nav_theory": "View Theory", "nav_advanced": "Advanced Practice", "nav_menu": "Course Menu",
+            "nav_anatomy": "Anatomy", "nav_access": "Access", "nav_modify": "Modify", "nav_missions": "Missions",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title": "Module 20: Dictionary Practice", "header_subtitle": "Let's organize data with Python's dictionaries!",
+            "anatomy_title": "Anatomy of a Dictionary", "anatomy_desc": "Dictionaries store data in key-value pairs. Click each highlighted part of this example dictionary to learn its role.",
+            "anatomy_status_initial": "Identify all 9 parts!", "anatomy_status_progress": "Identified {count} of {total} parts.", "anatomy_status_done": "All parts identified!",
+            "dict_exp_lbrace": "Opening Brace `{`: Marks the start of a dictionary.",
+            "dict_exp_key1": "Key `'name'`: A unique identifier (usually a string) for a value.",
+            "dict_exp_colon1": "Colon `:`: Separates a key from its value.",
+            "dict_exp_value1": "Value `'Alice'`: The data associated with the key 'name' (a string here).",
+            "dict_exp_comma": "Comma `,`: Separates key-value pairs.",
+            "dict_exp_key2": "Key `'age'`: Another unique identifier.",
+            "dict_exp_colon2": "Colon `:`: Separates the 'age' key from its value.",
+            "dict_exp_value2": "Value `25`: The data for 'age' (a number here).",
+            "dict_exp_rbrace": "Closing Brace `}`: Marks the end of the dictionary.",
+            "feedback_anatomy_correct": "Excellent! You dissected the dictionary structure!",
+            "access_title": "Accessing Dictionary Values", "access_desc": "To get a value, use the dictionary name followed by the key in square brackets `[]`. Try it below!",
+            "access_challenge_prompt": "Given the dictionary:",
+            "access_challenge_task": "Your task:", "access_input_label": "Your Code:",
+            "access_input_placeholder": "e.g., dictionary_name['key_name']",
+            "button_check_access": "Check Access Code", "access_output_label": "Simulated Result:",
+            "access_output_placeholder": "Result will appear here...",
+            "feedback_access_correct": "Correct! That's how you access the value.",
+            "feedback_access_incorrect_key": "Incorrect key or syntax. Use config['version'].",
+            "feedback_access_incorrect_syntax": "Check syntax: use dictionary_name['key_name'].",
+            "feedback_access_empty": "Input is empty.",
+            "modify_title": "Adding & Updating Pairs", "modify_desc": "You can add new key-value pairs or change existing values using the `dictionary[key] = value` syntax. Follow the steps below.",
+            "modify_step1_status": "Step 1: Add a Pair", "modify_step1_desc": "Add a new key `'city'` with the string value `'New York'` to the dictionary above.",
+            "modify_editor_label_1": "Editor for Step 1:", "modify_placeholder_add": "e.g., student['city'] = 'New York'",
+            "button_run_step_1": "Run Step 1",
+            "modify_step2_status": "Step 2: Update a Value", "modify_step2_desc": "Now, update the value associated with the key `'age'` to the number `26`.",
+            "modify_editor_label_2": "Editor for Step 2:", "modify_placeholder_update": "e.g., student['age'] = 26",
+            "button_run_step_2": "Run Step 2",
+            "feedback_modify_step1_correct": "Great! New pair added.", "feedback_modify_step1_incorrect": "Not quite. Use student['city'] = 'New York'. Check quotes!",
+            "feedback_modify_step2_correct": "Perfect! Value updated.", "feedback_modify_step2_incorrect": "Almost. Use student['age'] = 26. Make sure it's a number.",
+            "feedback_modify_empty": "Editor is empty.", "feedback_modify_syntax": "Check syntax: dictionary['key'] = value",
+            "feedback_modify_complete": "Both steps completed successfully!",
+            "missions_title": "Dictionary Missions!", "missions_desc": "Combine your dictionary skills! Complete these tasks using the editor in each mission.",
+            "mission1_title": "Mission 1: Create a Car Dictionary", "mission1_desc": "Create a dictionary named `my_car`. It should have a key `'make'` with value `'Tesla'` and a key `'model'` with value `'Model 3'`.",
+            "mission1_placeholder": "my_car = {'make': 'Tesla', ... }", "button_test_mission_1": "Test Mission 1",
+            "mission2_title": "Mission 2: Print the Name", "mission2_desc": "Assume a dictionary `user = {'id': 101, 'name': 'Bob', 'level': 5}` already exists. Write <strong>one line</strong> of code to `print()` the value of the `'name'` key.",
+            "mission2_placeholder": "print(user[...])", "button_test_mission_2": "Test Mission 2",
+            "mission3_title": "Mission 3: Add and Update Settings", "mission3_desc": "Assume `settings = {'volume': 80, 'brightness': 65}` exists. Write code to <strong>first</strong> add a new key `'mode'` with the value `'eco'`, and <strong>then</strong> update the `'volume'` to `90`. (Two lines of code needed).",
+            "mission3_placeholder": "settings['mode'] = 'eco'\\nsettings['volume'] = ...", "button_test_mission_3": "Test Mission 3",
+            "mission_output_placeholder": "Output/State check appears here...",
+            "feedback_mission_success": "Mission Accomplished!", "feedback_mission_syntax_error": "Syntax error or code doesn't run.",
+            "feedback_mission1_fail": "Dictionary `my_car` incorrect. Check keys ('make', 'model') and values ('Tesla', 'Model 3').",
+            "feedback_mission2_fail": "Didn't print 'Bob'. Check syntax: `print(user['name'])`.",
+            "feedback_mission3_fail": "Dictionary `settings` not correct. Expected {'volume': 90, 'brightness': 65, 'mode': 'eco'}. Check both lines.",
+            "feedback_missions_summary_all_done": "All {totalMissions} missions complete! Excellent dictionary skills!", "feedback_missions_summary_progress": "Completed {completedCount} of {totalMissions} missions. Keep practicing!",
+            "completion_title": "Module 20 Practice Complete!", "completion_desc": "Well done! You've practiced creating, accessing, and modifying dictionaries – essential tools for organizing data.<br> Ready for more? Try the <strong>Advanced Practice</strong> for Module 20!",
+            "button_view_theory": "View Theory Again", "button_start_advanced": "Start Advanced Practice", "button_back_menu": "Back to Course Menu"
+        },
+        pt: { // Placeholder translations for PT - needs review
+            "page_title": "Módulo 20: Introdução a Dicionários Prática",
+            "tooltip_click_identify": "Clique para identificar esta parte",
+            "nav_theory": "Ver Teoria", "nav_advanced": "Prática Avançada", "nav_menu": "Menu do Curso",
+            "nav_anatomy": "Anatomia", "nav_access": "Acessar", "nav_modify": "Modificar", "nav_missions": "Missões",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title": "Módulo 20: Prática com Dicionários", "header_subtitle": "Vamos organizar dados com dicionários Python!",
+            "anatomy_title": "Anatomia de um Dicionário", "anatomy_desc": "Dicionários armazenam dados em pares chave-valor. Clique em cada parte destacada deste dicionário de exemplo para aprender seu papel.",
+            "anatomy_status_initial": "Identifique todas as 9 partes!", "anatomy_status_progress": "Identificadas {count} de {total} partes.", "anatomy_status_done": "Todas as partes identificadas!",
+            "dict_exp_lbrace": "Chave de Abertura `{`: Marca o início de um dicionário.",
+            "dict_exp_key1": "Chave `'name'`: Um identificador único (geralmente string) para um valor.",
+            "dict_exp_colon1": "Dois Pontos `:`: Separa uma chave de seu valor.",
+            "dict_exp_value1": "Valor `'Alice'`: O dado associado à chave 'name' (uma string aqui).",
+            "dict_exp_comma": "Vírgula `,`: Separa pares chave-valor.",
+            "dict_exp_key2": "Chave `'age'`: Outro identificador único.",
+            "dict_exp_colon2": "Dois Pontos `:`: Separa a chave 'age' de seu valor.",
+            "dict_exp_value2": "Valor `25`: O dado para 'age' (um número aqui).",
+            "dict_exp_rbrace": "Chave de Fechamento `}`: Marca o fim do dicionário.",
+            "feedback_anatomy_correct": "Excelente! Você dissecou a estrutura do dicionário!",
+            "access_title": "Acessando Valores do Dicionário", "access_desc": "Para obter um valor, use o nome do dicionário seguido pela chave entre colchetes `[]`. Tente abaixo!",
+            "access_challenge_prompt": "Dado o dicionário:",
+            "access_challenge_task": "Sua tarefa:", "access_input_label": "Seu Código:",
+            "access_input_placeholder": "ex: nome_dicionario['nome_chave']",
+            "button_check_access": "Verificar Código de Acesso", "access_output_label": "Resultado Simulado:",
+            "access_output_placeholder": "O resultado aparecerá aqui...",
+            "feedback_access_correct": "Correto! É assim que você acessa o valor.",
+            "feedback_access_incorrect_key": "Chave ou sintaxe incorreta. Use config['version'].",
+            "feedback_access_incorrect_syntax": "Verifique a sintaxe: use nome_dicionario['nome_chave'].",
+            "feedback_access_empty": "Campo vazio.",
+            "modify_title": "Adicionando & Atualizando Pares", "modify_desc": "Você pode adicionar novos pares chave-valor ou alterar valores existentes usando a sintaxe `dicionario[chave] = valor`. Siga os passos abaixo.",
+            "modify_step1_status": "Passo 1: Adicionar um Par", "modify_step1_desc": "Adicione uma nova chave `'city'` com o valor string `'New York'` ao dicionário acima.",
+            "modify_editor_label_1": "Editor para Passo 1:", "modify_placeholder_add": "ex: student['city'] = 'New York'",
+            "button_run_step_1": "Executar Passo 1",
+            "modify_step2_status": "Passo 2: Atualizar um Valor", "modify_step2_desc": "Agora, atualize o valor associado à chave `'age'` para o número `26`.",
+            "modify_editor_label_2": "Editor para Passo 2:", "modify_placeholder_update": "ex: student['age'] = 26",
+            "button_run_step_2": "Executar Passo 2",
+            "feedback_modify_step1_correct": "Ótimo! Novo par adicionado.", "feedback_modify_step1_incorrect": "Não exatamente. Use student['city'] = 'New York'. Verifique as aspas!",
+            "feedback_modify_step2_correct": "Perfeito! Valor atualizado.", "feedback_modify_step2_incorrect": "Quase lá. Use student['age'] = 26. Certifique-se de que é um número.",
+            "feedback_modify_empty": "Editor vazio.", "feedback_modify_syntax": "Verifique a sintaxe: dicionario['chave'] = valor",
+            "feedback_modify_complete": "Ambos os passos completados com sucesso!",
+            "missions_title": "Missões com Dicionários!", "missions_desc": "Combine suas habilidades com dicionários! Complete estas tarefas usando o editor em cada missão.",
+            "mission1_title": "Missão 1: Criar Dicionário de Carro", "mission1_desc": "Crie um dicionário chamado `my_car`. Deve ter uma chave `'make'` com valor `'Tesla'` e uma chave `'model'` com valor `'Model 3'`.",
+            "mission1_placeholder": "my_car = {'make': 'Tesla', ... }", "button_test_mission_1": "Testar Missão 1",
+            "mission2_title": "Missão 2: Imprimir o Nome", "mission2_desc": "Assuma que um dicionário `user = {'id': 101, 'name': 'Bob', 'level': 5}` já existe. Escreva <strong>uma linha</strong> de código para `print()` o valor da chave `'name'`.",
+            "mission2_placeholder": "print(user[...])", "button_test_mission_2": "Testar Missão 2",
+            "mission3_title": "Missão 3: Adicionar e Atualizar Configurações", "mission3_desc": "Assuma `settings = {'volume': 80, 'brightness': 65}` existe. Escreva código para <strong>primeiro</strong> adicionar uma nova chave `'mode'` com o valor `'eco'`, e <strong>depois</strong> atualizar o `'volume'` para `90`. (Duas linhas de código necessárias).",
+            "mission3_placeholder": "settings['mode'] = 'eco'\\nsettings['volume'] = ...", "button_test_mission_3": "Testar Missão 3",
+            "mission_output_placeholder": "Verificação de saída/estado aparece aqui...",
+            "feedback_mission_success": "Missão Cumprida!", "feedback_mission_syntax_error": "Erro de sintaxe ou código não executa.",
+            "feedback_mission1_fail": "Dicionário `my_car` incorreto. Verifique chaves ('make', 'model') e valores ('Tesla', 'Model 3').",
+            "feedback_mission2_fail": "Não imprimiu 'Bob'. Verifique sintaxe: `print(user['name'])`.",
+            "feedback_mission3_fail": "Dicionário `settings` incorreto. Esperado {'volume': 90, 'brightness': 65, 'mode': 'eco'}. Verifique ambas as linhas.",
+            "feedback_missions_summary_all_done": "Todas as {totalMissions} missões completas! Excelentes habilidades com dicionários!", "feedback_missions_summary_progress": "Completou {completedCount} de {totalMissions} missões. Continue praticando!",
+            "completion_title": "Prática do Módulo 20 Completa!", "completion_desc": "Muito bem! Você praticou criar, acessar e modificar dicionários – ferramentas essenciais para organizar dados.<br> Pronto para mais? Tente a <strong>Prática Avançada</strong> do Módulo 20!",
+            "button_view_theory": "Ver Teoria Novamente", "button_start_advanced": "Iniciar Prática Avançada", "button_back_menu": "Voltar ao Menu do Curso"
+        },
+        zh: { // Placeholder translations for ZH - needs review
+            "page_title": "模块 20：字典入门练习",
+            "tooltip_click_identify": "点击识别此部分",
+            "nav_theory": "查看理论", "nav_advanced": "高级练习", "nav_menu": "课程菜单",
+            "nav_anatomy": "剖析", "nav_access": "访问", "nav_modify": "修改", "nav_missions": "任务",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title": "模块 20：字典练习", "header_subtitle": "让我们用 Python 字典来组织数据！",
+            "anatomy_title": "字典剖析", "anatomy_desc": "字典以键值对存储数据。点击此示例字典的每个高亮部分，了解其作用。",
+            "anatomy_status_initial": "识别所有 9 个部分！", "anatomy_status_progress": "已识别 {count} / {total} 个部分。", "anatomy_status_done": "所有部分已识别！",
+            "dict_exp_lbrace": "左花括号 `{`: 标记字典的开始。",
+            "dict_exp_key1": "键 `'name'`: 值的唯一标识符（通常是字符串）。",
+            "dict_exp_colon1": "冒号 `:`: 分隔键和值。",
+            "dict_exp_value1": "值 `'Alice'`: 与键 'name' 关联的数据（此处为字符串）。",
+            "dict_exp_comma": "逗号 `,`: 分隔键值对。",
+            "dict_exp_key2": "键 `'age'`: 另一个唯一标识符。",
+            "dict_exp_colon2": "冒号 `:`: 分隔键 'age' 与其值。",
+            "dict_exp_value2": "值 `25`: 'age' 的数据（此处为数字）。",
+            "dict_exp_rbrace": "右花括号 `}`: 标记字典的结束。",
+            "feedback_anatomy_correct": "太棒了！你成功剖析了字典结构！",
+            "access_title": "访问字典值", "access_desc": "要获取值，请使用字典名称后跟方括号 `[]` 中的键。在下面试试吧！",
+            "access_challenge_prompt": "给定字典：",
+            "access_challenge_task": "你的任务：", "access_input_label": "你的代码：",
+            "access_input_placeholder": "例如：dictionary_name['key_name']",
+            "button_check_access": "检查访问代码", "access_output_label": "模拟结果：",
+            "access_output_placeholder": "结果将显示在此处...",
+            "feedback_access_correct": "正确！这就是访问值的方法。",
+            "feedback_access_incorrect_key": "键或语法不正确。请使用 config['version']。",
+            "feedback_access_incorrect_syntax": "检查语法：使用 dictionary_name['key_name']。",
+            "feedback_access_empty": "输入为空。",
+            "modify_title": "添加和更新键值对", "modify_desc": "你可以使用 `dictionary[key] = value` 语法添加新的键值对或更改现有值。请按照以下步骤操作。",
+            "modify_step1_status": "步骤 1：添加键值对", "modify_step1_desc": "在上面的字典中添加一个新键 `'city'`，其字符串值为 `'New York'`。",
+            "modify_editor_label_1": "步骤 1 编辑器：", "modify_placeholder_add": "例如：student['city'] = 'New York'",
+            "button_run_step_1": "运行步骤 1",
+            "modify_step2_status": "步骤 2：更新值", "modify_step2_desc": "现在，将与键 `'age'` 关联的值更新为数字 `26`。",
+            "modify_editor_label_2": "步骤 2 编辑器：", "modify_placeholder_update": "例如：student['age'] = 26",
+            "button_run_step_2": "运行步骤 2",
+            "feedback_modify_step1_correct": "很好！新键值对已添加。", "feedback_modify_step1_incorrect": "不太对。请使用 student['city'] = 'New York'。检查引号！",
+            "feedback_modify_step2_correct": "完美！值已更新。", "feedback_modify_step2_incorrect": "差不多了。请使用 student['age'] = 26。确保它是一个数字。",
+            "feedback_modify_empty": "编辑器为空。", "feedback_modify_syntax": "检查语法：dictionary['key'] = value",
+            "feedback_modify_complete": "两个步骤都成功完成！",
+            "missions_title": "字典任务！", "missions_desc": "整合你的字典技能！在每个任务中使用编辑器完成这些任务。",
+            "mission1_title": "任务 1：创建汽车字典", "mission1_desc": "创建一个名为 `my_car` 的字典。它应该有一个键 `'make'`，值为 `'Tesla'`；一个键 `'model'`，值为 `'Model 3'`。",
+            "mission1_placeholder": "my_car = {'make': 'Tesla', ... }", "button_test_mission_1": "测试任务 1",
+            "mission2_title": "任务 2：打印姓名", "mission2_desc": "假设字典 `user = {'id': 101, 'name': 'Bob', 'level': 5}` 已存在。编写<strong>一行</strong>代码来 `print()` 键 `'name'` 的值。",
+            "mission2_placeholder": "print(user[...])", "button_test_mission_2": "测试任务 2",
+            "mission3_title": "任务 3：添加和更新设置", "mission3_desc": "假设 `settings = {'volume': 80, 'brightness': 65}` 存在。编写代码，<strong>首先</strong>添加一个新键 `'mode'`，值为 `'eco'`，<strong>然后</strong>将 `'volume'` 更新为 `90`。（需要两行代码）。",
+            "mission3_placeholder": "settings['mode'] = 'eco'\\nsettings['volume'] = ...", "button_test_mission_3": "测试任务 3",
+            "mission_output_placeholder": "输出/状态检查显示在此处...",
+            "feedback_mission_success": "任务完成！", "feedback_mission_syntax_error": "语法错误或代码无法运行。",
+            "feedback_mission1_fail": "字典 `my_car` 不正确。检查键 ('make', 'model') 和值 ('Tesla', 'Model 3')。",
+            "feedback_mission2_fail": "未打印 'Bob'。检查语法：`print(user['name'])`。",
+            "feedback_mission3_fail": "字典 `settings` 不正确。预期 {'volume': 90, 'brightness': 65, 'mode': 'eco'}。检查两行代码。",
+            "feedback_missions_summary_all_done": "所有 {totalMissions} 个任务已完成！字典技能很棒！", "feedback_missions_summary_progress": "已完成 {completedCount} / {totalMissions} 个任务。继续练习！",
+            "completion_title": "模块 20 练习完成！", "completion_desc": "做得好！你已经练习了创建、访问和修改字典——组织数据的基本工具。<br> 准备好迎接更多挑战了吗？试试模块 20 的<strong>高级练习</strong>吧！",
+            "button_view_theory": "再次查看理论", "button_start_advanced": "开始高级练习", "button_back_menu": "返回课程菜单"
+        }
+    };
+
+
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // --- Language Management Functions (Keep as is) ---
+        function getStoredLanguage() { /* ... from Module 0 ... */
+            const storedLang = localStorage.getItem('userLanguage');
+            if (storedLang && translations[storedLang]) return storedLang;
+            const browserLang = navigator.language || navigator.userLanguage;
+            if (browserLang.startsWith('pt')) return 'pt';
+            if (browserLang.startsWith('zh')) return 'zh';
+            return 'en'; // Default to English
+        }
+
+        function setLanguage(lang) { /* ... from Module 0, slightly modified for new activities ... */
+            if (!translations[lang]) lang = 'en'; // Fallback
+            localStorage.setItem('userLanguage', lang);
+            document.documentElement.lang = lang;
+            translatePage(lang); // Apply generic translations
+
+            const langSelect = document.getElementById('languageSelect');
+            if (langSelect) langSelect.value = lang;
+
+             // Re-initialize or update language-dependent interactive content
+             if (document.getElementById('dict-anatomy')) {
+                 setupAnatomyActivity(); // Re-setup anatomy with correct language explanations
+             }
+             if (document.getElementById('dict-access')) {
+                 setupAccessActivity(); // Reset access activity state/placeholders
+             }
+             if (document.getElementById('dict-modify')) {
+                 setupModifyActivity(); // Reset modify activity state/placeholders
+             }
+             if (document.getElementById('mini-missions')) {
+                 // Reset mission placeholders and potentially feedback (output might stay)
+                 setupMissionsActivity(); // Call a setup function for missions if needed for placeholders etc.
+                 if (typeof updateMissionSummary === 'function') updateMissionSummary(); // Update summary text
+             }
+        }
+
+        // Helper to get translation, potentially with replacements
+        function getTranslation(key, lang, replacements = {}) { /* ... from Module 0 ... */
+            let text = translations[lang]?.[key] ?? translations['en']?.[key] ?? `[${key}]`;
+            for (const placeholder in replacements) {
+                const regex = new RegExp(`\\{${placeholder}\\}`, 'g');
+                text = text.replace(regex, replacements[placeholder]);
+            }
+            return text;
+        }
+
+        function translatePage(lang) { /* ... from Module 0 ... */
+             if (!translations[lang]) lang = 'en';
+             document.querySelectorAll('[data-translate]').forEach(el => {
+                 const key = el.getAttribute('data-translate');
+                 const translation = getTranslation(key, lang);
+                 if (el.tagName === 'TITLE') { document.title = translation; }
+                 else if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') { /* Placeholders handled below */ }
+                 else if (el.tagName === 'OPTION') { el.textContent = translation; }
+                 else {
+                     if (translation.includes('<') && translation.includes('>')) { el.innerHTML = translation; }
+                     else { el.textContent = translation; }
+                 }
+             });
+             document.querySelectorAll('[data-translate-placeholder]').forEach(el => {
+                 const key = el.getAttribute('data-translate-placeholder');
+                 const translation = getTranslation(key, lang);
+                 el.setAttribute('placeholder', translation);
+             });
+             document.querySelectorAll('[data-translate-title]').forEach(el => {
+                 const key = el.getAttribute('data-translate-title');
+                 const translation = getTranslation(key, lang);
+                 el.setAttribute('title', translation);
+             });
+        }
+
+        // --- Initialize Language ---
+        const initialLang = getStoredLanguage();
+
+        // --- Minimal Nav Logic (Keep as is from Module 0) ---
+        const navToggleButton = document.getElementById('minimal-nav-toggle');
+        /* ... rest of nav logic from Module 0 ... */
+        const navPanel = document.getElementById('minimal-nav-panel');
+        const body = document.body;
+        if (navToggleButton && navPanel) {
+            navToggleButton.addEventListener('click', (event) => { /* ... */ body.classList.toggle('nav-active'); /* ... */ });
+            document.addEventListener('click', (event) => { if (body.classList.contains('nav-active') && !navPanel.contains(event.target) && event.target !== navToggleButton && !navToggleButton.contains(event.target) ) { body.classList.remove('nav-active'); /* ... */ } });
+            navPanel.querySelectorAll('a').forEach(link => { link.addEventListener('click', () => { body.classList.remove('nav-active'); /* ... */ }); });
+            document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && body.classList.contains('nav-active')) { body.classList.remove('nav-active'); /* ... */ } });
+            navToggleButton.setAttribute('aria-expanded', 'false');
+        }
+
+        // --- Language Switcher Setup (Keep as is from Module 0) ---
+        const langSelect = document.getElementById('languageSelect');
+        if (langSelect) {
+            langSelect.addEventListener('change', (e) => { setLanguage(e.target.value); });
+        }
+
+        // --- Helper Function for Feedback (Keep as is from Module 0) ---
+        function showFeedback(elementId, messageKey, type = 'info', replacements = {}) { /* ... from Module 0 ... */
+             const feedbackEl = document.getElementById(elementId);
+             if (!feedbackEl) { console.error(`Feedback element not found: ${elementId}`); return; }
+             const currentLang = getStoredLanguage();
+             const translatedMessage = getTranslation(messageKey, currentLang, replacements);
+             if (translatedMessage.includes('<') && translatedMessage.includes('>')) { feedbackEl.innerHTML = translatedMessage; }
+             else { feedbackEl.textContent = translatedMessage; }
+             feedbackEl.className = 'feedback-message'; // Reset classes
+             feedbackEl.classList.add('visible', type);
+
+             const interactiveArea = feedbackEl.closest('.interactive-area');
+             if (!interactiveArea) return;
+             interactiveArea.classList.remove('success-glow-anim', 'shake-anim');
+             void interactiveArea.offsetWidth; // Trigger reflow for animation restart
+             if (type === 'correct') { interactiveArea.classList.add('success-glow-anim'); }
+             else if (type === 'incorrect') { interactiveArea.classList.add('shake-anim'); }
+        }
+
+        // --- Activity 1: Dictionary Anatomy (Adapted from Module 0) ---
+        const anatomySection = document.getElementById('dict-anatomy');
+        let partExplanations = {};
+        const totalAnatomyParts = 9; // Updated count for dictionary example
+        let currentAnatomyListeners = [];
+
+        function setupAnatomyActivity() {
+            if (!anatomySection) return;
+            const currentLang = getStoredLanguage();
+            partExplanations = {}; // Clear previous
+            document.querySelectorAll('#explanation-texts span[data-key]').forEach(span => {
+                const key = span.getAttribute('data-key');
+                partExplanations[key] = getTranslation(`dict_exp_${key}`, currentLang); // Fetch explanation
+            });
+
+            const anatomyCode = document.getElementById('dict-anatomy-code');
+            const parts = anatomyCode.querySelectorAll('.code-part');
+            const explanationsDiv = document.getElementById('anatomy-explanations');
+            const statusP = document.getElementById('anatomy-status');
+            const feedbackDiv = document.getElementById('anatomy-feedback');
+            let identifiedCount = 0;
+
+            // Remove old listeners
+            currentAnatomyListeners.forEach(({ element, listener }) => element.removeEventListener('click', listener));
+            currentAnatomyListeners = [];
+
+            // Reset visual state
+            parts.forEach(p => p.classList.remove('identified'));
+            explanationsDiv.innerHTML = '';
+            statusP.innerHTML = getTranslation('anatomy_status_initial', currentLang); // Set initial status text
+            feedbackDiv.classList.remove('visible', 'correct', 'incorrect', 'info');
+
+            parts.forEach(part => {
+                const clickListener = () => {
+                    const partType = part.dataset.part;
+                    if (!part.classList.contains('identified') && partType && partExplanations[partType]) {
+                        part.classList.add('identified');
+                        identifiedCount++;
+                        const p = document.createElement('p');
+                        p.classList.add('part-explanation');
+                        const icon = document.createElement('i');
+                        icon.className = 'fas fa-check-circle';
+                        icon.style.color = 'var(--success-color)';
+                        const strong = document.createElement('strong');
+                        strong.textContent = part.textContent.trim() + ': ';
+                        p.appendChild(icon); p.appendChild(strong);
+                        p.appendChild(document.createTextNode(partExplanations[partType]));
+                        explanationsDiv.appendChild(p);
+
+                        statusP.innerHTML = getTranslation('anatomy_status_progress', currentLang, { count: identifiedCount, total: totalAnatomyParts });
+
+                        if (identifiedCount === totalAnatomyParts) {
+                            statusP.innerHTML = getTranslation('anatomy_status_done', currentLang);
+                            showFeedback('anatomy-feedback', 'feedback_anatomy_correct', 'correct');
+                        }
+                    }
+                };
+                part.addEventListener('click', clickListener);
+                currentAnatomyListeners.push({ element: part, listener: clickListener });
+            });
+        }
+
+
+        // --- Activity 2: Accessing Values ---
+        const accessSection = document.getElementById('dict-access');
+
+        function setupAccessActivity() {
+            if (!accessSection) return;
+            const inputField = document.getElementById('access-input-field');
+            const checkBtn = document.getElementById('check-access-btn');
+            const outputArea = document.getElementById('access-output');
+            const feedbackDiv = document.getElementById('access-feedback');
+            const placeholder = outputArea.querySelector('.placeholder');
+
+            // Reset state on setup (called by setLanguage)
+            inputField.value = '';
+            if(placeholder) placeholder.textContent = getTranslation('access_output_placeholder', getStoredLanguage());
+            outputArea.innerHTML = ''; // Clear previous output
+            outputArea.appendChild(placeholder); // Add placeholder back
+            feedbackDiv.classList.remove('visible');
+            checkBtn.disabled = false;
+            checkBtn.classList.remove('success');
+        }
+
+        if (accessSection) {
+            const inputField = document.getElementById('access-input-field');
+            const checkBtn = document.getElementById('check-access-btn');
+            const outputArea = document.getElementById('access-output');
+            const feedbackDiv = document.getElementById('access-feedback');
+            const correctCode = "config['version']";
+            const correctValue = 1.2;
+
+            checkBtn.addEventListener('click', () => {
+                 const userCode = inputField.value.trim().replace(/\s+/g, ''); // Remove spaces for comparison
+                 const expectedCodeClean = correctCode.replace(/\s+/g, '');
+                 feedbackDiv.classList.remove('visible');
+                 outputArea.innerHTML = ''; // Clear previous output
+
+                 if (userCode === '') {
+                     const placeholder = document.createElement('span');
+                     placeholder.className = 'placeholder';
+                     placeholder.textContent = getTranslation('access_output_placeholder', getStoredLanguage());
+                     outputArea.appendChild(placeholder);
+                     showFeedback('access-feedback', 'feedback_access_empty', 'info');
+                 } else if (userCode === expectedCodeClean) {
+                     outputArea.textContent = `> ${correctValue}`;
+                     showFeedback('access-feedback', 'feedback_access_correct', 'correct');
+                     checkBtn.classList.add('success');
+                     checkBtn.disabled = true;
+                 } else {
+                     const placeholder = document.createElement('span');
+                     placeholder.className = 'placeholder';
+                     placeholder.textContent = getTranslation('access_output_placeholder', getStoredLanguage());
+                     outputArea.appendChild(placeholder);
+                     // Simple check for common errors
+                     if (!userCode.includes('[') || !userCode.includes(']')) {
+                         showFeedback('access-feedback', 'feedback_access_incorrect_syntax', 'incorrect');
+                     } else {
+                          showFeedback('access-feedback', 'feedback_access_incorrect_key', 'incorrect');
+                     }
+                     checkBtn.classList.remove('success');
+                 }
+             });
+        }
+
+        // --- Activity 3: Modifying Dictionaries ---
+        const modifySection = document.getElementById('dict-modify');
+        let modifyDictState = {}; // Store the current state of the dictionary
+        let currentModifyStep = 1;
+
+        function setupModifyActivity() {
+            if (!modifySection) return;
+            currentModifyStep = 1;
+            modifyDictState = { name: 'Alice', age: 25 }; // Initial state
+
+            const displayArea = document.getElementById('modify-dict-display');
+            const step1Div = document.getElementById('modify-step-1');
+            const step2Div = document.getElementById('modify-step-2');
+            const editor1 = document.getElementById('modify-editor-1');
+            const editor2 = document.getElementById('modify-editor-2');
+            const status1 = document.getElementById('step-1-status');
+            const status2 = document.getElementById('step-2-status');
+            const feedback1 = document.getElementById('modify-feedback-1');
+            const feedback2 = document.getElementById('modify-feedback-2');
+            const completeFeedback = document.getElementById('modify-complete-feedback');
+            const runBtn1 = document.getElementById('run-modify-step-1');
+            const runBtn2 = document.getElementById('run-modify-step-2');
+            const currentLang = getStoredLanguage();
+
+            // Reset state
+            displayArea.textContent = `student = ${JSON.stringify(modifyDictState, null, 2)}`;
+            displayArea.classList.remove('state-change-pulse');
+            editor1.value = ''; editor2.value = '';
+            feedback1.classList.remove('visible'); feedback2.classList.remove('visible'); completeFeedback.classList.remove('visible');
+            status1.innerHTML = `<i class="fas fa-arrow-right"></i> ${getTranslation('modify_step1_status', currentLang)}`;
+            status2.innerHTML = `<i class="fas fa-arrow-right"></i> ${getTranslation('modify_step2_status', currentLang)}`;
+            status1.classList.remove('completed'); status2.classList.remove('completed');
+            step1Div.classList.remove('hidden'); step2Div.classList.add('hidden');
+            runBtn1.disabled = false; runBtn2.disabled = false;
+            runBtn1.classList.remove('success'); runBtn2.classList.remove('success');
+        }
+
+         function formatDictDisplay(dictObject, varName = 'student') {
+            // Simple JSON stringify isn't quite Python syntax, but good enough for display
+            let formatted = `${varName} = {\n`;
+            const entries = Object.entries(dictObject);
+            entries.forEach(([key, value], index) => {
+                formatted += `  '${key}': ${typeof value === 'string' ? `'${value}'` : value}`;
+                if (index < entries.length - 1) {
+                    formatted += ',';
+                }
+                formatted += '\n';
+            });
+            formatted += '}';
+            return formatted;
+         }
+
+        if (modifySection) {
+            const displayArea = document.getElementById('modify-dict-display');
+            const step1Div = document.getElementById('modify-step-1');
+            const step2Div = document.getElementById('modify-step-2');
+            const editor1 = document.getElementById('modify-editor-1');
+            const editor2 = document.getElementById('modify-editor-2');
+            const status1 = document.getElementById('step-1-status');
+            const status2 = document.getElementById('step-2-status');
+            const feedback1 = document.getElementById('modify-feedback-1');
+            const feedback2 = document.getElementById('modify-feedback-2');
+            const completeFeedback = document.getElementById('modify-complete-feedback');
+            const runBtn1 = document.getElementById('run-modify-step-1');
+            const runBtn2 = document.getElementById('run-modify-step-2');
+
+            runBtn1.addEventListener('click', () => {
+                const code = editor1.value.trim();
+                feedback1.classList.remove('visible');
+                const correctCode = "student['city']='New York'"; // Check variation
+
+                if (code === '') {
+                    showFeedback('modify-feedback-1', 'feedback_modify_empty', 'info');
+                } else if (code.replace(/\s*=\s*/, '=') === correctCode) {
+                    modifyDictState['city'] = 'New York'; // Update state
+                    displayArea.textContent = formatDictDisplay(modifyDictState);
+                    displayArea.classList.add('state-change-pulse'); // Add visual cue
+                    showFeedback('modify-feedback-1', 'feedback_modify_step1_correct', 'correct');
+                    status1.innerHTML = `<i class="fas fa-check-circle"></i> ${getTranslation('modify_step1_status', getStoredLanguage())}`;
+                    status1.classList.add('completed');
+                    runBtn1.disabled = true; runBtn1.classList.add('success');
+                    step2Div.classList.remove('hidden'); // Show next step
+                    currentModifyStep = 2;
+                } else {
+                    showFeedback('modify-feedback-1', 'feedback_modify_step1_incorrect', 'incorrect');
+                    runBtn1.classList.remove('success');
+                }
+            });
+
+            runBtn2.addEventListener('click', () => {
+                if (currentModifyStep !== 2) return; // Prevent running out of order
+                const code = editor2.value.trim();
+                 feedback2.classList.remove('visible');
+                 const correctCode = "student['age']=26"; // Check variation
+
+                if (code === '') {
+                    showFeedback('modify-feedback-2', 'feedback_modify_empty', 'info');
+                } else if (code.replace(/\s*=\s*/, '=') === correctCode) {
+                     modifyDictState['age'] = 26; // Update state
+                     displayArea.textContent = formatDictDisplay(modifyDictState);
+                     displayArea.classList.add('state-change-pulse');
+                     showFeedback('modify-feedback-2', 'feedback_modify_step2_correct', 'correct');
+                     status2.innerHTML = `<i class="fas fa-check-circle"></i> ${getTranslation('modify_step2_status', getStoredLanguage())}`;
+                     status2.classList.add('completed');
+                     runBtn2.disabled = true; runBtn2.classList.add('success');
+                     showFeedback('modify-complete-feedback', 'feedback_modify_complete', 'correct');
+                     currentModifyStep = 3; // Done
+                 } else {
+                     showFeedback('modify-feedback-2', 'feedback_modify_step2_incorrect', 'incorrect');
+                     runBtn2.classList.remove('success');
+                 }
+             });
+        }
+
+        // --- Activity 4: Mini Missions (Adapted from Module 0) ---
+        const missionsSection = document.getElementById('mini-missions');
+        let updateMissionSummary; // Define function scope
+
+        function setupMissionsActivity() {
+            if (!missionsSection) return;
+            // Reset placeholders if needed based on language
+            const missions = missionsSection.querySelectorAll('.mission');
+            const currentLang = getStoredLanguage();
+            missions.forEach(mission => {
+                const editor = mission.querySelector('.mission-editor');
+                const placeholderKey = editor.dataset.translatePlaceholder;
+                if (placeholderKey) {
+                    editor.setAttribute('placeholder', getTranslation(placeholderKey, currentLang));
+                }
+                const outputArea = mission.querySelector('.mission-output');
+                const outputPlaceholderKey = outputArea.dataset.translate;
+                 if (outputPlaceholderKey) {
+                    outputArea.innerHTML = ''; // Clear previous output first
+                    outputArea.textContent = getTranslation(outputPlaceholderKey, currentLang);
+                }
+            });
+            // Also reset visual state like icons and completion status if required on language change
+            // missions.forEach(m => {
+            //     m.dataset.completed = 'false';
+            //     m.querySelector('.mission-status i').className = 'fas fa-question-circle';
+            //     m.querySelector('.mission-feedback').classList.remove('visible');
+            // });
+            // updateMissionSummary(); // This will be called by setLanguage itself
+        }
+
+        if (missionsSection) {
+            const missionRunButtons = missionsSection.querySelectorAll('.mission-run-btn');
+            const summaryFeedback = document.getElementById('missions-summary-feedback');
+            const totalMissions = missionsSection.querySelectorAll('.mission').length;
+
+            updateMissionSummary = function() { // Assign function
+                 const completedMissionsCount = missionsSection.querySelectorAll('.mission[data-completed="true"]').length;
+                 const currentLang = getStoredLanguage();
+                 if (completedMissionsCount === totalMissions) {
+                     showFeedback('missions-summary-feedback', 'feedback_missions_summary_all_done', 'correct', { totalMissions: totalMissions });
+                 } else if (completedMissionsCount > 0) {
+                     showFeedback('missions-summary-feedback', 'feedback_missions_summary_progress', 'info', { completedCount: completedMissionsCount, totalMissions: totalMissions });
+                 } else {
+                     summaryFeedback.classList.remove('visible', 'correct', 'incorrect', 'info');
+                 }
+            }
+
+            missionRunButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const missionId = button.dataset.missionId;
+                    const missionDiv = document.getElementById(`mission-${missionId}`);
+                    if (!missionDiv) return;
+                    const editor = missionDiv.querySelector('.mission-editor');
+                    const outputArea = missionDiv.querySelector('.mission-output');
+                    const feedbackDivId = `mission-feedback-${missionId}`;
+                    const feedbackDiv = document.getElementById(feedbackDivId);
+                    const statusIcon = missionDiv.querySelector('.mission-status i');
+                    const code = editor.value.trim();
+                    outputArea.innerHTML = ''; // Clear previous output
+                    feedbackDiv.classList.remove('visible');
+                    let success = false;
+                    let feedbackMessageKey = 'feedback_mission_syntax_error'; // Default error
+                    let feedbackType = 'incorrect';
+                    let simulatedOutput = '';
+
+                    /* Validation Logic - Basic Simulation */
+                    try {
+                         // WARNING: Using eval is generally unsafe, but acceptable here in a controlled
+                         // learning environment where input is simple variable assignment/print.
+                         // A safer approach would use regex or a proper parser if complexity increases.
+                         if (missionId === '1') {
+                             let context = {};
+                             // Very basic check for assignment structure
+                             if (/^my_car\s*=\s*{/.test(code) && code.includes("'make'") && code.includes("'Tesla'") && code.includes("'model'") && code.includes("'Model 3'")) {
+                                 try {
+                                     // Attempt to evaluate in a restricted context (doesn't really restrict much here)
+                                     eval(`(function(){ ${code}; this.result = my_car; }).call(context)`);
+                                     const result = context.result;
+                                     if (result && typeof result === 'object' && result.make === 'Tesla' && result.model === 'Model 3' && Object.keys(result).length === 2) {
+                                         success = true;
+                                         simulatedOutput = `State check: my_car = ${JSON.stringify(result)}`;
+                                     } else { feedbackMessageKey = 'feedback_mission1_fail'; }
+                                 } catch (e) { /* Keep default syntax error */ }
+                             } else { feedbackMessageKey = 'feedback_mission1_fail'; }
+                         } else if (missionId === '2') {
+                             let capturedOutput = null;
+                             const mockUser = {'id': 101, 'name': 'Bob', 'level': 5};
+                             // Mock print
+                             const mockPrint = (val) => { capturedOutput = String(val); };
+                              if (/^print\(user\['name'\]\)$/.test(code.replace(/\s/g, ''))) {
+                                try {
+                                    // Evaluate with mocked print and user
+                                    eval(`(function(print, user){ ${code} })(mockPrint, mockUser)`);
+                                    if (capturedOutput === 'Bob') {
+                                        success = true;
+                                        simulatedOutput = `> ${capturedOutput}`;
+                                    } else { feedbackMessageKey = 'feedback_mission2_fail'; }
+                                } catch (e) { /* Keep default syntax error */ }
+                              } else { feedbackMessageKey = 'feedback_mission2_fail'; }
+                         } else if (missionId === '3') {
+                             let mockSettings = {'volume': 80, 'brightness': 65};
+                             const lines = code.split('\n').map(l => l.trim()).filter(l => l && !l.startsWith('#'));
+                             if (lines.length === 2) {
+                                 try {
+                                     // Evaluate line by line, modifying the mock object
+                                     eval(`(function(settings){ ${lines[0]} })(mockSettings)`);
+                                     eval(`(function(settings){ ${lines[1]} })(mockSettings)`);
+                                      if (mockSettings.mode === 'eco' && mockSettings.volume === 90 && mockSettings.brightness === 65 && Object.keys(mockSettings).length === 3) {
+                                         success = true;
+                                         simulatedOutput = `State check: settings = ${JSON.stringify(mockSettings)}`;
+                                     } else { feedbackMessageKey = 'feedback_mission3_fail'; }
+                                 } catch (e) { feedbackMessageKey = 'feedback_mission3_fail'; /* More specific than syntax */ }
+                             } else { feedbackMessageKey = 'feedback_mission3_fail'; }
+                         }
+                    } catch (error) {
+                        console.error("Mission validation error:", error);
+                        simulatedOutput = "Error during simulation.";
+                    }
+                    /* End Validation */
+
+                    outputArea.textContent = simulatedOutput || getTranslation('mission_output_placeholder', getStoredLanguage());
+
+                    if (success) {
+                        feedbackMessageKey = 'feedback_mission_success';
+                        feedbackType = 'correct';
+                        statusIcon.className = 'fas fa-check-circle';
+                        missionDiv.dataset.completed = 'true';
+                    } else {
+                        feedbackType = 'incorrect';
+                        statusIcon.className = 'fas fa-times-circle';
+                        missionDiv.dataset.completed = 'false';
+                    }
+                    showFeedback(feedbackDivId, feedbackMessageKey, feedbackType);
+                    updateMissionSummary();
+                });
+            });
+             // Initial call to set up placeholders etc.
+             setupMissionsActivity();
+             updateMissionSummary(); // Initial summary update
+        }
+
+
+        // --- Fade-in animations on scroll (Keep as is from Module 0) ---
+        const fadeElements = document.querySelectorAll('.fade-in');
+        /* ... animation logic from Module 0 ... */
+         const animateOnScroll = () => {
+             const windowHeight = window.innerHeight;
+             fadeElements.forEach(el => {
+                 if (el.style.opacity === '1') return; // Already visible
+                 const rect = el.getBoundingClientRect();
+                 if (rect.top < windowHeight - 80 && rect.bottom >= 50) {
+                     el.style.opacity = '1';
+                     el.style.transform = 'translateY(0)';
+                 }
+             });
+         };
+         const scrollHandler = () => window.requestAnimationFrame(animateOnScroll);
+         window.addEventListener('scroll', scrollHandler);
+
+
+        // --- Initial Language Application and Activity Setups ---
+        setLanguage(initialLang); // Apply language FIRST & trigger activity resets
+        animateOnScroll(); // Trigger initial animation check
+
+        // Activity setups are now called within setLanguage or directly if needed
+        // setupAnatomyActivity(); // Already called by setLanguage
+        // setupAccessActivity(); // Already called by setLanguage
+        // setupModifyActivity(); // Already called by setLanguage
+        // setupMissionsActivity(); // Already called by setLanguage
+
+    }); // End DOMContentLoaded
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,1180 @@
+<!DOCTYPE html>
+<!-- Language set by JS -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Title set by JS -->
+    <title data-translate="page_title">Module 30: Recursion Practice!</title>
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* --- Base Styles & Variables --- */
+        :root {
+            --primary-color: #007bff; /* Blue */
+            --secondary-color: #6c757d; /* Grey */
+            --background-light: #f8f9fa;
+            --background-medium: #e9ecef;
+            --background-dark: #343a40;
+            --text-light: #f8f9fa;
+            --text-dark: #212529;
+            --accent-color: #ffc107; /* Yellow */
+            --success-color: #28a745; /* Green */
+            --error-color: #dc3545;   /* Red */
+            --info-color: #17a2b8;    /* Teal */
+            --recursion-highlight-bg: rgba(23, 162, 184, 0.15); /* Teal highlight */
+            --recursion-highlight-border: rgba(23, 162, 184, 0.5);
+            --basecase-highlight-bg: rgba(255, 193, 7, 0.15); /* Yellow highlight */
+            --basecase-highlight-border: rgba(255, 193, 7, 0.5);
+            --border-radius: 8px;
+            --transition-speed: 0.3s;
+            --font-body: 'Roboto', sans-serif;
+            --font-title: 'Orbitron', sans-serif;
+            --selection-highlight-bg: rgba(0, 123, 255, 0.1);
+            --selection-highlight-border: rgba(0, 123, 255, 0.4);
+            /* Colors matching news.html for consistency in switcher potentially */
+            --nav-primary: #6e48aa;
+            --nav-success: #4cc9f0;
+            --nav-dark: #1a1a2e;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; font-size: 16px; }
+        body {
+            font-family: var(--font-body); line-height: 1.7;
+            background-color: var(--background-light); color: var(--text-dark);
+            overflow-x: hidden;
+        }
+
+        /* --- Utility Classes --- */
+        .container { max-width: 960px; margin: 0 auto; padding: 0 15px; }
+        .text-center { text-align: center; }
+        .highlight { color: var(--primary-color); font-weight: bold; }
+        .code-font { font-family: 'Courier New', Courier, monospace; }
+        .hidden { display: none !important; }
+        .button-group { /* For navigation buttons */
+            margin-top: 2rem;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1rem;
+        }
+
+        /* --- Advanced Animations (Keep existing from Module 0) --- */
+        .fade-in { opacity: 0; transform: translateY(20px); animation: fadeInAnimation 0.8s ease-out forwards; }
+        .fade-in.delay-1 { animation-delay: 0.2s; }
+        .fade-in.delay-2 { animation-delay: 0.4s; }
+        .fade-in.delay-3 { animation-delay: 0.6s; }
+        .fade-in.delay-4 { animation-delay: 0.8s; }
+        @keyframes fadeInAnimation { to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulseHeaderIcon { /* Keep or change icons */
+            0% { transform: scale(1); opacity: 0.1; filter: brightness(1); }
+            50% { transform: scale(1.05); opacity: 0.25; filter: brightness(1.2); }
+            100% { transform: scale(1); opacity: 0.1; filter: brightness(1); }
+        }
+        @keyframes successGlow {
+             0% { box-shadow: 0 0 3px rgba(40, 167, 69, 0.3); transform: scale(1); }
+             50% { box-shadow: 0 0 12px 5px rgba(40, 167, 69, 0.5); transform: scale(1.01); }
+             100% { box-shadow: 0 0 3px rgba(40, 167, 69, 0.3); transform: scale(1); }
+        }
+        .success-glow-anim { animation: successGlow 0.9s ease-out; }
+        @keyframes shake {
+          10%, 90% { transform: translate3d(-2px, 0, 0); } 20%, 80% { transform: translate3d(3px, 0, 0); }
+          30%, 50%, 70% { transform: translate3d(-5px, 0, 0); } 40%, 60% { transform: translate3d(5px, 0, 0); }
+        }
+        .shake-anim { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes iconAppearCorrect {
+            0% { transform: scale(0.5) rotate(-15deg); opacity: 0; }
+            60% { transform: scale(1.2) rotate(5deg); opacity: 1; }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        @keyframes iconAppearIncorrect {
+             0% { transform: scale(0.5) rotate(-15deg); opacity: 0; }
+             50% { transform: scale(1.2) rotate(10deg); opacity: 1; }
+             70% { transform: scale(0.9) rotate(-5deg); }
+             100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        @keyframes iconAppearMissed {
+             0% { transform: scale(0.8) rotateY(90deg); opacity: 0; }
+             100% { transform: scale(1) rotateY(0deg); opacity: 0.8; }
+        }
+        .action-button:active:not(:disabled) {
+            transform: translateY(1px) scale(0.98);
+            filter: brightness(0.95);
+        }
+
+
+        /* --- Minimal Retractable Nav (Keep existing from Module 0) --- */
+        .minimal-nav-button { position: fixed; top: 15px; right: 15px; z-index: 1001; background-color: rgba(52, 58, 64, 0.75); color: var(--text-light); border: none; border-radius: var(--border-radius); padding: 8px 12px; cursor: pointer; transition: background-color var(--transition-speed), opacity var(--transition-speed), transform var(--transition-speed); font-size: 1.1rem; opacity: 0.6; box-shadow: 0 2px 5px rgba(0,0,0,0.2); line-height: 1;}
+        .minimal-nav-button:hover { background-color: rgba(52, 58, 64, 0.95); opacity: 1; transform: scale(1.05); }
+        .minimal-nav { position: fixed; top: 60px; right: 15px; z-index: 1000; background-color: var(--background-dark); border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.3); padding: 0.8rem; opacity: 0; transform: translateY(-15px) scale(0.95); transform-origin: top right; pointer-events: none; transition: opacity var(--transition-speed) ease, transform var(--transition-speed) ease; min-width: 200px;}
+        body.nav-active .minimal-nav { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto;}
+        .minimal-nav ul { list-style: none; margin: 0; padding: 0;}
+        .minimal-nav ul li { margin-bottom: 5px; }
+        .minimal-nav ul li:last-child { margin-bottom: 0;}
+        .minimal-nav ul li a { display: flex; align-items: center; color: var(--text-light); text-decoration: none; padding: 0.6rem 1rem; border-radius: 4px; transition: background-color var(--transition-speed), color var(--transition-speed); white-space: nowrap; font-weight: 400; font-size: 0.95rem;}
+        .minimal-nav ul li a i.fas { margin-right: 10px; width: 1.2em; text-align: center; opacity: 0.8; transition: opacity var(--transition-speed);}
+        .minimal-nav ul li a:hover { background-color: var(--primary-color); color: var(--text-light);}
+        .minimal-nav ul li a:hover i.fas { opacity: 1;}
+        .minimal-nav .language-switcher-item { padding: 0.5rem 1rem; border-top: 1px solid var(--secondary-color); margin-top: 8px; padding-top: 13px;}
+        #languageSelect { width: 100%; background: rgba(255,255,255,0.1); color: white; border: 1px solid var(--nav-success); border-radius: 5px; padding: 6px 30px 6px 12px; cursor: pointer; font-size: 0.9rem; appearance: none; -webkit-appearance: none; -moz-appearance: none; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%234CC9F0%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right 10px center; background-size: 10px auto; transition: background-color 0.3s ease;}
+        #languageSelect:hover { background-color: rgba(255,255,255,0.15);}
+        #languageSelect option { background: var(--nav-dark); color: var(--text-light);}
+
+
+        /* --- Practice Header (Adjust for Module 30 Theme) --- */
+        .practice-header { background: linear-gradient(135deg, var(--info-color), #0f6674); /* Teal gradient */ color: var(--text-light); padding: 3rem 0 4rem; text-align: center; position: relative; overflow: hidden; border-bottom: 5px solid var(--accent-color); }
+        .practice-header h1 { font-family: var(--font-title); font-size: 2.8rem; margin-bottom: 0.5rem; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); animation: fadeInAnimation 1s ease-out; }
+        .practice-header p { font-size: 1.1rem; font-weight: 300; opacity: 0.9; animation: fadeInAnimation 1s ease-out 0.3s forwards; opacity: 0; }
+        .header-icon { position: absolute; font-size: 4rem; color: var(--text-light); animation: pulseHeaderIcon 6s infinite ease-in-out alternate; }
+        /* Changed Icons for Recursion */
+        .icon1 { top: 20%; left: 15%; animation-duration: 7s; } /* Recycle icon */
+        .icon2 { bottom: 15%; right: 20%; animation-duration: 5s; } /* Infinity icon */
+
+
+        /* --- Practice Section Styling (Keep existing from Module 0) --- */
+        .practice-section { padding: 3rem 0; background-color: var(--background-medium); border-bottom: 1px solid #d6d8db; }
+        .practice-section:nth-child(odd) { background-color: var(--background-light); }
+        .practice-section:last-of-type { border-bottom: none; }
+        .practice-section h2 { font-family: var(--font-title); font-size: 1.8rem; color: var(--primary-color); margin-bottom: 1rem; text-align: center; }
+        .practice-section .section-description { text-align: center; margin-bottom: 2.5rem; color: var(--secondary-color); font-size: 1.05rem; max-width: 700px; margin-left: auto; margin-right: auto; }
+
+
+        /* --- General Interactive Elements (Keep existing from Module 0) --- */
+        .interactive-area { background-color: #fff; padding: 2rem; border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.08); margin-top: 1.5rem; position: relative; transition: box-shadow 0.5s ease-out; }
+        .feedback-message { padding: 0.8rem 1rem; margin-top: 1rem; border-radius: var(--border-radius); font-weight: bold; text-align: center; opacity: 0; max-height: 0; overflow: hidden; transition: opacity var(--transition-speed) ease, max-height var(--transition-speed) ease, margin-top var(--transition-speed) ease; }
+        .feedback-message.visible { opacity: 1; max-height: 100px; margin-top: 1.5rem; }
+        .feedback-message.correct { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .feedback-message.incorrect { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .feedback-message.info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .feedback-message .fas { margin: 0 3px; }
+        .action-button { display: inline-block; padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold; color: var(--text-light); background-color: var(--primary-color); border: none; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), transform var(--transition-speed), filter var(--transition-speed), box-shadow var(--transition-speed); margin-top: 1rem; vertical-align: middle; box-shadow: 0 2px 5px rgba(0,0,0,0.1); text-decoration: none;}
+        .action-button:hover:not(:disabled) { background-color: #0056b3; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+        .action-button:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none; box-shadow: none; opacity: 0.7; }
+        .action-button.success { background-color: var(--success-color); }
+        .action-button.success:hover:not(:disabled) { background-color: #218838; }
+        .action-button.secondary { background-color: var(--secondary-color); }
+        .action-button.secondary:hover:not(:disabled) { background-color: #5a6268; }
+        /* Code styling (Keep existing from Module 0) */
+        .code-block { background-color: var(--background-dark); color: var(--text-light); padding: 1.5rem; border-radius: var(--border-radius); font-family: var(--code-font); font-size: 1rem; position: relative; overflow-x: auto; margin: 1rem 0; }
+        .code-keyword { color: #569cd6; } .code-string { color: #ce9178; } .code-comment { color: #6a9955; } .code-function { color: #dcdcaa; } .code-variable { color: #9cdcfe; } .code-number { color: #b5cea8; } .code-operator { color: #d4d4d4; } .code-control { color: #c586c0;} .code-builtin { color: #4ec9b0; } .code-paren { color: #ffd700; }
+
+        /* --- Activity 1: Anatomy of Recursion --- */
+        #anatomy-recursion .code-part { cursor: pointer; border-bottom: 2px dashed rgba(255, 255, 255, 0.3); transition: background-color var(--transition-speed), border-bottom-color var(--transition-speed); padding: 0 2px; display: inline-block; }
+        #anatomy-recursion .code-part:hover { background-color: rgba(255, 255, 255, 0.15); border-bottom-color: var(--accent-color); }
+        /* Specific highlights for recursion parts */
+        #anatomy-recursion .code-part.identified[data-part="recursive_call"] { background-color: var(--recursion-highlight-bg); border-bottom: 2px solid var(--recursion-highlight-border); }
+        #anatomy-recursion .code-part.identified[data-part="base_case"] { background-color: var(--basecase-highlight-bg); border-bottom: 2px solid var(--basecase-highlight-border); }
+        #anatomy-recursion .code-part.identified:not([data-part="recursive_call"]):not([data-part="base_case"]) { background-color: rgba(40, 167, 69, 0.3); border-bottom: 2px solid var(--success-color); }
+        #anatomy-recursion .code-part.identified { cursor: default; }
+        .part-explanation { font-size: 0.95rem; border-left: 3px solid var(--info-color); padding: 5px 10px; margin-top: 0.5rem; background-color: rgba(23, 162, 184, 0.05); }
+        .part-explanation.base-case-style { border-left-color: var(--accent-color); background-color: rgba(255, 193, 7, 0.05); color: #856404; } /* Adjust color if needed */
+        .part-explanation.recursive-call-style { border-left-color: var(--info-color); background-color: rgba(23, 162, 184, 0.05); color: var(--info-color); }
+        #anatomy-status { margin-top: 1rem; font-style: italic; color: var(--secondary-color); }
+
+        /* --- Activity 2: Spot the Base Case --- */
+        /* Re-use styles from Module 0's Spot the Comment, adjusted for context */
+         .code-line-container { display: flex; align-items: center; margin-bottom: 8px; position: relative; }
+         .feedback-icon-placeholder { width: 30px; height: 24px; margin-right: 10px; display: inline-flex; align-items: center; justify-content: center; transition: opacity var(--transition-speed); opacity: 0; font-size: 1.2rem; }
+         .feedback-icon-placeholder.visible { opacity: 1; }
+         #spot-base-case .code-line-check { flex-grow: 1; background-color: var(--background-dark); color: var(--text-light); padding: 10px 15px; border-radius: 5px; cursor: pointer; transition: background-color var(--transition-speed), transform var(--transition-speed), border-left-color var(--transition-speed); font-family: var(--code-font); border-left: 4px solid transparent; user-select: none; -webkit-user-select: none; }
+         #spot-base-case .code-line-check:hover { background-color: #495057; transform: translateX(3px); }
+         #spot-base-case .code-line-check.selected-visual { background-color: var(--basecase-highlight-bg); border-left-color: var(--basecase-highlight-border); color: var(--text-dark); } /* Yellow selection */
+         #spot-base-case .code-line-check.checked-state { cursor: default; }
+         .feedback-icon-placeholder .fa-check { color: var(--success-color); animation: iconAppearCorrect 0.5s ease-out forwards; }
+         .feedback-icon-placeholder .fa-times { color: var(--error-color); animation: iconAppearIncorrect 0.6s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards; }
+         .feedback-icon-placeholder .fa-eye { color: var(--accent-color); animation: iconAppearMissed 0.4s ease-in forwards; opacity: 0; } /* Use eye for missed base cases */
+         #reset-base-case-btn { margin-left: 10px; }
+
+        /* --- Activity 3: Recursive Simulator --- */
+        /* Re-use styles from Module 0's Code Simulator */
+        #recursive-simulator .sim-editor { width: 100%; min-height: 120px; /* Slightly taller */ background-color: var(--background-dark); color: var(--text-light); border: 1px solid var(--secondary-color); border-radius: var(--border-radius); padding: 1rem; font-family: var(--code-font); font-size: 1rem; line-height: 1.5; resize: vertical; }
+        #recursive-simulator .sim-output-area { margin-top: 1rem; min-height: 80px; /* Slightly taller */ background-color: #1a1a1a; border: 1px solid #444; border-radius: var(--border-radius); padding: 1rem; color: var(--accent-color); font-family: var(--code-font); font-size: 1.05rem; white-space: pre-wrap; word-wrap: break-word; }
+        #recursive-simulator .sim-output-area .placeholder { color: var(--secondary-color); font-style: italic; font-size: 0.9rem; }
+        #recursive-simulator .sim-output-area .output-line { display: block; } /* Keep as block for multi-line output */
+
+        /* --- Activity 4: Mini Missions --- */
+        /* Re-use styles from Module 0's Mini Missions */
+        #mini-missions .mission { padding: 1.5rem; border: 1px solid #d6d8db; border-radius: var(--border-radius); margin-bottom: 1.5rem; background-color: var(--background-light); position: relative; }
+        .mission-status { position: absolute; top: 10px; right: 10px; font-size: 1.5rem; transition: transform 0.3s ease; }
+        .mission-status .fa-check-circle { color: var(--success-color); transform-origin: center; }
+        .mission-status .fa-times-circle { color: var(--error-color); }
+        .mission-status .fa-question-circle { color: var(--secondary-color); }
+        .mission[data-completed="true"] .mission-status .fa-check-circle { animation: iconAppearCorrect 0.6s ease-out; }
+        #mini-missions .mission-editor { width: 100%; min-height: 150px; /* Larger for recursive functions */ background-color: var(--background-dark); color: var(--text-light); border: 1px solid var(--secondary-color); border-radius: var(--border-radius); padding: 1rem; font-family: var(--code-font); font-size: 1rem; line-height: 1.5; resize: vertical; margin-top: 1rem; }
+        #mini-missions .mission-output { margin-top: 1rem; min-height: 50px; background-color: #1a1a1a; border: 1px solid #444; border-radius: var(--border-radius); padding: 0.8rem; color: var(--accent-color); font-family: var(--code-font); font-size: 1rem; white-space: pre-wrap; word-wrap: break-word; }
+
+        /* --- Final Section (Keep existing from Module 0) --- */
+        .completion-section { padding: 4rem 0; text-align: center; }
+        .completion-section .icon { font-size: 4rem; color: var(--success-color); margin-bottom: 1rem; display: inline-block; opacity: 0; animation: iconAppearCorrect 1s ease-out 0.5s forwards; }
+        .completion-section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); }
+        .completion-section p { font-size: 1.1rem; margin-top: 1rem; color: var(--secondary-color); }
+
+        /* --- Responsive Design (Keep existing from Module 0, adjust if needed) --- */
+        @media (max-width: 768px) {
+            html { font-size: 15px; }
+            .practice-header h1 { font-size: 2.2rem; }
+            .practice-section h2 { font-size: 1.6rem; }
+            .interactive-area { padding: 1.5rem; }
+            .feedback-icon-placeholder { width: 25px; margin-right: 8px; font-size: 1.1rem;}
+            .button-group { flex-direction: column; align-items: center; }
+            .minimal-nav { min-width: 180px; }
+            .minimal-nav ul li a { padding: 0.6rem 0.8rem; }
+            #languageSelect { font-size: 0.85rem; padding: 5px 25px 5px 10px;}
+        }
+        @media (max-width: 480px) {
+            html { font-size: 14px; }
+            .practice-header h1 { font-size: 1.8rem; }
+            .practice-header p { font-size: 1rem; }
+            .practice-section h2 { font-size: 1.4rem; }
+            .interactive-area { padding: 1rem; }
+            .action-button { font-size: 0.9rem; padding: 0.7rem 1.2rem; width: 90%; max-width: 300px;}
+            #recursive-simulator .sim-editor, #recursive-simulator .sim-output-area { font-size: 0.9rem; }
+            #spot-base-case .code-line-check { padding: 8px 12px; font-size: 0.9rem;}
+            #mini-missions .mission-editor { min-height: 120px; font-size: 0.95rem;}
+            #mini-missions .mission-output { font-size: 0.95rem;}
+            .feedback-icon-placeholder { width: 20px; margin-right: 5px; font-size: 1rem;}
+            .button-group a.action-button { width: 90%; max-width: 300px; margin-bottom: 0.5rem; }
+            .minimal-nav-button { top: 10px; right: 10px; padding: 6px 10px; font-size: 1rem; }
+            .minimal-nav { top: 48px; right: 10px; min-width: 160px; }
+            .minimal-nav ul li a { padding: 0.5rem 0.7rem; font-size: 0.9rem;}
+            .minimal-nav ul li a i.fas { margin-right: 8px; }
+            #languageSelect { font-size: 0.8rem; padding: 4px 20px 4px 8px;}
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ========= Minimal Nav Handle ========= -->
+    <button id="minimal-nav-toggle" class="minimal-nav-button" aria-label="Toggle Navigation Menu">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- ========= Minimal Nav Panel (with Language Switcher) ========= -->
+    <nav id="minimal-nav-panel" class="minimal-nav">
+        <ul>
+             <!-- *** MODIFIED: Links for Module 30 *** -->
+            <li><a href="ctp-theory-30.html"><i class="fas fa-book-open fa-fw"></i> <span data-translate="nav_theory">View Theory</span></a></li>
+            <li><a href="ctp-advanced-30.html"><i class="fas fa-flask fa-fw"></i> <span data-translate="nav_advanced">Advanced Practice</span></a></li>
+            <li><a href="ctp-dashboard.html"><i class="fas fa-list fa-fw"></i> <span data-translate="nav_menu">Course Menu</span></a></li>
+            <hr style="border: none; border-top: 1px solid var(--secondary-color); margin: 8px 0;">
+             <!-- *** MODIFIED: Links for Module 30 Sections *** -->
+            <li><a href="#anatomy-recursion"><i class="fas fa-microscope fa-fw"></i> <span data-translate="nav_anatomy">Anatomy</span></a></li>
+            <li><a href="#spot-base-case"><i class="fas fa-bullseye fa-fw"></i> <span data-translate="nav_spot_base">Spot Base Case</span></a></li>
+            <li><a href="#recursive-simulator"><i class="fas fa-keyboard fa-fw"></i> <span data-translate="nav_simulator">Simulator</span></a></li>
+            <li><a href="#mini-missions"><i class="fas fa-rocket fa-fw"></i> <span data-translate="nav_missions">Missions</span></a></li>
+            <!-- Language Switcher Item -->
+            <li class="language-switcher-item">
+                 <select id="languageSelect" aria-label="Select Language">
+                     <option value="en" data-translate="lang_en">🇬🇧 English</option>
+                     <option value="pt" data-translate="lang_pt">🇧🇷 Português</option>
+                     <option value="zh" data-translate="lang_zh">🇨🇳 中文</option>
+                 </select>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- ========= Header ========= -->
+    <header class="practice-header">
+         <!-- *** MODIFIED: Icons for Recursion Theme *** -->
+        <i class="fas fa-recycle header-icon icon1"></i>
+        <i class="fas fa-infinity header-icon icon2"></i>
+        <div class="container">
+             <!-- *** MODIFIED: Title for Module 30 *** -->
+            <h1 data-translate="header_title">Module 30: Recursion Practice</h1>
+            <p data-translate="header_subtitle">Let's dive into functions that call themselves!</p>
+        </div>
+    </header>
+
+    <!-- ========= Main Content ========= -->
+    <main>
+        <!-- ========= Activity 1: Anatomy of Recursion ========= -->
+        <section id="anatomy-recursion" class="practice-section">
+             <div class="container">
+                  <!-- *** MODIFIED: Title/Desc for Recursion Anatomy *** -->
+                 <h2 class="fade-in"><i class="fas fa-microscope"></i> <span data-translate="anatomy_title">Anatomy of Recursion</span></h2>
+                 <p class="section-description fade-in delay-1" data-translate="anatomy_desc">
+                     Recursive functions have key parts. Click each highlighted piece of the `countdown` function below to identify it.
+                 </p>
+                 <div class="interactive-area fade-in delay-2">
+                     <div class="code-block">
+                        <pre><code><span class="code-keyword">def</span> <span class="code-part" data-part="function_name" data-translate-title="tooltip_click_identify" title="Click to identify this part"><span class="code-function">countdown</span></span><span class="code-paren">(</span><span class="code-part" data-part="parameter" data-translate-title="tooltip_click_identify" title="Click to identify this part"><span class="code-variable">n</span></span><span class="code-paren">)</span><span class="code-operator">:</span>
+    <span class="code-part" data-part="base_case_check" data-translate-title="tooltip_click_identify" title="Click to identify this part"><span class="code-control">if</span> <span class="code-variable">n</span> <span class="code-operator">&lt;=</span> <span class="code-number">0</span><span class="code-operator">:</span></span>
+        <span class="code-part" data-part="base_case_action" data-translate-title="tooltip_click_identify" title="Click to identify this part"><span class="code-builtin">print</span><span class="code-paren">(</span><span class="code-string">"Blastoff!"</span><span class="code-paren">)</span></span>
+    <span class="code-control">else</span><span class="code-operator">:</span>
+        <span class="code-builtin">print</span><span class="code-paren">(</span><span class="code-variable">n</span><span class="code-paren">)</span>
+        <span class="code-part" data-part="recursive_call" data-translate-title="tooltip_click_identify" title="Click to identify this part"><span class="code-function">countdown</span><span class="code-paren">(</span><span class="code-variable">n</span> <span class="code-operator">-</span> <span class="code-number">1</span><span class="code-paren">)</span></span></code></pre>
+                    </div>
+                     <div id="anatomy-explanations"></div>
+                     <!-- *** MODIFIED: Status text key *** -->
+                     <p id="anatomy-status" data-translate="anatomy_status_initial">Identify all 5 key parts!</p>
+                     <div id="anatomy-feedback" class="feedback-message"></div>
+                     <!-- Hidden elements for storing translated explanation parts -->
+                     <div id="explanation-texts" style="display: none;">
+                         <!-- *** MODIFIED: Explanation Keys for Recursion *** -->
+                        <span data-key="function_name" data-translate="anatomy_exp_func_name">Function Name: The name used to define and call the function.</span>
+                        <span data-key="parameter" data-translate="anatomy_exp_parameter">Parameter: Input value the function receives (here, `n`).</span>
+                        <span data-key="base_case_check" data-translate="anatomy_exp_base_check">Base Case Check: The condition (`if n <= 0`) that stops recursion.</span>
+                        <span data-key="base_case_action" data-translate="anatomy_exp_base_action">Base Case Action: What happens when the base case is met (stops calling itself).</span>
+                        <span data-key="recursive_call" data-translate="anatomy_exp_recursive_call">Recursive Call: The function calls itself, usually with modified input (`n-1`).</span>
+                     </div>
+                 </div>
+             </div>
+        </section>
+
+        <!-- ========= Activity 2: Spot the Base Case ========= -->
+        <section id="spot-base-case" class="practice-section">
+            <div class="container">
+                 <!-- *** MODIFIED: Title/Desc for Spotting Base Case *** -->
+                <h2 class="fade-in"><i class="fas fa-bullseye"></i> <span data-translate="spot_title">Spot the Base Case</span></h2>
+                <p class="section-description fade-in delay-1" data-translate="spot_desc">
+                    A recursive function *must* have a base case to stop. Click only on the line(s) that represent a correct base case condition or action.
+                    Then click "Check Selection".
+                </p>
+                <div class="interactive-area fade-in delay-2">
+                    <div id="base-case-lines">
+                        <!-- Lines will be generated by JS -->
+                    </div>
+                     <div class="text-center">
+                          <!-- *** MODIFIED: Button/Feedback IDs/Keys *** -->
+                         <button id="check-base-case-btn" class="action-button" data-translate="button_check_base_case">Check Selection</button>
+                         <button id="reset-base-case-btn" class="action-button secondary hidden" data-translate="button_try_again">Try Again</button>
+                     </div>
+                     <div id="base-case-feedback" class="feedback-message"></div>
+                </div>
+            </div>
+        </section>
+
+         <!-- ========= Activity 3: Recursive Simulator ========= -->
+        <section id="recursive-simulator" class="practice-section">
+             <div class="container">
+                  <!-- *** MODIFIED: Title/Desc for Recursive Simulator *** -->
+                 <h2 class="fade-in"><i class="fas fa-keyboard"></i> <span data-translate="simulator_title">Recursive Code Simulator</span></h2>
+                 <p class="section-description fade-in delay-1" data-translate="simulator_desc">
+                     Try writing a recursive `countdown(n)` function like the one in the Anatomy section.
+                     Make it print numbers from `n` down to 1, then "Blastoff!". Test it by calling `countdown(3)`.
+                 </p>
+                 <div class="interactive-area fade-in delay-2">
+                      <!-- *** MODIFIED: IDs/Keys for this simulator instance *** -->
+                     <label for="rec-sim-editor-input" style="font-weight: bold; display:block; margin-bottom: 8px;" data-translate="simulator_editor_label">Code Editor:</label>
+                     <textarea id="rec-sim-editor-input" class="sim-editor" rows="8" data-translate-placeholder="simulator_editor_placeholder" placeholder="def countdown(n):\n    # Your base case here\n    # Your recursive step here\n\ncountdown(3) # Test call"></textarea>
+                     <div class="text-center">
+                          <button id="run-rec-sim-btn" class="action-button" data-translate="button_run_sim">Run Simulation</button>
+                     </div>
+                     <label for="rec-sim-output" style="font-weight: bold; display:block; margin-top: 1.5rem; margin-bottom: 8px;" data-translate="simulator_output_label">Simulated Output:</label>
+                     <div id="rec-sim-output" class="sim-output-area">
+                         <span class="placeholder" data-translate="simulator_output_placeholder">Output will appear here...</span>
+                     </div>
+                     <div id="rec-sim-feedback" class="feedback-message"></div>
+                 </div>
+             </div>
+        </section>
+
+         <!-- ========= Activity 4: Mini Missions (Recursion Focused) ========= -->
+        <section id="mini-missions" class="practice-section">
+             <div class="container">
+                  <!-- *** MODIFIED: Title/Desc for Recursive Missions *** -->
+                 <h2 class="fade-in"><i class="fas fa-rocket"></i> <span data-translate="missions_title">Recursive Mini Missions!</span></h2>
+                 <p class="section-description fade-in delay-1" data-translate="missions_desc">
+                     Apply your recursion knowledge! Write the functions described below and test them.
+                 </p>
+                 <div class="interactive-area fade-in delay-2">
+                     <!-- Mission 1: Recursive Countdown -->
+                     <div class="mission" id="mission-1" data-completed="false">
+                         <span class="mission-status"><i class="fas fa-question-circle"></i></span>
+                          <!-- *** MODIFIED: Mission 1 Details *** -->
+                         <h4 data-translate="mission1_title">Mission 1: Recursive Countdown</h4>
+                         <p data-translate="mission1_desc">Write a recursive function `countdown(n)` that prints numbers from `n` down to 1, then "Done!". Test it by calling `countdown(4)`.</p>
+                         <textarea class="sim-editor mission-editor" rows="7" data-translate-placeholder="mission1_placeholder" placeholder="def countdown(n):\n    # ... base case ...\n    # ... recursive step ...\n\ncountdown(4)"></textarea>
+                         <div class="text-center"> <button class="action-button mission-run-btn" data-mission-id="1" data-translate="button_test_mission_1">Test Mission 1</button> </div>
+                         <div class="sim-output-area mission-output"></div>
+                         <div id="mission-feedback-1" class="feedback-message mission-feedback"></div>
+                     </div>
+
+                     <!-- Mission 2: Recursive Factorial -->
+                     <div class="mission" id="mission-2" data-completed="false">
+                          <span class="mission-status"><i class="fas fa-question-circle"></i></span>
+                           <!-- *** MODIFIED: Mission 2 Details *** -->
+                         <h4 data-translate="mission2_title">Mission 2: Recursive Factorial</h4>
+                         <p data-translate="mission2_desc">Write a recursive function `factorial(n)` that *returns* the factorial of n (n!). Remember, 0! = 1. Then print the result of `factorial(5)`.</p>
+                         <textarea class="sim-editor mission-editor" rows="7" data-translate-placeholder="mission2_placeholder" placeholder="def factorial(n):\n    # Base case: if n is 0...\n    # Recursive step: n * factorial(n-1)...\n\nresult = factorial(5)\nprint(result)"></textarea>
+                          <div class="text-center"> <button class="action-button mission-run-btn" data-mission-id="2" data-translate="button_test_mission_2">Test Mission 2</button> </div>
+                         <div class="sim-output-area mission-output"></div>
+                         <div id="mission-feedback-2" class="feedback-message mission-feedback"></div>
+                     </div>
+
+                     <!-- Mission 3: Iterative Factorial (Comparison) -->
+                     <div class="mission" id="mission-3" data-completed="false">
+                          <span class="mission-status"><i class="fas fa-question-circle"></i></span>
+                           <!-- *** MODIFIED: Mission 3 Details *** -->
+                         <h4 data-translate="mission3_title">Mission 3: Iterative Factorial (Challenge)</h4>
+                         <p data-translate="mission3_desc">Now, write an *iterative* (using a loop) function `iterative_factorial(n)` that also returns n!. Print the result of `iterative_factorial(5)`.</p>
+                         <textarea class="sim-editor mission-editor" rows="7" data-translate-placeholder="mission3_placeholder" placeholder="def iterative_factorial(n):\n    result = 1\n    # Use a loop (e.g., for i in range(1, n + 1))\n    # ... multiply result by i ...\n    return result\n\nresult = iterative_factorial(5)\nprint(result)"></textarea>
+                          <div class="text-center"> <button class="action-button mission-run-btn" data-mission-id="3" data-translate="button_test_mission_3">Test Mission 3</button> </div>
+                         <div class="sim-output-area mission-output"></div>
+                         <div id="mission-feedback-3" class="feedback-message mission-feedback"></div>
+                     </div>
+
+                     <div id="missions-summary-feedback" class="feedback-message" style="margin-top: 2rem;"></div>
+                 </div>
+             </div>
+        </section>
+
+         <!-- ========= Completion Section ========= -->
+        <section class="completion-section">
+            <div class="container">
+                <div class="icon fade-in" style="animation: iconAppearCorrect 1s ease-out 0.5s forwards;">
+                     <!-- *** MODIFIED: Icons for completion *** -->
+                    <i class="fas fa-star"></i> <i class="fas fa-recycle"></i> <i class="fas fa-star"></i>
+                </div>
+                 <!-- *** MODIFIED: Text/Links for Module 30 *** -->
+                <h2 class="fade-in delay-1" data-translate="completion_title">Module 30 Practice Complete!</h2>
+                <p class="fade-in delay-2" data-translate="completion_desc">
+                    Great job exploring recursion! It's a powerful concept. <br>
+                    Ready for more? Try the <strong>Advanced Practice</strong> for Module 30.
+                </p>
+                <div class="button-group">
+                    <a href="ctp-theory-30.html" class="action-button secondary fade-in delay-3"><i class="fas fa-book-open"></i> <span data-translate="button_view_theory">View Theory Again</span></a>
+                    <a href="ctp-advanced-30.html" class="action-button success fade-in delay-3"><i class="fas fa-arrow-right"></i> <span data-translate="button_start_advanced">Start Advanced Practice</span></a>
+                    <a href="ctp-dashboard.html" class="action-button secondary fade-in delay-4"><i class="fas fa-list"></i> <span data-translate="button_back_menu">Back to Course Menu</span></a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ========= Script ========= -->
+    <script>
+    // --- Translations Object ---
+    // *** ADDED Keys and Translations for Module 30 ***
+    const translations = {
+        en: {
+            // --- General & Nav ---
+            "page_title": "Module 30: Recursion Practice!",
+            "tooltip_click_identify": "Click to identify this part",
+            "nav_theory": "View Theory", "nav_advanced": "Advanced Practice", "nav_menu": "Course Menu",
+            "nav_anatomy": "Anatomy", "nav_spot_base": "Spot Base Case", "nav_simulator": "Simulator", "nav_missions": "Missions",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title": "Module 30: Recursion Practice", "header_subtitle": "Let's dive into functions that call themselves!",
+            // --- Activity 1: Anatomy ---
+            "anatomy_title": "Anatomy of Recursion", "anatomy_desc": "Recursive functions have key parts. Click each highlighted piece of the `countdown` function below to identify it.",
+            "anatomy_status_initial": "Identify all 5 key parts!", "anatomy_status_progress": "Identified {count} of {total} parts.", "anatomy_status_done": "All key parts identified!",
+            "anatomy_exp_func_name": "Function Name: The name used to define and call the function.",
+            "anatomy_exp_parameter": "Parameter: Input value the function receives (here, `n`).",
+            "anatomy_exp_base_check": "Base Case Check: The condition (`if n <= 0`) that stops recursion.",
+            "anatomy_exp_base_action": "Base Case Action: What happens when the base case is met (stops calling itself).",
+            "anatomy_exp_recursive_call": "Recursive Call: The function calls itself, usually with modified input (`n-1`).",
+            "feedback_anatomy_correct": "Excellent! You've dissected the recursive function!",
+            // --- Activity 2: Spot Base Case ---
+            "spot_title": "Spot the Base Case", "spot_desc": "A recursive function *must* have a base case to stop. Click only on the line(s) that represent a correct base case condition or action. Then click \"Check Selection\".",
+            "spot_code_line_1": "def loop_print(i, max):\n    # Loop, not recursion", // Not Rec
+            "spot_code_line_2": "    while i < max:\n        print(i)\n        i += 1", // Not Rec
+            "spot_code_line_3": "def recursive_sum(n):",
+            "spot_code_line_4": "    if n <= 0: # Correct Base Case Condition", // Is Base
+            "spot_code_line_5": "        return 0 # Correct Base Case Action", // Is Base
+            "spot_code_line_6": "    else:\n        return n + recursive_sum(n - 1)",
+            "spot_code_line_7": "def infinite_recursion(x):", // Missing base case
+            "spot_code_line_8": "    print(x)",
+            "spot_code_line_9": "    infinite_recursion(x + 1) # No stop!",
+            "spot_code_line_10": "def factorial(n):",
+            "spot_code_line_11": "    if n == 1 or n == 0: # Correct Base Case Condition", // Is Base
+            "spot_code_line_12": "        return 1 # Correct Base Case Action", // Is Base
+            "spot_code_line_13": "    # Missing else, but implies recursion continues",
+            "spot_code_line_14": "    return n * factorial(n - 1)",
+            "button_check_base_case": "Check Selection", "button_try_again": "Try Again",
+            "feedback_spot_correct": "Perfect! You found all {totalBaseCases} base case lines. <i class=\"fas fa-thumbs-up\"></i>", // Adjusted key
+            "feedback_spot_incorrect": "Not quite. {hints}. Base cases are conditions/actions that stop recursion.", // Adjusted key
+            "feedback_spot_hint_incorrect": "{count} incorrect selection(s) marked with <i class=\"fas fa-times\"></i>",
+            "feedback_spot_hint_missed": "{count} missed base case line(s) marked with <i class=\"fas fa-eye\"></i>", // Adjusted key
+            "feedback_spot_hints_joiner": ", and ",
+            // --- Activity 3: Simulator ---
+            "simulator_title": "Recursive Code Simulator", "simulator_desc": "Try writing a recursive `countdown(n)` function like the one in the Anatomy section. Make it print numbers from `n` down to 1, then \"Blastoff!\". Test it by calling `countdown(3)`.",
+            "simulator_editor_label": "Code Editor:", "simulator_editor_placeholder": "def countdown(n):\n    # Your base case here (if n <= 0)\n    #   print('Blastoff!')\n    # else:\n    #   print(n)\n    #   countdown(n-1)\n\ncountdown(3) # Test call",
+            "button_run_sim": "Run Simulation", "simulator_output_label": "Simulated Output:", "simulator_output_placeholder": "Output will appear here...",
+            "feedback_sim_success": "Simulation seems correct!", // Generic success
+            "feedback_sim_countdown_success": "Countdown successful! Output matches.", // Specific success
+            "feedback_sim_empty": "Editor is empty.", "feedback_sim_no_def": "Need a function definition (`def countdown(n):`).",
+            "feedback_sim_no_call": "Need to call the function (e.g., `countdown(3)`).",
+            "feedback_sim_runtime_error": "Simulation error (e.g., infinite recursion?). Check base case.", // More specific error
+            "feedback_sim_output_mismatch": "Output doesn't match expected countdown. Check logic.", // Specific error
+            "feedback_sim_syntax": "Check Python syntax.",
+            // --- Activity 4: Mini Missions ---
+            "missions_title": "Recursive Mini Missions!", "missions_desc": "Apply your recursion knowledge! Write the functions described below and test them.",
+            "mission1_title": "Mission 1: Recursive Countdown", "mission1_desc": "Write a recursive function `countdown(n)` that prints numbers from `n` down to 1, then \"Done!\". Test it by calling `countdown(4)`.", "mission1_placeholder": "def countdown(n):\n    # Base case: print 'Done!' if n <= 0\n    # Else: print n, then call countdown(n-1)\n\ncountdown(4)",
+            "button_test_mission_1": "Test Mission 1",
+            "mission2_title": "Mission 2: Recursive Factorial", "mission2_desc": "Write a recursive function `factorial(n)` that *returns* the factorial of n (n!). Remember, 0! = 1. Then print the result of `factorial(5)`.", "mission2_placeholder": "def factorial(n):\n    # Base case: return 1 if n is 0\n    # Recursive step: return n * factorial(n-1)\n\nresult = factorial(5)\nprint(result)",
+            "button_test_mission_2": "Test Mission 2",
+            "mission3_title": "Mission 3: Iterative Factorial (Challenge)", "mission3_desc": "Now, write an *iterative* (using a loop) function `iterative_factorial(n)` that also returns n!. Print the result of `iterative_factorial(5)`.", "mission3_placeholder": "def iterative_factorial(n):\n    result = 1\n    # Use a for loop from 1 to n\n    #   Multiply result by loop variable\n    return result\n\nresult = iterative_factorial(5)\nprint(result)",
+            "button_test_mission_3": "Test Mission 3",
+            "feedback_mission_success": "Mission Accomplished!", "feedback_mission_syntax_error": "Syntax/logic error in your code.",
+            "feedback_mission1_hint": "Check base case (n<=0 -> print 'Done!') and recursive step (print n, call countdown(n-1)). Ensure countdown(4) is called.",
+            "feedback_mission2_hint": "Base case: return 1 if n<=0. Recursive: return n * factorial(n-1). Ensure you print the result of factorial(5).",
+            "feedback_mission3_hint": "Use a `for` loop (e.g., `range(1, n + 1)`). Initialize result=1. Multiply inside loop. Return result. Ensure you print the result of iterative_factorial(5).",
+            "feedback_mission_generic_hint": "Check function definition, base case, recursive step/loop, and the final print call.",
+            "feedback_missions_summary_all_done": "All {totalMissions} missions complete! Recursion mastered!", "feedback_missions_summary_progress": "Completed {completedCount} of {totalMissions} missions. Keep recursing!",
+            // --- Completion ---
+            "completion_title": "Module 30 Practice Complete!", "completion_desc": "Great job exploring recursion! It's a powerful concept. <br> Ready for more? Try the <strong>Advanced Practice</strong> for Module 30.",
+            "button_view_theory": "View Theory Again", "button_start_advanced": "Start Advanced Practice", "button_back_menu": "Back to Course Menu"
+        },
+        pt: {
+            // --- General & Nav ---
+            "page_title": "Módulo 30: Prática de Recursão!",
+            "tooltip_click_identify": "Clique para identificar esta parte",
+            "nav_theory": "Ver Teoria", "nav_advanced": "Prática Avançada", "nav_menu": "Menu do Curso",
+            "nav_anatomy": "Anatomia", "nav_spot_base": "Achar Caso Base", "nav_simulator": "Simulador", "nav_missions": "Missões",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title": "Módulo 30: Prática de Recursão", "header_subtitle": "Vamos mergulhar em funções que chamam a si mesmas!",
+            // --- Activity 1: Anatomy ---
+            "anatomy_title": "Anatomia da Recursão", "anatomy_desc": "Funções recursivas têm partes chave. Clique em cada pedaço destacado da função `countdown` abaixo para identificá-lo.",
+            "anatomy_status_initial": "Identifique todas as 5 partes chave!", "anatomy_status_progress": "Identificadas {count} de {total} partes.", "anatomy_status_done": "Todas as partes chave identificadas!",
+            "anatomy_exp_func_name": "Nome da Função: O nome usado para definir e chamar a função.",
+            "anatomy_exp_parameter": "Parâmetro: Valor de entrada que a função recebe (aqui, `n`).",
+            "anatomy_exp_base_check": "Verificação do Caso Base: A condição (`if n <= 0`) que para a recursão.",
+            "anatomy_exp_base_action": "Ação do Caso Base: O que acontece quando o caso base é atingido (para de chamar a si mesma).",
+            "anatomy_exp_recursive_call": "Chamada Recursiva: A função chama a si mesma, geralmente com entrada modificada (`n-1`).",
+            "feedback_anatomy_correct": "Excelente! Você dissecou a função recursiva!",
+            // --- Activity 2: Spot Base Case ---
+            "spot_title": "Ache o Caso Base", "spot_desc": "Uma função recursiva *precisa* ter um caso base para parar. Clique apenas na(s) linha(s) que representam uma condição ou ação de caso base correta. Depois clique em \"Verificar Seleção\".",
+            "spot_code_line_1": "def loop_print(i, max):\n    # Loop, não recursão", // Not Rec (PT)
+            "spot_code_line_2": "    while i < max:\n        print(i)\n        i += 1", // Not Rec (PT)
+            "spot_code_line_3": "def soma_recursiva(n):", // PT
+            "spot_code_line_4": "    if n <= 0: # Condição Caso Base Correta", // Is Base (PT)
+            "spot_code_line_5": "        return 0 # Ação Caso Base Correta", // Is Base (PT)
+            "spot_code_line_6": "    else:\n        return n + soma_recursiva(n - 1)", // PT
+            "spot_code_line_7": "def recursao_infinita(x):", // PT
+            "spot_code_line_8": "    print(x)",
+            "spot_code_line_9": "    recursao_infinita(x + 1) # Sem parada!", // PT
+            "spot_code_line_10": "def fatorial(n):", // PT
+            "spot_code_line_11": "    if n == 1 or n == 0: # Condição Caso Base Correta", // Is Base (PT)
+            "spot_code_line_12": "        return 1 # Ação Caso Base Correta", // Is Base (PT)
+            "spot_code_line_13": "    # Falta else, mas implica continuação",
+            "spot_code_line_14": "    return n * fatorial(n - 1)", // PT
+            "button_check_base_case": "Verificar Seleção", "button_try_again": "Tentar Novamente",
+            "feedback_spot_correct": "Perfeito! Você encontrou todas as {totalBaseCases} linhas de caso base. <i class=\"fas fa-thumbs-up\"></i>",
+            "feedback_spot_incorrect": "Não exatamente. {hints}. Casos base são condições/ações que param a recursão.",
+            "feedback_spot_hint_incorrect": "{count} seleção(ões) incorreta(s) marcada(s) com <i class=\"fas fa-times\"></i>",
+            "feedback_spot_hint_missed": "{count} linha(s) de caso base não encontrada(s) marcada(s) com <i class=\"fas fa-eye\"></i>",
+            "feedback_spot_hints_joiner": ", e ",
+            // --- Activity 3: Simulator ---
+            "simulator_title": "Simulador de Código Recursivo", "simulator_desc": "Tente escrever uma função recursiva `countdown(n)` como a da seção Anatomia. Faça-a imprimir números de `n` até 1, e depois \"Blastoff!\". Teste chamando `countdown(3)`.",
+            "simulator_editor_label": "Editor de Código:", "simulator_editor_placeholder": "def countdown(n):\n    # Seu caso base aqui (if n <= 0)\n    #   print('Blastoff!')\n    # else:\n    #   print(n)\n    #   countdown(n-1)\n\ncountdown(3) # Chamada de teste",
+            "button_run_sim": "Executar Simulação", "simulator_output_label": "Saída Simulada:", "simulator_output_placeholder": "A saída aparecerá aqui...",
+            "feedback_sim_success": "Simulação parece correta!",
+            "feedback_sim_countdown_success": "Contagem regressiva bem-sucedida! Saída confere.",
+            "feedback_sim_empty": "Editor está vazio.", "feedback_sim_no_def": "Precisa de uma definição de função (`def countdown(n):`).",
+            "feedback_sim_no_call": "Precisa chamar a função (ex: `countdown(3)`).",
+            "feedback_sim_runtime_error": "Erro na simulação (ex: recursão infinita?). Verifique o caso base.",
+            "feedback_sim_output_mismatch": "Saída não confere com a contagem regressiva esperada. Verifique a lógica.",
+            "feedback_sim_syntax": "Verifique a sintaxe Python.",
+            // --- Activity 4: Mini Missions ---
+            "missions_title": "Mini Missões Recursivas!", "missions_desc": "Aplique seu conhecimento de recursão! Escreva as funções descritas abaixo e teste-as.",
+            "mission1_title": "Missão 1: Contagem Regressiva Recursiva", "mission1_desc": "Escreva uma função recursiva `countdown(n)` que imprima números de `n` até 1, e depois \"Feito!\". Teste chamando `countdown(4)`.", "mission1_placeholder": "def countdown(n):\n    # Caso base: print 'Feito!' se n <= 0\n    # Senão: print n, depois chame countdown(n-1)\n\ncountdown(4)",
+            "button_test_mission_1": "Testar Missão 1",
+            "mission2_title": "Missão 2: Fatorial Recursivo", "mission2_desc": "Escreva uma função recursiva `factorial(n)` que *retorne* o fatorial de n (n!). Lembre-se, 0! = 1. Depois imprima o resultado de `factorial(5)`.", "mission2_placeholder": "def factorial(n):\n    # Caso base: retorne 1 se n é 0\n    # Passo recursivo: retorne n * factorial(n-1)\n\nresultado = factorial(5)\nprint(resultado)",
+            "button_test_mission_2": "Testar Missão 2",
+            "mission3_title": "Missão 3: Fatorial Iterativo (Desafio)", "mission3_desc": "Agora, escreva uma função *iterativa* (usando um loop) `iterative_factorial(n)` que também retorne n!. Imprima o resultado de `iterative_factorial(5)`.", "mission3_placeholder": "def iterative_factorial(n):\n    resultado = 1\n    # Use um loop for de 1 até n\n    #   Multiplique resultado pela variável do loop\n    return resultado\n\nresultado = iterative_factorial(5)\nprint(resultado)",
+            "button_test_mission_3": "Testar Missão 3",
+            "feedback_mission_success": "Missão Cumprida!", "feedback_mission_syntax_error": "Erro de sintaxe/lógica no seu código.",
+            "feedback_mission1_hint": "Verifique caso base (n<=0 -> print 'Feito!') e passo recursivo (print n, chame countdown(n-1)). Garanta que countdown(4) é chamado.",
+            "feedback_mission2_hint": "Caso base: retorne 1 se n<=0. Recursivo: retorne n * factorial(n-1). Garanta que você imprime o resultado de factorial(5).",
+            "feedback_mission3_hint": "Use um loop `for` (ex: `range(1, n + 1)`). Inicialize resultado=1. Multiplique dentro do loop. Retorne resultado. Garanta que você imprime o resultado de iterative_factorial(5).",
+            "feedback_mission_generic_hint": "Verifique definição da função, caso base, passo recursivo/loop, e a chamada final de print.",
+            "feedback_missions_summary_all_done": "Todas as {totalMissions} missões completas! Recursão dominada!", "feedback_missions_summary_progress": "Completou {completedCount} de {totalMissions} missões. Continue recursando!",
+            // --- Completion ---
+            "completion_title": "Prática do Módulo 30 Completa!", "completion_desc": "Ótimo trabalho explorando recursão! É um conceito poderoso. <br> Pronto para mais? Tente a <strong>Prática Avançada</strong> do Módulo 30.",
+            "button_view_theory": "Ver Teoria Novamente", "button_start_advanced": "Iniciar Prática Avançada", "button_back_menu": "Voltar ao Menu do Curso"
+        },
+        zh: {
+            // --- General & Nav ---
+            "page_title": "模块 30：递归练习！",
+            "tooltip_click_identify": "点击识别此部分",
+            "nav_theory": "查看理论", "nav_advanced": "高级练习", "nav_menu": "课程菜单",
+            "nav_anatomy": "剖析", "nav_spot_base": "找出基本情况", "nav_simulator": "模拟器", "nav_missions": "任务",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title": "模块 30：递归练习", "header_subtitle": "让我们深入了解调用自身的函数！",
+            // --- Activity 1: Anatomy ---
+            "anatomy_title": "递归剖析", "anatomy_desc": "递归函数有关键部分。点击下面 `countdown` 函数中每个高亮部分来识别它。",
+            "anatomy_status_initial": "识别所有 5 个关键部分！", "anatomy_status_progress": "已识别 {count} / {total} 个部分。", "anatomy_status_done": "所有关键部分已识别！",
+            "anatomy_exp_func_name": "函数名：用于定义和调用函数的名称。",
+            "anatomy_exp_parameter": "参数：函数接收的输入值（这里是 `n`）。",
+            "anatomy_exp_base_check": "基本情况检查：停止递归的条件（`if n <= 0`）。",
+            "anatomy_exp_base_action": "基本情况操作：满足基本情况时发生的操作（停止调用自身）。",
+            "anatomy_exp_recursive_call": "递归调用：函数调用自身，通常使用修改后的输入（`n-1`）。",
+            "feedback_anatomy_correct": "太棒了！你成功剖析了递归函数！",
+            // --- Activity 2: Spot Base Case ---
+            "spot_title": "找出基本情况", "spot_desc": "递归函数*必须*有一个基本情况才能停止。仅点击代表正确基本情况条件或操作的行。然后点击“检查选择”。",
+            "spot_code_line_1": "def loop_print(i, max):\n    # 循环，不是递归", // Not Rec (ZH)
+            "spot_code_line_2": "    while i < max:\n        print(i)\n        i += 1", // Not Rec (ZH)
+            "spot_code_line_3": "def recursive_sum(n):", // ZH
+            "spot_code_line_4": "    if n <= 0: # 正确的基本情况条件", // Is Base (ZH)
+            "spot_code_line_5": "        return 0 # 正确的基本情况操作", // Is Base (ZH)
+            "spot_code_line_6": "    else:\n        return n + recursive_sum(n - 1)", // ZH
+            "spot_code_line_7": "def infinite_recursion(x):", // ZH
+            "spot_code_line_8": "    print(x)",
+            "spot_code_line_9": "    infinite_recursion(x + 1) # 没有停止！", // ZH
+            "spot_code_line_10": "def factorial(n):", // ZH
+            "spot_code_line_11": "    if n == 1 or n == 0: # 正确的基本情况条件", // Is Base (ZH)
+            "spot_code_line_12": "        return 1 # 正确的基本情况操作", // Is Base (ZH)
+            "spot_code_line_13": "    # 缺少 else，但暗示递归继续",
+            "spot_code_line_14": "    return n * factorial(n - 1)", // ZH
+            "button_check_base_case": "检查选择", "button_try_again": "再试一次",
+            "feedback_spot_correct": "完美！你找到了所有 {totalBaseCases} 个基本情况行。 <i class=\"fas fa-thumbs-up\"></i>",
+            "feedback_spot_incorrect": "不太对。{hints}。基本情况是停止递归的条件/操作。",
+            "feedback_spot_hint_incorrect": "{count} 个错误选择，已用 <i class=\"fas fa-times\"></i> 标记",
+            "feedback_spot_hint_missed": "{count} 个遗漏的基本情况行，已用 <i class=\"fas fa-eye\"></i> 标记",
+            "feedback_spot_hints_joiner": "，并且 ",
+            // --- Activity 3: Simulator ---
+            "simulator_title": "递归代码模拟器", "simulator_desc": "尝试编写一个像“剖析”部分那样的递归 `countdown(n)` 函数。让它打印从 `n` 到 1 的数字，然后打印 “Blastoff!”。通过调用 `countdown(3)` 来测试它。",
+            "simulator_editor_label": "代码编辑器：", "simulator_editor_placeholder": "def countdown(n):\n    # 你的基本情况 (if n <= 0)\n    #   print('Blastoff!')\n    # else:\n    #   print(n)\n    #   countdown(n-1)\n\ncountdown(3) # 测试调用",
+            "button_run_sim": "运行模拟", "simulator_output_label": "模拟输出：", "simulator_output_placeholder": "输出将显示在此处...",
+            "feedback_sim_success": "模拟似乎正确！",
+            "feedback_sim_countdown_success": "倒计时成功！输出匹配。",
+            "feedback_sim_empty": "编辑器是空的。", "feedback_sim_no_def": "需要函数定义 (`def countdown(n):`)。",
+            "feedback_sim_no_call": "需要调用函数 (例如 `countdown(3)`)。",
+            "feedback_sim_runtime_error": "模拟出错（例如，无限递归？）。检查基本情况。",
+            "feedback_sim_output_mismatch": "输出与预期的倒计时不符。检查逻辑。",
+            "feedback_sim_syntax": "检查 Python 语法。",
+            // --- Activity 4: Mini Missions ---
+            "missions_title": "递归迷你任务！", "missions_desc": "应用你的递归知识！编写下面描述的函数并测试它们。",
+            "mission1_title": "任务 1：递归倒计时", "mission1_desc": "编写一个递归函数 `countdown(n)`，打印从 `n` 到 1 的数字，然后打印 “Done!”。通过调用 `countdown(4)` 来测试它。", "mission1_placeholder": "def countdown(n):\n    # 基本情况：如果 n <= 0 打印 'Done!'\n    # 否则：打印 n，然后调用 countdown(n-1)\n\ncountdown(4)",
+            "button_test_mission_1": "测试任务 1",
+            "mission2_title": "任务 2：递归阶乘", "mission2_desc": "编写一个递归函数 `factorial(n)`，*返回* n 的阶乘 (n!)。记住，0! = 1。然后打印 `factorial(5)` 的结果。", "mission2_placeholder": "def factorial(n):\n    # 基本情况：如果 n 为 0 则返回 1\n    # 递归步骤：返回 n * factorial(n-1)\n\nresult = factorial(5)\nprint(result)",
+            "button_test_mission_2": "测试任务 2",
+            "mission3_title": "任务 3：迭代阶乘（挑战）", "mission3_desc": "现在，编写一个*迭代*（使用循环）函数 `iterative_factorial(n)`，同样返回 n!。打印 `iterative_factorial(5)` 的结果。", "mission3_placeholder": "def iterative_factorial(n):\n    result = 1\n    # 使用 for 循环从 1 到 n\n    #   将 result 乘以循环变量\n    return result\n\nresult = iterative_factorial(5)\nprint(result)",
+            "button_test_mission_3": "测试任务 3",
+            "feedback_mission_success": "任务完成！", "feedback_mission_syntax_error": "代码中存在语法/逻辑错误。",
+            "feedback_mission1_hint": "检查基本情况（n<=0 -> 打印 'Done!'）和递归步骤（打印 n, 调用 countdown(n-1)）。确保调用了 countdown(4)。",
+            "feedback_mission2_hint": "基本情况：如果 n<=0 返回 1。递归：返回 n * factorial(n-1)。确保打印 factorial(5) 的结果。",
+            "feedback_mission3_hint": "使用 `for` 循环（例如 `range(1, n + 1)`）。初始化 result=1。在循环内相乘。返回 result。确保打印 iterative_factorial(5) 的结果。",
+            "feedback_mission_generic_hint": "检查函数定义、基本情况、递归步骤/循环以及最终的 print 调用。",
+            "feedback_missions_summary_all_done": "所有 {totalMissions} 个任务已完成！递归已掌握！", "feedback_missions_summary_progress": "已完成 {completedCount} / {totalMissions} 个任务。继续递归！",
+            // --- Completion ---
+            "completion_title": "模块 30 练习完成！", "completion_desc": "探索递归做得很好！这是一个强大的概念。<br> 准备好了解更多内容了吗？尝试模块 30 的<strong>高级练习</strong>。",
+            "button_view_theory": "再次查看理论", "button_start_advanced": "开始高级练习", "button_back_menu": "返回课程菜单"
+        }
+    };
+
+
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // --- Language Management Functions (Keep from Module 0) ---
+        function getStoredLanguage() {
+            const storedLang = localStorage.getItem('userLanguage');
+            if (storedLang && translations[storedLang]) return storedLang;
+            const browserLang = navigator.language || navigator.userLanguage;
+            if (browserLang.startsWith('pt')) return 'pt';
+            if (browserLang.startsWith('zh')) return 'zh';
+            return 'en';
+        }
+
+        function setLanguage(lang) {
+            if (!translations[lang]) lang = 'en';
+            localStorage.setItem('userLanguage', lang);
+            document.documentElement.lang = lang;
+            translatePage(lang);
+
+            const langSelect = document.getElementById('languageSelect');
+            if (langSelect) langSelect.value = lang;
+
+            // --- Re-initialize Module 30 Activities ---
+            if (document.getElementById('anatomy-recursion')) {
+                setupRecursionAnatomy(); // Use new setup function name
+            }
+            if (document.getElementById('spot-base-case')) {
+                setupBaseCaseSpotting(); // Use new setup function name
+            }
+            // Simulators and Missions don't strictly need re-init on lang change,
+            // but mission summary text needs update.
+            if (document.getElementById('mini-missions') && typeof updateMissionSummary === 'function') {
+               updateMissionSummary();
+            }
+            // Update simulator placeholders via translatePage
+        }
+
+        function getTranslation(key, lang, replacements = {}) {
+            let text = translations[lang]?.[key] ?? translations['en']?.[key] ?? `[${key}]`;
+            for (const placeholder in replacements) {
+                const regex = new RegExp(`\\{${placeholder}\\}`, 'g');
+                text = text.replace(regex, replacements[placeholder]);
+            }
+            return text;
+        }
+
+        function translatePage(lang) {
+            if (!translations[lang]) lang = 'en';
+            document.querySelectorAll('[data-translate]').forEach(el => {
+                const key = el.getAttribute('data-translate');
+                const translation = getTranslation(key, lang);
+                if (el.tagName === 'TITLE') { document.title = translation; }
+                else if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') { /* Handled by placeholder */ }
+                else if (el.tagName === 'OPTION') { el.textContent = translation; }
+                else {
+                     if (translation.includes('<') && translation.includes('>')) { el.innerHTML = translation; }
+                     else { el.textContent = translation; }
+                 }
+            });
+            document.querySelectorAll('[data-translate-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-translate-placeholder');
+                const translation = getTranslation(key, lang);
+                el.setAttribute('placeholder', translation);
+            });
+             document.querySelectorAll('[data-translate-title]').forEach(el => {
+                 const key = el.getAttribute('data-translate-title');
+                 const translation = getTranslation(key, lang);
+                 el.setAttribute('title', translation);
+             });
+        }
+
+        // --- Initialize Language ---
+        const initialLang = getStoredLanguage();
+        // setLanguage called later
+
+        // --- Minimal Nav Logic (Keep from Module 0) ---
+        const navToggleButton = document.getElementById('minimal-nav-toggle');
+        const navPanel = document.getElementById('minimal-nav-panel');
+        const body = document.body;
+        if (navToggleButton && navPanel) {
+            navToggleButton.addEventListener('click', (event) => { event.stopPropagation(); body.classList.toggle('nav-active'); navToggleButton.setAttribute('aria-expanded', body.classList.contains('nav-active')); });
+            document.addEventListener('click', (event) => { if (body.classList.contains('nav-active') && !navPanel.contains(event.target) && event.target !== navToggleButton && !navToggleButton.contains(event.target)) { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); } });
+            navPanel.querySelectorAll('a').forEach(link => { link.addEventListener('click', () => { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); }); });
+            document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && body.classList.contains('nav-active')) { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); } });
+            navToggleButton.setAttribute('aria-expanded', 'false');
+        }
+
+        // --- Language Switcher Setup (Keep from Module 0) ---
+        const langSelect = document.getElementById('languageSelect');
+        if (langSelect) {
+            langSelect.addEventListener('change', (e) => { setLanguage(e.target.value); });
+        }
+
+        // --- Helper Function for Feedback (Keep from Module 0) ---
+        function showFeedback(elementId, messageKey, type = 'info', replacements = {}) {
+            const feedbackEl = document.getElementById(elementId);
+            if (!feedbackEl) { console.error(`Feedback element not found: ${elementId}`); return; }
+            const currentLang = getStoredLanguage();
+            const translatedMessage = getTranslation(messageKey, currentLang, replacements);
+            if (translatedMessage.includes('<') && translatedMessage.includes('>')) { feedbackEl.innerHTML = translatedMessage; }
+            else { feedbackEl.textContent = translatedMessage; }
+            feedbackEl.className = 'feedback-message'; // Reset classes first
+            feedbackEl.classList.add('visible', type);
+            const interactiveArea = feedbackEl.closest('.interactive-area');
+            if (!interactiveArea) return;
+            interactiveArea.classList.remove('success-glow-anim', 'shake-anim');
+            void interactiveArea.offsetWidth; // Trigger reflow
+            if (type === 'correct') { interactiveArea.classList.add('success-glow-anim'); }
+            else if (type === 'incorrect') { interactiveArea.classList.add('shake-anim'); }
+        }
+
+        // --- Activity 1: Anatomy of Recursion (Adapted from Module 0) ---
+        const anatomyRecursionSection = document.getElementById('anatomy-recursion');
+        let recursionPartExplanations = {};
+        const totalRecursionAnatomyParts = 5; // Update count
+        let currentRecursionAnatomyListeners = [];
+
+        function setupRecursionAnatomy() {
+            if (!anatomyRecursionSection) return;
+            const currentLang = getStoredLanguage();
+            recursionPartExplanations = {};
+            // Fetch explanations using new keys
+            document.querySelectorAll('#explanation-texts span[data-key]').forEach(span => {
+                const key = span.getAttribute('data-key');
+                recursionPartExplanations[key] = getTranslation(`anatomy_exp_${key}`, currentLang);
+            });
+
+            const parts = anatomyRecursionSection.querySelectorAll('.code-part');
+            const explanationsDiv = document.getElementById('anatomy-explanations');
+            const statusP = document.getElementById('anatomy-status');
+            const feedbackDiv = document.getElementById('anatomy-feedback');
+            let identifiedCount = 0;
+
+            currentRecursionAnatomyListeners.forEach(({element, listener}) => element.removeEventListener('click', listener));
+            currentRecursionAnatomyListeners = [];
+
+            parts.forEach(p => p.classList.remove('identified'));
+            explanationsDiv.innerHTML = '';
+            statusP.innerHTML = getTranslation('anatomy_status_initial', currentLang); // Use correct initial status key
+            feedbackDiv.classList.remove('visible', 'correct', 'incorrect', 'info');
+
+            parts.forEach(part => {
+                const clickListener = () => {
+                    const partType = part.dataset.part;
+                    if (!part.classList.contains('identified') && partType && recursionPartExplanations[partType]) {
+                        part.classList.add('identified');
+                        identifiedCount++;
+                        const p = document.createElement('p');
+                        p.classList.add('part-explanation');
+                        // Add specific styles for base case / recursive call explanations
+                        if (partType.includes('base_case')) p.classList.add('base-case-style');
+                        if (partType.includes('recursive_call')) p.classList.add('recursive-call-style');
+
+                        const icon = document.createElement('i');
+                        icon.className = 'fas fa-check-circle';
+                        icon.style.color = 'var(--success-color)';
+                        const strong = document.createElement('strong');
+                        // Get text simply, structure is simpler now with <pre>
+                        strong.textContent = part.textContent.trim() + ': ';
+                        p.appendChild(icon); p.appendChild(document.createTextNode(' ')); // Space after icon
+                        p.appendChild(strong);
+                        p.appendChild(document.createTextNode(recursionPartExplanations[partType]));
+                        explanationsDiv.appendChild(p);
+
+                        statusP.innerHTML = getTranslation('anatomy_status_progress', currentLang, { count: identifiedCount, total: totalRecursionAnatomyParts });
+
+                        if (identifiedCount === totalRecursionAnatomyParts) {
+                            statusP.innerHTML = getTranslation('anatomy_status_done', currentLang);
+                            showFeedback('anatomy-feedback', 'feedback_anatomy_correct', 'correct');
+                        }
+                    }
+                };
+                part.addEventListener('click', clickListener);
+                currentRecursionAnatomyListeners.push({ element: part, listener: clickListener });
+            });
+        }
+        // Initial setup call moved to end
+
+        // --- Activity 2: Spot the Base Case (Adapted from Module 0 Spot Comment) ---
+        const spotBaseCaseSection = document.getElementById('spot-base-case');
+        if (spotBaseCaseSection) {
+            const linesContainer = document.getElementById('base-case-lines');
+            const checkBtn = document.getElementById('check-base-case-btn');
+            const resetBtn = document.getElementById('reset-base-case-btn');
+            const feedbackDiv = document.getElementById('base-case-feedback');
+
+            // Define lines and whether they are part of a base case
+            const baseCaseCodeLinesData = [
+                { key: 'spot_code_line_1', isBaseCase: false }, { key: 'spot_code_line_2', isBaseCase: false },
+                { key: 'spot_code_line_3', isBaseCase: false }, { key: 'spot_code_line_4', isBaseCase: true }, // Condition
+                { key: 'spot_code_line_5', isBaseCase: true }, // Action
+                { key: 'spot_code_line_6', isBaseCase: false }, { key: 'spot_code_line_7', isBaseCase: false },
+                { key: 'spot_code_line_8', isBaseCase: false }, { key: 'spot_code_line_9', isBaseCase: false },
+                { key: 'spot_code_line_10', isBaseCase: false }, { key: 'spot_code_line_11', isBaseCase: true }, // Condition
+                { key: 'spot_code_line_12', isBaseCase: true }, // Action
+                { key: 'spot_code_line_13', isBaseCase: false }, { key: 'spot_code_line_14', isBaseCase: false }
+            ];
+            let currentBaseCaseLineListeners = [];
+
+            function createBaseCaseLineElement(lineData, currentLang) {
+                 const container = document.createElement('div');
+                 container.classList.add('code-line-container');
+                 const iconPlaceholder = document.createElement('span');
+                 iconPlaceholder.classList.add('feedback-icon-placeholder');
+                 const codeLine = document.createElement('div');
+                 codeLine.classList.add('code-line-check');
+                 codeLine.dataset.isBaseCase = lineData.isBaseCase.toString(); // Store data
+                 codeLine.innerHTML = getTranslation(lineData.key, currentLang) // Use translation, allow potential HTML in future
+                                    .replace(/^( +)/gm, m => '&nbsp;'.repeat(m.length)); // Preserve indentation
+                 container.appendChild(iconPlaceholder);
+                 container.appendChild(codeLine);
+                 return container;
+            }
+
+            function setupBaseCaseSpotting() {
+                 const currentLang = getStoredLanguage();
+                 currentBaseCaseLineListeners.forEach(({element, listener}) => element.removeEventListener('click', listener));
+                 currentBaseCaseLineListeners = [];
+
+                 linesContainer.innerHTML = '';
+                 baseCaseCodeLinesData.forEach(lineData => {
+                     const lineElementContainer = createBaseCaseLineElement(lineData, currentLang);
+                     linesContainer.appendChild(lineElementContainer);
+                     const lineCheckDiv = lineElementContainer.querySelector('.code-line-check');
+                     const lineClickListener = () => {
+                         if (lineCheckDiv.classList.contains('checked-state')) return;
+                         lineCheckDiv.classList.toggle('selected-visual');
+                     };
+                     lineCheckDiv.addEventListener('click', lineClickListener);
+                     currentBaseCaseLineListeners.push({ element: lineCheckDiv, listener: lineClickListener });
+                 });
+                 feedbackDiv.classList.remove('visible', 'correct', 'incorrect', 'info');
+                 resetBtn.classList.add('hidden');
+                 checkBtn.disabled = false;
+                 checkBtn.classList.remove('success');
+            }
+
+            checkBtn.addEventListener('click', () => {
+                 let correctSelections = 0; let incorrectSelections = 0; let missedBaseCases = 0;
+                 const lineContainers = linesContainer.querySelectorAll('.code-line-container');
+                 const totalBaseCases = baseCaseCodeLinesData.filter(l => l.isBaseCase).length; // Count true base cases
+                 let isCorrectOverall = false;
+                 const currentLang = getStoredLanguage();
+
+                 lineContainers.forEach(container => {
+                    const lineCheck = container.querySelector('.code-line-check');
+                    const iconPlaceholder = container.querySelector('.feedback-icon-placeholder');
+                    const isBaseCase = lineCheck.dataset.isBaseCase === 'true'; // Check the data attribute
+                    const isSelected = lineCheck.classList.contains('selected-visual');
+
+                    iconPlaceholder.innerHTML = ''; iconPlaceholder.classList.remove('visible');
+                    lineCheck.classList.add('checked-state'); // Mark as checked
+
+                    let iconClass = '';
+                    if (isSelected && isBaseCase) { iconClass = 'fas fa-check'; correctSelections++; iconPlaceholder.classList.add('visible'); }
+                    else if (isSelected && !isBaseCase) { iconClass = 'fas fa-times'; incorrectSelections++; iconPlaceholder.classList.add('visible'); }
+                    else if (!isSelected && isBaseCase) { iconClass = 'fas fa-eye'; missedBaseCases++; iconPlaceholder.classList.add('visible'); } // Use eye for missed
+
+                    if (iconClass) { const icon = document.createElement('i'); icon.className = iconClass; iconPlaceholder.appendChild(icon); }
+                 });
+
+                 let feedbackMsgKey = ''; let feedbackReplacements = {};
+                 if (incorrectSelections === 0 && missedBaseCases === 0 && correctSelections === totalBaseCases) {
+                     isCorrectOverall = true;
+                     feedbackMsgKey = 'feedback_spot_correct'; // Use new feedback key
+                     feedbackReplacements = { totalBaseCases: totalBaseCases };
+                     showFeedback('base-case-feedback', feedbackMsgKey, 'correct', feedbackReplacements);
+                     checkBtn.classList.add('success');
+                 } else {
+                     let hints = [];
+                     if (incorrectSelections > 0) hints.push(getTranslation('feedback_spot_hint_incorrect', currentLang, { count: incorrectSelections }));
+                     if (missedBaseCases > 0) hints.push(getTranslation('feedback_spot_hint_missed', currentLang, { count: missedBaseCases }));
+                     feedbackMsgKey = 'feedback_spot_incorrect'; // Use new feedback key
+                     feedbackReplacements = { hints: hints.join(getTranslation('feedback_spot_hints_joiner', currentLang)) };
+                     showFeedback('base-case-feedback', feedbackMsgKey, 'incorrect', feedbackReplacements);
+                     checkBtn.classList.remove('success');
+                 }
+
+                 if (isCorrectOverall) { resetBtn.classList.add('hidden'); checkBtn.disabled = true; }
+                 else { resetBtn.classList.remove('hidden'); checkBtn.disabled = true; }
+            });
+
+            resetBtn.addEventListener('click', setupBaseCaseSpotting);
+            // setupBaseCaseSpotting(); // Call moved to end
+        }
+
+        // --- Activity 3: Recursive Simulator (Adapted from Module 0) ---
+        const recSimSection = document.getElementById('recursive-simulator');
+        if(recSimSection) {
+            const editor = document.getElementById('rec-sim-editor-input');
+            const outputArea = document.getElementById('rec-sim-output');
+            const runBtn = document.getElementById('run-rec-sim-btn');
+            const feedbackDiv = document.getElementById('rec-sim-feedback');
+
+            runBtn.addEventListener('click', () => {
+                 const code = editor.value; // Don't trim yet, newlines matter
+                 let placeholder = outputArea.querySelector('.placeholder');
+                 outputArea.innerHTML = ''; // Clear previous output
+                 if (!placeholder) {
+                     placeholder = document.createElement('span');
+                     placeholder.className = 'placeholder';
+                     placeholder.dataset.translate = 'simulator_output_placeholder';
+                 }
+                 placeholder.textContent = getTranslation('simulator_output_placeholder', getStoredLanguage());
+                 feedbackDiv.classList.remove('visible', 'correct', 'incorrect', 'info');
+
+                 if (code.trim() === '') {
+                     outputArea.appendChild(placeholder);
+                     showFeedback('rec-sim-feedback', 'feedback_sim_empty', 'info');
+                     return;
+                 }
+                 if (!code.includes('def countdown') || !code.includes(':')) {
+                     outputArea.appendChild(placeholder);
+                     showFeedback('rec-sim-feedback', 'feedback_sim_no_def', 'incorrect');
+                     return;
+                 }
+                  if (!code.match(/countdown\s*\(\s*3\s*\)/)) { // Check for the specific call
+                     outputArea.appendChild(placeholder);
+                     showFeedback('rec-sim-feedback', 'feedback_sim_no_call', 'incorrect');
+                     return;
+                  }
+
+                 // --- Basic Simulation for countdown(3) ---
+                 // This is a VERY simplified simulation, not a full Python interpreter.
+                 // It checks for expected output patterns for the specific task.
+                 let simulatedOutput = '';
+                 let steps = 0;
+                 const MAX_STEPS = 10; // Prevent infinite loops in simulation
+
+                 // Try to roughly simulate the expected behavior
+                 try {
+                     // Very crude check for base case and recursive structure
+                     const hasBaseCase = code.includes('if n <= 0:') || code.includes('if n == 0:');
+                     const hasRecursiveCall = code.includes('countdown(n - 1)') || code.includes('countdown(n-1)');
+                     const hasPrintN = code.includes('print(n)');
+                     const hasPrintBlastoff = code.includes('print("Blastoff!")') || code.includes("print('Blastoff!')");
+
+                     if (hasBaseCase && hasRecursiveCall && hasPrintN && hasPrintBlastoff && code.includes('else:')) {
+                         // Simulate the expected output for countdown(3)
+                         simulatedOutput = "> 3\n> 2\n> 1\n> Blastoff!";
+                         // Check if the code structure *looks* roughly correct
+                         const baseCaseIndex = code.indexOf('if n');
+                         const elseIndex = code.indexOf('else:');
+                         const printNIndex = code.indexOf('print(n)');
+                         const recursiveCallIndex = code.indexOf('countdown(n');
+                         const printBlastoffIndex = code.indexOf('Blastoff!');
+
+                         // Basic structural check (very loose)
+                         if (baseCaseIndex < elseIndex && printBlastoffIndex > baseCaseIndex && printBlastoffIndex < elseIndex && printNIndex > elseIndex && recursiveCallIndex > elseIndex && recursiveCallIndex > printNIndex) {
+                             // Looks plausible structure-wise
+                             outputArea.innerHTML = simulatedOutput.replace(/\n/g, '<span class="output-line"></span>').replace(/> /g, '> '); // Display nicely
+                             showFeedback('rec-sim-feedback', 'feedback_sim_countdown_success', 'correct');
+                         } else {
+                             // Structure seems wrong, even if parts exist
+                            outputArea.appendChild(placeholder);
+                            showFeedback('rec-sim-feedback', 'feedback_sim_output_mismatch', 'incorrect');
+                         }
+                     } else {
+                         // Missing key components
+                         outputArea.appendChild(placeholder);
+                         showFeedback('rec-sim-feedback', 'feedback_sim_output_mismatch', 'incorrect'); // Generic mismatch if parts missing
+                     }
+                 } catch (e) {
+                     console.error("Simulation error:", e);
+                     outputArea.appendChild(placeholder);
+                     showFeedback('rec-sim-feedback', 'feedback_sim_runtime_error', 'incorrect');
+                 }
+             });
+        }
+
+        // --- Activity 4: Mini Missions (Adapted for Recursion) ---
+        const missionsSection = document.getElementById('mini-missions');
+        let updateMissionSummary; // Define function scope
+        if (missionsSection) {
+            const missionRunButtons = missionsSection.querySelectorAll('.mission-run-btn');
+            const summaryFeedback = document.getElementById('missions-summary-feedback');
+            const totalMissions = missionsSection.querySelectorAll('.mission').length;
+            let completedMissionsCount = 0;
+
+            updateMissionSummary = function() { // Assign function
+                 completedMissionsCount = missionsSection.querySelectorAll('.mission[data-completed="true"]').length;
+                 const currentLang = getStoredLanguage();
+                 if (completedMissionsCount === totalMissions) {
+                     showFeedback('missions-summary-feedback', 'feedback_missions_summary_all_done', 'correct', { totalMissions: totalMissions });
+                 } else if (completedMissionsCount > 0) {
+                     showFeedback('missions-summary-feedback', 'feedback_missions_summary_progress', 'info', { completedCount: completedMissionsCount, totalMissions: totalMissions });
+                 } else {
+                     summaryFeedback.classList.remove('visible', 'correct', 'incorrect', 'info');
+                 }
+            }
+
+            missionRunButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const missionId = button.dataset.missionId;
+                    const missionDiv = document.getElementById(`mission-${missionId}`);
+                    if (!missionDiv) return;
+                    const editor = missionDiv.querySelector('.mission-editor');
+                    const outputArea = missionDiv.querySelector('.mission-output');
+                    const feedbackDivId = `mission-feedback-${missionId}`;
+                    const feedbackDiv = document.getElementById(feedbackDivId);
+                    const statusIcon = missionDiv.querySelector('.mission-status i');
+                    const code = editor.value; // Keep newlines
+                    outputArea.innerHTML = ''; // Clear output
+                    let success = false;
+                    let feedbackMessageKey = 'feedback_mission_syntax_error'; // Default error
+                    let feedbackType = 'incorrect';
+                    let specificHintKey = `feedback_mission${missionId}_hint`; // Default hint
+
+                     // --- Simplified Validation Logic for Missions ---
+                     // Avoids full JS interpretation, checks structure and expected output patterns
+                     try {
+                         outputArea.innerHTML = ''; // Clear previous run
+                         let simulatedOutput = '';
+
+                         if (missionId === '1') { // Recursive Countdown to "Done!"
+                             const expectedOutput = "> 4\n> 3\n> 2\n> 1\n> Done!";
+                             // Crude checks
+                             const hasDef = code.includes('def countdown(n):');
+                             const hasBase = (code.includes('if n <= 0:') || code.includes('if n == 0:')) && (code.includes('print("Done!")') || code.includes("print('Done!')"));
+                             const hasRec = code.includes('else:') && code.includes('print(n)') && code.includes('countdown(n - 1)');
+                             const hasCall = code.match(/countdown\s*\(\s*4\s*\)/);
+                             if (hasDef && hasBase && hasRec && hasCall) {
+                                 simulatedOutput = expectedOutput;
+                                 success = true;
+                             }
+                         } else if (missionId === '2') { // Recursive Factorial(5) -> 120
+                             const expectedOutput = "> 120";
+                             const hasDef = code.includes('def factorial(n):');
+                             const hasBase = (code.includes('if n <= 0:') || code.includes('if n == 0:')) && code.includes('return 1');
+                             const hasRec = code.includes('return n * factorial(n - 1)');
+                             const hasCall = code.match(/factorial\s*\(\s*5\s*\)/);
+                             const hasPrint = code.includes('print('); // Check if result is printed
+                             if (hasDef && hasBase && hasRec && hasCall && hasPrint) {
+                                 simulatedOutput = expectedOutput;
+                                 success = true;
+                             }
+                         } else if (missionId === '3') { // Iterative Factorial(5) -> 120
+                             const expectedOutput = "> 120";
+                             const hasDef = code.includes('def iterative_factorial(n):');
+                             const hasLoop = code.includes('for ') && code.includes(' in range(');
+                             const hasMultiply = code.includes('*=') || (code.includes('result =') && code.includes('*'));
+                             const hasReturn = code.includes('return result');
+                              const hasCall = code.match(/iterative_factorial\s*\(\s*5\s*\)/);
+                              const hasPrint = code.includes('print(');
+                             if (hasDef && hasLoop && hasMultiply && hasReturn && hasCall && hasPrint) {
+                                 simulatedOutput = expectedOutput;
+                                 success = true;
+                             }
+                         }
+
+                         // Display simulated output if logic seemed plausible
+                         if(simulatedOutput) {
+                              outputArea.innerHTML = simulatedOutput.replace(/\n/g, '<span class="output-line"></span>').replace(/> /g, '> ');
+                         } else if (!success) {
+                             // If it failed checks but didn't throw an error, show placeholder
+                             const placeholder = document.createElement('span');
+                             placeholder.className = 'placeholder';
+                              placeholder.textContent = getTranslation('simulator_output_placeholder', getStoredLanguage());
+                              outputArea.appendChild(placeholder);
+                         }
+
+                     } catch (error) {
+                        console.error("Mission validation error:", error);
+                        const placeholder = document.createElement('span');
+                        placeholder.className = 'placeholder';
+                        placeholder.textContent = getTranslation('simulator_output_placeholder', getStoredLanguage());
+                        outputArea.appendChild(placeholder);
+                        // Keep default feedbackMessageKey (syntax error)
+                     }
+                    // --- End Validation Logic ---
+
+                    if (success) {
+                        feedbackMessageKey = 'feedback_mission_success';
+                        feedbackType = 'correct';
+                        statusIcon.className = 'fas fa-check-circle';
+                        missionDiv.dataset.completed = 'true';
+                    } else {
+                        feedbackMessageKey = specificHintKey || feedbackMessageKey; // Use specific hint if available
+                        feedbackType = 'incorrect';
+                        statusIcon.className = 'fas fa-times-circle';
+                        missionDiv.dataset.completed = 'false';
+                    }
+                    showFeedback(feedbackDivId, feedbackMessageKey, feedbackType);
+                    updateMissionSummary();
+                });
+            });
+            updateMissionSummary(); // Initial call
+        }
+
+
+        // --- Fade-in animations on scroll (Keep from Module 0) ---
+        const fadeElements = document.querySelectorAll('.fade-in');
+        const animateOnScroll = () => {
+             const windowHeight = window.innerHeight;
+             fadeElements.forEach(el => {
+                 if (el.style.opacity === '1') return; // Already visible
+                 const rect = el.getBoundingClientRect();
+                 if (rect.top < windowHeight - 80 && rect.bottom >= 50) { // Adjust threshold if needed
+                     el.style.opacity = '1';
+                     el.style.transform = 'translateY(0)';
+                 }
+             });
+        };
+        const scrollHandler = () => window.requestAnimationFrame(animateOnScroll);
+        window.addEventListener('scroll', scrollHandler);
+
+        // --- Initial Language Application and Activity Setups ---
+        setLanguage(initialLang); // Apply language FIRST
+        animateOnScroll(); // Trigger initial animation check AFTER setting language
+
+        // Call initial setups for activities *after* language is set
+        // These functions handle fetching translated text internally now
+        setupRecursionAnatomy();
+        setupBaseCaseSpotting();
+        // Simulator and Missions are mostly handled via placeholders/button text updated by setLanguage
+
+    }); // End DOMContentLoaded
+    </script>
+
+</body>
+</html>

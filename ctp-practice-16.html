@@ -1,0 +1,1391 @@
+<!DOCTYPE html>
+<!-- Language set by JS -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Title set by JS -->
+    <title data-translate="page_title">Module 16: Defining Simple Functions</title>
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* --- Base Styles & Variables --- */
+        :root {
+            --primary-color: #007bff; /* Keeping blue for primary actions */
+            --secondary-color: #6c757d;
+            --background-light: #f8f9fa;
+            --background-medium: #e9ecef;
+            --background-dark: #343a40;
+            --text-light: #f8f9fa;
+            --text-dark: #212529;
+            --accent-color: #ffc107; /* Yellow */
+            --success-color: #28a745; /* Green */
+            --error-color: #dc3545;   /* Red */
+            --info-color: #17a2b8;    /* Teal */
+            --function-color: #dcdcaa; /* Yellowish for function names */
+            --keyword-color: #569cd6;  /* Blue for keywords like def */
+            --string-color: #ce9178;   /* Orange for strings */
+            --comment-color: #6a9955;  /* Green for comments */
+            --paren-color: #ffd700;   /* Gold for parentheses */
+            --border-radius: 8px;
+            --transition-speed: 0.3s;
+            --font-body: 'Roboto', sans-serif;
+            --font-title: 'Orbitron', sans-serif;
+            --selection-highlight-bg: rgba(0, 123, 255, 0.1);
+            --selection-highlight-border: rgba(0, 123, 255, 0.4);
+            /* Colors matching news.html for consistency in switcher potentially */
+            --nav-primary: #6e48aa;
+            --nav-success: #4cc9f0;
+            --nav-dark: #1a1a2e;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; font-size: 16px; }
+        body {
+            font-family: var(--font-body); line-height: 1.7;
+            background-color: var(--background-light); color: var(--text-dark);
+            overflow-x: hidden;
+        }
+
+        /* --- Utility Classes --- */
+        .container { max-width: 960px; margin: 0 auto; padding: 0 15px; }
+        .text-center { text-align: center; }
+        .highlight { color: var(--primary-color); font-weight: bold; }
+        .code-font { font-family: 'Courier New', Courier, monospace; }
+        .hidden { display: none !important; }
+        .button-group { /* For navigation buttons */
+            margin-top: 2rem;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1rem;
+        }
+
+        /* --- Advanced Animations --- */
+        .fade-in { opacity: 0; transform: translateY(20px); animation: fadeInAnimation 0.8s ease-out forwards; }
+        .fade-in.delay-1 { animation-delay: 0.2s; }
+        .fade-in.delay-2 { animation-delay: 0.4s; }
+        .fade-in.delay-3 { animation-delay: 0.6s; }
+        .fade-in.delay-4 { animation-delay: 0.8s; }
+        @keyframes fadeInAnimation { to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulseHeaderIcon {
+            0% { transform: scale(1); opacity: 0.1; filter: brightness(1); }
+            50% { transform: scale(1.05); opacity: 0.25; filter: brightness(1.2); }
+            100% { transform: scale(1); opacity: 0.1; filter: brightness(1); }
+        }
+        @keyframes successGlow {
+             0% { box-shadow: 0 0 3px rgba(40, 167, 69, 0.3); transform: scale(1); }
+             50% { box-shadow: 0 0 12px 5px rgba(40, 167, 69, 0.5); transform: scale(1.01); }
+             100% { box-shadow: 0 0 3px rgba(40, 167, 69, 0.3); transform: scale(1); }
+        }
+        .success-glow-anim { animation: successGlow 0.9s ease-out; }
+        @keyframes shake {
+          10%, 90% { transform: translate3d(-2px, 0, 0); } 20%, 80% { transform: translate3d(3px, 0, 0); }
+          30%, 50%, 70% { transform: translate3d(-5px, 0, 0); } 40%, 60% { transform: translate3d(5px, 0, 0); }
+        }
+        .shake-anim { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes iconAppearCorrect {
+            0% { transform: scale(0.5) rotate(-15deg); opacity: 0; }
+            60% { transform: scale(1.2) rotate(5deg); opacity: 1; }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        @keyframes iconAppearIncorrect {
+             0% { transform: scale(0.5) rotate(-15deg); opacity: 0; }
+             50% { transform: scale(1.2) rotate(10deg); opacity: 1; }
+             70% { transform: scale(0.9) rotate(-5deg); }
+             100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        @keyframes iconAppearMissed {
+             0% { transform: scale(0.8) rotateY(90deg); opacity: 0; }
+             100% { transform: scale(1) rotateY(0deg); opacity: 0.8; }
+        }
+        .action-button:active:not(:disabled) {
+            transform: translateY(1px) scale(0.98);
+            filter: brightness(0.95);
+        }
+
+
+        /* --- Minimal Retractable Nav (with Language Switcher Integration) --- */
+        .minimal-nav-button {
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            z-index: 1001; /* Above the panel */
+            background-color: rgba(52, 58, 64, 0.75);
+            color: var(--text-light);
+            border: none;
+            border-radius: var(--border-radius);
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: background-color var(--transition-speed), opacity var(--transition-speed), transform var(--transition-speed);
+            font-size: 1.1rem;
+            opacity: 0.6;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            line-height: 1;
+        }
+        .minimal-nav-button:hover {
+            background-color: rgba(52, 58, 64, 0.95);
+            opacity: 1;
+            transform: scale(1.05);
+        }
+        .minimal-nav {
+            position: fixed;
+            top: 60px;
+            right: 15px;
+            z-index: 1000;
+            background-color: var(--background-dark);
+            border-radius: var(--border-radius);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            padding: 0.8rem;
+            opacity: 0;
+            transform: translateY(-15px) scale(0.95);
+            transform-origin: top right;
+            pointer-events: none;
+            transition: opacity var(--transition-speed) ease, transform var(--transition-speed) ease;
+            min-width: 200px;
+        }
+        body.nav-active .minimal-nav {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+            pointer-events: auto;
+        }
+        .minimal-nav ul {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+        .minimal-nav ul li {
+            margin-bottom: 5px; /* Spacing between items */
+        }
+        .minimal-nav ul li:last-child {
+             margin-bottom: 0;
+        }
+        .minimal-nav ul li a {
+            display: flex;
+            align-items: center;
+            color: var(--text-light);
+            text-decoration: none;
+            padding: 0.6rem 1rem; /* Slightly reduced padding */
+            border-radius: 4px;
+            transition: background-color var(--transition-speed), color var(--transition-speed);
+            white-space: nowrap;
+            font-weight: 400;
+            font-size: 0.95rem; /* Slightly smaller font */
+        }
+        .minimal-nav ul li a i.fas {
+            margin-right: 10px;
+            width: 1.2em;
+            text-align: center;
+            opacity: 0.8;
+            transition: opacity var(--transition-speed);
+        }
+        .minimal-nav ul li a:hover {
+            background-color: var(--primary-color);
+            color: var(--text-light);
+        }
+        .minimal-nav ul li a:hover i.fas {
+            opacity: 1;
+        }
+        /* Language Switcher Styles */
+        .minimal-nav .language-switcher-item {
+            padding: 0.5rem 1rem;
+            border-top: 1px solid var(--secondary-color);
+            margin-top: 8px;
+            padding-top: 13px;
+        }
+        #languageSelect {
+            width: 100%; background: rgba(255,255,255,0.1); color: white;
+            border: 1px solid var(--nav-success); border-radius: 5px;
+            padding: 6px 30px 6px 12px; cursor: pointer; font-size: 0.9rem;
+            appearance: none; -webkit-appearance: none; -moz-appearance: none;
+            background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%234CC9F0%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E');
+            background-repeat: no-repeat; background-position: right 10px center;
+            background-size: 10px auto; transition: background-color 0.3s ease;
+        }
+        #languageSelect:hover { background-color: rgba(255,255,255,0.15); }
+        #languageSelect option { background: var(--nav-dark); color: var(--text-light); }
+        /* --- End Minimal Retractable Nav --- */
+
+
+        /* --- Practice Header --- */
+        /* Changed gradient slightly to differentiate module */
+        .practice-header { background: linear-gradient(135deg, var(--primary-color), #0056b3); color: var(--text-light); padding: 3rem 0 4rem; text-align: center; position: relative; overflow: hidden; border-bottom: 5px solid var(--accent-color); }
+        .practice-header h1 { font-family: var(--font-title); font-size: 2.8rem; margin-bottom: 0.5rem; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); animation: fadeInAnimation 1s ease-out; }
+        .practice-header p { font-size: 1.1rem; font-weight: 300; opacity: 0.9; animation: fadeInAnimation 1s ease-out 0.3s forwards; opacity: 0; }
+        /* Changed header icons */
+        .header-icon { position: absolute; font-size: 4rem; color: var(--text-light); animation: pulseHeaderIcon 6s infinite ease-in-out alternate; }
+        .icon1 { top: 20%; left: 15%; animation-duration: 7s; transform: rotate(-15deg); } /* Function icon */
+        .icon2 { bottom: 15%; right: 20%; animation-duration: 5s; transform: rotate(10deg); } /* Gear/process icon */
+
+        /* --- Practice Section Styling --- */
+        .practice-section { padding: 3rem 0; background-color: var(--background-medium); border-bottom: 1px solid #d6d8db; }
+        .practice-section:nth-child(odd) { background-color: var(--background-light); }
+        .practice-section:last-of-type { border-bottom: none; }
+        .practice-section h2 { font-family: var(--font-title); font-size: 1.8rem; color: var(--primary-color); margin-bottom: 1rem; text-align: center; }
+        .practice-section .section-description { text-align: center; margin-bottom: 2.5rem; color: var(--secondary-color); font-size: 1.05rem; max-width: 700px; margin-left: auto; margin-right: auto; }
+
+        /* --- General Interactive Elements --- */
+        .interactive-area { background-color: #fff; padding: 2rem; border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.08); margin-top: 1.5rem; position: relative; transition: box-shadow 0.5s ease-out; }
+        .feedback-message { padding: 0.8rem 1rem; margin-top: 1rem; border-radius: var(--border-radius); font-weight: bold; text-align: center; opacity: 0; max-height: 0; overflow: hidden; transition: opacity var(--transition-speed) ease, max-height var(--transition-speed) ease, margin-top var(--transition-speed) ease; }
+        .feedback-message.visible { opacity: 1; max-height: 100px; margin-top: 1.5rem; }
+        .feedback-message.correct { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .feedback-message.incorrect { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .feedback-message.info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .feedback-message .fas { margin: 0 3px; } /* Spacing for icons in feedback */
+        .action-button {
+             display: inline-block; padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold;
+             color: var(--text-light); background-color: var(--primary-color); border: none;
+             border-radius: var(--border-radius); cursor: pointer;
+             transition: background-color var(--transition-speed), transform var(--transition-speed), filter var(--transition-speed), box-shadow var(--transition-speed);
+             margin-top: 1rem; vertical-align: middle; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+             text-decoration: none;
+        }
+        .action-button:hover:not(:disabled) { background-color: #0056b3; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+        .action-button:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none; box-shadow: none; opacity: 0.7; }
+        .action-button.success { background-color: var(--success-color); }
+        .action-button.success:hover:not(:disabled) { background-color: #218838; }
+        .action-button.secondary { background-color: var(--secondary-color); }
+        .action-button.secondary:hover:not(:disabled) { background-color: #5a6268; }
+        /* Code styling */
+        .code-block { background-color: var(--background-dark); color: var(--text-light); padding: 1.5rem; border-radius: var(--border-radius); font-family: var(--code-font); font-size: 1rem; position: relative; overflow-x: auto; margin: 1rem 0; white-space: pre; /* Preserve indentation */ }
+        .code-keyword { color: var(--keyword-color); }
+        .code-string { color: var(--string-color); }
+        .code-comment { color: var(--comment-color); }
+        .code-function { color: var(--function-color); }
+        .code-paren { color: var(--paren-color); }
+        .code-colon { color: var(--paren-color); } /* Use same color as parens for colon */
+        .code-indent { display: block; padding-left: 2em; } /* Visual indent */
+
+        /* --- Activity 1: Function Anatomy --- */
+        #anatomy-function .code-part { cursor: pointer; border-bottom: 2px dashed rgba(255, 255, 255, 0.3); transition: background-color var(--transition-speed), border-bottom-color var(--transition-speed); padding: 0 2px; }
+        #anatomy-function .code-part:hover { background-color: rgba(255, 255, 255, 0.15); border-bottom-color: var(--accent-color); }
+        #anatomy-function .code-part.identified { background-color: rgba(40, 167, 69, 0.3); border-bottom: 2px solid var(--success-color); cursor: default; }
+        .part-explanation { font-size: 0.95rem; color: var(--info-color); border-left: 3px solid var(--info-color); padding: 5px 10px; margin-top: 0.5rem; background-color: rgba(23, 162, 184, 0.05); }
+        #anatomy-status { margin-top: 1rem; font-style: italic; color: var(--secondary-color); }
+
+        /* --- Activity 2: Build-a-Function-Call --- */
+        #build-a-call .draggable-pieces { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 1.5rem; padding: 1rem; background-color: var(--background-light); border: 1px dashed var(--secondary-color); border-radius: var(--border-radius); justify-content: center; user-select: none; -webkit-user-select: none; -ms-user-select: none; }
+        .piece { display: inline-block; padding: 8px 12px; background-color: var(--primary-color); color: var(--text-light); border-radius: 4px; cursor: grab; font-family: var(--code-font); font-size: 1rem; transition: background-color var(--transition-speed), transform var(--transition-speed), opacity 0.1s ease, box-shadow var(--transition-speed); border: 1px solid #0056b3; touch-action: none; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .piece:active { cursor: grabbing; }
+        .piece.dragging { opacity: 0.6 !important; transform: scale(1.05) rotate(3deg); position: fixed !important; pointer-events: none !important; z-index: 1000 !important; cursor: grabbing !important; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+        .piece.ghosting { opacity: 0.3; }
+        .piece[data-type="function_name"] { background-color: var(--function-color); color: var(--text-dark); border-color:#b8b89a; } /* Match function color */
+        .piece[data-type="parentheses"] { background-color: var(--paren-color); color: var(--text-dark); border-color:#ccac00; } /* Match paren color */
+        #call-drop-zone { min-height: 60px; background-color: var(--background-dark); border: 3px dashed var(--secondary-color); border-radius: var(--border-radius); padding: 15px; display: flex; align-items: center; gap: 5px; flex-wrap: wrap; transition: border-color var(--transition-speed), background-color var(--transition-speed), box-shadow var(--transition-speed); }
+        #call-drop-zone.over { border-color: var(--accent-color); background-color: #495057; box-shadow: inset 0 0 10px rgba(255,193,7,0.2); }
+        #call-drop-zone .piece { cursor: default; margin: 0; touch-action: auto; box-shadow: none; }
+        #call-drop-zone-placeholder { color: var(--secondary-color); font-style: italic; width: 100%; text-align: center;}
+
+        /* --- Activity 3: Function Simulator --- */
+        #function-simulator .sim-editor { width: 100%; min-height: 120px; background-color: var(--background-dark); color: var(--text-light); border: 1px solid var(--secondary-color); border-radius: var(--border-radius); padding: 1rem; font-family: var(--code-font); font-size: 1rem; line-height: 1.5; resize: vertical; }
+        #function-simulator .sim-output-area { margin-top: 1rem; min-height: 50px; background-color: #1a1a1a; border: 1px solid #444; border-radius: var(--border-radius); padding: 1rem; color: var(--accent-color); font-family: var(--code-font); font-size: 1.05rem; white-space: pre-wrap; word-wrap: break-word; }
+        #function-simulator .sim-output-area .placeholder { color: var(--secondary-color); font-style: italic; font-size: 0.9rem; }
+        #function-simulator .sim-output-area .output-line { display: block; }
+
+        /* --- Activity 4: Spot the Function Call --- */
+         .code-line-container { display: flex; align-items: center; margin-bottom: 8px; position: relative; }
+         .feedback-icon-placeholder { width: 30px; height: 24px; margin-right: 10px; display: inline-flex; align-items: center; justify-content: center; transition: opacity var(--transition-speed); opacity: 0; font-size: 1.2rem; }
+         .feedback-icon-placeholder.visible { opacity: 1; }
+         #spot-call .code-line-check { flex-grow: 1; background-color: var(--background-dark); color: var(--text-light); padding: 10px 15px; border-radius: 5px; cursor: pointer; transition: background-color var(--transition-speed), transform var(--transition-speed), border-left-color var(--transition-speed); font-family: var(--code-font); border-left: 4px solid transparent; user-select: none; -webkit-user-select: none; }
+         #spot-call .code-line-check:hover { background-color: #495057; transform: translateX(3px); }
+         #spot-call .code-line-check.selected-visual { background-color: var(--selection-highlight-bg); border-left-color: var(--selection-highlight-border); color: var(--text-dark); }
+         #spot-call .code-line-check.checked-state { cursor: default; } /* Prevent hover/active effects when checked */
+         .feedback-icon-placeholder .fa-check { color: var(--success-color); animation: iconAppearCorrect 0.5s ease-out forwards; }
+         .feedback-icon-placeholder .fa-times { color: var(--error-color); animation: iconAppearIncorrect 0.6s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards; }
+         .feedback-icon-placeholder .fa-eye { color: var(--accent-color); animation: iconAppearMissed 0.4s ease-in forwards; opacity: 0; }
+         #reset-call-btn { margin-left: 10px; }
+
+         /* --- Activity 5: Mini Missions (Function Focus) --- */
+        #mini-missions-func .mission { padding: 1.5rem; border: 1px solid #d6d8db; border-radius: var(--border-radius); margin-bottom: 1.5rem; background-color: var(--background-light); position: relative; }
+        .mission-status { position: absolute; top: 10px; right: 10px; font-size: 1.5rem; transition: transform 0.3s ease; }
+        .mission-status .fa-check-circle { color: var(--success-color); transform-origin: center; }
+        .mission-status .fa-times-circle { color: var(--error-color); }
+        .mission-status .fa-question-circle { color: var(--secondary-color); }
+        .mission[data-completed="true"] .mission-status .fa-check-circle { animation: iconAppearCorrect 0.6s ease-out; }
+        #mini-missions-func .mission-editor { width: 100%; min-height: 100px; background-color: var(--background-dark); color: var(--text-light); border: 1px solid var(--secondary-color); border-radius: var(--border-radius); padding: 1rem; font-family: var(--code-font); font-size: 1rem; line-height: 1.5; resize: vertical; margin-top: 1rem; white-space: pre; /* Preserve indentation */ }
+        #mini-missions-func .mission-output { margin-top: 1rem; min-height: 30px; background-color: #1a1a1a; border: 1px solid #444; border-radius: var(--border-radius); padding: 0.8rem; color: var(--accent-color); font-family: var(--code-font); font-size: 1rem; white-space: pre-wrap; word-wrap: break-word; }
+
+
+        /* --- Final Section --- */
+        .completion-section { padding: 4rem 0; text-align: center; }
+        .completion-section .icon {
+            font-size: 4rem; color: var(--success-color); margin-bottom: 1rem;
+            display: inline-block;
+            opacity: 0; /* Start hidden for animation */
+            animation: iconAppearCorrect 1s ease-out 0.5s forwards; /* Use icon animation */
+        }
+        .completion-section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); }
+        .completion-section p { font-size: 1.1rem; margin-top: 1rem; color: var(--secondary-color); }
+
+        /* --- Responsive Design --- */
+        @media (max-width: 768px) {
+            html { font-size: 15px; }
+            .practice-header h1 { font-size: 2.2rem; }
+            .practice-section h2 { font-size: 1.6rem; }
+            .interactive-area { padding: 1.5rem; }
+            #build-a-call .draggable-pieces { padding: 0.8rem; }
+            .piece { padding: 6px 10px; font-size: 0.95rem; }
+            #call-drop-zone { min-height: 50px; padding: 10px; }
+            .feedback-icon-placeholder { width: 25px; margin-right: 8px; font-size: 1.1rem;}
+            .button-group { flex-direction: column; align-items: center; }
+             /* Adjust nav panel if needed */
+            .minimal-nav { min-width: 180px; }
+            .minimal-nav ul li a { padding: 0.6rem 0.8rem; }
+            #languageSelect { font-size: 0.85rem; padding: 5px 25px 5px 10px;}
+        }
+        @media (max-width: 480px) {
+            html { font-size: 14px; }
+            .practice-header h1 { font-size: 1.8rem; }
+            .practice-header p { font-size: 1rem; }
+            .practice-section h2 { font-size: 1.4rem; }
+            .interactive-area { padding: 1rem; }
+            .action-button { font-size: 0.9rem; padding: 0.7rem 1.2rem; width: 90%; max-width: 300px;}
+            #function-simulator .sim-editor, #function-simulator .sim-output-area { font-size: 0.9rem; }
+            #spot-call .code-line-check { padding: 8px 12px; font-size: 0.9rem;}
+            #mini-missions-func .mission-editor { min-height: 90px; font-size: 0.95rem;}
+            #mini-missions-func .mission-output { font-size: 0.95rem;}
+            .feedback-icon-placeholder { width: 20px; margin-right: 5px; font-size: 1rem;}
+            .button-group a.action-button { width: 90%; max-width: 300px; margin-bottom: 0.5rem; }
+            /* Adjust Nav */
+             .minimal-nav-button { top: 10px; right: 10px; padding: 6px 10px; font-size: 1rem; }
+             .minimal-nav { top: 48px; right: 10px; min-width: 160px; }
+             .minimal-nav ul li a { padding: 0.5rem 0.7rem; font-size: 0.9rem;}
+             .minimal-nav ul li a i.fas { margin-right: 8px; }
+             #languageSelect { font-size: 0.8rem; padding: 4px 20px 4px 8px;}
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ========= Minimal Nav Handle ========= -->
+    <button id="minimal-nav-toggle" class="minimal-nav-button" aria-label="Toggle Navigation Menu">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- ========= Minimal Nav Panel (with Language Switcher) ========= -->
+    <nav id="minimal-nav-panel" class="minimal-nav">
+        <ul>
+            <!-- MODULE 16 Links -->
+            <li><a href="ctp-theory-16.html"><i class="fas fa-book-open fa-fw"></i> <span data-translate="nav_theory">View Theory</span></a></li>
+            <li><a href="ctp-advanced-16.html"><i class="fas fa-flask fa-fw"></i> <span data-translate="nav_advanced">Advanced Practice</span></a></li>
+            <li><a href="ctp-dashboard.html"><i class="fas fa-list fa-fw"></i> <span data-translate="nav_menu">Course Menu</span></a></li>
+            <hr style="border: none; border-top: 1px solid var(--secondary-color); margin: 8px 0;">
+            <!-- Activity Links -->
+            <li><a href="#anatomy-function"><i class="fas fa-microscope fa-fw"></i> <span data-translate="nav_anatomy">Anatomy</span></a></li>
+            <li><a href="#build-a-call"><i class="fas fa-puzzle-piece fa-fw"></i> <span data-translate="nav_build">Build Call</span></a></li>
+            <li><a href="#function-simulator"><i class="fas fa-keyboard fa-fw"></i> <span data-translate="nav_simulator">Simulator</span></a></li>
+            <li><a href="#spot-call"><i class="fas fa-search fa-fw"></i> <span data-translate="nav_spot">Spot Call</span></a></li>
+            <li><a href="#mini-missions-func"><i class="fas fa-rocket fa-fw"></i> <span data-translate="nav_missions">Missions</span></a></li>
+            <!-- Language Switcher Item -->
+            <li class="language-switcher-item">
+                 <select id="languageSelect" aria-label="Select Language">
+                     <option value="en" data-translate="lang_en">🇬🇧 English</option>
+                     <option value="pt" data-translate="lang_pt">🇧🇷 Português</option>
+                     <option value="zh" data-translate="lang_zh">🇨🇳 中文</option>
+                 </select>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- ========= Header ========= -->
+    <header class="practice-header">
+        <!-- Changed icons -->
+        <i class="fas fa-code-branch header-icon icon1"></i>
+        <i class="fas fa-cogs header-icon icon2"></i>
+        <div class="container">
+            <!-- MODULE 16 Title -->
+            <h1 data-translate="header_title">Module 16: Defining Simple Functions</h1>
+            <p data-translate="header_subtitle">Package code into reusable blocks!</p>
+        </div>
+    </header>
+
+    <!-- ========= Main Content ========= -->
+    <main>
+        <!-- ========= Activity 1: Anatomy of a Function Definition ========= -->
+        <section id="anatomy-function" class="practice-section">
+             <div class="container">
+                 <h2 class="fade-in"><i class="fas fa-microscope"></i> <span data-translate="anatomy16_title">Anatomy of a Function Definition</span></h2>
+                 <p class="section-description fade-in delay-1" data-translate="anatomy16_desc">
+                     Functions bundle code. Click each highlighted part of this simple function definition to learn its role. This uses <strong>Abstraction</strong> to name a task.
+                 </p>
+                 <div class="interactive-area fade-in delay-2">
+                     <div class="code-block">
+<span class="code-part" data-part="keyword" data-translate-title="tooltip_click_identify" title="Click to identify this part"><span class="code-keyword">def</span></span> <span class="code-part" data-part="name" data-translate-title="tooltip_click_identify" title="Click to identify this part"><span class="code-function">greet</span></span><span class="code-part" data-part="parentheses" data-translate-title="tooltip_click_identify" title="Click to identify this part"><span class="code-paren">()</span></span><span class="code-part" data-part="colon" data-translate-title="tooltip_click_identify" title="Click to identify this part"><span class="code-colon">:</span></span>
+    <span class="code-part code-indent" data-part="body" data-translate-title="tooltip_click_identify" title="Click to identify this part"><span class="code-keyword">print</span><span class="code-paren">(</span><span class="code-string" data-translate="anatomy16_code_string">"Hello!"</span><span class="code-paren">)</span></span>
+                     </div>
+                     <div id="anatomy-explanations"></div>
+                     <p id="anatomy-status" data-translate="anatomy16_status_initial">Identify all 5 parts!</p>
+                     <div id="anatomy-feedback" class="feedback-message"></div>
+                     <!-- Hidden elements for storing translated explanation parts -->
+                     <div id="explanation-texts" style="display: none;">
+                        <span data-key="keyword" data-translate="anatomy16_exp_keyword">The `def` keyword: Signals the start of a function definition.</span>
+                        <span data-key="name" data-translate="anatomy16_exp_name">Function Name (`greet`): Your chosen name for this block of code. Follows variable naming rules.</span>
+                        <span data-key="parentheses" data-translate="anatomy16_exp_parentheses">Parentheses `()`: Required after the name. Holds input parameters (arguments) later. Empty for now.</span>
+                        <span data-key="colon" data-translate="anatomy16_exp_colon">Colon `:`: Marks the end of the function header and start of the indented body.</span>
+                        <span data-key="body" data-translate="anatomy16_exp_body">Function Body (indented): The code that runs when the function is *called*. Indentation is crucial!</span>
+                     </div>
+                 </div>
+             </div>
+        </section>
+
+        <!-- ========= Activity 2: Build-a-Function-Call ========= -->
+        <section id="build-a-call" class="practice-section">
+             <div class="container">
+                 <h2 class="fade-in"><i class="fas fa-puzzle-piece"></i> <span data-translate="build16_title">Build a Function Call</span></h2>
+                 <p class="section-description fade-in delay-1" data-translate="build16_desc">
+                     We defined the `greet()` function above. Now, drag the pieces below to construct the code that *calls* (runs) this function.
+                 </p>
+                 <div class="interactive-area fade-in delay-2">
+                     <p data-translate="build16_reminder">Reminder: The function is defined as:</p>
+                     <div class="code-block">
+<span class="code-keyword">def</span> <span class="code-function">greet</span><span class="code-paren">()</span><span class="code-colon">:</span>
+    <span class="code-indent"><span class="code-keyword">print</span><span class="code-paren">(</span><span class="code-string" data-translate="anatomy16_code_string">"Hello!"</span><span class="code-paren">)</span></span>
+                     </div>
+                     <div id="draggable-pieces" class="draggable-pieces">
+                         <!-- Pieces populated by JS -->
+                     </div>
+                     <p data-translate="build16_target_label">Construct the function call here:</p>
+                     <div id="call-drop-zone" class="code-font">
+                         <span id="call-drop-zone-placeholder" data-translate="build16_drop_placeholder">Drop pieces here...</span>
+                     </div>
+                     <div class="text-center">
+                         <button id="check-call-btn" class="action-button" data-translate="button_check_call">Check Call</button>
+                         <button id="reset-call-btn" class="action-button secondary" data-translate="button_reset_build">Reset</button>
+                     </div>
+                     <div id="call-feedback" class="feedback-message"></div>
+                 </div>
+             </div>
+        </section>
+
+         <!-- ========= Activity 3: Function Simulator ========= -->
+        <section id="function-simulator" class="practice-section">
+             <div class="container">
+                 <h2 class="fade-in"><i class="fas fa-keyboard"></i> <span data-translate="simulator16_title">Define and Call Your Function</span></h2>
+                 <p class="section-description fade-in delay-1" data-translate="simulator16_desc">
+                     Time to write your own! In the editor:
+                     1. Define a function named `say_hello` that prints "Hello from my function!".
+                     2. On a new line *after* the definition, *call* your `say_hello` function.
+                     Remember indentation! This uses <strong>Abstraction</strong> to hide the print detail inside `say_hello`.
+                 </p>
+                 <div class="interactive-area fade-in delay-2">
+                     <label for="sim-editor-input-func" style="font-weight: bold; display:block; margin-bottom: 8px;" data-translate="simulator16_editor_label">Code Editor:</label>
+                     <textarea id="sim-editor-input-func" class="sim-editor" rows="5" data-translate-placeholder="simulator16_editor_placeholder" placeholder='def say_hello():\n    print("Hello from my function!")\n\nsay_hello()'></textarea>
+                     <div class="text-center">
+                          <button id="run-sim-btn-func" class="action-button" data-translate="button_run_sim">Run Simulation</button>
+                     </div>
+                     <label for="sim-output-func" style="font-weight: bold; display:block; margin-top: 1.5rem; margin-bottom: 8px;" data-translate="simulator16_output_label">Simulated Output:</label>
+                     <div id="sim-output-func" class="sim-output-area">
+                         <span class="placeholder" data-translate="simulator16_output_placeholder">Output will appear here...</span>
+                     </div>
+                     <div id="sim-feedback-func" class="feedback-message"></div>
+                 </div>
+             </div>
+        </section>
+
+         <!-- ========= Activity 4: Spot the Function Call ========= -->
+        <section id="spot-call" class="practice-section">
+            <div class="container">
+                <h2 class="fade-in"><i class="fas fa-search"></i> <span data-translate="spot16_title">Spot the Function Call</span></h2>
+                <p class="section-description fade-in delay-1" data-translate="spot16_desc">
+                    Which lines below are actually *calling* (running) a function? Click the line(s) that execute a function. This relates to <strong>Decomposition</strong> - defining tasks and then using them.
+                </p>
+                <div class="interactive-area fade-in delay-2">
+                    <div id="call-lines">
+                        <!-- Lines will be generated by JS -->
+                    </div>
+                     <div class="text-center">
+                         <button id="check-call-select-btn" class="action-button" data-translate="button_check_selection">Check Selection</button>
+                         <button id="reset-call-btn" class="action-button secondary hidden" data-translate="button_try_again">Try Again</button>
+                     </div>
+                     <div id="call-select-feedback" class="feedback-message"></div>
+                </div>
+            </div>
+        </section>
+
+         <!-- ========= Activity 5: Mini Missions (Functions) ========= -->
+        <section id="mini-missions-func" class="practice-section">
+             <div class="container">
+                  <h2 class="fade-in"><i class="fas fa-rocket"></i> <span data-translate="missions16_title">Function Mini Missions!</span></h2>
+                 <p class="section-description fade-in delay-1" data-translate="missions16_desc">
+                     Practice defining and calling. Complete these tasks in the editors below. This shows <strong>Decomposition</strong> by creating small, focused functions.
+                 </p>
+                 <div class="interactive-area fade-in delay-2">
+                     <!-- Mission 1 -->
+                     <div class="mission" id="mission-func-1" data-completed="false">
+                         <span class="mission-status"><i class="fas fa-question-circle"></i></span>
+                         <h4 data-translate="mission16_1_title">Mission 1: Simple Greeting</h4>
+                         <p data-translate="mission16_1_desc">Define a function named `show_message` that prints "Mission 1 Complete!". Then, call this function.</p>
+                         <textarea class="sim-editor mission-editor" rows="4" data-translate-placeholder="mission16_1_placeholder" placeholder='def show_message():\n    print("...")\n\nshow_message()'></textarea>
+                         <div class="text-center"> <button class="action-button mission-run-btn" data-mission-id="1" data-translate="button_test_mission_1">Test Mission 1</button> </div>
+                         <div class="sim-output-area mission-output"></div>
+                         <div id="mission-feedback-func-1" class="feedback-message mission-feedback"></div>
+                     </div>
+                     <!-- Mission 2 -->
+                     <div class="mission" id="mission-func-2" data-completed="false">
+                          <span class="mission-status"><i class="fas fa-question-circle"></i></span>
+                         <h4 data-translate="mission16_2_title">Mission 2: Two Tasks (Decomposition)</h4>
+                         <p data-translate="mission16_2_desc">Define <strong>two</strong> functions: `task_one` (prints "Task One Done.") and `task_two` (prints "Task Two Done."). Then, call *both* functions, one after the other.</p>
+                         <textarea class="sim-editor mission-editor" rows="6" data-translate-placeholder="mission16_2_placeholder" placeholder='def task_one():\n    print("...")\n\ndef task_two():\n    print("...")\n\ntask_one()\ntask_two()'></textarea>
+                          <div class="text-center"> <button class="action-button mission-run-btn" data-mission-id="2" data-translate="button_test_mission_2">Test Mission 2</button> </div>
+                         <div class="sim-output-area mission-output"></div>
+                         <div id="mission-feedback-func-2" class="feedback-message mission-feedback"></div>
+                     </div>
+                     <!-- Mission 3 -->
+                     <div class="mission" id="mission-func-3" data-completed="false">
+                          <span class="mission-status"><i class="fas fa-question-circle"></i></span>
+                         <h4 data-translate="mission16_3_title">Mission 3: Function with Comment</h4>
+                         <p data-translate="mission16_3_desc">Define a function `ai_greeting` that prints "Greetings, AI Enthusiast!". Add a comment inside the function body explaining what it does. Then, call the function.</p>
+                         <textarea class="sim-editor mission-editor" rows="5" data-translate-placeholder="mission16_3_placeholder" placeholder='def ai_greeting():\n    # Your comment here\n    print("...")\n\nai_greeting()'></textarea>
+                          <div class="text-center"> <button class="action-button mission-run-btn" data-mission-id="3" data-translate="button_test_mission_3">Test Mission 3</button> </div>
+                         <div class="sim-output-area mission-output"></div>
+                         <div id="mission-feedback-func-3" class="feedback-message mission-feedback"></div>
+                     </div>
+                     <div id="missions-summary-feedback-func" class="feedback-message" style="margin-top: 2rem;"></div>
+                 </div>
+             </div>
+        </section>
+
+         <!-- ========= Completion Section ========= -->
+        <section class="completion-section">
+            <div class="container">
+                <div class="icon fade-in" style="animation: iconAppearCorrect 1s ease-out 0.5s forwards;">
+                    <i class="fas fa-star"></i> <i class="fas fa-award"></i> <i class="fas fa-star"></i>
+                </div>
+                <!-- MODULE 16 Completion -->
+                <h2 class="fade-in delay-1" data-translate="completion16_title">Module 16 Practice Complete!</h2>
+                <p class="fade-in delay-2" data-translate="completion16_desc">
+                    Great job defining and calling functions! You're building reusable code blocks. <br>
+                    Ready for more? Try the <strong>Advanced Practice</strong> for Module 16!
+                </p>
+                <div class="button-group">
+                    <!-- MODULE 16 Links -->
+                    <a href="ctp-theory-16.html" class="action-button secondary fade-in delay-3"><i class="fas fa-book-open"></i> <span data-translate="button_view_theory">View Theory Again</span></a>
+                    <a href="ctp-advanced-16.html" class="action-button success fade-in delay-3"><i class="fas fa-arrow-right"></i> <span data-translate="button_start_advanced">Start Advanced Practice</span></a>
+                    <a href="ctp-dashboard.html" class="action-button secondary fade-in delay-4"><i class="fas fa-list"></i> <span data-translate="button_back_menu">Back to Course Menu</span></a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ========= Script ========= -->
+    <script>
+    // --- Translations Object ---
+    const translations = {
+        en: {
+            "page_title": "Module 16: Defining Simple Functions",
+            "tooltip_click_identify": "Click to identify this part",
+            "nav_theory": "View Theory", "nav_advanced": "Advanced Practice", "nav_menu": "Course Menu",
+            "nav_anatomy": "Anatomy", "nav_build": "Build Call", "nav_simulator": "Simulator", "nav_spot": "Spot Call", "nav_missions": "Missions",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title": "Module 16: Defining Simple Functions", "header_subtitle": "Package code into reusable blocks!",
+            // Activity 1: Anatomy
+            "anatomy16_title": "Anatomy of a Function Definition", "anatomy16_desc": "Functions bundle code. Click each highlighted part of this simple function definition to learn its role. This uses <strong>Abstraction</strong> to name a task.",
+            "anatomy16_code_string": "\"Hello!\"", // Used in anatomy and build reminder
+            "anatomy16_status_initial": "Identify all 5 parts!", "anatomy16_status_progress": "Identified {count} of {total} parts.", "anatomy16_status_done": "All parts identified!",
+            "anatomy16_exp_keyword": "The `def` keyword: Signals the start of a function definition.",
+            "anatomy16_exp_name": "Function Name (`greet`): Your chosen name for this block of code. Follows variable naming rules.",
+            "anatomy16_exp_parentheses": "Parentheses `()`: Required after the name. Holds input parameters (arguments) later. Empty for now.",
+            "anatomy16_exp_colon": "Colon `:`: Marks the end of the function header and start of the indented body.",
+            "anatomy16_exp_body": "Function Body (indented): The code that runs when the function is *called*. Indentation is crucial!",
+            "feedback_anatomy16_correct": "Excellent! You've dissected the function definition!",
+             // Activity 2: Build Call
+            "build16_title": "Build a Function Call", "build16_desc": "We defined the `greet()` function above. Now, drag the pieces below to construct the code that *calls* (runs) this function.",
+            "build16_reminder": "Reminder: The function is defined as:",
+            "build16_target_label": "Construct the function call here:",
+            "build16_drop_placeholder": "Drop pieces here...",
+            "build16_piece_greet": "greet", // Function name piece
+            "build16_piece_parens": "()", // Parentheses piece
+            "build16_piece_def": "def", // Distractor piece
+            "build16_piece_colon": ":", // Distractor piece
+            "button_check_call": "Check Call", "button_reset_build": "Reset",
+            "feedback_build16_correct": "Perfect! That's how you call the function.", "feedback_build16_incorrect": "Not quite. A function call needs the name followed by parentheses `()`.", "feedback_build16_missing": "Drag both the function name and the parentheses.",
+             // Activity 3: Simulator
+            "simulator16_title": "Define and Call Your Function", "simulator16_desc": "Time to write your own! In the editor:\n1. Define a function named `say_hello` that prints \"Hello from my function!\".\n2. On a new line *after* the definition, *call* your `say_hello` function.\nRemember indentation! This uses <strong>Abstraction</strong> to hide the print detail inside `say_hello`.",
+            "simulator16_editor_label": "Code Editor:", "simulator16_editor_placeholder": 'def say_hello():\n    print("Hello from my function!")\n\nsay_hello()',
+            "button_run_sim": "Run Simulation", "simulator16_output_label": "Simulated Output:", "simulator16_output_placeholder": "Output will appear here...",
+            "feedback_sim16_success": "Simulation successful! Function defined and called.", "feedback_sim16_empty": "Editor is empty.", "feedback_sim16_no_def": "Need to define `say_hello` using `def say_hello():`.", "feedback_sim16_no_indent": "The `print` inside `say_hello` must be indented.", "feedback_sim16_wrong_print": "Function should print 'Hello from my function!'.", "feedback_sim16_no_call": "You defined `say_hello`, but didn't call it with `say_hello()` after the definition.", "feedback_sim16_syntax": "Check syntax: `def name():`, indentation, and `name()` call.",
+            // Activity 4: Spot Call
+            "spot16_title": "Spot the Function Call", "spot16_desc": "Which lines below are actually *calling* (running) a function? Click the line(s) that execute a function. This relates to <strong>Decomposition</strong> - defining tasks and then using them.",
+            "spot16_code_line_1": "def process_data():", "spot16_code_line_2": "  # Prepare data", "spot16_code_line_3": "result = calculate_sum(5, 3)", "spot16_code_line_4": "process_data()", "spot16_code_line_5": "x = 10 # Assign variable", "spot16_code_line_6": "print(\"Done!\")",
+            "button_check_selection": "Check Selection", "button_try_again": "Try Again",
+            "feedback_spot16_correct": "Correct! You identified all {totalCalls} function calls. <i class=\"fas fa-thumbs-up\"></i>",
+            "feedback_spot16_incorrect": "Not quite right. {hints}. Remember, a call uses the function name followed by `()`. Definitions start with `def`.",
+            "feedback_spot16_hint_incorrect": "{count} incorrect selection(s) marked with <i class=\"fas fa-times\"></i>",
+            "feedback_spot16_hint_missed": "{count} missed call(s) marked with <i class=\"fas fa-eye\"></i>",
+            "feedback_spot16_hints_joiner": ", and ",
+             // Activity 5: Missions
+            "missions16_title": "Function Mini Missions!", "missions16_desc": "Practice defining and calling. Complete these tasks in the editors below. This shows <strong>Decomposition</strong> by creating small, focused functions.",
+            "mission16_1_title": "Mission 1: Simple Greeting", "mission16_1_desc": "Define a function named `show_message` that prints \"Mission 1 Complete!\". Then, call this function.", "mission16_1_placeholder": 'def show_message():\n    print("...")\n\nshow_message()',
+            "button_test_mission_1": "Test Mission 1",
+            "mission16_2_title": "Mission 2: Two Tasks (Decomposition)", "mission16_2_desc": "Define <strong>two</strong> functions: `task_one` (prints \"Task One Done.\") and `task_two` (prints \"Task Two Done.\"). Then, call *both* functions, one after the other.", "mission16_2_placeholder": 'def task_one():\n    print("...")\n\ndef task_two():\n    print("...")\n\ntask_one()\ntask_two()',
+            "button_test_mission_2": "Test Mission 2",
+            "mission16_3_title": "Mission 3: Function with Comment", "mission16_3_desc": "Define a function `ai_greeting` that prints \"Greetings, AI Enthusiast!\". Add a comment inside the function body explaining what it does. Then, call the function.", "mission16_3_placeholder": 'def ai_greeting():\n    # Your comment here\n    print("...")\n\nai_greeting()',
+            "button_test_mission_3": "Test Mission 3",
+            "feedback_mission16_success": "Mission Accomplished!", "feedback_mission16_syntax_error": "Syntax/logic error. Check `def`, `:`, indentation, and the call.",
+            "feedback_mission16_1_hint": "Define `show_message()` to print 'Mission 1 Complete!', then call `show_message()`.",
+            "feedback_mission16_2_hint_def": "Need to define both `task_one()` and `task_two()` correctly.",
+            "feedback_mission16_2_hint_call": "Need to call *both* `task_one()` and `task_two()` after definitions.",
+            "feedback_mission16_2_hint_text": "Check the exact text printed by each function.",
+            "feedback_mission16_3_hint_def": "Define `ai_greeting()` to print 'Greetings, AI Enthusiast!'.",
+            "feedback_mission16_3_hint_comment": "Add a `# comment` inside the function body (indented).",
+            "feedback_mission16_3_hint_call": "Don't forget to call `ai_greeting()`.",
+            "feedback_missions16_summary_all_done": "All {totalMissions} function missions complete! Excellent!", "feedback_missions16_summary_progress": "Completed {completedCount} of {totalMissions} missions. Keep practicing!",
+             // Completion Section
+            "completion16_title": "Module 16 Practice Complete!", "completion16_desc": "Great job defining and calling functions! You're building reusable code blocks. <br> Ready for more? Try the <strong>Advanced Practice</strong> for Module 16!",
+            "button_view_theory": "View Theory Again", "button_start_advanced": "Start Advanced Practice", "button_back_menu": "Back to Course Menu"
+        },
+        pt: {
+            "page_title": "Módulo 16: Definindo Funções Simples",
+            "tooltip_click_identify": "Clique para identificar esta parte",
+            "nav_theory": "Ver Teoria", "nav_advanced": "Prática Avançada", "nav_menu": "Menu do Curso",
+            "nav_anatomy": "Anatomia", "nav_build": "Construir Chamada", "nav_simulator": "Simulador", "nav_spot": "Achar Chamada", "nav_missions": "Missões",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title": "Módulo 16: Definindo Funções Simples", "header_subtitle": "Empacote código em blocos reutilizáveis!",
+            // Activity 1: Anatomy
+            "anatomy16_title": "Anatomia da Definição de uma Função", "anatomy16_desc": "Funções agrupam código. Clique em cada parte destacada desta definição de função simples para aprender seu papel. Isso usa <strong>Abstração</strong> para nomear uma tarefa.",
+            "anatomy16_code_string": "\"Olá!\"",
+            "anatomy16_status_initial": "Identifique todas as 5 partes!", "anatomy16_status_progress": "Identificadas {count} de {total} partes.", "anatomy16_status_done": "Todas as partes identificadas!",
+            "anatomy16_exp_keyword": "A palavra-chave `def`: Sinaliza o início da definição de uma função.",
+            "anatomy16_exp_name": "Nome da Função (`greet`): O nome escolhido para este bloco de código. Segue regras de nomenclatura de variáveis.",
+            "anatomy16_exp_parentheses": "Parênteses `()`: Necessários após o nome. Guardam parâmetros de entrada (argumentos) mais tarde. Vazios por enquanto.",
+            "anatomy16_exp_colon": "Dois pontos `:`: Marcam o fim do cabeçalho da função e o início do corpo indentado.",
+            "anatomy16_exp_body": "Corpo da Função (indentado): O código que executa quando a função é *chamada*. A indentação é crucial!",
+            "feedback_anatomy16_correct": "Excelente! Você dissecou a definição da função!",
+             // Activity 2: Build Call
+            "build16_title": "Construir uma Chamada de Função", "build16_desc": "Definimos a função `greet()` acima. Agora, arraste as peças abaixo para construir o código que *chama* (executa) esta função.",
+            "build16_reminder": "Lembrete: A função é definida como:",
+            "build16_target_label": "Construa a chamada da função aqui:",
+            "build16_drop_placeholder": "Solte as peças aqui...",
+            "build16_piece_greet": "greet", "build16_piece_parens": "()", "build16_piece_def": "def", "build16_piece_colon": ":",
+            "button_check_call": "Verificar Chamada", "button_reset_build": "Reiniciar",
+            "feedback_build16_correct": "Perfeito! É assim que você chama a função.", "feedback_build16_incorrect": "Não exatamente. Uma chamada de função precisa do nome seguido por parênteses `()`.", "feedback_build16_missing": "Arraste o nome da função e os parênteses.",
+             // Activity 3: Simulator
+            "simulator16_title": "Defina e Chame Sua Função", "simulator16_desc": "Hora de escrever a sua! No editor:\n1. Defina uma função chamada `say_hello` que imprima \"Olá da minha função!\".\n2. Em uma nova linha *após* a definição, *chame* sua função `say_hello`.\nLembre-se da indentação! Isso usa <strong>Abstração</strong> para ocultar o detalhe da impressão dentro de `say_hello`.",
+            "simulator16_editor_label": "Editor de Código:", "simulator16_editor_placeholder": 'def say_hello():\n    print("Olá da minha função!")\n\nsay_hello()', // Placeholder translation
+            "button_run_sim": "Executar Simulação", "simulator16_output_label": "Saída Simulada:", "simulator16_output_placeholder": "A saída aparecerá aqui...",
+            "feedback_sim16_success": "Simulação bem-sucedida! Função definida e chamada.", "feedback_sim16_empty": "Editor está vazio.", "feedback_sim16_no_def": "Precisa definir `say_hello` usando `def say_hello():`.", "feedback_sim16_no_indent": "O `print` dentro de `say_hello` deve ser indentado.", "feedback_sim16_wrong_print": "Função deve imprimir 'Olá da minha função!'.", "feedback_sim16_no_call": "Você definiu `say_hello`, mas não a chamou com `say_hello()` após a definição.", "feedback_sim16_syntax": "Verifique a sintaxe: `def nome():`, indentação e a chamada `nome()`.",
+            // Activity 4: Spot Call
+            "spot16_title": "Ache a Chamada de Função", "spot16_desc": "Quais linhas abaixo estão realmente *chamando* (executando) uma função? Clique na(s) linha(s) que executam uma função. Isso se relaciona com <strong>Decomposição</strong> - definir tarefas e depois usá-las.",
+            "spot16_code_line_1": "def processar_dados():", "spot16_code_line_2": "  # Preparar dados", "spot16_code_line_3": "resultado = calcular_soma(5, 3)", "spot16_code_line_4": "processar_dados()", "spot16_code_line_5": "x = 10 # Atribuir variável", "spot16_code_line_6": "print(\"Feito!\")",
+            "button_check_selection": "Verificar Seleção", "button_try_again": "Tentar Novamente",
+            "feedback_spot16_correct": "Correto! Você identificou todas as {totalCalls} chamadas de função. <i class=\"fas fa-thumbs-up\"></i>",
+            "feedback_spot16_incorrect": "Não exatamente. {hints}. Lembre-se, uma chamada usa o nome da função seguido por `()`. Definições começam com `def`.",
+            "feedback_spot16_hint_incorrect": "{count} seleção(ões) incorreta(s) marcada(s) com <i class=\"fas fa-times\"></i>",
+            "feedback_spot16_hint_missed": "{count} chamada(s) não encontrada(s) marcada(s) com <i class=\"fas fa-eye\"></i>",
+            "feedback_spot16_hints_joiner": ", e ",
+             // Activity 5: Missions
+            "missions16_title": "Mini Missões de Função!", "missions16_desc": "Pratique definindo e chamando. Complete estas tarefas nos editores abaixo. Isso mostra <strong>Decomposição</strong> criando funções pequenas e focadas.",
+            "mission16_1_title": "Missão 1: Saudação Simples", "mission16_1_desc": "Defina uma função chamada `show_message` que imprima \"Missão 1 Completa!\". Então, chame esta função.", "mission16_1_placeholder": 'def show_message():\n    print("...")\n\nshow_message()',
+            "button_test_mission_1": "Testar Missão 1",
+            "mission16_2_title": "Missão 2: Duas Tarefas (Decomposição)", "mission16_2_desc": "Defina <strong>duas</strong> funções: `task_one` (imprime \"Tarefa Um Feita.\") e `task_two` (imprime \"Tarefa Dois Feita.\"). Então, chame *ambas* as funções, uma após a outra.", "mission16_2_placeholder": 'def task_one():\n    print("...")\n\ndef task_two():\n    print("...")\n\ntask_one()\ntask_two()',
+            "button_test_mission_2": "Testar Missão 2",
+            "mission16_3_title": "Missão 3: Função com Comentário", "mission16_3_desc": "Defina uma função `ai_greeting` que imprima \"Saudações, Entusiasta de IA!\". Adicione um comentário dentro do corpo da função explicando o que ela faz. Então, chame a função.", "mission16_3_placeholder": 'def ai_greeting():\n    # Seu comentário aqui\n    print("...")\n\nai_greeting()',
+            "button_test_mission_3": "Testar Missão 3",
+            "feedback_mission16_success": "Missão Cumprida!", "feedback_mission16_syntax_error": "Erro de sintaxe/lógica. Verifique `def`, `:`, indentação e a chamada.",
+            "feedback_mission16_1_hint": "Defina `show_message()` para imprimir 'Missão 1 Completa!', depois chame `show_message()`.",
+            "feedback_mission16_2_hint_def": "Precisa definir `task_one()` e `task_two()` corretamente.",
+            "feedback_mission16_2_hint_call": "Precisa chamar *ambas* `task_one()` e `task_two()` após as definições.",
+            "feedback_mission16_2_hint_text": "Verifique o texto exato impresso por cada função.",
+            "feedback_mission16_3_hint_def": "Defina `ai_greeting()` para imprimir 'Saudações, Entusiasta de IA!'.",
+            "feedback_mission16_3_hint_comment": "Adicione um `# comentário` dentro do corpo da função (indentado).",
+            "feedback_mission16_3_hint_call": "Não esqueça de chamar `ai_greeting()`.",
+            "feedback_missions16_summary_all_done": "Todas as {totalMissions} missões de função completas! Excelente!", "feedback_missions16_summary_progress": "Completou {completedCount} de {totalMissions} missões. Continue praticando!",
+             // Completion Section
+            "completion16_title": "Prática do Módulo 16 Completa!", "completion16_desc": "Ótimo trabalho definindo e chamando funções! Você está construindo blocos de código reutilizáveis. <br> Pronto para mais? Tente a <strong>Prática Avançada</strong> do Módulo 16!",
+            "button_view_theory": "Ver Teoria Novamente", "button_start_advanced": "Iniciar Prática Avançada", "button_back_menu": "Voltar ao Menu do Curso"
+        },
+        zh: {
+            "page_title": "模块 16：定义简单函数",
+            "tooltip_click_identify": "点击识别此部分",
+            "nav_theory": "查看理论", "nav_advanced": "高级练习", "nav_menu": "课程菜单",
+            "nav_anatomy": "剖析", "nav_build": "构建调用", "nav_simulator": "模拟器", "nav_spot": "找出调用", "nav_missions": "任务",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title": "模块 16：定义简单函数", "header_subtitle": "将代码打包成可重用的块！",
+            // Activity 1: Anatomy
+            "anatomy16_title": "剖析函数定义", "anatomy16_desc": "函数用于捆绑代码。点击这个简单函数定义的每个高亮部分，了解其作用。这使用了<strong>抽象</strong>来命名一个任务。",
+            "anatomy16_code_string": "\"你好！\"",
+            "anatomy16_status_initial": "识别所有 5 个部分！", "anatomy16_status_progress": "已识别 {count} / {total} 个部分。", "anatomy16_status_done": "所有部分已识别！",
+            "anatomy16_exp_keyword": "`def` 关键字：标志着函数定义的开始。",
+            "anatomy16_exp_name": "函数名 (`greet`)：您为这段代码选择的名称。遵循变量命名规则。",
+            "anatomy16_exp_parentheses": "括号 `()`：名称后必需。稍后用于存放输入参数（实参）。现在为空。",
+            "anatomy16_exp_colon": "冒号 `:`：标记函数头的结束和缩进主体的开始。",
+            "anatomy16_exp_body": "函数主体（缩进）：函数被*调用*时运行的代码。缩进至关重要！",
+            "feedback_anatomy16_correct": "太棒了！你成功剖析了函数定义！",
+             // Activity 2: Build Call
+            "build16_title": "构建函数调用", "build16_desc": "我们在上面定义了 `greet()` 函数。现在，拖动下面的碎片来构建*调用*（运行）此函数的代码。",
+            "build16_reminder": "提醒：函数定义如下：",
+            "build16_target_label": "在此构建函数调用：",
+            "build16_drop_placeholder": "将碎片拖放到此处...",
+            "build16_piece_greet": "greet", "build16_piece_parens": "()", "build16_piece_def": "def", "build16_piece_colon": ":",
+            "button_check_call": "检查调用", "button_reset_build": "重置",
+            "feedback_build16_correct": "完美！这就是调用函数的方式。", "feedback_build16_incorrect": "不太对。函数调用需要函数名后跟括号 `()`。", "feedback_build16_missing": "请拖动函数名和括号。",
+             // Activity 3: Simulator
+            "simulator16_title": "定义并调用你的函数", "simulator16_desc": "轮到你来写了！在编辑器中：\n1. 定义一个名为 `say_hello` 的函数，打印“来自我的函数问候！”。\n2. 在定义*之后*的新行上，*调用*你的 `say_hello` 函数。\n记住缩进！这使用了<strong>抽象</strong>将打印细节隐藏在 `say_hello` 中。",
+            "simulator16_editor_label": "代码编辑器：", "simulator16_editor_placeholder": 'def say_hello():\n    print("来自我的函数问候！")\n\nsay_hello()', // Placeholder translation
+            "button_run_sim": "运行模拟", "simulator16_output_label": "模拟输出：", "simulator16_output_placeholder": "输出将显示在此处...",
+            "feedback_sim16_success": "模拟成功！函数已定义并调用。", "feedback_sim16_empty": "编辑器是空的。", "feedback_sim16_no_def": "需要使用 `def say_hello():` 来定义 `say_hello`。", "feedback_sim16_no_indent": "`say_hello` 内部的 `print` 必须缩进。", "feedback_sim16_wrong_print": "函数应打印“来自我的函数问候！”。", "feedback_sim16_no_call": "你定义了 `say_hello`，但在定义后没有用 `say_hello()` 调用它。", "feedback_sim16_syntax": "检查语法：`def 名称():`、缩进和 `名称()` 调用。",
+            // Activity 4: Spot Call
+            "spot16_title": "找出函数调用", "spot16_desc": "下面哪些行实际在*调用*（运行）一个函数？点击执行函数的行。这与<strong>分解</strong>有关——定义任务然后使用它们。",
+            "spot16_code_line_1": "def process_data():", "spot16_code_line_2": "  # 准备数据", "spot16_code_line_3": "result = calculate_sum(5, 3)", "spot16_code_line_4": "process_data()", "spot16_code_line_5": "x = 10 # 变量赋值", "spot16_code_line_6": "print(\"完成！\")",
+            "button_check_selection": "检查选择", "button_try_again": "再试一次",
+            "feedback_spot16_correct": "正确！你找出了所有 {totalCalls} 个函数调用。 <i class=\"fas fa-thumbs-up\"></i>",
+            "feedback_spot16_incorrect": "不太对。{hints}。记住，调用使用函数名后跟 `()`。定义以 `def` 开头。",
+            "feedback_spot16_hint_incorrect": "{count} 个错误选择，已用 <i class=\"fas fa-times\"></i> 标记",
+            "feedback_spot16_hint_missed": "{count} 个遗漏的调用，已用 <i class=\"fas fa-eye\"></i> 标记",
+            "feedback_spot16_hints_joiner": "，并且 ",
+             // Activity 5: Missions
+            "missions16_title": "函数迷你任务！", "missions16_desc": "练习定义和调用。在下面的编辑器中完成这些任务。这通过创建小型、专注的函数来展示<strong>分解</strong>。",
+            "mission16_1_title": "任务 1：简单问候", "mission16_1_desc": "定义一个名为 `show_message` 的函数，打印“任务 1 完成！”。然后，调用此函数。", "mission16_1_placeholder": 'def show_message():\n    print("...")\n\nshow_message()',
+            "button_test_mission_1": "测试任务 1",
+            "mission16_2_title": "任务 2：两个任务（分解）", "mission16_2_desc": "定义<strong>两个</strong>函数：`task_one`（打印“任务一完成。”）和 `task_two`（打印“任务二完成。”）。然后，一个接一个地调用*两个*函数。", "mission16_2_placeholder": 'def task_one():\n    print("...")\n\ndef task_two():\n    print("...")\n\ntask_one()\ntask_two()',
+            "button_test_mission_2": "测试任务 2",
+            "mission16_3_title": "任务 3：带注释的函数", "mission16_3_desc": "定义一个函数 `ai_greeting`，打印“问候，AI 爱好者！”。在函数主体内添加注释说明其功能。然后，调用该函数。", "mission16_3_placeholder": 'def ai_greeting():\n    # 你的注释在此\n    print("...")\n\nai_greeting()',
+            "button_test_mission_3": "测试任务 3",
+            "feedback_mission16_success": "任务完成！", "feedback_mission16_syntax_error": "语法/逻辑错误。检查 `def`、`:`、缩进和调用。",
+            "feedback_mission16_1_hint": "定义 `show_message()` 打印 '任务 1 完成！'，然后调用 `show_message()`。",
+            "feedback_mission16_2_hint_def": "需要正确定义 `task_one()` 和 `task_two()`。",
+            "feedback_mission16_2_hint_call": "定义后需要调用 *两个* 函数 `task_one()` 和 `task_two()`。",
+            "feedback_mission16_2_hint_text": "检查每个函数打印的确切文本。",
+            "feedback_mission16_3_hint_def": "定义 `ai_greeting()` 打印 '问候，AI 爱好者！'。",
+            "feedback_mission16_3_hint_comment": "在函数主体内（缩进）添加 `# 注释`。",
+            "feedback_mission16_3_hint_call": "别忘了调用 `ai_greeting()`。",
+            "feedback_missions16_summary_all_done": "所有 {totalMissions} 个函数任务已完成！太棒了！", "feedback_missions16_summary_progress": "已完成 {completedCount} / {totalMissions} 个任务。继续练习！",
+             // Completion Section
+            "completion16_title": "模块 16 练习完成！", "completion16_desc": "做得好，定义和调用函数！你正在构建可重用的代码块。<br> 准备好学习更多了吗？试试模块 16 的<strong>高级练习</strong>！",
+            "button_view_theory": "再次查看理论", "button_start_advanced": "开始高级练习", "button_back_menu": "返回课程菜单"
+        }
+    };
+
+
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // --- Language Management Functions (Same as Module 0) ---
+        function getStoredLanguage() { /* ... keep code ... */
+            const storedLang = localStorage.getItem('userLanguage');
+            if (storedLang && translations[storedLang]) return storedLang;
+            const browserLang = navigator.language || navigator.userLanguage;
+            if (browserLang.startsWith('pt')) return 'pt';
+            if (browserLang.startsWith('zh')) return 'zh';
+            return 'en';
+        }
+        function setLanguage(lang) { /* ... keep code ... */
+            if (!translations[lang]) lang = 'en'; // Fallback
+            localStorage.setItem('userLanguage', lang);
+            document.documentElement.lang = lang;
+            translatePage(lang); // Apply generic translations first
+
+            const langSelect = document.getElementById('languageSelect');
+            if (langSelect) langSelect.value = lang;
+
+            // Re-initialize or update language-dependent interactive content
+            if (document.getElementById('anatomy-function')) setupAnatomyActivity();
+            if (document.getElementById('build-a-call')) setupBuildCallActivity();
+            if (document.getElementById('spot-call')) setupSpotCallActivity();
+            if (document.getElementById('mini-missions-func') && typeof updateMissionSummary === 'function') updateMissionSummary();
+        }
+        function getTranslation(key, lang, replacements = {}) { /* ... keep code ... */
+             let text = translations[lang]?.[key] ?? translations['en']?.[key] ?? `[${key}]`; // Fallback shows key
+             for (const placeholder in replacements) {
+                 const regex = new RegExp(`\\{${placeholder}\\}`, 'g');
+                 text = text.replace(regex, replacements[placeholder]);
+             }
+             return text;
+        }
+        function translatePage(lang) { /* ... keep code ... */
+             if (!translations[lang]) lang = 'en';
+             document.querySelectorAll('[data-translate]').forEach(el => {
+                 const key = el.getAttribute('data-translate');
+                 const translation = getTranslation(key, lang);
+                  if (el.tagName === 'TITLE') { document.title = translation; }
+                  else if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') { /* Handled below */ }
+                  else if (el.tagName === 'OPTION') { el.textContent = translation; }
+                  else {
+                      if (translation.includes('<') && translation.includes('>')) { el.innerHTML = translation; }
+                      else { el.textContent = translation; }
+                  }
+             });
+             document.querySelectorAll('[data-translate-placeholder]').forEach(el => {
+                 const key = el.getAttribute('data-translate-placeholder');
+                 const translation = getTranslation(key, lang);
+                 el.setAttribute('placeholder', translation);
+             });
+              document.querySelectorAll('[data-translate-title]').forEach(el => {
+                  const key = el.getAttribute('data-translate-title');
+                  const translation = getTranslation(key, lang);
+                  el.setAttribute('title', translation);
+              });
+        }
+
+        const initialLang = getStoredLanguage();
+
+        // --- Minimal Nav Logic (Same as Module 0) ---
+        const navToggleButton = document.getElementById('minimal-nav-toggle'); /* ... keep logic ... */
+        const navPanel = document.getElementById('minimal-nav-panel');
+        const body = document.body;
+        if (navToggleButton && navPanel) {
+            navToggleButton.addEventListener('click', (event) => { event.stopPropagation(); body.classList.toggle('nav-active'); navToggleButton.setAttribute('aria-expanded', body.classList.contains('nav-active')); });
+            document.addEventListener('click', (event) => { if (body.classList.contains('nav-active') && !navPanel.contains(event.target) && event.target !== navToggleButton && !navToggleButton.contains(event.target) ) { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); } });
+            navPanel.querySelectorAll('a').forEach(link => { link.addEventListener('click', () => { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); }); });
+            document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && body.classList.contains('nav-active')) { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); } });
+            navToggleButton.setAttribute('aria-expanded', 'false');
+        }
+
+        // --- Language Switcher Setup (Same as Module 0) ---
+        const langSelect = document.getElementById('languageSelect'); /* ... keep logic ... */
+        if (langSelect) { langSelect.addEventListener('change', (e) => { setLanguage(e.target.value); }); }
+
+        // --- Helper Function for Feedback (Same as Module 0) ---
+        function showFeedback(elementId, messageKey, type = 'info', replacements = {}) { /* ... keep code ... */
+            const feedbackEl = document.getElementById(elementId);
+            if (!feedbackEl) { console.error(`Feedback element not found: ${elementId}`); return; }
+            const currentLang = getStoredLanguage();
+            const translatedMessage = getTranslation(messageKey, currentLang, replacements);
+            if (translatedMessage.includes('<') && translatedMessage.includes('>')) { feedbackEl.innerHTML = translatedMessage; }
+            else { feedbackEl.textContent = translatedMessage; }
+            feedbackEl.className = 'feedback-message';
+            feedbackEl.classList.add('visible', type);
+            const interactiveArea = feedbackEl.closest('.interactive-area');
+            if (!interactiveArea) return;
+            interactiveArea.classList.remove('success-glow-anim', 'shake-anim');
+            void interactiveArea.offsetWidth;
+            if (type === 'correct') { interactiveArea.classList.add('success-glow-anim'); }
+            else if (type === 'incorrect') { interactiveArea.classList.add('shake-anim'); }
+        }
+
+        // --- Activity 1: Function Anatomy ---
+        const anatomyFunction = document.getElementById('anatomy-function');
+        let anatomyPartExplanations = {};
+        const totalAnatomyFuncParts = 5; // def, name, (), :, body
+        let currentAnatomyListeners = [];
+
+        function setupAnatomyActivity() {
+            if (!anatomyFunction) return;
+            const currentLang = getStoredLanguage();
+            anatomyPartExplanations = {}; // Clear previous explanations
+            document.querySelectorAll('#explanation-texts span[data-key]').forEach(span => {
+                const key = span.getAttribute('data-key');
+                anatomyPartExplanations[key] = getTranslation(`anatomy16_exp_${key}`, currentLang);
+            });
+
+            const parts = anatomyFunction.querySelectorAll('.code-part');
+            const explanationsDiv = document.getElementById('anatomy-explanations');
+            const statusP = document.getElementById('anatomy-status');
+            const feedbackDiv = document.getElementById('anatomy-feedback');
+            let identifiedCount = 0;
+
+            currentAnatomyListeners.forEach(({element, listener}) => element.removeEventListener('click', listener));
+            currentAnatomyListeners = [];
+
+            parts.forEach(p => p.classList.remove('identified'));
+            explanationsDiv.innerHTML = '';
+            statusP.innerHTML = getTranslation('anatomy16_status_initial', currentLang);
+            feedbackDiv.classList.remove('visible', 'correct', 'incorrect', 'info');
+
+            parts.forEach(part => {
+                const clickListener = () => {
+                    const partType = part.dataset.part;
+                    if (!part.classList.contains('identified') && partType && anatomyPartExplanations[partType]) {
+                        part.classList.add('identified');
+                        identifiedCount++;
+                        const p = document.createElement('p');
+                        p.classList.add('part-explanation');
+                        const icon = document.createElement('i');
+                        icon.className = 'fas fa-check-circle';
+                        icon.style.color = 'var(--success-color)';
+                        const strong = document.createElement('strong');
+                        // Get text from inner span or the part itself
+                        const displayedTextElement = part.querySelector('span[class^="code-"]');
+                        strong.textContent = (displayedTextElement ? displayedTextElement.textContent.trim() : part.textContent.trim()) + ': ';
+                        if (partType === 'body') { // Special case for body description
+                           strong.textContent = 'Function Body (Indented Code): ';
+                        }
+
+                        p.appendChild(icon);
+                        p.appendChild(strong);
+                        p.appendChild(document.createTextNode(anatomyPartExplanations[partType]));
+                        explanationsDiv.appendChild(p);
+
+                        statusP.innerHTML = getTranslation('anatomy16_status_progress', currentLang, { count: identifiedCount, total: totalAnatomyFuncParts });
+
+                        if (identifiedCount === totalAnatomyFuncParts) {
+                            statusP.innerHTML = getTranslation('anatomy16_status_done', currentLang);
+                            showFeedback('anatomy-feedback', 'feedback_anatomy16_correct', 'correct');
+                        }
+                    } else if (!anatomyPartExplanations[partType]) {
+                        console.warn(`Explanation missing or part already identified: ${partType}`);
+                    }
+                };
+                part.addEventListener('click', clickListener);
+                currentAnatomyListeners.push({ element: part, listener: clickListener });
+            });
+        }
+
+        // --- Activity 2: Build-a-Function-Call ---
+        const buildACallSection = document.getElementById('build-a-call');
+        let callDropZone;
+
+        if (buildACallSection) {
+            const piecesContainer = document.getElementById('draggable-pieces');
+            callDropZone = document.getElementById('call-drop-zone');
+            const checkBtn = document.getElementById('check-call-btn');
+            const resetBtn = document.getElementById('reset-call-btn');
+            const feedbackDiv = document.getElementById('call-feedback');
+
+             const initialCallPiecesData = [
+                 { key: 'build16_piece_greet', canonicalValue: 'greet', type: 'function_name' },
+                 { key: 'build16_piece_parens', canonicalValue: '()', type: 'parentheses' },
+                 { key: 'build16_piece_def', canonicalValue: 'def', type: 'keyword_distractor' }, // Distractor
+                 { key: 'build16_piece_colon', canonicalValue: ':', type: 'colon_distractor' }   // Distractor
+             ];
+
+            let draggedElement = null; let touchDragElement = null; let originalPiece = null; let startX, startY, offsetX, offsetY;
+
+            function createCallPieceElement(pieceData, currentLang) {
+                const piece = document.createElement('span');
+                piece.classList.add('piece', 'code-font');
+                piece.draggable = true;
+                const displayText = getTranslation(pieceData.key, currentLang);
+                piece.textContent = displayText;
+                piece.dataset.value = pieceData.canonicalValue;
+                piece.dataset.type = pieceData.type;
+                if(pieceData.key) piece.dataset.transKey = pieceData.key;
+
+                // Apply specific styles based on type
+                if (pieceData.type === 'function_name') piece.style.backgroundColor = 'var(--function-color)';
+                if (pieceData.type === 'parentheses') piece.style.backgroundColor = 'var(--paren-color)';
+                if (pieceData.type.includes('distractor')) piece.style.backgroundColor = 'var(--secondary-color)'; // Grey out distractors
+
+                 // Adjust text color for light backgrounds
+                if (pieceData.type === 'function_name' || pieceData.type === 'parentheses') {
+                     piece.style.color = 'var(--text-dark)';
+                }
+
+                addDragListeners(piece);
+                addTouchListeners(piece);
+                return piece;
+             }
+
+            function populateCallPieces() {
+                 const currentLang = getStoredLanguage();
+                 piecesContainer.innerHTML = '';
+                 const shuffledPieces = [...initialCallPiecesData].sort(() => Math.random() - 0.5);
+                 shuffledPieces.forEach(pData => {
+                     piecesContainer.appendChild(createCallPieceElement(pData, currentLang));
+                 });
+             }
+
+            function setupBuildCallActivity() {
+                 populateCallPieces();
+                 callDropZone.innerHTML = '';
+                 const placeholder = document.createElement('span');
+                 placeholder.id = 'call-drop-zone-placeholder';
+                 placeholder.dataset.translate = 'build16_drop_placeholder';
+                 placeholder.textContent = getTranslation('build16_drop_placeholder', getStoredLanguage());
+                 callDropZone.appendChild(placeholder);
+                 feedbackDiv.classList.remove('visible', 'correct', 'incorrect', 'info');
+                 checkBtn.classList.remove('success');
+                 checkBtn.disabled = false;
+                 callDropZone.classList.remove('over');
+             }
+
+            // Drag/Touch Listeners (mostly same as Module 0, ensure correct IDs/Classes)
+            function addDragListeners(element) { /* ... keep logic, adjust if needed ... */
+                element.addEventListener('dragstart', (e) => { if (e.target.closest('#call-drop-zone')) { e.preventDefault(); return; } draggedElement = element; element.classList.add('ghosting'); e.dataTransfer.effectAllowed = 'move'; try { e.dataTransfer.setData('text/plain', element.dataset.value); } catch (err) {} });
+                element.addEventListener('dragend', () => { if (draggedElement && draggedElement.parentNode) { draggedElement.classList.remove('ghosting'); } draggedElement = null; callDropZone.classList.remove('over'); });
+             }
+             function handleTouchStart(e) { /* ... keep logic, ensure correct IDs/Classes ... */
+                 if (touchDragElement || e.target.closest('#call-drop-zone')) return; originalPiece = e.target.closest('.piece'); if (!originalPiece || !piecesContainer.contains(originalPiece)) return; const touch = e.targetTouches[0]; startX = touch.clientX; startY = touch.clientY; const rect = originalPiece.getBoundingClientRect(); offsetX = startX - rect.left; offsetY = startY - rect.top; touchDragElement = originalPiece.cloneNode(true); touchDragElement.classList.add('dragging'); touchDragElement.style.position = 'fixed'; touchDragElement.style.left = `${startX - offsetX}px`; touchDragElement.style.top = `${startY - offsetY}px`; touchDragElement.style.width = `${rect.width}px`; touchDragElement.style.height = `${rect.height}px`; document.body.appendChild(touchDragElement); originalPiece.classList.add('ghosting'); e.preventDefault();
+             }
+             function handleTouchMove(e) { /* ... keep logic, ensure correct IDs/Classes ... */
+                  if (!touchDragElement) return; e.preventDefault(); const touch = e.targetTouches[0]; const currentX = touch.clientX; const currentY = touch.clientY; touchDragElement.style.left = `${currentX - offsetX}px`; touchDragElement.style.top = `${currentY - offsetY}px`; touchDragElement.style.display = 'none'; const elemBelow = document.elementFromPoint(currentX, currentY); touchDragElement.style.display = ''; const isOverDropZone = elemBelow === callDropZone || callDropZone.contains(elemBelow); callDropZone.classList.toggle('over', isOverDropZone);
+             }
+             function handleTouchEnd(e) { /* ... keep logic, ensure correct IDs/Classes ... */
+                 if (!touchDragElement || !originalPiece) return; const touch = e.changedTouches[0]; const finalX = touch.clientX; const finalY = touch.clientY; touchDragElement.style.display = 'none'; const elemBelow = document.elementFromPoint(finalX, finalY); touchDragElement.style.display = ''; const droppedInZone = elemBelow === callDropZone || callDropZone.contains(elemBelow); if (droppedInZone) { callDropZone.querySelector('#call-drop-zone-placeholder')?.remove(); const droppedPiece = originalPiece.cloneNode(true); droppedPiece.classList.remove('ghosting'); droppedPiece.draggable = false; droppedPiece.style.cursor = 'default'; droppedPiece.removeEventListener('touchstart', handleTouchStart); droppedPiece.removeEventListener('touchmove', handleTouchMove); droppedPiece.removeEventListener('touchend', handleTouchEnd); callDropZone.appendChild(droppedPiece); originalPiece.remove(); } else { originalPiece.classList.remove('ghosting'); } if (touchDragElement.parentNode === document.body) { document.body.removeChild(touchDragElement); } callDropZone.classList.remove('over'); touchDragElement = null; originalPiece = null;
+             }
+             function addTouchListeners(element) { element.addEventListener('touchstart', handleTouchStart, { passive: false }); element.addEventListener('touchmove', handleTouchMove, { passive: false }); element.addEventListener('touchend', handleTouchEnd); }
+
+            callDropZone.addEventListener('dragover', (e) => { e.preventDefault(); callDropZone.classList.add('over'); });
+            callDropZone.addEventListener('dragleave', () => { callDropZone.classList.remove('over'); });
+            callDropZone.addEventListener('drop', (e) => {
+                 e.preventDefault(); callDropZone.classList.remove('over');
+                 if (draggedElement && piecesContainer.contains(draggedElement)) {
+                     callDropZone.querySelector('#call-drop-zone-placeholder')?.remove();
+                     const droppedPiece = draggedElement; droppedPiece.classList.remove('ghosting'); droppedPiece.draggable = false; droppedPiece.style.cursor = 'default';
+                     callDropZone.appendChild(droppedPiece); draggedElement = null;
+                 }
+             });
+
+            checkBtn.addEventListener('click', () => {
+                 const droppedPieces = Array.from(callDropZone.querySelectorAll('.piece'));
+                 const sequence = droppedPieces.map(p => p.dataset.type).join('-');
+                 const correctSequence = 'function_name-parentheses';
+
+                 if (droppedPieces.length === 0) { showFeedback('call-feedback', 'feedback_build16_missing', 'info'); checkBtn.classList.remove('success'); }
+                 else if (sequence === correctSequence) { showFeedback('call-feedback', 'feedback_build16_correct', 'correct'); checkBtn.classList.add('success'); checkBtn.disabled = true; }
+                 else { showFeedback('call-feedback', 'feedback_build16_incorrect', 'incorrect'); checkBtn.classList.remove('success'); }
+            });
+            resetBtn.addEventListener('click', setupBuildCallActivity);
+        }
+
+
+        // --- Activity 3: Function Simulator ---
+        const funcSimSection = document.getElementById('function-simulator');
+        if(funcSimSection) {
+            const editor = document.getElementById('sim-editor-input-func');
+            const outputArea = document.getElementById('sim-output-func');
+            const runBtn = document.getElementById('run-sim-btn-func');
+            const feedbackDiv = document.getElementById('sim-feedback-func');
+
+            runBtn.addEventListener('click', () => {
+                 const code = editor.value; // Don't trim lines individually yet
+                 const lines = code.split('\n');
+                 let placeholder = outputArea.querySelector('.placeholder');
+                 outputArea.innerHTML = '';
+                 if (!placeholder) { placeholder = document.createElement('span'); placeholder.className = 'placeholder'; placeholder.dataset.translate = 'simulator16_output_placeholder'; }
+                 placeholder.textContent = getTranslation('simulator16_output_placeholder', getStoredLanguage());
+                 feedbackDiv.classList.remove('visible', 'correct', 'incorrect', 'info');
+
+                 // Basic validation
+                 const defRegex = /^\s*def\s+say_hello\s*\(\s*\)\s*:/;
+                 const printRegex = /^\s+print\s*\(\s*(["'])Hello from my function!\1\s*\)/; // Check indentation and exact text
+                 const callRegex = /^\s*say_hello\s*\(\s*\)\s*$/;
+
+                 let hasDef = false; let defLineIndex = -1;
+                 let hasCorrectPrint = false; let printLineIndex = -1;
+                 let hasCall = false; let callLineIndex = -1;
+
+                 lines.forEach((line, index) => {
+                     if (defRegex.test(line)) { hasDef = true; defLineIndex = index; }
+                     if (hasDef && index === defLineIndex + 1 && printRegex.test(line)) { hasCorrectPrint = true; printLineIndex = index; }
+                     if (callRegex.test(line)) {
+                         // Allow call anywhere *after* the definition (simple check)
+                         if (defLineIndex !== -1 && index > defLineIndex) {
+                            // Basic check: if print line exists, call should be after it or anywhere after def
+                            if (printLineIndex === -1 || index >= printLineIndex) {
+                                hasCall = true;
+                                callLineIndex = index;
+                            }
+                         } else if (defLineIndex === -1) { // Call without definition found yet
+                             hasCall = true; // Mark it, but will fail later
+                             callLineIndex = index;
+                         }
+                     }
+                 });
+
+                 // Check conditions
+                 if (code.trim() === '') { outputArea.appendChild(placeholder); showFeedback('sim-feedback-func', 'feedback_sim16_empty', 'info'); }
+                 else if (!hasDef) { outputArea.appendChild(placeholder); showFeedback('sim-feedback-func', 'feedback_sim16_no_def', 'incorrect'); }
+                 else if (!hasCorrectPrint) {
+                     // Check if print exists but wrong indentation or text
+                     let wrongIndent = false;
+                     let wrongText = false;
+                      lines.forEach((line, index) => {
+                          if (index === defLineIndex + 1) {
+                              if (/^\s*print\(.*\)/.test(line) && !printRegex.test(line)) wrongText = true; // Check text
+                              if (!/^\s+/.test(line) && /print\(.*\)/.test(line)) wrongIndent = true; // Check indentation
+                          }
+                      });
+                     if(wrongIndent) { showFeedback('sim-feedback-func', 'feedback_sim16_no_indent', 'incorrect'); }
+                     else if(wrongText) { showFeedback('sim-feedback-func', 'feedback_sim16_wrong_print', 'incorrect'); }
+                     else { showFeedback('sim-feedback-func', 'feedback_sim16_no_indent', 'incorrect'); } // Default to indent if specific checks fail
+                     outputArea.appendChild(placeholder);
+                 }
+                 else if (!hasCall) { outputArea.appendChild(placeholder); showFeedback('sim-feedback-func', 'feedback_sim16_no_call', 'incorrect'); }
+                 else { // All parts seem present
+                     const outputLine = document.createElement('span');
+                     outputLine.classList.add('output-line');
+                     outputLine.textContent = `> Hello from my function!`;
+                     outputArea.appendChild(outputLine);
+                     showFeedback('sim-feedback-func', 'feedback_sim16_success', 'correct');
+                 }
+             });
+        }
+
+
+        // --- Activity 4: Spot the Function Call ---
+        const spotCallSection = document.getElementById('spot-call');
+        if (spotCallSection) {
+            const linesContainer = document.getElementById('call-lines');
+            const checkBtn = document.getElementById('check-call-select-btn');
+            const resetBtn = document.getElementById('reset-call-btn');
+            const feedbackDiv = document.getElementById('call-select-feedback');
+
+             const spotCallLinesData = [
+                 { key: 'spot16_code_line_1', isCall: false }, // def process_data():
+                 { key: 'spot16_code_line_2', isCall: false }, //   # Prepare data
+                 { key: 'spot16_code_line_3', isCall: true },  // result = calculate_sum(5, 3) -> calculate_sum() is a call
+                 { key: 'spot16_code_line_4', isCall: true },  // process_data()
+                 { key: 'spot16_code_line_5', isCall: false }, // x = 10 # Assign variable
+                 { key: 'spot16_code_line_6', isCall: true }   // print("Done!") -> print() is a call
+             ];
+            let currentCallLineListeners = [];
+
+            function createSpotCallLineElement(lineData, currentLang) {
+                 const container = document.createElement('div');
+                 container.classList.add('code-line-container');
+                 const iconPlaceholder = document.createElement('span');
+                 iconPlaceholder.classList.add('feedback-icon-placeholder');
+                 const codeLine = document.createElement('div');
+                 codeLine.classList.add('code-line-check');
+                 codeLine.dataset.isCall = lineData.isCall.toString();
+                 // Simple syntax highlighting for display
+                 let lineText = getTranslation(lineData.key, currentLang);
+                 lineText = lineText.replace(/def\s+(\w+)\(\):/, '<span class="code-keyword">def</span> <span class="code-function">$1</span><span class="code-paren">()</span>:');
+                 lineText = lineText.replace(/(\w+)\((.*?)\)/g, (match, funcName, args) => {
+                    if (funcName === 'def') return match; // Don't highlight def itself as a call
+                    return `<span class="code-function">${funcName}</span><span class="code-paren">(${args})</span>`;
+                 });
+                 lineText = lineText.replace(/#.*/, '<span class="code-comment">$&</span>'); // Comments
+                 codeLine.innerHTML = lineText;
+
+                 container.appendChild(iconPlaceholder);
+                 container.appendChild(codeLine);
+                 return container;
+            }
+
+            function setupSpotCallActivity() {
+                 const currentLang = getStoredLanguage();
+                 currentCallLineListeners.forEach(({element, listener}) => element.removeEventListener('click', listener));
+                 currentCallLineListeners = [];
+
+                 linesContainer.innerHTML = '';
+                 spotCallLinesData.forEach(lineData => {
+                     const lineElementContainer = createSpotCallLineElement(lineData, currentLang);
+                     linesContainer.appendChild(lineElementContainer);
+                     const lineCheckDiv = lineElementContainer.querySelector('.code-line-check');
+                     const lineClickListener = () => {
+                         if (lineCheckDiv.classList.contains('checked-state')) return;
+                         lineCheckDiv.classList.toggle('selected-visual');
+                     };
+                     lineCheckDiv.addEventListener('click', lineClickListener);
+                     currentCallLineListeners.push({ element: lineCheckDiv, listener: lineClickListener });
+                 });
+                 feedbackDiv.classList.remove('visible', 'correct', 'incorrect', 'info');
+                 resetBtn.classList.add('hidden');
+                 checkBtn.disabled = false;
+                 checkBtn.classList.remove('success');
+            }
+
+            checkBtn.addEventListener('click', () => {
+                 let correctSelections = 0; let incorrectSelections = 0; let missedCalls = 0;
+                 const lineContainers = linesContainer.querySelectorAll('.code-line-container');
+                 const totalCalls = spotCallLinesData.filter(l => l.isCall).length;
+                 let isCorrectOverall = false;
+                 const currentLang = getStoredLanguage();
+
+                 lineContainers.forEach(container => {
+                    const lineCheck = container.querySelector('.code-line-check');
+                    const iconPlaceholder = container.querySelector('.feedback-icon-placeholder');
+                    const isCall = lineCheck.dataset.isCall === 'true';
+                    const isSelected = lineCheck.classList.contains('selected-visual');
+
+                    iconPlaceholder.innerHTML = '';
+                    iconPlaceholder.classList.remove('visible');
+                    lineCheck.classList.add('checked-state');
+
+                    let iconClass = '';
+                    if (isSelected && isCall) { iconClass = 'fas fa-check'; correctSelections++; iconPlaceholder.classList.add('visible'); }
+                    else if (isSelected && !isCall) { iconClass = 'fas fa-times'; incorrectSelections++; iconPlaceholder.classList.add('visible'); }
+                    else if (!isSelected && isCall) { iconClass = 'fas fa-eye'; missedCalls++; iconPlaceholder.classList.add('visible'); }
+
+                    if (iconClass) { const icon = document.createElement('i'); icon.className = iconClass; iconPlaceholder.appendChild(icon); }
+                 });
+
+                 let feedbackMsgKey = ''; let feedbackReplacements = {};
+                 if (incorrectSelections === 0 && missedCalls === 0 && correctSelections === totalCalls) {
+                     isCorrectOverall = true;
+                     feedbackMsgKey = 'feedback_spot16_correct';
+                     feedbackReplacements = { totalCalls: totalCalls };
+                     showFeedback('call-select-feedback', feedbackMsgKey, 'correct', feedbackReplacements);
+                     checkBtn.classList.add('success');
+                 } else {
+                     let hints = [];
+                     if (incorrectSelections > 0) hints.push(getTranslation('feedback_spot16_hint_incorrect', currentLang, { count: incorrectSelections }));
+                     if (missedCalls > 0) hints.push(getTranslation('feedback_spot16_hint_missed', currentLang, { count: missedCalls }));
+                     feedbackMsgKey = 'feedback_spot16_incorrect';
+                     feedbackReplacements = { hints: hints.join(getTranslation('feedback_spot16_hints_joiner', currentLang)) };
+                     showFeedback('call-select-feedback', feedbackMsgKey, 'incorrect', feedbackReplacements);
+                     checkBtn.classList.remove('success');
+                 }
+
+                 if (isCorrectOverall) {
+                     resetBtn.classList.add('hidden');
+                     checkBtn.disabled = true;
+                 } else {
+                     resetBtn.classList.remove('hidden');
+                     checkBtn.disabled = true;
+                 }
+            });
+            resetBtn.addEventListener('click', () => { setupSpotCallActivity(); });
+        }
+
+
+        // --- Activity 5: Mini Missions (Functions) ---
+        const missionsFuncSection = document.getElementById('mini-missions-func');
+        let updateMissionSummary; // Define function scope
+        if (missionsFuncSection) {
+            const missionRunButtons = missionsFuncSection.querySelectorAll('.mission-run-btn');
+            const summaryFeedback = document.getElementById('missions-summary-feedback-func');
+            const totalMissions = missionsFuncSection.querySelectorAll('.mission').length;
+            let completedMissionsCount = 0;
+
+            updateMissionSummary = function() { // Assign function
+                 completedMissionsCount = missionsFuncSection.querySelectorAll('.mission[data-completed="true"]').length;
+                 const currentLang = getStoredLanguage();
+                 if (completedMissionsCount === totalMissions) {
+                     showFeedback('missions-summary-feedback-func', 'feedback_missions16_summary_all_done', 'correct', { totalMissions: totalMissions });
+                 } else if (completedMissionsCount > 0) {
+                     showFeedback('missions-summary-feedback-func', 'feedback_missions16_summary_progress', 'info', { completedCount: completedMissionsCount, totalMissions: totalMissions });
+                 } else {
+                     summaryFeedback.classList.remove('visible', 'correct', 'incorrect', 'info');
+                 }
+            }
+
+            missionRunButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const missionId = button.dataset.missionId;
+                    const missionDiv = document.getElementById(`mission-func-${missionId}`);
+                    if (!missionDiv) return;
+                    const editor = missionDiv.querySelector('.mission-editor');
+                    const outputArea = missionDiv.querySelector('.mission-output');
+                    const feedbackDivId = `mission-feedback-func-${missionId}`;
+                    const feedbackDiv = document.getElementById(feedbackDivId);
+                    if (!feedbackDiv) { console.error(`Feedback div ${feedbackDivId} not found`); return; }
+                    const statusIcon = missionDiv.querySelector('.mission-status i');
+                    const code = editor.value; // Keep whitespace/newlines
+                    const lines = code.split('\n');
+                    outputArea.innerHTML = '';
+                    let success = false;
+                    let feedbackMessageKey = 'feedback_mission16_syntax_error';
+                    let feedbackType = 'incorrect';
+                    let specificHintKey = '';
+                    let simulatedOutput = [];
+
+                     /* Validation Logic (Functions) */
+                     try {
+                        // Helper to check definition and call
+                        const checkDefAndCall = (funcName, printText) => {
+                            const defRgx = new RegExp(`^\\s*def\\s+${funcName}\\s*\\(\\s*\\)\\s*:`);
+                            const printRgx = new RegExp(`^\\s+print\\s*\\(\\s*(["'])${printText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\1\\s*\\)`); // Indented print
+                            const callRgx = new RegExp(`^\\s*${funcName}\\s*\\(\\s*\\)\\s*$`);
+                            let foundDef = false, defIdx = -1, foundPrint = false, foundCall = false, callIdx = -1;
+                            lines.forEach((line, idx) => {
+                                if (defRgx.test(line)) { foundDef = true; defIdx = idx; }
+                                if (foundDef && idx === defIdx + 1 && printRgx.test(line)) { foundPrint = true; }
+                                if (callRgx.test(line) && defIdx !== -1 && idx > defIdx) { foundCall = true; callIdx = idx; } // Call must be after def
+                            });
+                            return { foundDef, foundPrint, foundCall, callIdx };
+                        };
+                         // Helper to check two functions and calls
+                         const checkTwoFuncs = (name1, text1, name2, text2) => {
+                             const res1 = checkDefAndCall(name1, text1);
+                             const res2 = checkDefAndCall(name2, text2);
+                             // Check both defined, printed correctly, and called after their defs
+                             // Simple check: are both calls present *somewhere* after their respective defs?
+                             const bothDefined = res1.foundDef && res2.foundDef;
+                             const bothPrinted = res1.foundPrint && res2.foundPrint;
+                             const bothCalled = res1.foundCall && res2.foundCall;
+                             // Simulate output based on call order if successful
+                             let output = [];
+                             if(bothDefined && bothPrinted && bothCalled) {
+                                 // Assume simple sequential calls for expected output
+                                 if (res1.callIdx < res2.callIdx) { output = [text1, text2]; }
+                                 else if (res2.callIdx < res1.callIdx) { output = [text2, text1]; }
+                                 else { // Can't determine order or same line? Just check presence
+                                    output = [text1, text2]; // Or some other logic
+                                 }
+                             }
+                             return { success: bothDefined && bothPrinted && bothCalled, output: output, res1, res2 };
+                         };
+                          // Helper for func with comment
+                          const checkDefCommentCall = (funcName, printText) => {
+                              const defRgx = new RegExp(`^\\s*def\\s+${funcName}\\s*\\(\\s*\\)\\s*:`);
+                              const commentRgx = /^\s+#\s*\S+/; // Indented comment with some text
+                              const printRgx = new RegExp(`^\\s+print\\s*\\(\\s*(["'])${printText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\1\\s*\\)`); // Indented print
+                              const callRgx = new RegExp(`^\\s*${funcName}\\s*\\(\\s*\\)\\s*$`);
+                              let foundDef = false, defIdx = -1, foundComment = false, foundPrint = false, foundCall = false;
+                              lines.forEach((line, idx) => {
+                                  if (defRgx.test(line)) { foundDef = true; defIdx = idx; }
+                                  // Check for comment *and* print within the body (simple check: after def line)
+                                  if (foundDef && idx > defIdx && commentRgx.test(line)) { foundComment = true; }
+                                  if (foundDef && idx > defIdx && printRgx.test(line)) { foundPrint = true; }
+                                  if (callRgx.test(line) && defIdx !== -1 && idx > defIdx) { foundCall = true; }
+                              });
+                              return { foundDef, foundComment, foundPrint, foundCall };
+                          };
+
+
+                        if (missionId === '1') {
+                            const res = checkDefAndCall('show_message', 'Mission 1 Complete!');
+                            if (res.foundDef && res.foundPrint && res.foundCall) {
+                                success = true; simulatedOutput.push('Mission 1 Complete!');
+                            } else { specificHintKey = 'feedback_mission16_1_hint'; }
+                        } else if (missionId === '2') {
+                            const targetText1 = "Task One Done.";
+                            const targetText2 = "Task Two Done.";
+                            const res = checkTwoFuncs('task_one', targetText1, 'task_two', targetText2);
+                            if (res.success) {
+                                success = true; simulatedOutput = res.output; // Use determined output order
+                                 // More specific feedback if only calls are wrong order (complex) - skip for now
+                            } else {
+                                if (!res.res1.foundDef || !res.res2.foundDef || !res.res1.foundPrint || !res.res2.foundPrint) { specificHintKey = 'feedback_mission16_2_hint_def'; }
+                                else if (!res.res1.foundCall || !res.res2.foundCall) { specificHintKey = 'feedback_mission16_2_hint_call'; }
+                                else { specificHintKey = 'feedback_mission16_2_hint_text'; } // Default if def/call okay but print text wrong
+                            }
+                        } else if (missionId === '3') {
+                            const targetText = "Greetings, AI Enthusiast!";
+                            const res = checkDefCommentCall('ai_greeting', targetText);
+                             if (res.foundDef && res.foundComment && res.foundPrint && res.foundCall) {
+                                 success = true; simulatedOutput.push(targetText);
+                             } else {
+                                 if (!res.foundDef || !res.foundPrint) { specificHintKey = 'feedback_mission16_3_hint_def'; }
+                                 else if (!res.foundComment) { specificHintKey = 'feedback_mission16_3_hint_comment'; }
+                                 else if (!res.foundCall) { specificHintKey = 'feedback_mission16_3_hint_call'; }
+                                 else { specificHintKey = 'feedback_mission16_syntax_error'; } // Generic fallback
+                             }
+                        }
+                     } catch (error) { console.error("Mission validation error:", error); }
+                    /* End Validation */
+
+                    if (success) {
+                        feedbackMessageKey = 'feedback_mission16_success';
+                        feedbackType = 'correct';
+                        statusIcon.className = 'fas fa-check-circle';
+                        missionDiv.dataset.completed = 'true';
+                        // Display simulated output
+                        outputArea.innerHTML = simulatedOutput.map(line => `<span class="output-line">> ${line}</span>`).join('');
+                    } else {
+                        feedbackMessageKey = specificHintKey || feedbackMessageKey;
+                        feedbackType = 'incorrect';
+                        statusIcon.className = 'fas fa-times-circle';
+                        missionDiv.dataset.completed = 'false';
+                         outputArea.innerHTML = ''; // Clear output on error
+                    }
+                    showFeedback(feedbackDivId, feedbackMessageKey, feedbackType);
+                    updateMissionSummary();
+                });
+            });
+            updateMissionSummary(); // Initial call
+        }
+
+        // --- Fade-in animations on scroll (Same as Module 0) ---
+        const fadeElements = document.querySelectorAll('.fade-in'); /* ... keep logic ... */
+        const animateOnScroll = () => { const windowHeight = window.innerHeight; fadeElements.forEach(el => { if (el.style.opacity === '1') return; const rect = el.getBoundingClientRect(); if (rect.top < windowHeight - 80 && rect.bottom >= 50) { el.style.opacity = '1'; el.style.transform = 'translateY(0)'; } }); };
+        const scrollHandler = () => window.requestAnimationFrame(animateOnScroll);
+        window.addEventListener('scroll', scrollHandler);
+
+        // --- Initial Language Application and Activity Setups ---
+        setLanguage(initialLang); // Apply language FIRST
+        animateOnScroll(); // Trigger initial animation check
+
+        // Setups are called within setLanguage now to ensure correct text is ready
+
+    }); // End DOMContentLoaded
+    </script>
+
+</body>
+</html>

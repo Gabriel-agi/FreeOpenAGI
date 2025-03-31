@@ -1,0 +1,1276 @@
+<!DOCTYPE html>
+<!-- Language set by JS -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Title set by JS -->
+    <title data-translate="page_title">Module 25: Exception Handling Practice</title>
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* --- Base Styles & Variables --- */
+        :root {
+            --primary-color: #007bff; /* Keeping blue for consistency */
+            --secondary-color: #6c757d;
+            --background-light: #f8f9fa;
+            --background-medium: #e9ecef;
+            --background-dark: #343a40;
+            --text-light: #f8f9fa;
+            --text-dark: #212529;
+            --accent-color: #ffc107; /* Yellow */
+            --success-color: #28a745; /* Green */
+            --error-color: #dc3545;   /* Red */
+            --info-color: #17a2b8;    /* Teal */
+            --warning-color: #fd7e14; /* Orange for exceptions */
+            --border-radius: 8px;
+            --transition-speed: 0.3s;
+            --font-body: 'Roboto', sans-serif;
+            --font-title: 'Orbitron', sans-serif;
+            --selection-highlight-bg: rgba(0, 123, 255, 0.1);
+            --selection-highlight-border: rgba(0, 123, 255, 0.4);
+            /* Colors matching news.html */
+            --nav-primary: #6e48aa;
+            --nav-success: #4cc9f0;
+            --nav-dark: #1a1a2e;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; font-size: 16px; }
+        body {
+            font-family: var(--font-body); line-height: 1.7;
+            background-color: var(--background-light); color: var(--text-dark);
+            overflow-x: hidden;
+        }
+
+        /* --- Utility Classes --- */
+        .container { max-width: 960px; margin: 0 auto; padding: 0 15px; }
+        .text-center { text-align: center; }
+        .highlight { color: var(--primary-color); font-weight: bold; }
+        .code-font { font-family: 'Courier New', Courier, monospace; }
+        .hidden { display: none !important; }
+        .button-group { margin-top: 2rem; display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; }
+
+        /* --- Advanced Animations (Copied from Module 0) --- */
+        .fade-in { opacity: 0; transform: translateY(20px); animation: fadeInAnimation 0.8s ease-out forwards; }
+        .fade-in.delay-1 { animation-delay: 0.2s; }
+        .fade-in.delay-2 { animation-delay: 0.4s; }
+        .fade-in.delay-3 { animation-delay: 0.6s; }
+        .fade-in.delay-4 { animation-delay: 0.8s; }
+        @keyframes fadeInAnimation { to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulseHeaderIcon {
+            0% { transform: scale(1); opacity: 0.1; filter: brightness(1); }
+            50% { transform: scale(1.05); opacity: 0.25; filter: brightness(1.2); }
+            100% { transform: scale(1); opacity: 0.1; filter: brightness(1); }
+        }
+        @keyframes successGlow {
+             0% { box-shadow: 0 0 3px rgba(40, 167, 69, 0.3); transform: scale(1); }
+             50% { box-shadow: 0 0 12px 5px rgba(40, 167, 69, 0.5); transform: scale(1.01); }
+             100% { box-shadow: 0 0 3px rgba(40, 167, 69, 0.3); transform: scale(1); }
+        }
+        .success-glow-anim { animation: successGlow 0.9s ease-out; }
+        @keyframes shake {
+          10%, 90% { transform: translate3d(-2px, 0, 0); } 20%, 80% { transform: translate3d(3px, 0, 0); }
+          30%, 50%, 70% { transform: translate3d(-5px, 0, 0); } 40%, 60% { transform: translate3d(5px, 0, 0); }
+        }
+        .shake-anim { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes iconAppearCorrect {
+            0% { transform: scale(0.5) rotate(-15deg); opacity: 0; }
+            60% { transform: scale(1.2) rotate(5deg); opacity: 1; }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        @keyframes iconAppearIncorrect {
+             0% { transform: scale(0.5) rotate(-15deg); opacity: 0; }
+             50% { transform: scale(1.2) rotate(10deg); opacity: 1; }
+             70% { transform: scale(0.9) rotate(-5deg); }
+             100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        @keyframes iconAppearMissed { /* Renamed for potential reuse */
+             0% { transform: scale(0.8) rotateY(90deg); opacity: 0; }
+             100% { transform: scale(1) rotateY(0deg); opacity: 0.8; }
+        }
+        .action-button:active:not(:disabled) {
+            transform: translateY(1px) scale(0.98);
+            filter: brightness(0.95);
+        }
+
+        /* --- Minimal Retractable Nav (Copied from Module 0) --- */
+        .minimal-nav-button { position: fixed; top: 15px; right: 15px; z-index: 1001; background-color: rgba(52, 58, 64, 0.75); color: var(--text-light); border: none; border-radius: var(--border-radius); padding: 8px 12px; cursor: pointer; transition: background-color var(--transition-speed), opacity var(--transition-speed), transform var(--transition-speed); font-size: 1.1rem; opacity: 0.6; box-shadow: 0 2px 5px rgba(0,0,0,0.2); line-height: 1; }
+        .minimal-nav-button:hover { background-color: rgba(52, 58, 64, 0.95); opacity: 1; transform: scale(1.05); }
+        .minimal-nav { position: fixed; top: 60px; right: 15px; z-index: 1000; background-color: var(--background-dark); border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.3); padding: 0.8rem; opacity: 0; transform: translateY(-15px) scale(0.95); transform-origin: top right; pointer-events: none; transition: opacity var(--transition-speed) ease, transform var(--transition-speed) ease; min-width: 200px; }
+        body.nav-active .minimal-nav { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+        .minimal-nav ul { list-style: none; margin: 0; padding: 0; }
+        .minimal-nav ul li { margin-bottom: 5px; }
+        .minimal-nav ul li:last-child { margin-bottom: 0; }
+        .minimal-nav ul li a { display: flex; align-items: center; color: var(--text-light); text-decoration: none; padding: 0.6rem 1rem; border-radius: 4px; transition: background-color var(--transition-speed), color var(--transition-speed); white-space: nowrap; font-weight: 400; font-size: 0.95rem; }
+        .minimal-nav ul li a i.fas { margin-right: 10px; width: 1.2em; text-align: center; opacity: 0.8; transition: opacity var(--transition-speed); }
+        .minimal-nav ul li a:hover { background-color: var(--primary-color); color: var(--text-light); }
+        .minimal-nav ul li a:hover i.fas { opacity: 1; }
+        /* Language Switcher Styles */
+        .minimal-nav .language-switcher-item { padding: 0.5rem 1rem; border-top: 1px solid var(--secondary-color); margin-top: 8px; padding-top: 13px; }
+        #languageSelect { width: 100%; background: rgba(255,255,255,0.1); color: white; border: 1px solid var(--nav-success); border-radius: 5px; padding: 6px 30px 6px 12px; cursor: pointer; font-size: 0.9rem; appearance: none; -webkit-appearance: none; -moz-appearance: none; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%234CC9F0%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right 10px center; background-size: 10px auto; transition: background-color 0.3s ease; }
+        #languageSelect:hover { background-color: rgba(255,255,255,0.15); }
+        #languageSelect option { background: var(--nav-dark); color: var(--text-light); }
+
+        /* --- Practice Header --- */
+        /* Using orange/warning color theme for exceptions */
+        .practice-header { background: linear-gradient(135deg, var(--warning-color), #d35400); color: var(--text-light); padding: 3rem 0 4rem; text-align: center; position: relative; overflow: hidden; border-bottom: 5px solid var(--accent-color); }
+        .practice-header h1 { font-family: var(--font-title); font-size: 2.8rem; margin-bottom: 0.5rem; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); animation: fadeInAnimation 1s ease-out; }
+        .practice-header p { font-size: 1.1rem; font-weight: 300; opacity: 0.9; animation: fadeInAnimation 1s ease-out 0.3s forwards; opacity: 0; }
+        .header-icon { position: absolute; font-size: 4rem; color: var(--text-light); animation: pulseHeaderIcon 6s infinite ease-in-out alternate; }
+        .icon1 { top: 20%; left: 15%; animation-duration: 7s; } /* Shield for robustness */
+        .icon2 { bottom: 15%; right: 20%; animation-duration: 5s; } /* Bug/fix for error handling */
+
+        /* --- Practice Section Styling (Copied from Module 0) --- */
+        .practice-section { padding: 3rem 0; background-color: var(--background-medium); border-bottom: 1px solid #d6d8db; }
+        .practice-section:nth-child(odd) { background-color: var(--background-light); }
+        .practice-section:last-of-type { border-bottom: none; }
+        .practice-section h2 { font-family: var(--font-title); font-size: 1.8rem; color: var(--primary-color); margin-bottom: 1rem; text-align: center; }
+        .practice-section .section-description { text-align: center; margin-bottom: 2.5rem; color: var(--secondary-color); font-size: 1.05rem; max-width: 700px; margin-left: auto; margin-right: auto; }
+
+        /* --- General Interactive Elements (Copied from Module 0) --- */
+        .interactive-area { background-color: #fff; padding: 2rem; border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.08); margin-top: 1.5rem; position: relative; transition: box-shadow 0.5s ease-out; }
+        .feedback-message { padding: 0.8rem 1rem; margin-top: 1rem; border-radius: var(--border-radius); font-weight: bold; text-align: center; opacity: 0; max-height: 0; overflow: hidden; transition: opacity var(--transition-speed) ease, max-height var(--transition-speed) ease, margin-top var(--transition-speed) ease; }
+        .feedback-message.visible { opacity: 1; max-height: 100px; margin-top: 1.5rem; }
+        .feedback-message.correct { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .feedback-message.incorrect { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .feedback-message.info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .feedback-message .fas { margin: 0 3px; } /* Spacing for icons */
+        .action-button { display: inline-block; padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold; color: var(--text-light); background-color: var(--primary-color); border: none; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), transform var(--transition-speed), filter var(--transition-speed), box-shadow var(--transition-speed); margin-top: 1rem; vertical-align: middle; box-shadow: 0 2px 5px rgba(0,0,0,0.1); text-decoration: none; }
+        .action-button:hover:not(:disabled) { background-color: #0056b3; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+        .action-button:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none; box-shadow: none; opacity: 0.7; }
+        .action-button.success { background-color: var(--success-color); }
+        .action-button.success:hover:not(:disabled) { background-color: #218838; }
+        .action-button.secondary { background-color: var(--secondary-color); }
+        .action-button.secondary:hover:not(:disabled) { background-color: #5a6268; }
+        /* Code styling */
+        .code-block { background-color: var(--background-dark); color: var(--text-light); padding: 1.5rem; border-radius: var(--border-radius); font-family: var(--code-font); font-size: 1rem; position: relative; overflow-x: auto; margin: 1rem 0; }
+        .code-keyword { color: #569cd6; } /* Blue for keywords like try, except */
+        .code-string { color: #ce9178; } /* Orange/brown for strings */
+        .code-comment { color: #6a9955; } /* Green for comments */
+        .code-function { color: #dcdcaa; } /* Yellow for functions like print */
+        .code-error { color: #f47e84; font-weight: bold; } /* Pink/red for Error types */
+        .code-colon { color: #ffd700; } /* Yellow for colons */
+        .code-indent { display: block; margin-left: 2em; } /* Indentation */
+        .code-potential-error { background-color: rgba(220, 53, 69, 0.15); border-left: 3px solid var(--error-color); padding: 0.1em 0.3em; display: inline-block;} /* Highlight potential error line */
+
+        /* --- Activity 1: Anatomy of try...except --- */
+        #anatomy-try-except .code-part { cursor: pointer; border-bottom: 2px dashed rgba(255, 255, 255, 0.3); transition: background-color var(--transition-speed), border-bottom-color var(--transition-speed); padding: 0 2px; }
+        #anatomy-try-except .code-part:hover { background-color: rgba(255, 255, 255, 0.15); border-bottom-color: var(--accent-color); }
+        #anatomy-try-except .code-part.identified { background-color: rgba(40, 167, 69, 0.3); border-bottom: 2px solid var(--success-color); cursor: default; }
+        .part-explanation { font-size: 0.95rem; color: var(--info-color); border-left: 3px solid var(--info-color); padding: 5px 10px; margin-top: 0.5rem; background-color: rgba(23, 162, 184, 0.05); }
+        #anatomy-status { margin-top: 1rem; font-style: italic; color: var(--secondary-color); }
+
+        /* --- Activity 2: What's the Outcome? --- */
+        #predict-outcome .outcome-options { display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; margin-top: 1.5rem; }
+        .outcome-option { padding: 0.8rem 1.2rem; border: 2px solid var(--secondary-color); border-radius: var(--border-radius); cursor: pointer; transition: all var(--transition-speed); background-color: #fff; text-align: center; min-width: 150px; }
+        .outcome-option:hover { border-color: var(--primary-color); background-color: var(--background-light); }
+        .outcome-option.selected { border-color: var(--primary-color); background-color: var(--selection-highlight-bg); font-weight: bold; }
+        .outcome-option.correct { border-color: var(--success-color); background-color: rgba(40, 167, 69, 0.1); color: var(--success-color); font-weight: bold;}
+        .outcome-option.incorrect { border-color: var(--error-color); background-color: rgba(220, 53, 69, 0.1); color: var(--error-color); animation: shake 0.4s ease-in-out; }
+        #outcome-code-block { margin-bottom: 1rem; }
+        #next-outcome-btn { margin-left: 10px; }
+
+        /* --- Activity 3: Error Proofing (Simulator) --- */
+        #error-proofing .sim-editor { width: 100%; min-height: 100px; background-color: var(--background-dark); color: var(--text-light); border: 1px solid var(--secondary-color); border-radius: var(--border-radius); padding: 1rem; font-family: var(--code-font); font-size: 1rem; line-height: 1.5; resize: vertical; margin-top: 1rem; }
+        #error-proofing .sim-guidance { font-style: italic; color: var(--secondary-color); margin-bottom: 1rem; display: block; font-size: 0.95rem;}
+        #error-proofing .sim-output-area { margin-top: 1rem; min-height: 50px; background-color: #1a1a1a; border: 1px solid #444; border-radius: var(--border-radius); padding: 1rem; color: var(--accent-color); font-family: var(--code-font); font-size: 1.05rem; white-space: pre-wrap; word-wrap: break-word; }
+        #error-proofing .sim-output-area .placeholder { color: var(--secondary-color); font-style: italic; font-size: 0.9rem; }
+        #error-proofing .sim-output-area .output-line { display: block; }
+        #error-proofing .sim-output-area .error-output { color: var(--error-color); }
+
+        /* --- Activity 4: Match the Handler --- */
+        #match-handler .handler-options { display: flex; flex-direction: column; gap: 0.8rem; margin-top: 1.5rem; }
+        .handler-option { padding: 0.8rem 1rem; border: 2px solid var(--secondary-color); border-radius: var(--border-radius); cursor: pointer; transition: all var(--transition-speed); font-family: var(--code-font); }
+        .handler-option:hover { border-color: var(--primary-color); background-color: var(--background-light); }
+        .handler-option.selected { border-color: var(--primary-color); background-color: var(--selection-highlight-bg); font-weight: bold; }
+        .handler-option.correct { border-color: var(--success-color); background-color: rgba(40, 167, 69, 0.1); color: var(--success-color); font-weight: bold;}
+        .handler-option.incorrect { border-color: var(--error-color); background-color: rgba(220, 53, 69, 0.1); color: var(--error-color); animation: shake 0.4s ease-in-out; }
+        #handler-code-block { margin-bottom: 1rem; font-size: 1.1rem; } /* Slightly larger code */
+        #next-handler-btn { margin-left: 10px; }
+
+        /* --- Mini Missions (Reuse simulator styles) --- */
+         #mini-missions .mission { padding: 1.5rem; border: 1px solid #d6d8db; border-radius: var(--border-radius); margin-bottom: 1.5rem; background-color: var(--background-light); position: relative; }
+         .mission-status { position: absolute; top: 10px; right: 10px; font-size: 1.5rem; transition: transform 0.3s ease; }
+         .mission-status .fa-check-circle { color: var(--success-color); transform-origin: center; }
+         .mission-status .fa-times-circle { color: var(--error-color); }
+         .mission-status .fa-question-circle { color: var(--secondary-color); }
+         .mission[data-completed="true"] .mission-status .fa-check-circle { animation: iconAppearCorrect 0.6s ease-out; }
+         #mini-missions .mission-editor { width: 100%; min-height: 120px; background-color: var(--background-dark); color: var(--text-light); border: 1px solid var(--secondary-color); border-radius: var(--border-radius); padding: 1rem; font-family: var(--code-font); font-size: 1rem; line-height: 1.5; resize: vertical; margin-top: 1rem; }
+         #mini-missions .mission-output { margin-top: 1rem; min-height: 30px; background-color: #1a1a1a; border: 1px solid #444; border-radius: var(--border-radius); padding: 0.8rem; color: var(--accent-color); font-family: var(--code-font); font-size: 1rem; white-space: pre-wrap; word-wrap: break-word; }
+         #mini-missions .mission-output .error-output { color: var(--error-color); }
+
+        /* --- Completion Section (Copied from Module 0) --- */
+        .completion-section { padding: 4rem 0; text-align: center; }
+        .completion-section .icon { font-size: 4rem; color: var(--success-color); margin-bottom: 1rem; display: inline-block; opacity: 0; animation: iconAppearCorrect 1s ease-out 0.5s forwards; }
+        .completion-section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); }
+        .completion-section p { font-size: 1.1rem; margin-top: 1rem; color: var(--secondary-color); }
+
+        /* --- Responsive Design (Adjusted slightly from Module 0) --- */
+        @media (max-width: 768px) {
+            html { font-size: 15px; }
+            .practice-header h1 { font-size: 2.2rem; }
+            .practice-section h2 { font-size: 1.6rem; }
+            .interactive-area { padding: 1.5rem; }
+            .outcome-option, .handler-option { min-width: 120px; padding: 0.7rem 1rem; }
+            .feedback-icon-placeholder { width: 25px; margin-right: 8px; font-size: 1.1rem;}
+            .button-group { flex-direction: column; align-items: center; }
+             /* Adjust nav panel */
+            .minimal-nav { min-width: 180px; }
+            .minimal-nav ul li a { padding: 0.6rem 0.8rem; }
+            #languageSelect { font-size: 0.85rem; padding: 5px 25px 5px 10px;}
+        }
+        @media (max-width: 480px) {
+            html { font-size: 14px; }
+            .practice-header h1 { font-size: 1.8rem; }
+            .practice-header p { font-size: 1rem; }
+            .practice-section h2 { font-size: 1.4rem; }
+            .interactive-area { padding: 1rem; }
+            .action-button { font-size: 0.9rem; padding: 0.7rem 1.2rem; width: 90%; max-width: 300px;}
+            #error-proofing .sim-editor, #error-proofing .sim-output-area { font-size: 0.9rem; }
+            #mini-missions .mission-editor { min-height: 100px; font-size: 0.95rem;}
+            #mini-missions .mission-output { font-size: 0.95rem;}
+            .outcome-option, .handler-option { width: 100%; font-size: 0.9rem; }
+            .feedback-icon-placeholder { width: 20px; margin-right: 5px; font-size: 1rem;}
+            .button-group a.action-button { width: 90%; max-width: 300px; margin-bottom: 0.5rem; }
+            /* Adjust Nav */
+             .minimal-nav-button { top: 10px; right: 10px; padding: 6px 10px; font-size: 1rem; }
+             .minimal-nav { top: 48px; right: 10px; min-width: 160px; }
+             .minimal-nav ul li a { padding: 0.5rem 0.7rem; font-size: 0.9rem;}
+             .minimal-nav ul li a i.fas { margin-right: 8px; }
+             #languageSelect { font-size: 0.8rem; padding: 4px 20px 4px 8px;}
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ========= Minimal Nav Handle ========= -->
+    <button id="minimal-nav-toggle" class="minimal-nav-button" aria-label="Toggle Navigation Menu">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- ========= Minimal Nav Panel (with Language Switcher) ========= -->
+    <nav id="minimal-nav-panel" class="minimal-nav">
+        <ul>
+            <!-- ***** UPDATED Links for Module 25 ***** -->
+            <li><a href="ctp-theory-25.html"><i class="fas fa-book-open fa-fw"></i> <span data-translate="nav_theory">View Theory</span></a></li>
+            <li><a href="ctp-advanced-25.html"><i class="fas fa-flask fa-fw"></i> <span data-translate="nav_advanced">Advanced Practice</span></a></li>
+            <li><a href="ctp-dashboard.html"><i class="fas fa-list fa-fw"></i> <span data-translate="nav_menu">Course Menu</span></a></li>
+            <hr style="border: none; border-top: 1px solid var(--secondary-color); margin: 8px 0;">
+            <!-- ***** UPDATED Section Links ***** -->
+            <li><a href="#anatomy-try-except"><i class="fas fa-microscope fa-fw"></i> <span data-translate="nav_anatomy">Anatomy</span></a></li>
+            <li><a href="#predict-outcome"><i class="fas fa-question-circle fa-fw"></i> <span data-translate="nav_predict">Outcome</span></a></li>
+            <li><a href="#error-proofing"><i class="fas fa-shield-alt fa-fw"></i> <span data-translate="nav_proofing">Proofing</span></a></li>
+            <li><a href="#match-handler"><i class="fas fa-tasks fa-fw"></i> <span data-translate="nav_match">Match Handler</span></a></li>
+            <li><a href="#mini-missions"><i class="fas fa-rocket fa-fw"></i> <span data-translate="nav_missions">Missions</span></a></li>
+            <!-- Language Switcher Item -->
+            <li class="language-switcher-item">
+                 <select id="languageSelect" aria-label="Select Language">
+                     <option value="en" data-translate="lang_en">🇬🇧 English</option>
+                     <option value="pt" data-translate="lang_pt">🇧🇷 Português</option>
+                     <option value="zh" data-translate="lang_zh">🇨🇳 中文</option>
+                 </select>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- ========= Header ========= -->
+    <header class="practice-header">
+        <!-- Icons representing robustness and error fixing -->
+        <i class="fas fa-shield-alt header-icon icon1"></i>
+        <i class="fas fa-bug-slash header-icon icon2"></i>
+        <div class="container">
+             <!-- ***** UPDATED Title for Module 25 ***** -->
+            <h1 data-translate="header_title">Module 25: Exception Handling Practice</h1>
+            <p data-translate="header_subtitle">Make your code robust! Learn to handle errors gracefully.</p>
+        </div>
+    </header>
+
+    <!-- ========= Main Content ========= -->
+    <main>
+        <!-- ========= Activity 1: Anatomy of try...except ========= -->
+        <section id="anatomy-try-except" class="practice-section">
+             <div class="container">
+                 <h2 class="fade-in"><i class="fas fa-microscope"></i> <span data-translate="anatomy25_title">Anatomy of Error Handling</span></h2>
+                 <p class="section-description fade-in delay-1" data-translate="anatomy25_desc">
+                     A `try...except` block helps catch errors. Click each highlighted part of the code below to see its role.
+                 </p>
+                 <div class="interactive-area fade-in delay-2">
+                     <div class="code-block">
+                        <span class="code-part" data-part="try-keyword" data-translate-title="tooltip_click_identify" title="Click to identify this part"><span class="code-keyword">try</span></span><span class="code-part" data-part="try-colon" data-translate-title="tooltip_click_identify" title="Click to identify this part"><span class="code-colon">:</span></span>
+                        <span class="code-indent">
+                           <span class="code-part" data-part="risky-code" data-translate-title="tooltip_click_identify" title="Click to identify this part"><span class="code-potential-error" data-translate="anatomy25_code_risky">result = 10 / 0</span></span> <span class="code-comment" data-translate="anatomy25_code_risky_comment"># Potential error here</span>
+                        </span>
+                        <span class="code-part" data-part="except-keyword" data-translate-title="tooltip_click_identify" title="Click to identify this part"><span class="code-keyword">except</span></span> <span class="code-part" data-part="exception-type" data-translate-title="tooltip_click_identify" title="Click to identify this part"><span class="code-error">ZeroDivisionError</span></span><span class="code-part" data-part="except-colon" data-translate-title="tooltip_click_identify" title="Click to identify this part"><span class="code-colon">:</span></span>
+                        <span class="code-indent">
+                             <span class="code-part" data-part="handler-code" data-translate-title="tooltip_click_identify" title="Click to identify this part"><span class="code-function">print</span>(<span class="code-string" data-translate="anatomy25_code_handler">"Cannot divide by zero!"</span>)</span>
+                        </span>
+                     </div>
+                     <div id="anatomy-explanations"></div>
+                     <p id="anatomy-status" data-translate="anatomy25_status_initial">Identify all 7 parts!</p>
+                     <div id="anatomy-feedback" class="feedback-message"></div>
+                     <!-- Hidden elements for storing translated explanation parts -->
+                     <div id="explanation-texts" style="display: none;">
+                        <span data-key="try-keyword" data-translate="anatomy25_exp_try_keyword">The `try` keyword: Starts a block where errors might happen.</span>
+                        <span data-key="try-colon" data-translate="anatomy25_exp_try_colon">Colon `:` after `try`: Marks the beginning of the `try` code suite.</span>
+                        <span data-key="risky-code" data-translate="anatomy25_exp_risky_code">Risky Code: The operation(s) that could potentially raise an error.</span>
+                        <span data-key="except-keyword" data-translate="anatomy25_exp_except_keyword">The `except` keyword: Starts a block to handle a specific error.</span>
+                        <span data-key="exception-type" data-translate="anatomy25_exp_exception_type">Exception Type (`ZeroDivisionError`): Specifies which error this block catches.</span>
+                        <span data-key="except-colon" data-translate="anatomy25_exp_except_colon">Colon `:` after `except`: Marks the beginning of the error handling code.</span>
+                        <span data-key="handler-code" data-translate="anatomy25_exp_handler_code">Handler Code: What to do if the specified error occurs.</span>
+                     </div>
+                 </div>
+             </div>
+        </section>
+
+        <!-- ========= Activity 2: What's the Outcome? ========= -->
+        <section id="predict-outcome" class="practice-section">
+            <div class="container">
+                <h2 class="fade-in"><i class="fas fa-question-circle"></i> <span data-translate="predict_title">What's the Outcome?</span></h2>
+                <p class="section-description fade-in delay-1" data-translate="predict_desc">
+                    Look at the code. What will happen when it runs? Select the correct outcome below, then check your answer.
+                </p>
+                <div class="interactive-area fade-in delay-2">
+                    <div id="outcome-code-block" class="code-block">
+                        <!-- Code snippet will be loaded here by JS -->
+                    </div>
+                    <div id="outcome-options" class="outcome-options">
+                        <!-- Outcome options will be loaded here by JS -->
+                    </div>
+                     <div class="text-center">
+                        <button id="check-outcome-btn" class="action-button" data-translate="button_check_answer" disabled>Check Answer</button>
+                        <button id="next-outcome-btn" class="action-button secondary hidden" data-translate="button_next_q">Next Question</button>
+                    </div>
+                    <div id="outcome-feedback" class="feedback-message"></div>
+                </div>
+            </div>
+        </section>
+
+         <!-- ========= Activity 3: Error Proofing ========= -->
+        <section id="error-proofing" class="practice-section">
+             <div class="container">
+                 <h2 class="fade-in"><i class="fas fa-shield-alt"></i> <span data-translate="proofing_title">Error Proofing Challenge</span></h2>
+                 <p class="section-description fade-in delay-1" data-translate="proofing_desc">
+                     The code below might crash! Modify it in the editor by adding a `try...except` block to handle the potential `ValueError` if the user enters text instead of a number. Print a friendly message in the `except` block.
+                 </p>
+                 <div class="interactive-area fade-in delay-2">
+                     <span class="sim-guidance" data-translate="proofing_guidance">Goal: Prevent crash from non-numeric input.</span>
+                     <label for="proofing-editor-input" style="font-weight: bold; display:block; margin-bottom: 8px;" data-translate="proofing_editor_label">Code Editor:</label>
+                     <textarea id="proofing-editor-input" class="sim-editor code-font" rows="6" data-translate-placeholder="proofing_editor_placeholder" placeholder='''# Wrap the line below in try...except
+# number = int(input("Enter a number: "))
+# print(f"You entered: {number}")
+# Add except ValueError: block here
+'''></textarea>
+                     <div class="text-center">
+                          <button id="run-proofing-btn" class="action-button" data-translate="button_check_proofing">Check My Code</button>
+                     </div>
+                     <!-- Simulate interaction conceptually -->
+                     <label for="proofing-output" style="font-weight: bold; display:block; margin-top: 1.5rem; margin-bottom: 8px;" data-translate="proofing_output_label">Conceptual Output:</label>
+                     <div id="proofing-output" class="sim-output-area">
+                         <span class="placeholder" data-translate="proofing_output_placeholder">Result of check will appear here...</span>
+                     </div>
+                     <div id="proofing-feedback" class="feedback-message"></div>
+                 </div>
+             </div>
+        </section>
+
+         <!-- ========= Activity 4: Match the Handler ========= -->
+        <section id="match-handler" class="practice-section">
+            <div class="container">
+                <h2 class="fade-in"><i class="fas fa-tasks"></i> <span data-translate="match_title">Match the Handler</span></h2>
+                <p class="section-description fade-in delay-1" data-translate="match_desc">
+                    Which `except` block is needed to correctly handle the potential error in the `try` block below? Click the right handler.
+                </p>
+                <div class="interactive-area fade-in delay-2">
+                    <div class="code-block">
+                        <span class="code-keyword">try</span><span class="code-colon">:</span>
+                        <div id="handler-code-block" class="code-indent">
+                           <!-- Potentially problematic code loaded by JS -->
+                           <code>some_code = ???</code>
+                        </div>
+                        <span class="code-keyword">except</span> <span class="code-error">WhichError</span><span class="code-colon">:</span>
+                        <div class="code-indent">
+                            <span class="code-function">print</span>(<span class="code-string" data-translate="match_handler_print">"Error handled!"</span>)
+                        </div>
+                    </div>
+
+                    <div id="handler-options" class="handler-options">
+                        <!-- Exception type options loaded by JS -->
+                    </div>
+
+                    <div class="text-center">
+                        <button id="check-handler-btn" class="action-button" data-translate="button_check_handler" disabled>Check Handler</button>
+                        <button id="next-handler-btn" class="action-button secondary hidden" data-translate="button_next_q">Next Question</button>
+                    </div>
+                    <div id="handler-feedback" class="feedback-message"></div>
+                </div>
+            </div>
+        </section>
+
+         <!-- ========= Activity 5: Mini Missions ========= -->
+        <section id="mini-missions" class="practice-section">
+             <div class="container">
+                  <h2 class="fade-in"><i class="fas fa-rocket"></i> <span data-translate="missions_title">Mini Missions!</span></h2>
+                 <p class="section-description fade-in delay-1" data-translate="missions_desc">
+                     Apply your knowledge! Complete these coding tasks using `try...except`.
+                 </p>
+                 <div class="interactive-area fade-in delay-2">
+                     <!-- Mission 1: Handle ZeroDivisionError -->
+                     <div class="mission" id="mission-1" data-completed="false">
+                         <span class="mission-status"><i class="fas fa-question-circle"></i></span>
+                         <h4 data-translate="mission25_1_title">Mission 1: Safe Division</h4>
+                         <p data-translate="mission25_1_desc">Write code that divides `100` by a variable `divisor` (assume it exists). Use `try...except` to catch a potential `ZeroDivisionError` and print "Cannot divide by zero." if it happens. Otherwise, print the result.</p>
+                         <textarea class="sim-editor mission-editor" rows="6" data-translate-placeholder="mission25_1_placeholder" placeholder='''# Assume divisor is defined (e.g., divisor = 0 or divisor = 5)
+# We will test with both cases conceptually.
+
+# Your try...except block here
+# try:
+#   result = 100 / divisor
+#   print(result)
+# except ZeroDivisionError:
+#   print(...)
+'''></textarea>
+                         <div class="text-center"> <button class="action-button mission-run-btn" data-mission-id="1" data-translate="button_test_mission_1">Test Mission 1</button> </div>
+                         <div class="sim-output-area mission-output"></div>
+                         <div id="mission-feedback-1" class="feedback-message mission-feedback"></div>
+                     </div>
+                     <!-- Mission 2: Handle ValueError -->
+                     <div class="mission" id="mission-2" data-completed="false">
+                          <span class="mission-status"><i class="fas fa-question-circle"></i></span>
+                         <h4 data-translate="mission25_2_title">Mission 2: Robust Input</h4>
+                         <p data-translate="mission25_2_desc">Ask the user for their age using `input()`. Convert it to an integer using `int()`. Use `try...except` to catch a `ValueError` if they enter non-numeric text, printing "Invalid input, please enter a number." If successful, print "Age accepted.".</p>
+                         <textarea class="sim-editor mission-editor" rows="6" data-translate-placeholder="mission25_2_placeholder" placeholder='''# Your code here
+# try:
+#   age_text = input("Enter age: ") # Simulate input()
+#   age = int(age_text)
+#   print("Age accepted.")
+# except ValueError:
+#   print(...)
+'''></textarea>
+                          <div class="text-center"> <button class="action-button mission-run-btn" data-mission-id="2" data-translate="button_test_mission_2">Test Mission 2</button> </div>
+                         <div class="sim-output-area mission-output"></div>
+                         <div id="mission-feedback-2" class="feedback-message mission-feedback"></div>
+                     </div>
+                     <div id="missions-summary-feedback" class="feedback-message" style="margin-top: 2rem;"></div>
+                 </div>
+             </div>
+        </section>
+
+         <!-- ========= Completion Section ========= -->
+        <section class="completion-section">
+            <div class="container">
+                <div class="icon fade-in" style="animation: iconAppearCorrect 1s ease-out 0.5s forwards;">
+                    <i class="fas fa-shield-alt"></i> <i class="fas fa-check-circle"></i> <i class="fas fa-shield-alt"></i>
+                </div>
+                 <!-- ***** UPDATED Completion Text ***** -->
+                <h2 class="fade-in delay-1" data-translate="completion_title">Module 25 Practice Complete!</h2>
+                <p class="fade-in delay-2" data-translate="completion_desc">
+                    Excellent! You've practiced handling errors and making your code more robust. <br>
+                    Ready for more challenges? Try the <strong>Advanced Practice</strong> for Module 25!
+                </p>
+                <div class="button-group">
+                    <!-- ***** UPDATED Links for Module 25 ***** -->
+                    <a href="ctp-theory-25.html" class="action-button secondary fade-in delay-3"><i class="fas fa-book-open"></i> <span data-translate="button_view_theory">View Theory Again</span></a>
+                    <a href="ctp-advanced-25.html" class="action-button success fade-in delay-3"><i class="fas fa-arrow-right"></i> <span data-translate="button_start_advanced">Start Advanced Practice</span></a>
+                    <a href="ctp-dashboard.html" class="action-button secondary fade-in delay-4"><i class="fas fa-list"></i> <span data-translate="button_back_menu">Back to Course Menu</span></a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ========= Script ========= -->
+    <script>
+    // --- Translations Object ---
+    const translations = {
+        en: {
+            "page_title": "Module 25: Exception Handling Practice",
+            "tooltip_click_identify": "Click to identify this part",
+            "nav_theory": "View Theory", "nav_advanced": "Advanced Practice", "nav_menu": "Course Menu",
+            "nav_anatomy": "Anatomy", "nav_predict": "Outcome", "nav_proofing": "Proofing", "nav_match": "Match Handler", "nav_missions": "Missions",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title": "Module 25: Exception Handling Practice", "header_subtitle": "Make your code robust! Learn to handle errors gracefully.",
+            // Anatomy
+            "anatomy25_title": "Anatomy of Error Handling", "anatomy25_desc": "A `try...except` block helps catch errors. Click each highlighted part of the code below to see its role.",
+            "anatomy25_status_initial": "Identify all 7 parts!", "anatomy25_status_progress": "Identified {count} of {total} parts.", "anatomy25_status_done": "All parts identified!",
+            "anatomy25_code_risky": "result = 10 / 0", "anatomy25_code_risky_comment": "# Potential error here", "anatomy25_code_handler": "\"Cannot divide by zero!\"",
+            "anatomy25_exp_try_keyword": "The `try` keyword: Starts a block where errors might happen.",
+            "anatomy25_exp_try_colon": "Colon `:` after `try`: Marks the beginning of the `try` code suite.",
+            "anatomy25_exp_risky_code": "Risky Code: The operation(s) that could potentially raise an error.",
+            "anatomy25_exp_except_keyword": "The `except` keyword: Starts a block to handle a specific error.",
+            "anatomy25_exp_exception_type": "Exception Type (`ZeroDivisionError`): Specifies which error this block catches.",
+            "anatomy25_exp_except_colon": "Colon `:` after `except`: Marks the beginning of the error handling code.",
+            "anatomy25_exp_handler_code": "Handler Code: What to do if the specified error occurs.",
+            "feedback_anatomy_correct": "Excellent! You've dissected the try-except block!",
+            // Predict Outcome
+            "predict_title": "What's the Outcome?", "predict_desc": "Look at the code. What will happen when it runs? Select the correct outcome below, then check your answer.",
+            "button_check_answer": "Check Answer", "button_next_q": "Next Question",
+            "predict_outcome_success": "Success Output:", // Prefix for options showing success
+            "predict_outcome_handled": "Handled Output:", // Prefix for options showing handled error
+            "predict_outcome_crash": "Crash:",          // Prefix for options showing unhandled crash
+            "predict_code_1": "try:\n  print(5 / 1)\nexcept ZeroDivisionError:\n  print(\"Math error\")", // Expected: Success Output: 5.0
+            "predict_options_1_correct": "5.0", "predict_options_1_a": "Math error", "predict_options_1_b": "ZeroDivisionError",
+            "predict_code_2": "try:\n  print(int('hello'))\nexcept ValueError:\n  print(\"Bad input\")", // Expected: Handled Output: Bad input
+            "predict_options_2_a": "hello", "predict_options_2_correct": "Bad input", "predict_options_2_b": "ValueError",
+            "predict_code_3": "try:\n  print(10 / 0)\nexcept ValueError:\n  print(\"Wrong type\")", // Expected: Crash: ZeroDivisionError
+            "predict_options_3_a": "0.0", "predict_options_3_b": "Wrong type", "predict_options_3_correct": "ZeroDivisionError",
+             "predict_code_4": "x = 'a'\ntry:\n  print(x + 1)\nexcept TypeError:\n  print(\"Type mismatch\")", // Expected: Handled Output: Type mismatch
+            "predict_options_4_a": "a1", "predict_options_4_correct": "Type mismatch", "predict_options_4_b": "TypeError",
+            "feedback_predict_correct": "Correct! You predicted the outcome perfectly.",
+            "feedback_predict_incorrect": "Not quite. The actual outcome was different. Think about which error occurs (if any) and if it's handled.",
+            "feedback_predict_select": "Please select an outcome option first.",
+            // Error Proofing
+            "proofing_title": "Error Proofing Challenge", "proofing_desc": "The code below might crash! Modify it in the editor by adding a `try...except` block to handle the potential `ValueError` if the user enters text instead of a number. Print a friendly message in the `except` block.",
+            "proofing_guidance": "Goal: Prevent crash from non-numeric input.",
+            "proofing_editor_label": "Code Editor:", "proofing_editor_placeholder": "# Wrap the line below in try...except\n# number = int(input(\"Enter a number: \"))\n# print(f\"You entered: {number}\")\n# Add except ValueError: block here",
+            "button_check_proofing": "Check My Code", "proofing_output_label": "Conceptual Output:", "proofing_output_placeholder": "Result of check will appear here...",
+            "feedback_proofing_success_numeric": "Excellent! Your code would correctly handle numeric input.",
+            "feedback_proofing_success_text": "Excellent! Your code seems to correctly handle text input with `except ValueError:` and prints a message.",
+            "feedback_proofing_fail_no_try": "Missing `try:` block.",
+            "feedback_proofing_fail_no_except": "Missing `except ValueError:` block.",
+            "feedback_proofing_fail_no_print": "The `except` block should print a user-friendly message.",
+            "feedback_proofing_fail_structure": "Check the structure: `try:` block should contain `int(input(...))`, `except ValueError:` should follow.",
+            "proofing_output_numeric": "> Simulating numeric input (e.g., '123')...\n> Code handles it.",
+            "proofing_output_text": "> Simulating text input (e.g., 'abc')...\n> Code handles it with except.",
+            "proofing_output_fail": "> Simulating text input (e.g., 'abc')...\n> Code would likely crash or logic is incorrect.",
+            // Match Handler
+            "match_title": "Match the Handler", "match_desc": "Which `except` block is needed to correctly handle the potential error in the `try` block below? Click the right handler.",
+            "match_handler_print": "\"Error handled!\"", "button_check_handler": "Check Handler",
+            "match_code_1": "result = int('xyz')", // ValueError
+            "match_code_2": "data = [1, 2]\nprint(data[5])", // IndexError
+            "match_code_3": "val = 10 / 0", // ZeroDivisionError
+            "match_code_4": "print('Age: ' + 25)", // TypeError
+            "match_handler_option_value": "ValueError", "match_handler_option_index": "IndexError", "match_handler_option_zerodiv": "ZeroDivisionError", "match_handler_option_type": "TypeError", "match_handler_option_key": "KeyError",
+            "feedback_match_correct": "Correct! That's the right exception type.",
+            "feedback_match_incorrect": "Incorrect. That exception type wouldn't handle this specific error.",
+            "feedback_match_select": "Please select a handler option first.",
+            // Mini Missions
+            "missions_title": "Mini Missions!", "missions_desc": "Apply your knowledge! Complete these coding tasks using `try...except`.",
+            "mission25_1_title": "Mission 1: Safe Division", "mission25_1_desc": "Write code that divides `100` by a variable `divisor` (assume it exists). Use `try...except` to catch a potential `ZeroDivisionError` and print \"Cannot divide by zero.\" if it happens. Otherwise, print the result.", "mission25_1_placeholder": "# Assume divisor is defined...\n# Your try...except block here...",
+            "button_test_mission_1": "Test Mission 1",
+            "mission25_2_title": "Mission 2: Robust Input", "mission25_2_desc": "Ask the user for their age using `input()`. Convert it to an integer using `int()`. Use `try...except` to catch a `ValueError` if they enter non-numeric text, printing \"Invalid input, please enter a number.\" If successful, print \"Age accepted.\".", "mission25_2_placeholder": "# Your code here...\n# try:\n#   age_text = ...\n#   age = ...\n# except ValueError: ...",
+            "button_test_mission_2": "Test Mission 2",
+            "feedback_mission_success": "Mission Accomplished!", "feedback_mission_syntax_error": "Syntax/logic error. Check `try`/`except` structure and the specific error type.",
+            "feedback_mission1_hint": "Need `try:`, `100 / divisor`, `except ZeroDivisionError:`, and `print` in both blocks.",
+            "feedback_mission2_hint": "Need `try:`, `int(input(...))`, `except ValueError:`, and `print` in both blocks.",
+            "feedback_missions_summary_all_done": "All {totalMissions} missions complete! Code robustness increased!", "feedback_missions_summary_progress": "Completed {completedCount} of {totalMissions} missions. Keep handling those errors!",
+            // Completion
+            "completion_title": "Module 25 Practice Complete!", "completion_desc": "Excellent! You've practiced handling errors and making your code more robust. <br> Ready for more challenges? Try the <strong>Advanced Practice</strong> for Module 25!",
+            "button_view_theory": "View Theory Again", "button_start_advanced": "Start Advanced Practice", "button_back_menu": "Back to Course Menu"
+        },
+        pt: {
+            "page_title": "Módulo 25: Prática de Tratamento de Exceções",
+            "tooltip_click_identify": "Clique para identificar esta parte",
+            "nav_theory": "Ver Teoria", "nav_advanced": "Prática Avançada", "nav_menu": "Menu do Curso",
+            "nav_anatomy": "Anatomia", "nav_predict": "Resultado", "nav_proofing": "Proteção", "nav_match": "Combinar Handler", "nav_missions": "Missões",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title": "Módulo 25: Prática de Tratamento de Exceções", "header_subtitle": "Torne seu código robusto! Aprenda a tratar erros elegantemente.",
+            // Anatomy
+            "anatomy25_title": "Anatomia do Tratamento de Erros", "anatomy25_desc": "Um bloco `try...except` ajuda a capturar erros. Clique em cada parte destacada do código abaixo para ver seu papel.",
+            "anatomy25_status_initial": "Identifique todas as 7 partes!", "anatomy25_status_progress": "Identificadas {count} de {total} partes.", "anatomy25_status_done": "Todas as partes identificadas!",
+            "anatomy25_code_risky": "resultado = 10 / 0", "anatomy25_code_risky_comment": "# Erro potencial aqui", "anatomy25_code_handler": "\"Não pode dividir por zero!\"",
+            "anatomy25_exp_try_keyword": "A palavra-chave `try`: Inicia um bloco onde erros podem acontecer.",
+            "anatomy25_exp_try_colon": "Dois pontos `:` após `try`: Marca o início do conjunto de código `try`.",
+            "anatomy25_exp_risky_code": "Código Arriscado: A(s) operação(ões) que podem potencialmente levantar um erro.",
+            "anatomy25_exp_except_keyword": "A palavra-chave `except`: Inicia um bloco para tratar um erro específico.",
+            "anatomy25_exp_exception_type": "Tipo de Exceção (`ZeroDivisionError`): Especifica qual erro este bloco captura.",
+            "anatomy25_exp_except_colon": "Dois pontos `:` após `except`: Marca o início do código de tratamento de erro.",
+            "anatomy25_exp_handler_code": "Código de Tratamento (Handler): O que fazer se o erro especificado ocorrer.",
+            "feedback_anatomy_correct": "Excelente! Você dissecou o bloco try-except!",
+            // Predict Outcome
+            "predict_title": "Qual é o Resultado?", "predict_desc": "Olhe para o código. O que acontecerá quando ele rodar? Selecione o resultado correto abaixo, depois verifique sua resposta.",
+            "button_check_answer": "Verificar Resposta", "button_next_q": "Próxima Pergunta",
+            "predict_outcome_success": "Saída Sucesso:", "predict_outcome_handled": "Saída Tratada:", "predict_outcome_crash": "Crash:",
+            "predict_code_1": "try:\n  print(5 / 1)\nexcept ZeroDivisionError:\n  print(\"Erro matemático\")", // Saída Sucesso: 5.0
+            "predict_options_1_correct": "5.0", "predict_options_1_a": "Erro matemático", "predict_options_1_b": "ZeroDivisionError",
+            "predict_code_2": "try:\n  print(int('olá'))\nexcept ValueError:\n  print(\"Entrada inválida\")", // Saída Tratada: Entrada inválida
+            "predict_options_2_a": "olá", "predict_options_2_correct": "Entrada inválida", "predict_options_2_b": "ValueError",
+            "predict_code_3": "try:\n  print(10 / 0)\nexcept ValueError:\n  print(\"Tipo errado\")", // Crash: ZeroDivisionError
+            "predict_options_3_a": "0.0", "predict_options_3_b": "Tipo errado", "predict_options_3_correct": "ZeroDivisionError",
+            "predict_code_4": "x = 'a'\ntry:\n  print(x + 1)\nexcept TypeError:\n  print(\"Tipos incompatíveis\")", // Saída Tratada: Tipos incompatíveis
+            "predict_options_4_a": "a1", "predict_options_4_correct": "Tipos incompatíveis", "predict_options_4_b": "TypeError",
+            "feedback_predict_correct": "Correto! Você previu o resultado perfeitamente.",
+            "feedback_predict_incorrect": "Não exatamente. O resultado real foi diferente. Pense sobre qual erro ocorre (se houver) e se ele é tratado.",
+            "feedback_predict_select": "Por favor, selecione uma opção de resultado primeiro.",
+            // Error Proofing
+            "proofing_title": "Desafio de Proteção contra Erros", "proofing_desc": "O código abaixo pode quebrar! Modifique-o no editor adicionando um bloco `try...except` para tratar o potencial `ValueError` se o usuário digitar texto em vez de um número. Imprima uma mensagem amigável no bloco `except`.",
+            "proofing_guidance": "Objetivo: Prevenir crash por entrada não numérica.",
+            "proofing_editor_label": "Editor de Código:", "proofing_editor_placeholder": "# Envolva a linha abaixo em try...except\n# numero = int(input(\"Digite um número: \"))\n# print(f\"Você digitou: {numero}\")\n# Adicione o bloco except ValueError: aqui",
+            "button_check_proofing": "Verificar Meu Código", "proofing_output_label": "Saída Conceitual:", "proofing_output_placeholder": "Resultado da verificação aparecerá aqui...",
+            "feedback_proofing_success_numeric": "Excelente! Seu código trataria corretamente a entrada numérica.",
+            "feedback_proofing_success_text": "Excelente! Seu código parece tratar corretamente a entrada de texto com `except ValueError:` e imprime uma mensagem.",
+            "feedback_proofing_fail_no_try": "Faltando bloco `try:`.",
+            "feedback_proofing_fail_no_except": "Faltando bloco `except ValueError:`.",
+            "feedback_proofing_fail_no_print": "O bloco `except` deve imprimir uma mensagem amigável.",
+            "feedback_proofing_fail_structure": "Verifique a estrutura: bloco `try:` deve conter `int(input(...))`, `except ValueError:` deve seguir.",
+            "proofing_output_numeric": "> Simulando entrada numérica (ex: '123')...\n> Código trata.",
+            "proofing_output_text": "> Simulando entrada de texto (ex: 'abc')...\n> Código trata com except.",
+            "proofing_output_fail": "> Simulando entrada de texto (ex: 'abc')...\n> Código provavelmente quebraria ou lógica está incorreta.",
+             // Match Handler
+             "match_title": "Combine o Handler", "match_desc": "Qual bloco `except` é necessário para tratar corretamente o erro potencial no bloco `try` abaixo? Clique no handler correto.",
+             "match_handler_print": "\"Erro tratado!\"", "button_check_handler": "Verificar Handler",
+             "match_code_1": "resultado = int('xyz')", // ValueError
+             "match_code_2": "dados = [1, 2]\nprint(dados[5])", // IndexError
+             "match_code_3": "valor = 10 / 0", // ZeroDivisionError
+             "match_code_4": "print('Idade: ' + 25)", // TypeError
+             "match_handler_option_value": "ValueError", "match_handler_option_index": "IndexError", "match_handler_option_zerodiv": "ZeroDivisionError", "match_handler_option_type": "TypeError", "match_handler_option_key": "KeyError",
+             "feedback_match_correct": "Correto! Esse é o tipo de exceção certo.",
+             "feedback_match_incorrect": "Incorreto. Esse tipo de exceção não trataria este erro específico.",
+             "feedback_match_select": "Por favor, selecione uma opção de handler primeiro.",
+            // Mini Missions
+            "missions_title": "Mini Missões!", "missions_desc": "Aplique seu conhecimento! Complete estas tarefas de codificação usando `try...except`.",
+            "mission25_1_title": "Missão 1: Divisão Segura", "mission25_1_desc": "Escreva um código que divida `100` por uma variável `divisor` (assuma que ela existe). Use `try...except` para capturar um potencial `ZeroDivisionError` e imprima \"Não pode dividir por zero.\" se acontecer. Caso contrário, imprima o resultado.", "mission25_1_placeholder": "# Assuma que divisor está definido...\n# Seu bloco try...except aqui...",
+            "button_test_mission_1": "Testar Missão 1",
+            "mission25_2_title": "Missão 2: Entrada Robusta", "mission25_2_desc": "Peça a idade do usuário usando `input()`. Converta para inteiro usando `int()`. Use `try...except` para capturar um `ValueError` se digitarem texto não numérico, imprimindo \"Entrada inválida, por favor digite um número.\" Se bem-sucedido, imprima \"Idade aceita.\".", "mission25_2_placeholder": "# Seu código aqui...\n# try:\n#   texto_idade = ...\n#   idade = ...\n# except ValueError: ...",
+            "button_test_mission_2": "Testar Missão 2",
+            "feedback_mission_success": "Missão Cumprida!", "feedback_mission_syntax_error": "Erro de sintaxe/lógica. Verifique a estrutura `try`/`except` e o tipo de erro específico.",
+            "feedback_mission1_hint": "Precisa de `try:`, `100 / divisor`, `except ZeroDivisionError:`, e `print` em ambos os blocos.",
+            "feedback_mission2_hint": "Precisa de `try:`, `int(input(...))`, `except ValueError:`, e `print` em ambos os blocos.",
+            "feedback_missions_summary_all_done": "Todas as {totalMissions} missões completas! Robustez do código aumentada!", "feedback_missions_summary_progress": "Completou {completedCount} de {totalMissions} missões. Continue tratando esses erros!",
+            // Completion
+            "completion_title": "Prática do Módulo 25 Completa!", "completion_desc": "Excelente! Você praticou o tratamento de erros e tornou seu código mais robusto. <br> Pronto para mais desafios? Experimente a <strong>Prática Avançada</strong> do Módulo 25!",
+            "button_view_theory": "Ver Teoria Novamente", "button_start_advanced": "Iniciar Prática Avançada", "button_back_menu": "Voltar ao Menu do Curso"
+        },
+        zh: {
+            "page_title": "模块 25：异常处理练习",
+            "tooltip_click_identify": "点击识别此部分",
+            "nav_theory": "查看理论", "nav_advanced": "高级练习", "nav_menu": "课程菜单",
+            "nav_anatomy": "剖析", "nav_predict": "结果", "nav_proofing": "防错", "nav_match": "匹配处理", "nav_missions": "任务",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title": "模块 25：异常处理练习", "header_subtitle": "让你的代码更健壮！学习优雅地处理错误。",
+             // Anatomy
+            "anatomy25_title": "错误处理剖析", "anatomy25_desc": "`try...except` 代码块有助于捕获错误。点击下面代码中每个高亮部分，了解其作用。",
+            "anatomy25_status_initial": "识别所有 7 个部分！", "anatomy25_status_progress": "已识别 {count} / {total} 个部分。", "anatomy25_status_done": "所有部分已识别！",
+            "anatomy25_code_risky": "result = 10 / 0", "anatomy25_code_risky_comment": "# 这里可能出错", "anatomy25_code_handler": "\"不能除以零！\"",
+            "anatomy25_exp_try_keyword": "`try` 关键字：开始一个可能发生错误的块。",
+            "anatomy25_exp_try_colon": "`try` 后面的冒号 `:`：标记 `try` 代码块的开始。",
+            "anatomy25_exp_risky_code": "风险代码：可能引发错误的操作。",
+            "anatomy25_exp_except_keyword": "`except` 关键字：开始一个处理特定错误的块。",
+            "anatomy25_exp_exception_type": "异常类型 (`ZeroDivisionError`)：指定此块捕获哪种错误。",
+            "anatomy25_exp_except_colon": "`except` 后面的冒号 `:`：标记错误处理代码的开始。",
+            "anatomy25_exp_handler_code": "处理代码 (Handler)：如果指定的错误发生，该怎么做。",
+            "feedback_anatomy_correct": "太棒了！你成功剖析了 try-except 代码块！",
+            // Predict Outcome
+            "predict_title": "结果会怎样？", "predict_desc": "看看这段代码。它运行时会发生什么？选择下面的正确结果，然后检查你的答案。",
+            "button_check_answer": "检查答案", "button_next_q": "下一题",
+            "predict_outcome_success": "成功输出：", "predict_outcome_handled": "已处理输出：", "predict_outcome_crash": "崩溃：",
+            "predict_code_1": "try:\n  print(5 / 1)\nexcept ZeroDivisionError:\n  print(\"数学错误\")", // 成功输出： 5.0
+            "predict_options_1_correct": "5.0", "predict_options_1_a": "数学错误", "predict_options_1_b": "ZeroDivisionError",
+            "predict_code_2": "try:\n  print(int('你好'))\nexcept ValueError:\n  print(\"输入无效\")", // 已处理输出： 输入无效
+            "predict_options_2_a": "你好", "predict_options_2_correct": "输入无效", "predict_options_2_b": "ValueError",
+            "predict_code_3": "try:\n  print(10 / 0)\nexcept ValueError:\n  print(\"类型错误\")", // 崩溃： ZeroDivisionError
+            "predict_options_3_a": "0.0", "predict_options_3_b": "类型错误", "predict_options_3_correct": "ZeroDivisionError",
+            "predict_code_4": "x = 'a'\ntry:\n  print(x + 1)\nexcept TypeError:\n  print(\"类型不匹配\")", // 已处理输出： 类型不匹配
+            "predict_options_4_a": "a1", "predict_options_4_correct": "类型不匹配", "predict_options_4_b": "TypeError",
+            "feedback_predict_correct": "正确！你完美地预测了结果。",
+            "feedback_predict_incorrect": "不太对。实际结果不同。想想发生了什么错误（如果有的话）以及它是否被处理了。",
+            "feedback_predict_select": "请先选择一个结果选项。",
+            // Error Proofing
+            "proofing_title": "防错挑战", "proofing_desc": "下面的代码可能会崩溃！在编辑器中修改它，添加一个 `try...except` 块来处理用户输入文本而非数字时可能发生的 `ValueError`。在 `except` 块中打印一条友好的消息。",
+            "proofing_guidance": "目标：防止因非数字输入而崩溃。",
+            "proofing_editor_label": "代码编辑器：", "proofing_editor_placeholder": "# 将下面的行包装在 try...except 中\n# number = int(input(\"输入一个数字：\"))\n# print(f\"你输入了：{number}\")\n# 在此处添加 except ValueError: 块",
+            "button_check_proofing": "检查我的代码", "proofing_output_label": "概念输出：", "proofing_output_placeholder": "检查结果将显示在此处...",
+            "feedback_proofing_success_numeric": "太棒了！你的代码能够正确处理数字输入。",
+            "feedback_proofing_success_text": "太棒了！你的代码似乎能用 `except ValueError:` 正确处理文本输入并打印消息。",
+            "feedback_proofing_fail_no_try": "缺少 `try:` 块。",
+            "feedback_proofing_fail_no_except": "缺少 `except ValueError:` 块。",
+            "feedback_proofing_fail_no_print": "`except` 块应该打印一条用户友好的消息。",
+            "feedback_proofing_fail_structure": "检查结构：`try:` 块应包含 `int(input(...))`，`except ValueError:` 应紧随其后。",
+            "proofing_output_numeric": "> 模拟数字输入 (例如 '123')...\n> 代码处理成功。",
+            "proofing_output_text": "> 模拟文本输入 (例如 'abc')...\n> 代码使用 except 处理成功。",
+            "proofing_output_fail": "> 模拟文本输入 (例如 'abc')...\n> 代码可能会崩溃或逻辑不正确。",
+            // Match Handler
+            "match_title": "匹配处理程序", "match_desc": "需要哪个 `except` 块来正确处理下面 `try` 块中的潜在错误？点击正确的处理程序。",
+            "match_handler_print": "\"错误已处理！\"", "button_check_handler": "检查处理程序",
+            "match_code_1": "result = int('xyz')", // ValueError
+            "match_code_2": "data = [1, 2]\nprint(data[5])", // IndexError
+            "match_code_3": "val = 10 / 0", // ZeroDivisionError
+            "match_code_4": "print('年龄: ' + 25)", // TypeError
+            "match_handler_option_value": "ValueError", "match_handler_option_index": "IndexError", "match_handler_option_zerodiv": "ZeroDivisionError", "match_handler_option_type": "TypeError", "match_handler_option_key": "KeyError",
+            "feedback_match_correct": "正确！这是正确的异常类型。",
+            "feedback_match_incorrect": "不正确。该异常类型无法处理此特定错误。",
+            "feedback_match_select": "请先选择一个处理程序选项。",
+            // Mini Missions
+            "missions_title": "迷你任务！", "missions_desc": "运用你的知识！使用 `try...except` 完成这些编码任务。",
+            "mission25_1_title": "任务 1：安全除法", "mission25_1_desc": "编写代码，将 `100` 除以变量 `divisor`（假设它存在）。使用 `try...except` 捕获潜在的 `ZeroDivisionError`，如果发生，则打印 “不能除以零。”。否则，打印结果。", "mission25_1_placeholder": "# 假设 divisor 已定义...\n# 你的 try...except 块在这里...",
+            "button_test_mission_1": "测试任务 1",
+            "mission25_2_title": "任务 2：健壮输入", "mission25_2_desc": "使用 `input()` 询问用户年龄。使用 `int()` 将其转换为整数。使用 `try...except` 捕获 `ValueError`（如果他们输入非数字文本），打印 “输入无效，请输入数字。”。如果成功，打印 “年龄已接受。”。", "mission25_2_placeholder": "# 你的代码在这里...\n# try:\n#   age_text = ...\n#   age = ...\n# except ValueError: ...",
+            "button_test_mission_2": "测试任务 2",
+            "feedback_mission_success": "任务完成！", "feedback_mission_syntax_error": "语法/逻辑错误。检查 `try`/`except` 结构和具体的错误类型。",
+            "feedback_mission1_hint": "需要 `try:`、`100 / divisor`、`except ZeroDivisionError:` 以及在两个块中的 `print`。",
+            "feedback_mission2_hint": "需要 `try:`、`int(input(...))`、`except ValueError:` 以及在两个块中的 `print`。",
+            "feedback_missions_summary_all_done": "所有 {totalMissions} 个任务已完成！代码健壮性提升！", "feedback_missions_summary_progress": "已完成 {completedCount} / {totalMissions} 个任务。继续处理这些错误！",
+            // Completion
+            "completion_title": "模块 25 练习完成！", "completion_desc": "太棒了！你练习了处理错误并使你的代码更加健壮。<br> 准备好迎接更多挑战了吗？试试模块 25 的<strong>高级练习</strong>！",
+            "button_view_theory": "再次查看理论", "button_start_advanced": "开始高级练习", "button_back_menu": "返回课程菜单"
+        }
+    };
+
+
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // --- Language Management Functions (Copied from Module 0) ---
+        function getStoredLanguage() { /* ... same as Module 0 ... */
+            const storedLang = localStorage.getItem('userLanguage');
+            if (storedLang && translations[storedLang]) return storedLang;
+            const browserLang = navigator.language || navigator.userLanguage;
+            if (browserLang.startsWith('pt')) return 'pt';
+            if (browserLang.startsWith('zh')) return 'zh';
+            return 'en';
+        }
+        function getTranslation(key, lang, replacements = {}) { /* ... same as Module 0 ... */
+            let text = translations[lang]?.[key] ?? translations['en']?.[key] ?? `[${key}]`; // Fallback shows key
+            for (const placeholder in replacements) {
+                const regex = new RegExp(`\\{${placeholder}\\}`, 'g');
+                text = text.replace(regex, replacements[placeholder]);
+            }
+            return text;
+        }
+        function translatePage(lang) { /* ... same as Module 0 ... */
+             if (!translations[lang]) lang = 'en';
+             document.querySelectorAll('[data-translate]').forEach(el => {
+                 const key = el.getAttribute('data-translate');
+                 const translation = getTranslation(key, lang);
+                  if (el.tagName === 'TITLE') { document.title = translation; }
+                  else if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') { /* Placeholders handled below */ }
+                  else if (el.tagName === 'OPTION') { el.textContent = translation; }
+                  else {
+                      if (translation.includes('<') && translation.includes('>')) { el.innerHTML = translation; }
+                      else { el.textContent = translation; }
+                  }
+             });
+             document.querySelectorAll('[data-translate-placeholder]').forEach(el => {
+                 const key = el.getAttribute('data-translate-placeholder');
+                 const translation = getTranslation(key, lang);
+                 el.setAttribute('placeholder', translation);
+             });
+             document.querySelectorAll('[data-translate-title]').forEach(el => {
+                 const key = el.getAttribute('data-translate-title');
+                 const translation = getTranslation(key, lang);
+                 el.setAttribute('title', translation);
+             });
+        }
+        function setLanguage(lang) { /* ... slightly adapted for activity resets ... */
+             if (!translations[lang]) lang = 'en';
+             localStorage.setItem('userLanguage', lang);
+             document.documentElement.lang = lang;
+             translatePage(lang); // Apply generic translations
+
+             const langSelect = document.getElementById('languageSelect');
+             if (langSelect) langSelect.value = lang;
+
+              // Re-initialize or update language-dependent interactive content
+              if (anatomyTryExceptSection) setupAnatomyActivity();
+              if (predictOutcomeSection) setupPredictOutcomeActivity(); // Resets with new text
+              if (errorProofingSection) { // Reset placeholder text if needed
+                  const editor = document.getElementById('proofing-editor-input');
+                  if (editor) editor.placeholder = getTranslation('proofing_editor_placeholder', lang);
+              }
+              if (matchHandlerSection) setupMatchHandlerActivity(); // Resets with new text
+              if (missionsSection && typeof updateMissionSummary === 'function') { // Missions use placeholders primarily
+                updateMissionSummary(); // Update summary text
+             }
+        }
+
+        // --- Initialize Language ---
+        const initialLang = getStoredLanguage();
+
+        // --- Minimal Nav Logic (Copied from Module 0) ---
+        const navToggleButton = document.getElementById('minimal-nav-toggle');
+        const navPanel = document.getElementById('minimal-nav-panel');
+        const body = document.body;
+        if (navToggleButton && navPanel) { /* ... same as Module 0 ... */
+            navToggleButton.addEventListener('click', (event) => { event.stopPropagation(); body.classList.toggle('nav-active'); navToggleButton.setAttribute('aria-expanded', body.classList.contains('nav-active')); });
+            document.addEventListener('click', (event) => { if (body.classList.contains('nav-active') && !navPanel.contains(event.target) && event.target !== navToggleButton && !navToggleButton.contains(event.target) ) { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); } });
+            navPanel.querySelectorAll('a').forEach(link => { link.addEventListener('click', () => { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); }); });
+            document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && body.classList.contains('nav-active')) { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); } });
+            navToggleButton.setAttribute('aria-expanded', 'false');
+        }
+
+        // --- Language Switcher Setup (Copied from Module 0) ---
+        const langSelect = document.getElementById('languageSelect');
+        if (langSelect) {
+            langSelect.addEventListener('change', (e) => { setLanguage(e.target.value); });
+        }
+
+        // --- Helper Function for Feedback (Copied from Module 0) ---
+        function showFeedback(elementId, messageKey, type = 'info', replacements = {}) { /* ... same as Module 0 ... */
+            const feedbackEl = document.getElementById(elementId);
+            if (!feedbackEl) { console.error(`Feedback element not found: ${elementId}`); return; }
+            const currentLang = getStoredLanguage();
+            const translatedMessage = getTranslation(messageKey, currentLang, replacements);
+             if (translatedMessage.includes('<') && translatedMessage.includes('>')) { feedbackEl.innerHTML = translatedMessage; } else { feedbackEl.textContent = translatedMessage; }
+            feedbackEl.className = 'feedback-message'; // Reset classes first
+            feedbackEl.classList.add('visible', type);
+            const interactiveArea = feedbackEl.closest('.interactive-area');
+            if (!interactiveArea) return;
+            interactiveArea.classList.remove('success-glow-anim', 'shake-anim');
+            void interactiveArea.offsetWidth; // Trigger reflow
+            if (type === 'correct') { interactiveArea.classList.add('success-glow-anim'); }
+            else if (type === 'incorrect') { interactiveArea.classList.add('shake-anim'); }
+        }
+
+        // --- Activity 1: Anatomy of try...except ---
+        const anatomyTryExceptSection = document.getElementById('anatomy-try-except');
+        let anatomyPartExplanations = {};
+        const totalAnatomyParts = 7; // Updated count
+        let currentAnatomyListeners = [];
+
+        function setupAnatomyActivity() {
+            if (!anatomyTryExceptSection) return;
+            const currentLang = getStoredLanguage();
+            anatomyPartExplanations = {}; // Clear previous
+             // Populate explanations based on current language
+             document.querySelectorAll('#explanation-texts span[data-key]').forEach(span => {
+                 const key = span.getAttribute('data-key');
+                 if (key && key.startsWith('anatomy25_exp_')) { // Ensure it's for this activity
+                     anatomyPartExplanations[key.replace('anatomy25_exp_', '')] = getTranslation(key, currentLang);
+                 }
+             });
+
+            const parts = anatomyTryExceptSection.querySelectorAll('.code-part');
+            const explanationsDiv = document.getElementById('anatomy-explanations');
+            const statusP = document.getElementById('anatomy-status');
+            const feedbackDiv = document.getElementById('anatomy-feedback');
+            let identifiedCount = 0;
+
+            // Remove old listeners
+            currentAnatomyListeners.forEach(({element, listener}) => element.removeEventListener('click', listener));
+            currentAnatomyListeners = [];
+
+            // Reset visual state
+            parts.forEach(p => p.classList.remove('identified'));
+            explanationsDiv.innerHTML = '';
+            statusP.innerHTML = getTranslation('anatomy25_status_initial', currentLang);
+            feedbackDiv.classList.remove('visible', 'correct', 'incorrect', 'info');
+
+            parts.forEach(part => {
+                 const partType = part.dataset.part;
+                 const clickListener = () => {
+                     if (!part.classList.contains('identified') && partType && anatomyPartExplanations[partType]) {
+                         part.classList.add('identified');
+                         identifiedCount++;
+                         const p = document.createElement('p');
+                         p.classList.add('part-explanation');
+                         // Simple text display for minimal approach
+                         p.innerHTML = `<i class="fas fa-check-circle" style="color: var(--success-color); margin-right: 5px;"></i> <strong>${part.textContent.trim()}:</strong> ${anatomyPartExplanations[partType]}`;
+                         explanationsDiv.appendChild(p);
+
+                         statusP.innerHTML = getTranslation('anatomy25_status_progress', currentLang, { count: identifiedCount, total: totalAnatomyParts });
+
+                         if (identifiedCount === totalAnatomyParts) {
+                             statusP.innerHTML = getTranslation('anatomy25_status_done', currentLang);
+                             showFeedback('anatomy-feedback', 'feedback_anatomy_correct', 'correct');
+                         }
+                     } else if (!anatomyPartExplanations[partType]) {
+                        // console.warn(`Explanation missing for part: ${partType}`);
+                     }
+                 };
+                 part.addEventListener('click', clickListener);
+                 currentAnatomyListeners.push({ element: part, listener: clickListener });
+            });
+        }
+
+
+        // --- Activity 2: What's the Outcome? ---
+        const predictOutcomeSection = document.getElementById('predict-outcome');
+        if (predictOutcomeSection) {
+            const codeBlock = document.getElementById('outcome-code-block');
+            const optionsContainer = document.getElementById('outcome-options');
+            const checkBtn = document.getElementById('check-outcome-btn');
+            const nextBtn = document.getElementById('next-outcome-btn');
+            const feedbackDiv = document.getElementById('outcome-feedback');
+            let currentOutcomeQuestionIndex = 0;
+            let outcomeQuestions = []; // Will be populated
+
+             function generateOutcomeQuestions(lang) {
+                 outcomeQuestions = [
+                    { // Q1
+                        codeKey: 'predict_code_1',
+                        options: [
+                            { key: 'predict_options_1_correct', type: 'success', correct: true },
+                            { key: 'predict_options_1_a', type: 'handled', correct: false },
+                            { key: 'predict_options_1_b', type: 'crash', correct: false }
+                        ]
+                    },
+                    { // Q2
+                        codeKey: 'predict_code_2',
+                         options: [
+                            { key: 'predict_options_2_a', type: 'success', correct: false },
+                            { key: 'predict_options_2_correct', type: 'handled', correct: true },
+                            { key: 'predict_options_2_b', type: 'crash', correct: false }
+                        ]
+                    },
+                    { // Q3
+                        codeKey: 'predict_code_3',
+                         options: [
+                             { key: 'predict_options_3_a', type: 'success', correct: false },
+                             { key: 'predict_options_3_b', type: 'handled', correct: false },
+                             { key: 'predict_options_3_correct', type: 'crash', correct: true }
+                         ]
+                    },
+                    { // Q4
+                        codeKey: 'predict_code_4',
+                         options: [
+                             { key: 'predict_options_4_a', type: 'success', correct: false },
+                             { key: 'predict_options_4_correct', type: 'handled', correct: true },
+                             { key: 'predict_options_4_b', type: 'crash', correct: false }
+                         ]
+                    }
+                ].map(q => ({ // Translate content
+                     ...q,
+                     code: getTranslation(q.codeKey, lang),
+                     options: q.options.map(opt => ({
+                         ...opt,
+                         text: `${getTranslation(`predict_outcome_${opt.type}`, lang)} ${getTranslation(opt.key, lang)}`
+                     })).sort(() => Math.random() - 0.5) // Shuffle options
+                 }));
+             }
+
+            function displayOutcomeQuestion(index) {
+                const question = outcomeQuestions[index];
+                if (!question) return;
+                codeBlock.innerHTML = `<pre><code>${question.code}</code></pre>`; // Use pre for formatting
+                optionsContainer.innerHTML = '';
+                question.options.forEach((opt, optIndex) => {
+                    const button = document.createElement('button');
+                    button.classList.add('outcome-option');
+                    button.textContent = opt.text;
+                    button.dataset.correct = opt.correct;
+                    button.dataset.index = optIndex;
+                    button.addEventListener('click', () => {
+                        optionsContainer.querySelectorAll('.outcome-option').forEach(btn => btn.classList.remove('selected'));
+                        button.classList.add('selected');
+                        checkBtn.disabled = false;
+                        feedbackDiv.classList.remove('visible'); // Hide feedback on new selection
+                    });
+                    optionsContainer.appendChild(button);
+                });
+                checkBtn.disabled = true;
+                checkBtn.classList.remove('success', 'hidden');
+                nextBtn.classList.add('hidden');
+                feedbackDiv.classList.remove('visible');
+            }
+
+            checkBtn.addEventListener('click', () => {
+                const selectedOption = optionsContainer.querySelector('.outcome-option.selected');
+                if (!selectedOption) {
+                    showFeedback('outcome-feedback', 'feedback_predict_select', 'info');
+                    return;
+                }
+                const isCorrect = selectedOption.dataset.correct === 'true';
+                optionsContainer.querySelectorAll('.outcome-option').forEach(btn => {
+                    btn.disabled = true; // Disable after check
+                    if (btn.dataset.correct === 'true') btn.classList.add('correct');
+                });
+
+                if (isCorrect) {
+                    selectedOption.classList.add('correct'); // Already selected, just confirm style
+                    showFeedback('outcome-feedback', 'feedback_predict_correct', 'correct');
+                    nextBtn.classList.remove('hidden');
+                    checkBtn.classList.add('hidden'); // Hide check button after correct answer
+                } else {
+                    selectedOption.classList.add('incorrect');
+                    showFeedback('outcome-feedback', 'feedback_predict_incorrect', 'incorrect');
+                     nextBtn.classList.remove('hidden'); // Allow moving on even if wrong
+                     checkBtn.classList.add('hidden');
+                }
+            });
+
+            nextBtn.addEventListener('click', () => {
+                currentOutcomeQuestionIndex = (currentOutcomeQuestionIndex + 1) % outcomeQuestions.length;
+                displayOutcomeQuestion(currentOutcomeQuestionIndex);
+            });
+
+            function setupPredictOutcomeActivity() {
+                 generateOutcomeQuestions(getStoredLanguage());
+                 currentOutcomeQuestionIndex = 0;
+                 displayOutcomeQuestion(currentOutcomeQuestionIndex);
+            }
+        }
+
+        // --- Activity 3: Error Proofing (Simulator Logic) ---
+        const errorProofingSection = document.getElementById('error-proofing');
+        if (errorProofingSection) {
+            const editor = document.getElementById('proofing-editor-input');
+            const runBtn = document.getElementById('run-proofing-btn');
+            const outputArea = document.getElementById('proofing-output');
+            const feedbackDiv = document.getElementById('proofing-feedback');
+
+            runBtn.addEventListener('click', () => {
+                const code = editor.value;
+                const currentLang = getStoredLanguage();
+                outputArea.innerHTML = ''; // Clear previous output
+                feedbackDiv.classList.remove('visible');
+
+                // Simple checks based on keywords and structure
+                const hasTry = code.includes('try:');
+                const hasExceptValueError = code.includes('except ValueError:');
+                // Basic check if int(input(...)) is likely inside try
+                const tryBlockContent = code.substring(code.indexOf('try:') + 4, code.indexOf('except')).trim();
+                const hasIntInputInTry = tryBlockContent.includes('int(') && tryBlockContent.includes('input(');
+                // Basic check if except block has a print statement
+                const exceptBlockContent = code.substring(code.indexOf('except ValueError:') + 17).trim();
+                const hasPrintInExcept = exceptBlockContent.includes('print(');
+
+                let success = false;
+                let feedbackKey = 'feedback_proofing_fail_structure';
+                let outputKey = 'proofing_output_fail';
+
+                if (!hasTry) {
+                    feedbackKey = 'feedback_proofing_fail_no_try';
+                } else if (!hasExceptValueError) {
+                    feedbackKey = 'feedback_proofing_fail_no_except';
+                } else if (!hasIntInputInTry) {
+                     feedbackKey = 'feedback_proofing_fail_structure'; // Or a more specific message
+                } else if (!hasPrintInExcept) {
+                     feedbackKey = 'feedback_proofing_fail_no_print';
+                } else {
+                     success = true;
+                     feedbackKey = 'feedback_proofing_success_text'; // Assume text handling is the main goal
+                     outputKey = 'proofing_output_text';
+                     // Could add a check for numeric handling too if desired, but keep it simple
+                }
+
+                // Display conceptual output
+                const outputText = getTranslation(outputKey, currentLang);
+                outputText.split('\n').forEach(line => {
+                    const span = document.createElement('span');
+                    span.classList.add(line.includes('crash') ? 'error-output' : 'output-line');
+                    span.textContent = line;
+                    outputArea.appendChild(span);
+                });
+
+                 showFeedback('proofing-feedback', feedbackKey, success ? 'correct' : 'incorrect');
+                 runBtn.classList.toggle('success', success);
+                 runBtn.disabled = success; // Disable if correct
+            });
+             // Reset placeholder on language change
+             // Handled in setLanguage function
+        }
+
+
+         // --- Activity 4: Match the Handler ---
+         const matchHandlerSection = document.getElementById('match-handler');
+         if (matchHandlerSection) {
+             const codeBlockContainer = document.getElementById('handler-code-block');
+             const optionsContainer = document.getElementById('handler-options');
+             const checkBtn = document.getElementById('check-handler-btn');
+             const nextBtn = document.getElementById('next-handler-btn');
+             const feedbackDiv = document.getElementById('handler-feedback');
+             let currentHandlerQuestionIndex = 0;
+             let handlerQuestions = [];
+
+             function generateHandlerQuestions(lang) {
+                 // Define questions with code and correct handler key
+                 handlerQuestions = [
+                     { codeKey: 'match_code_1', correctHandlerKey: 'match_handler_option_value' },
+                     { codeKey: 'match_code_2', correctHandlerKey: 'match_handler_option_index' },
+                     { codeKey: 'match_code_3', correctHandlerKey: 'match_handler_option_zerodiv' },
+                     { codeKey: 'match_code_4', correctHandlerKey: 'match_handler_option_type' },
+                 ].map(q => ({ // Translate code and generate options
+                     code: getTranslation(q.codeKey, lang),
+                     correctHandler: getTranslation(q.correctHandlerKey, lang),
+                     // Provide a pool of options including the correct one and some distractors
+                     options: [
+                         getTranslation('match_handler_option_value', lang),
+                         getTranslation('match_handler_option_index', lang),
+                         getTranslation('match_handler_option_zerodiv', lang),
+                         getTranslation('match_handler_option_type', lang),
+                         getTranslation('match_handler_option_key', lang) // Example distractor
+                     ].filter((handler, index, self) => // Ensure unique options and include correct one
+                         self.indexOf(handler) === index
+                     ).sort(() => Math.random() - 0.5).slice(0, 4) // Pick 4 shuffled options
+                 }));
+                  // Ensure the correct answer is always included if sliced out
+                 handlerQuestions.forEach(q => {
+                    if (!q.options.includes(q.correctHandler)) {
+                        q.options.pop(); // Remove one random option
+                        q.options.push(q.correctHandler); // Add the correct one
+                        q.options.sort(() => Math.random() - 0.5); // Shuffle again
+                    }
+                 });
+             }
+
+             function displayHandlerQuestion(index) {
+                 const question = handlerQuestions[index];
+                 if (!question) return;
+                 codeBlockContainer.innerHTML = `<pre><code class="code-potential-error">${question.code}</code></pre>`;
+                 optionsContainer.innerHTML = '';
+                 question.options.forEach((optText) => {
+                     const button = document.createElement('button');
+                     button.classList.add('handler-option');
+                     button.textContent = `except ${optText}:`;
+                     button.dataset.handler = optText;
+                     button.dataset.correct = (optText === question.correctHandler).toString();
+
+                     button.addEventListener('click', () => {
+                         optionsContainer.querySelectorAll('.handler-option').forEach(btn => btn.classList.remove('selected'));
+                         button.classList.add('selected');
+                         checkBtn.disabled = false;
+                         feedbackDiv.classList.remove('visible');
+                     });
+                     optionsContainer.appendChild(button);
+                 });
+                 checkBtn.disabled = true;
+                 checkBtn.classList.remove('success', 'hidden');
+                 nextBtn.classList.add('hidden');
+                 feedbackDiv.classList.remove('visible');
+             }
+
+             checkBtn.addEventListener('click', () => {
+                 const selectedOption = optionsContainer.querySelector('.handler-option.selected');
+                 if (!selectedOption) {
+                     showFeedback('handler-feedback', 'feedback_match_select', 'info');
+                     return;
+                 }
+                 const isCorrect = selectedOption.dataset.correct === 'true';
+                 optionsContainer.querySelectorAll('.handler-option').forEach(btn => {
+                     btn.disabled = true;
+                     if (btn.dataset.correct === 'true') btn.classList.add('correct');
+                 });
+
+                 if (isCorrect) {
+                     selectedOption.classList.add('correct');
+                     showFeedback('handler-feedback', 'feedback_match_correct', 'correct');
+                     nextBtn.classList.remove('hidden');
+                     checkBtn.classList.add('hidden');
+                 } else {
+                     selectedOption.classList.add('incorrect');
+                     showFeedback('handler-feedback', 'feedback_match_incorrect', 'incorrect');
+                     nextBtn.classList.remove('hidden');
+                     checkBtn.classList.add('hidden');
+                 }
+             });
+
+             nextBtn.addEventListener('click', () => {
+                 currentHandlerQuestionIndex = (currentHandlerQuestionIndex + 1) % handlerQuestions.length;
+                 displayHandlerQuestion(currentHandlerQuestionIndex);
+             });
+
+             function setupMatchHandlerActivity() {
+                  generateHandlerQuestions(getStoredLanguage());
+                  currentHandlerQuestionIndex = 0;
+                  displayHandlerQuestion(currentHandlerQuestionIndex);
+             }
+         }
+
+
+        // --- Activity 5: Mini Missions ---
+        const missionsSection = document.getElementById('mini-missions');
+        let updateMissionSummary; // Define function scope
+        if (missionsSection) {
+            const missionRunButtons = missionsSection.querySelectorAll('.mission-run-btn');
+            const summaryFeedback = document.getElementById('missions-summary-feedback');
+            const totalMissions = missionsSection.querySelectorAll('.mission').length;
+            let completedMissionsCount = 0;
+
+            updateMissionSummary = function() { // Assign function
+                 completedMissionsCount = missionsSection.querySelectorAll('.mission[data-completed="true"]').length;
+                 const currentLang = getStoredLanguage();
+                 if (completedMissionsCount === totalMissions) {
+                     showFeedback('missions-summary-feedback', 'feedback_missions_summary_all_done', 'correct', { totalMissions: totalMissions });
+                 } else if (completedMissionsCount > 0) {
+                     showFeedback('missions-summary-feedback', 'feedback_missions_summary_progress', 'info', { completedCount: completedMissionsCount, totalMissions: totalMissions });
+                 } else {
+                     summaryFeedback.classList.remove('visible', 'correct', 'incorrect', 'info');
+                 }
+            }
+            missionRunButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const missionId = button.dataset.missionId;
+                    const missionDiv = document.getElementById(`mission-${missionId}`);
+                    if (!missionDiv) return;
+                    const editor = missionDiv.querySelector('.mission-editor');
+                    const outputArea = missionDiv.querySelector('.mission-output');
+                    const feedbackDivId = `mission-feedback-${missionId}`;
+                    const feedbackDiv = document.getElementById(feedbackDivId);
+                    if (!feedbackDiv) { console.error(`Feedback div ${feedbackDivId} not found`); return; }
+                    const statusIcon = missionDiv.querySelector('.mission-status i');
+                    const code = editor.value.trim();
+                    outputArea.innerHTML = '';
+                    let success = false;
+                    let feedbackMessageKey = 'feedback_mission_syntax_error';
+                    let specificHintKey = '';
+
+                     /* Simple Validation Logic (Keyword Checking) */
+                     try {
+                         const hasTry = code.includes('try:');
+                         const hasPrint = code.includes('print('); // General check
+
+                         if (missionId === '1') { // Safe Division
+                             const hasExceptZeroDiv = code.includes('except ZeroDivisionError:');
+                             const hasDivision = code.includes('100') && code.includes('/');
+                             if (hasTry && hasExceptZeroDiv && hasDivision && hasPrint) {
+                                 success = true;
+                                 // Simulate both outcomes conceptually
+                                 outputArea.innerHTML = `<span class="output-line">> Testing with divisor=5: 20.0</span><span class="output-line">> Testing with divisor=0: Cannot divide by zero.</span>`;
+                             } else { specificHintKey = 'feedback_mission1_hint'; }
+                         } else if (missionId === '2') { // Robust Input
+                             const hasExceptValue = code.includes('except ValueError:');
+                             const hasIntInput = code.includes('int(') && code.includes('input(');
+                             if (hasTry && hasExceptValue && hasIntInput && hasPrint) {
+                                 success = true;
+                                 // Simulate both outcomes
+                                 outputArea.innerHTML = `<span class="output-line">> Simulating numeric input: Age accepted.</span><span class="output-line">> Simulating text input: Invalid input, please enter a number.</span>`;
+                             } else { specificHintKey = 'feedback_mission2_hint'; }
+                         }
+                     } catch (error) { console.error("Mission validation error:", error); }
+                     /* End Validation */
+
+                     if (success) {
+                         feedbackMessageKey = 'feedback_mission_success';
+                         statusIcon.className = 'fas fa-check-circle';
+                         missionDiv.dataset.completed = 'true';
+                     } else {
+                         feedbackMessageKey = specificHintKey || feedbackMessageKey;
+                         statusIcon.className = 'fas fa-times-circle';
+                         missionDiv.dataset.completed = 'false';
+                         // Provide generic error output if failed
+                         outputArea.innerHTML = `<span class="output-line error-output">> Conceptual test failed. Check hints.</span>`;
+                     }
+                     showFeedback(feedbackDivId, feedbackMessageKey, success ? 'correct' : 'incorrect');
+                     updateMissionSummary();
+                });
+            });
+            updateMissionSummary(); // Initial call
+        }
+
+        // --- Fade-in animations on scroll (Copied from Module 0) ---
+        const fadeElements = document.querySelectorAll('.fade-in');
+        const animateOnScroll = () => { /* ... same as Module 0 ... */
+             const windowHeight = window.innerHeight;
+             fadeElements.forEach(el => {
+                  // Use Intersection Observer for better performance if needed, but keeping simple for now
+                 const rect = el.getBoundingClientRect();
+                 // Check if already animated (via style.opacity)
+                 if (el.style.opacity === '' || el.style.opacity === '0') {
+                     if (rect.top < windowHeight - 50 && rect.bottom >= 50) { // Adjusted threshold slightly
+                         el.style.opacity = '1';
+                         el.style.transform = 'translateY(0)';
+                     }
+                 }
+             });
+        };
+        const scrollHandler = () => window.requestAnimationFrame(animateOnScroll);
+        window.addEventListener('scroll', scrollHandler);
+
+        // --- Initial Language Application and Activity Setups ---
+        setLanguage(initialLang); // Apply language FIRST
+        animateOnScroll(); // Trigger initial animation check
+
+        // Explicitly call setups for activities *after* language is set
+        // Note: Some setups might already be called within setLanguage if they depend heavily on it
+        if (typeof setupAnatomyActivity === 'function') setupAnatomyActivity();
+        if (typeof setupPredictOutcomeActivity === 'function') setupPredictOutcomeActivity();
+        if (typeof setupMatchHandlerActivity === 'function') setupMatchHandlerActivity();
+        // Mini missions summary updated by setLanguage
+
+    }); // End DOMContentLoaded
+    </script>
+
+</body>
+</html>

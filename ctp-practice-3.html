@@ -1,1 +1,1144 @@
+<!DOCTYPE html>
+<!-- Language set by JS -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Title set by JS -->
+    <title data-translate="page_title">Module 3: Python Practice - Text!</title>
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
+    <style>
+        /* --- Base Styles & Variables --- */
+        :root {
+            --primary-color: #007bff; /* Blue */
+            --secondary-color: #6c757d; /* Grey */
+            --background-light: #f8f9fa;
+            --background-medium: #e9ecef;
+            --background-dark: #343a40;
+            --text-light: #f8f9fa;
+            --text-dark: #212529;
+            --accent-color: #ffc107; /* Yellow */
+            --success-color: #28a745; /* Green */
+            --error-color: #dc3545;   /* Red */
+            --info-color: #17a2b8;    /* Teal */
+            --string-color: #ce9178; /* Orange-brown for strings */
+            --operator-color: #d4d4d4; /* Light grey for operators */
+            --number-color: #b5cea8;  /* Light green for numbers */
+            --border-radius: 8px;
+            --transition-speed: 0.3s;
+            --font-body: 'Roboto', sans-serif;
+            --font-title: 'Orbitron', sans-serif;
+            --selection-highlight-bg: rgba(0, 123, 255, 0.1);
+            --selection-highlight-border: rgba(0, 123, 255, 0.4);
+            /* Colors matching news.html for consistency in switcher potentially */
+            --nav-primary: #6e48aa;
+            --nav-success: #4cc9f0;
+            --nav-dark: #1a1a2e;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; font-size: 16px; }
+        body {
+            font-family: var(--font-body); line-height: 1.7;
+            background-color: var(--background-light); color: var(--text-dark);
+            overflow-x: hidden;
+        }
+
+        /* --- Utility Classes --- */
+        .container { max-width: 960px; margin: 0 auto; padding: 0 15px; }
+        .text-center { text-align: center; }
+        .highlight { color: var(--primary-color); font-weight: bold; }
+        .code-font { font-family: 'Courier New', Courier, monospace; }
+        .hidden { display: none !important; }
+        .button-group { /* For navigation buttons */
+            margin-top: 2rem;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1rem;
+        }
+
+        /* --- Advanced Animations --- */
+        .fade-in { opacity: 0; transform: translateY(20px); animation: fadeInAnimation 0.8s ease-out forwards; }
+        .fade-in.delay-1 { animation-delay: 0.2s; }
+        .fade-in.delay-2 { animation-delay: 0.4s; }
+        .fade-in.delay-3 { animation-delay: 0.6s; }
+        .fade-in.delay-4 { animation-delay: 0.8s; }
+        @keyframes fadeInAnimation { to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulseHeaderIcon {
+            0% { transform: scale(1); opacity: 0.1; filter: brightness(1); }
+            50% { transform: scale(1.05); opacity: 0.25; filter: brightness(1.2); }
+            100% { transform: scale(1); opacity: 0.1; filter: brightness(1); }
+        }
+        @keyframes successGlow {
+             0% { box-shadow: 0 0 3px rgba(40, 167, 69, 0.3); transform: scale(1); }
+             50% { box-shadow: 0 0 12px 5px rgba(40, 167, 69, 0.5); transform: scale(1.01); }
+             100% { box-shadow: 0 0 3px rgba(40, 167, 69, 0.3); transform: scale(1); }
+        }
+        .success-glow-anim { animation: successGlow 0.9s ease-out; }
+        @keyframes shake {
+          10%, 90% { transform: translate3d(-2px, 0, 0); } 20%, 80% { transform: translate3d(3px, 0, 0); }
+          30%, 50%, 70% { transform: translate3d(-5px, 0, 0); } 40%, 60% { transform: translate3d(5px, 0, 0); }
+        }
+        .shake-anim { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes iconAppearCorrect {
+            0% { transform: scale(0.5) rotate(-15deg); opacity: 0; }
+            60% { transform: scale(1.2) rotate(5deg); opacity: 1; }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        @keyframes iconAppearIncorrect {
+             0% { transform: scale(0.5) rotate(-15deg); opacity: 0; }
+             50% { transform: scale(1.2) rotate(10deg); opacity: 1; }
+             70% { transform: scale(0.9) rotate(-5deg); }
+             100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        @keyframes iconAppearMissed { /* Reusing from Module 0 */
+             0% { transform: scale(0.8) rotateY(90deg); opacity: 0; }
+             100% { transform: scale(1) rotateY(0deg); opacity: 0.8; }
+        }
+        .action-button:active:not(:disabled) {
+            transform: translateY(1px) scale(0.98);
+            filter: brightness(0.95);
+        }
+
+
+        /* --- Minimal Retractable Nav (with Language Switcher Integration) --- */
+        .minimal-nav-button {
+            position: fixed; top: 15px; right: 15px; z-index: 1001;
+            background-color: rgba(52, 58, 64, 0.75); color: var(--text-light);
+            border: none; border-radius: var(--border-radius); padding: 8px 12px;
+            cursor: pointer; transition: background-color var(--transition-speed), opacity var(--transition-speed), transform var(--transition-speed);
+            font-size: 1.1rem; opacity: 0.6; box-shadow: 0 2px 5px rgba(0,0,0,0.2); line-height: 1;
+        }
+        .minimal-nav-button:hover { background-color: rgba(52, 58, 64, 0.95); opacity: 1; transform: scale(1.05); }
+        .minimal-nav {
+            position: fixed; top: 60px; right: 15px; z-index: 1000; background-color: var(--background-dark);
+            border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.3); padding: 0.8rem;
+            opacity: 0; transform: translateY(-15px) scale(0.95); transform-origin: top right;
+            pointer-events: none; transition: opacity var(--transition-speed) ease, transform var(--transition-speed) ease;
+            min-width: 200px;
+        }
+        body.nav-active .minimal-nav { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+        .minimal-nav ul { list-style: none; margin: 0; padding: 0; }
+        .minimal-nav ul li { margin-bottom: 5px; } .minimal-nav ul li:last-child { margin-bottom: 0; }
+        .minimal-nav ul li a {
+            display: flex; align-items: center; color: var(--text-light); text-decoration: none;
+            padding: 0.6rem 1rem; border-radius: 4px; transition: background-color var(--transition-speed), color var(--transition-speed);
+            white-space: nowrap; font-weight: 400; font-size: 0.95rem;
+        }
+        .minimal-nav ul li a i.fas { margin-right: 10px; width: 1.2em; text-align: center; opacity: 0.8; transition: opacity var(--transition-speed); }
+        .minimal-nav ul li a:hover { background-color: var(--primary-color); color: var(--text-light); }
+        .minimal-nav ul li a:hover i.fas { opacity: 1; }
+        .minimal-nav .language-switcher-item { padding: 0.5rem 1rem; border-top: 1px solid var(--secondary-color); margin-top: 8px; padding-top: 13px; }
+        #languageSelect {
+            width: 100%; background: rgba(255,255,255,0.1); color: white; border: 1px solid var(--nav-success);
+            border-radius: 5px; padding: 6px 30px 6px 12px; cursor: pointer; font-size: 0.9rem; appearance: none;
+            -webkit-appearance: none; -moz-appearance: none;
+            background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%234CC9F0%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E');
+            background-repeat: no-repeat; background-position: right 10px center; background-size: 10px auto;
+            transition: background-color 0.3s ease;
+        }
+        #languageSelect:hover { background-color: rgba(255,255,255,0.15); }
+        #languageSelect option { background: var(--nav-dark); color: var(--text-light); }
+        /* --- End Minimal Retractable Nav --- */
+
+
+        /* --- Practice Header --- */
+        /* Using Teal/Info color for Module 3 header */
+        .practice-header { background: linear-gradient(135deg, var(--info-color), #0d6775); color: var(--text-light); padding: 3rem 0 4rem; text-align: center; position: relative; overflow: hidden; border-bottom: 5px solid var(--accent-color); }
+        .practice-header h1 { font-family: var(--font-title); font-size: 2.8rem; margin-bottom: 0.5rem; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); animation: fadeInAnimation 1s ease-out; }
+        .practice-header p { font-size: 1.1rem; font-weight: 300; opacity: 0.9; animation: fadeInAnimation 1s ease-out 0.3s forwards; opacity: 0; }
+        .header-icon { position: absolute; font-size: 4rem; color: var(--text-light); animation: pulseHeaderIcon 6s infinite ease-in-out alternate; }
+        .icon1 { top: 20%; left: 15%; animation-duration: 7s; } /* Reusing icons */
+        .icon2 { bottom: 15%; right: 20%; animation-duration: 5s; }
+
+        /* --- Practice Section Styling --- */
+        .practice-section { padding: 3rem 0; background-color: var(--background-medium); border-bottom: 1px solid #d6d8db; }
+        .practice-section:nth-child(odd) { background-color: var(--background-light); }
+        .practice-section:last-of-type { border-bottom: none; }
+        .practice-section h2 { font-family: var(--font-title); font-size: 1.8rem; color: var(--primary-color); margin-bottom: 1rem; text-align: center; }
+        .practice-section .section-description { text-align: center; margin-bottom: 2.5rem; color: var(--secondary-color); font-size: 1.05rem; max-width: 700px; margin-left: auto; margin-right: auto; }
+
+        /* --- General Interactive Elements --- */
+        .interactive-area { background-color: #fff; padding: 2rem; border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.08); margin-top: 1.5rem; position: relative; transition: box-shadow 0.5s ease-out; }
+        .feedback-message { padding: 0.8rem 1rem; margin-top: 1rem; border-radius: var(--border-radius); font-weight: bold; text-align: center; opacity: 0; max-height: 0; overflow: hidden; transition: opacity var(--transition-speed) ease, max-height var(--transition-speed) ease, margin-top var(--transition-speed) ease; }
+        .feedback-message.visible { opacity: 1; max-height: 100px; margin-top: 1.5rem; }
+        .feedback-message.correct { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .feedback-message.incorrect { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .feedback-message.info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .feedback-message .fas { margin: 0 3px; } /* Spacing for icons in feedback */
+        .action-button {
+             display: inline-block; padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold;
+             color: var(--text-light); background-color: var(--primary-color); border: none;
+             border-radius: var(--border-radius); cursor: pointer;
+             transition: background-color var(--transition-speed), transform var(--transition-speed), filter var(--transition-speed), box-shadow var(--transition-speed);
+             margin-top: 1rem; vertical-align: middle; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+             text-decoration: none; /* For <a> tags styled as buttons */
+        }
+        .action-button:hover:not(:disabled) { background-color: #0056b3; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+        .action-button:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none; box-shadow: none; opacity: 0.7; }
+        .action-button.success { background-color: var(--success-color); }
+        .action-button.success:hover:not(:disabled) { background-color: #218838; }
+        .action-button.secondary { background-color: var(--secondary-color); }
+        .action-button.secondary:hover:not(:disabled) { background-color: #5a6268; }
+        /* Code styling */
+        .code-block { background-color: var(--background-dark); color: var(--text-light); padding: 1.5rem; border-radius: var(--border-radius); font-family: var(--code-font); font-size: 1rem; position: relative; overflow-x: auto; margin: 1rem 0; }
+        .code-keyword { color: #569cd6; } /* Reusing from Module 0 */
+        .code-string { color: var(--string-color); }
+        .code-operator { color: var(--operator-color); font-weight: bold; }
+        .code-number { color: var(--number-color); }
+        .code-paren { color: #ffd700; }
+        .code-function { color: #dcdcaa; }
+        .code-comment { color: #6a9955; }
+
+        /* --- Form Input Styling for Simulators --- */
+        .sim-input-group { margin-bottom: 1rem; display: flex; flex-direction: column; }
+        .sim-input-group label { font-weight: bold; margin-bottom: 0.5rem; color: var(--secondary-color); font-size: 0.95rem;}
+        .sim-input-group input[type="text"],
+        .sim-input-group input[type="number"] {
+            padding: 0.6rem 0.8rem; border: 1px solid #ced4da; border-radius: var(--border-radius);
+            font-family: var(--font-body); font-size: 1rem;
+            transition: border-color var(--transition-speed), box-shadow var(--transition-speed);
+        }
+        .sim-input-group input:focus { border-color: var(--primary-color); outline: none; box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25); }
+
+        /* --- Simulated Output Area --- */
+        .sim-output-area { margin-top: 1.5rem; min-height: 50px; background-color: #1a1a1a; border: 1px solid #444; border-radius: var(--border-radius); padding: 1rem; color: var(--accent-color); font-family: var(--code-font); font-size: 1.05rem; white-space: pre-wrap; word-wrap: break-word; }
+        .sim-output-area .placeholder { color: var(--secondary-color); font-style: italic; font-size: 0.9rem; }
+        .sim-output-area .output-line { display: block; }
+        .sim-output-area .output-value { color: var(--text-light); font-weight: bold; } /* For highlighting results */
+
+        /* --- Activity 1: Concatenation Anatomy --- */
+        #concatenation-anatomy .code-part { cursor: pointer; border-bottom: 2px dashed rgba(255, 255, 255, 0.3); transition: background-color var(--transition-speed), border-bottom-color var(--transition-speed); padding: 0 2px; display: inline-block; }
+        #concatenation-anatomy .code-part:hover { background-color: rgba(255, 255, 255, 0.15); border-bottom-color: var(--accent-color); }
+        #concatenation-anatomy .code-part.identified { background-color: rgba(40, 167, 69, 0.3); border-bottom: 2px solid var(--success-color); cursor: default; }
+        .part-explanation { font-size: 0.95rem; color: var(--info-color); border-left: 3px solid var(--info-color); padding: 5px 10px; margin-top: 0.5rem; background-color: rgba(23, 162, 184, 0.05); }
+        #anatomy-status { margin-top: 1rem; font-style: italic; color: var(--secondary-color); }
+
+        /* --- Activity 2, 3, 4: Simulators (Reuse sim styles) --- */
+        /* No specific styles needed beyond general sim/form styles */
+
+        /* --- Activity 5: Mini Missions --- */
+        #mini-missions .mission { padding: 1.5rem; border: 1px solid #d6d8db; border-radius: var(--border-radius); margin-bottom: 1.5rem; background-color: var(--background-light); position: relative; }
+        .mission-status { position: absolute; top: 10px; right: 10px; font-size: 1.5rem; transition: transform 0.3s ease; }
+        .mission-status .fa-check-circle { color: var(--success-color); transform-origin: center; }
+        .mission-status .fa-times-circle { color: var(--error-color); }
+        .mission-status .fa-question-circle { color: var(--secondary-color); }
+        .mission[data-completed="true"] .mission-status .fa-check-circle { animation: iconAppearCorrect 0.6s ease-out; }
+        #mini-missions .mission-editor { /* Use a textarea for multi-line code */
+            width: 100%; min-height: 100px; background-color: var(--background-dark);
+            color: var(--text-light); border: 1px solid var(--secondary-color);
+            border-radius: var(--border-radius); padding: 1rem; font-family: var(--code-font);
+            font-size: 1rem; line-height: 1.5; resize: vertical; margin-top: 1rem;
+        }
+        #mini-missions .mission-output { /* Reusing sim-output-area styling */
+            margin-top: 1rem; min-height: 30px; background-color: #1a1a1a; border: 1px solid #444;
+            border-radius: var(--border-radius); padding: 0.8rem; color: var(--accent-color);
+            font-family: var(--code-font); font-size: 1rem; white-space: pre-wrap; word-wrap: break-word;
+        }
+        #mini-missions .mission-output .placeholder { color: var(--secondary-color); font-style: italic; font-size: 0.9rem; }
+
+
+        /* --- Final Section --- */
+        .completion-section { padding: 4rem 0; text-align: center; }
+        .completion-section .icon {
+            font-size: 4rem; color: var(--success-color); margin-bottom: 1rem;
+            display: inline-block;
+            opacity: 0; /* Start hidden for animation */
+            animation: iconAppearCorrect 1s ease-out 0.5s forwards; /* Use icon animation */
+        }
+        .completion-section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); }
+        .completion-section p { font-size: 1.1rem; margin-top: 1rem; color: var(--secondary-color); }
+
+        /* --- Responsive Design --- */
+        @media (max-width: 768px) {
+            html { font-size: 15px; }
+            .practice-header h1 { font-size: 2.2rem; }
+            .practice-section h2 { font-size: 1.6rem; }
+            .interactive-area { padding: 1.5rem; }
+            .sim-output-area { font-size: 1rem; }
+            #mini-missions .mission-editor { font-size: 0.95rem; }
+            #mini-missions .mission-output { font-size: 0.95rem; }
+            .button-group { flex-direction: column; align-items: center; }
+            .minimal-nav { min-width: 180px; }
+            .minimal-nav ul li a { padding: 0.6rem 0.8rem; }
+            #languageSelect { font-size: 0.85rem; padding: 5px 25px 5px 10px;}
+        }
+        @media (max-width: 480px) {
+            html { font-size: 14px; }
+            .practice-header h1 { font-size: 1.8rem; }
+            .practice-header p { font-size: 1rem; }
+            .practice-section h2 { font-size: 1.4rem; }
+            .interactive-area { padding: 1rem; }
+            .action-button { font-size: 0.9rem; padding: 0.7rem 1.2rem; width: 90%; max-width: 300px;}
+            .sim-output-area { font-size: 0.9rem; }
+            #mini-missions .mission-editor { min-height: 90px; font-size: 0.9rem;}
+            #mini-missions .mission-output { font-size: 0.9rem;}
+            .button-group a.action-button { width: 90%; max-width: 300px; margin-bottom: 0.5rem; }
+             .minimal-nav-button { top: 10px; right: 10px; padding: 6px 10px; font-size: 1rem; }
+             .minimal-nav { top: 48px; right: 10px; min-width: 160px; }
+             .minimal-nav ul li a { padding: 0.5rem 0.7rem; font-size: 0.9rem;}
+             .minimal-nav ul li a i.fas { margin-right: 8px; }
+             #languageSelect { font-size: 0.8rem; padding: 4px 20px 4px 8px;}
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ========= Minimal Nav Handle ========= -->
+    <button id="minimal-nav-toggle" class="minimal-nav-button" aria-label="Toggle Navigation Menu">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- ========= Minimal Nav Panel (with Language Switcher) ========= -->
+    <nav id="minimal-nav-panel" class="minimal-nav">
+        <ul>
+            <!-- *** MODIFIED: Links point to module 3 *** -->
+            <li><a href="ctp-theory-3.html"><i class="fas fa-book-open fa-fw"></i> <span data-translate="nav_theory">View Theory</span></a></li>
+            <li><a href="ctp-advanced-3.html"><i class="fas fa-flask fa-fw"></i> <span data-translate="nav_advanced">Advanced Practice</span></a></li>
+            <li><a href="ctp-dashboard.html"><i class="fas fa-list fa-fw"></i> <span data-translate="nav_menu">Course Menu</span></a></li>
+            <hr style="border: none; border-top: 1px solid var(--secondary-color); margin: 8px 0;">
+            <!-- *** MODIFIED: Links to new section IDs *** -->
+            <li><a href="#concatenation-anatomy"><i class="fas fa-link fa-fw"></i> <span data-translate="nav_concat">Concatenation</span></a></li>
+            <li><a href="#string-multiplication"><i class="fas fa-asterisk fa-fw"></i> <span data-translate="nav_multiply">Multiplication</span></a></li>
+            <li><a href="#string-length"><i class="fas fa-ruler-horizontal fa-fw"></i> <span data-translate="nav_length">Length</span></a></li>
+            <li><a href="#string-indexing"><i class="fas fa-search-location fa-fw"></i> <span data-translate="nav_index">Indexing</span></a></li>
+            <li><a href="#mini-missions"><i class="fas fa-rocket fa-fw"></i> <span data-translate="nav_missions">Missions</span></a></li>
+            <!-- Language Switcher Item -->
+            <li class="language-switcher-item">
+                 <select id="languageSelect" aria-label="Select Language">
+                     <option value="en" data-translate="lang_en">🇬🇧 English</option>
+                     <option value="pt" data-translate="lang_pt">🇧🇷 Português</option>
+                     <option value="zh" data-translate="lang_zh">🇨🇳 中文</option>
+                 </select>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- ========= Header ========= -->
+    <header class="practice-header">
+        <!-- Reusing icons from Module 0 -->
+        <i class="fas fa-font header-icon icon1"></i> <!-- Text icon -->
+        <i class="fas fa-terminal header-icon icon2"></i> <!-- Terminal icon -->
+        <div class="container">
+            <!-- *** MODIFIED: Title for Module 3 *** -->
+            <h1 data-translate="header_title">Module 3: Practice - Working with Text</h1>
+            <p data-translate="header_subtitle">Let's manipulate strings and understand how text is represented!</p>
+        </div>
+    </header>
+
+    <!-- ========= Main Content ========= -->
+    <main>
+        <!-- ========= Activity 1: Anatomy of Concatenation ========= -->
+        <section id="concatenation-anatomy" class="practice-section">
+             <div class="container">
+                 <!-- *** MODIFIED: Title & Desc for Module 3 *** -->
+                 <h2 class="fade-in"><i class="fas fa-link"></i> <span data-translate="concat_anatomy_title">Anatomy of String Concatenation</span></h2>
+                 <p class="section-description fade-in delay-1" data-translate="concat_anatomy_desc">
+                     Joining strings together is called concatenation, using the `+` symbol. Click the parts below to identify them. This relates to how we combine pieces of data (Data Representation).
+                 </p>
+                 <div class="interactive-area fade-in delay-2">
+                     <div class="code-block">
+                        <!-- *** MODIFIED: Example code for concatenation *** -->
+                         <span class="code-part" data-part="string1" data-translate-title="tooltip_click_identify" title="Click to identify this part"><span class="code-string">"AI"</span></span><!--
+                         --><span class="code-part" data-part="operator1" data-translate-title="tooltip_click_identify" title="Click to identify this part"><span class="code-operator"> + </span></span><!--
+                         --><span class="code-part" data-part="string2" data-translate-title="tooltip_click_identify" title="Click to identify this part"><span class="code-string">" "</span></span><!--
+                         --><span class="code-part" data-part="operator2" data-translate-title="tooltip_click_identify" title="Click to identify this part"><span class="code-operator"> + </span></span><!--
+                         --><span class="code-part" data-part="string3" data-translate-title="tooltip_click_identify" title="Click to identify this part"><span class="code-string">"Rocks!"</span></span>
+                     </div>
+                     <div id="anatomy-explanations"></div>
+                     <p id="anatomy-status" data-translate="anatomy_status_initial">Identify all 5 parts!</p>
+                     <div id="anatomy-feedback" class="feedback-message"></div>
+                     <!-- Hidden elements for storing translated explanation parts -->
+                     <div id="explanation-texts" style="display: none;">
+                        <span data-key="string1" data-translate="anatomy_exp_string1">The first string literal: `"AI"`</span>
+                        <span data-key="operator1" data-translate="anatomy_exp_operator1">The concatenation operator: `+` (joins strings)</span>
+                        <span data-key="string2" data-translate="anatomy_exp_string2">The second string (a space): `" "`</span>
+                        <span data-key="operator2" data-translate="anatomy_exp_operator2">Another concatenation operator: `+`</span>
+                        <span data-key="string3" data-translate="anatomy_exp_string3">The third string literal: `"Rocks!"`</span>
+                     </div>
+                 </div>
+             </div>
+        </section>
+
+        <!-- ========= Activity 2: String Multiplication Simulator ========= -->
+        <section id="string-multiplication" class="practice-section">
+             <div class="container">
+                 <!-- *** MODIFIED: Title & Desc for Module 3 *** -->
+                 <h2 class="fade-in"><i class="fas fa-asterisk"></i> <span data-translate="multiply_title">String Multiplication</span></h2>
+                 <p class="section-description fade-in delay-1" data-translate="multiply_desc">
+                     You can "multiply" a string by an integer to repeat it. Try it below! This shows a simple form of Pattern Recognition - repeating a sequence.
+                 </p>
+                 <div class="interactive-area fade-in delay-2">
+                     <div class="sim-input-group">
+                         <label for="multiply-string-input" data-translate="multiply_label_string">String to Repeat:</label>
+                         <input type="text" id="multiply-string-input" class="code-font" data-translate-placeholder="multiply_placeholder_string" placeholder="e.g., AI">
+                     </div>
+                     <div class="sim-input-group">
+                         <label for="multiply-number-input" data-translate="multiply_label_number">Number of Times:</label>
+                         <input type="number" id="multiply-number-input" min="1" step="1" value="3" data-translate-placeholder="multiply_placeholder_number" placeholder="e.g., 3">
+                     </div>
+                     <div class="text-center">
+                          <button id="run-multiply-btn" class="action-button" data-translate="button_run_multiply">Repeat String</button>
+                     </div>
+                     <label for="multiply-output" style="font-weight: bold; display:block; margin-top: 1.5rem; margin-bottom: 8px;" data-translate="multiply_output_label">Result:</label>
+                     <div id="multiply-output" class="sim-output-area">
+                         <span class="placeholder" data-translate="multiply_output_placeholder">Result appears here...</span>
+                     </div>
+                     <div id="multiply-feedback" class="feedback-message"></div>
+                 </div>
+             </div>
+        </section>
+
+         <!-- ========= Activity 3: String Length Simulator ========= -->
+        <section id="string-length" class="practice-section">
+             <div class="container">
+                 <!-- *** MODIFIED: Title & Desc for Module 3 *** -->
+                 <h2 class="fade-in"><i class="fas fa-ruler-horizontal"></i> <span data-translate="length_title">Finding String Length</span></h2>
+                 <p class="section-description fade-in delay-1" data-translate="length_desc">
+                     The `len()` function tells you how many characters are in a string (including spaces!). This is fundamental to understanding the size of your text data. Enter a string below.
+                 </p>
+                 <div class="interactive-area fade-in delay-2">
+                     <div class="sim-input-group">
+                         <label for="length-string-input" data-translate="length_label_string">Enter a String:</label>
+                         <input type="text" id="length-string-input" class="code-font" data-translate-placeholder="length_placeholder_string" placeholder="e.g., Hello World!">
+                     </div>
+                     <div class="text-center">
+                          <button id="run-length-btn" class="action-button" data-translate="button_run_length">Calculate Length</button>
+                     </div>
+                     <label for="length-output" style="font-weight: bold; display:block; margin-top: 1.5rem; margin-bottom: 8px;" data-translate="length_output_label">Calculated Length:</label>
+                     <div id="length-output" class="sim-output-area">
+                         <span class="placeholder" data-translate="length_output_placeholder">Length appears here...</span>
+                     </div>
+                     <div id="length-feedback" class="feedback-message"></div>
+                 </div>
+             </div>
+        </section>
+
+        <!-- ========= Activity 4: String Indexing Simulator ========= -->
+        <section id="string-indexing" class="practice-section">
+             <div class="container">
+                 <!-- *** MODIFIED: Title & Desc for Module 3 *** -->
+                 <h2 class="fade-in"><i class="fas fa-search-location"></i> <span data-translate="index_title">Accessing Characters by Index</span></h2>
+                 <p class="section-description fade-in delay-1" data-translate="index_desc">
+                     You can get a single character from a string using its index inside square brackets `[]`. Remember: Python indexing starts at <strong class="code-font">0</strong>! This is key to how sequence data is represented and accessed.
+                 </p>
+                 <div class="interactive-area fade-in delay-2">
+                     <div class="sim-input-group">
+                         <label for="index-string-input" data-translate="index_label_string">Enter a String:</label>
+                         <input type="text" id="index-string-input" class="code-font" value="Python" data-translate-placeholder="index_placeholder_string" placeholder="e.g., Python">
+                     </div>
+                     <div class="sim-input-group">
+                         <label for="index-number-input" data-translate="index_label_number">Index to Access (starts at 0):</label>
+                         <input type="number" id="index-number-input" min="0" step="1" value="0" data-translate-placeholder="index_placeholder_number" placeholder="e.g., 0">
+                     </div>
+                     <div class="text-center">
+                          <button id="run-index-btn" class="action-button" data-translate="button_run_index">Get Character</button>
+                     </div>
+                     <label for="index-output" style="font-weight: bold; display:block; margin-top: 1.5rem; margin-bottom: 8px;" data-translate="index_output_label">Character at Index:</label>
+                     <div id="index-output" class="sim-output-area">
+                         <span class="placeholder" data-translate="index_output_placeholder">Character appears here...</span>
+                     </div>
+                     <div id="index-feedback" class="feedback-message"></div>
+                 </div>
+             </div>
+        </section>
+
+         <!-- ========= Activity 5: Mini Missions ========= -->
+        <section id="mini-missions" class="practice-section">
+             <div class="container">
+                  <h2 class="fade-in"><i class="fas fa-rocket"></i> <span data-translate="missions_title">String Mini Missions!</span></h2>
+                 <p class="section-description fade-in delay-1" data-translate="missions_desc">
+                     Combine your new string skills! Complete these coding tasks using the `print()` function in the editors below.
+                 </p>
+                 <div class="interactive-area fade-in delay-2">
+                     <!-- Mission 1: Concatenate -->
+                     <div class="mission" id="mission-1" data-completed="false">
+                         <span class="mission-status"><i class="fas fa-question-circle"></i></span>
+                         <h4 data-translate="mission1_title">Mission 1: Combine Words</h4>
+                         <p data-translate="mission1_desc">Write a command to `print` the result of joining the string `"Applied "` with the string `"AI"`. Don't forget the space if needed!</p>
+                         <textarea class="sim-editor mission-editor" rows="3" data-translate-placeholder="mission1_placeholder" placeholder='print("Applied " + "AI")'></textarea>
+                         <div class="text-center"> <button class="action-button mission-run-btn" data-mission-id="1" data-translate="button_test_mission_1">Test Mission 1</button> </div>
+                         <div class="sim-output-area mission-output"><span class="placeholder" data-translate="mission_output_placeholder">Output...</span></div>
+                         <div id="mission-feedback-1" class="feedback-message mission-feedback"></div>
+                     </div>
+                     <!-- Mission 2: Multiply & Length -->
+                     <div class="mission" id="mission-2" data-completed="false">
+                          <span class="mission-status"><i class="fas fa-question-circle"></i></span>
+                         <h4 data-translate="mission2_title">Mission 2: Repeat and Measure</h4>
+                         <p data-translate="mission2_desc">Write <strong>two separate</strong> `print()` commands. The first should print the string `"Go! "` repeated 3 times. The second should print the length of the string `"Data"`. </p>
+                         <textarea class="sim-editor mission-editor" rows="4" data-translate-placeholder="mission2_placeholder" placeholder='print("Go! " * 3)\nprint(len("Data"))'></textarea>
+                          <div class="text-center"> <button class="action-button mission-run-btn" data-mission-id="2" data-translate="button_test_mission_2">Test Mission 2</button> </div>
+                         <div class="sim-output-area mission-output"><span class="placeholder" data-translate="mission_output_placeholder">Output...</span></div>
+                         <div id="mission-feedback-2" class="feedback-message mission-feedback"></div>
+                     </div>
+                     <!-- Mission 3: Indexing -->
+                     <div class="mission" id="mission-3" data-completed="false">
+                          <span class="mission-status"><i class="fas fa-question-circle"></i></span>
+                         <h4 data-translate="mission3_title">Mission 3: First and Last</h4>
+                         <p data-translate="mission3_desc">Given the string `"Module"`, write a command to `print` its first character (index 0). On the <strong>next line</strong>, write another command to `print` its last character (index 5).</p>
+                         <textarea class="sim-editor mission-editor" rows="4" data-translate-placeholder="mission3_placeholder" placeholder='my_string = "Module"\nprint(my_string[0])\nprint(my_string[5])'></textarea>
+                          <div class="text-center"> <button class="action-button mission-run-btn" data-mission-id="3" data-translate="button_test_mission_3">Test Mission 3</button> </div>
+                         <div class="sim-output-area mission-output"><span class="placeholder" data-translate="mission_output_placeholder">Output...</span></div>
+                         <div id="mission-feedback-3" class="feedback-message mission-feedback"></div>
+                     </div>
+                     <div id="missions-summary-feedback" class="feedback-message" style="margin-top: 2rem;"></div>
+                 </div>
+             </div>
+        </section>
+
+         <!-- ========= Completion Section ========= -->
+        <section class="completion-section">
+            <div class="container">
+                 <!-- Reusing icons -->
+                <div class="icon fade-in" style="animation: iconAppearCorrect 1s ease-out 0.5s forwards;">
+                    <i class="fas fa-star"></i> <i class="fas fa-code"></i> <i class="fas fa-star"></i>
+                </div>
+                <!-- *** MODIFIED: Text for Module 3 *** -->
+                <h2 class="fade-in delay-1" data-translate="completion_title">Module 3 Practice Complete!</h2>
+                <p class="fade-in delay-2" data-translate="completion_desc">
+                    Excellent work manipulating strings! You're getting the hang of text data in Python. <br>
+                    Ready for more? Try the <strong>Advanced Practice</strong> for Module 3!
+                </p>
+                <div class="button-group">
+                    <!-- *** MODIFIED: Links for Module 3 *** -->
+                    <a href="ctp-theory-3.html" class="action-button secondary fade-in delay-3"><i class="fas fa-book-open"></i> <span data-translate="button_view_theory">View Theory Again</span></a>
+                    <a href="ctp-advanced-3.html" class="action-button success fade-in delay-3"><i class="fas fa-arrow-right"></i> <span data-translate="button_start_advanced">Start Advanced Practice</span></a>
+                    <a href="ctp-dashboard.html" class="action-button secondary fade-in delay-4"><i class="fas fa-list"></i> <span data-translate="button_back_menu">Back to Course Menu</span></a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ========= Script ========= -->
+    <script>
+    // --- Translations Object ---
+    const translations = {
+        en: {
+            "page_title": "Module 3: Python Practice - Text!",
+            "tooltip_click_identify": "Click to identify this part",
+            "nav_theory": "View Theory", "nav_advanced": "Advanced Practice", "nav_menu": "Course Menu",
+            "nav_concat": "Concatenation", "nav_multiply": "Multiplication", "nav_length": "Length", "nav_index": "Indexing", "nav_missions": "Missions",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title": "Module 3: Practice - Working with Text", "header_subtitle": "Let's manipulate strings and understand how text is represented!",
+            // Activity 1: Concatenation Anatomy
+            "concat_anatomy_title": "Anatomy of String Concatenation", "concat_anatomy_desc": "Joining strings together is called concatenation, using the `+` symbol. Click the parts below to identify them. This relates to how we combine pieces of data (Data Representation).",
+            "anatomy_status_initial": "Identify all 5 parts!", "anatomy_status_progress": "Identified {count} of {total} parts.", "anatomy_status_done": "All parts identified!",
+            "anatomy_exp_string1": "The first string literal: `\"AI\"`", "anatomy_exp_operator1": "The concatenation operator: `+` (joins strings)", "anatomy_exp_string2": "The second string (a space): `\" \"`", "anatomy_exp_operator2": "Another concatenation operator: `+`", "anatomy_exp_string3": "The third string literal: `\"Rocks!\"`",
+            "feedback_anatomy_correct": "Great! You've identified the parts of string concatenation!",
+            // Activity 2: String Multiplication
+            "multiply_title": "String Multiplication", "multiply_desc": "You can \"multiply\" a string by an integer to repeat it. Try it below! This shows a simple form of Pattern Recognition - repeating a sequence.",
+            "multiply_label_string": "String to Repeat:", "multiply_placeholder_string": "e.g., AI",
+            "multiply_label_number": "Number of Times:", "multiply_placeholder_number": "e.g., 3",
+            "button_run_multiply": "Repeat String", "multiply_output_label": "Result:", "multiply_output_placeholder": "Result appears here...",
+            "feedback_multiply_success": "String repeated successfully!", "feedback_multiply_no_string": "Please enter a string.", "feedback_multiply_no_number": "Please enter a valid positive number.", "feedback_multiply_too_long": "Result is too long to display well. Try fewer repetitions.",
+            // Activity 3: String Length
+            "length_title": "Finding String Length", "length_desc": "The `len()` function tells you how many characters are in a string (including spaces!). This is fundamental to understanding the size of your text data. Enter a string below.",
+            "length_label_string": "Enter a String:", "length_placeholder_string": "e.g., Hello World!",
+            "button_run_length": "Calculate Length", "length_output_label": "Calculated Length:", "length_output_placeholder": "Length appears here...",
+            "feedback_length_success": "Length calculated!", "feedback_length_empty": "Empty string has length 0.",
+            // Activity 4: String Indexing
+            "index_title": "Accessing Characters by Index", "index_desc": "You can get a single character from a string using its index inside square brackets `[]`. Remember: Python indexing starts at <strong class=\"code-font\">0</strong>! This is key to how sequence data is represented and accessed.",
+            "index_label_string": "Enter a String:", "index_placeholder_string": "e.g., Python",
+            "index_label_number": "Index to Access (starts at 0):", "index_placeholder_number": "e.g., 0",
+            "button_run_index": "Get Character", "index_output_label": "Character at Index:", "index_output_placeholder": "Character appears here...",
+            "feedback_index_success": "Character retrieved!", "feedback_index_no_string": "Please enter a string.", "feedback_index_no_index": "Please enter a valid non-negative index.", "feedback_index_out_of_bounds": "Index out of bounds! Max index is {max_index}.",
+            // Activity 5: Mini Missions
+            "missions_title": "String Mini Missions!", "missions_desc": "Combine your new string skills! Complete these coding tasks using the `print()` function in the editors below.",
+            "mission1_title": "Mission 1: Combine Words", "mission1_desc": "Write a command to `print` the result of joining the string `\"Applied \"` with the string `\"AI\"`. Don't forget the space if needed!", "mission1_placeholder": "print(\"Applied \" + \"AI\")",
+            "button_test_mission_1": "Test Mission 1",
+            "mission2_title": "Mission 2: Repeat and Measure", "mission2_desc": "Write <strong>two separate</strong> `print()` commands. The first should print the string `\"Go! \"` repeated 3 times. The second should print the length of the string `\"Data\"`. ", "mission2_placeholder": "print(\"Go! \" * 3)\\nprint(len(\"Data\"))",
+            "button_test_mission_2": "Test Mission 2",
+            "mission3_title": "Mission 3: First and Last", "mission3_desc": "Given the string `\"Module\"`, write a command to `print` its first character (index 0). On the <strong>next line</strong>, write another command to `print` its last character (index 5).", "mission3_placeholder": "my_string = \"Module\"\\nprint(my_string[0])\\nprint(my_string[5])",
+            "button_test_mission_3": "Test Mission 3",
+            "mission_output_placeholder": "Output...",
+            "feedback_mission_success": "Mission Accomplished!", "feedback_mission_syntax_error": "Check your code's syntax or logic.",
+            "feedback_mission1_hint": "Use `print(\"Applied \" + \"AI\")`.",
+            "feedback_mission2_hint": "Need two `print` lines. Check multiplication (`* 3`) and `len(\"Data\")`.",
+            "feedback_mission3_hint": "Need two `print` lines. Use index `[0]` for first, `[5]` for last.",
+            "feedback_missions_summary_all_done": "All {totalMissions} string missions complete! Fantastic!", "feedback_missions_summary_progress": "Completed {completedCount} of {totalMissions} missions. Keep practicing!",
+            // Completion Section
+            "completion_title": "Module 3 Practice Complete!", "completion_desc": "Excellent work manipulating strings! You're getting the hang of text data in Python. <br> Ready for more? Try the <strong>Advanced Practice</strong> for Module 3!",
+            "button_view_theory": "View Theory Again", "button_start_advanced": "Start Advanced Practice", "button_back_menu": "Back to Course Menu"
+        },
+        pt: {
+            "page_title": "Módulo 3: Prática Python - Texto!",
+            "tooltip_click_identify": "Clique para identificar esta parte",
+            "nav_theory": "Ver Teoria", "nav_advanced": "Prática Avançada", "nav_menu": "Menu do Curso",
+            "nav_concat": "Concatenação", "nav_multiply": "Multiplicação", "nav_length": "Comprimento", "nav_index": "Indexação", "nav_missions": "Missões",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title": "Módulo 3: Prática - Trabalhando com Texto", "header_subtitle": "Vamos manipular strings e entender como o texto é representado!",
+            // Activity 1: Concatenation Anatomy
+            "concat_anatomy_title": "Anatomia da Concatenação de Strings", "concat_anatomy_desc": "Unir strings é chamado de concatenação, usando o símbolo `+`. Clique nas partes abaixo para identificá-las. Isso se relaciona a como combinamos pedaços de dados (Representação de Dados).",
+            "anatomy_status_initial": "Identifique todas as 5 partes!", "anatomy_status_progress": "Identificadas {count} de {total} partes.", "anatomy_status_done": "Todas as partes identificadas!",
+            "anatomy_exp_string1": "O primeiro literal de string: `\"AI\"`", "anatomy_exp_operator1": "O operador de concatenação: `+` (une strings)", "anatomy_exp_string2": "A segunda string (um espaço): `\" \"`", "anatomy_exp_operator2": "Outro operador de concatenação: `+`", "anatomy_exp_string3": "O terceiro literal de string: `\"Rocks!\"`",
+            "feedback_anatomy_correct": "Ótimo! Você identificou as partes da concatenação de strings!",
+            // Activity 2: String Multiplication
+            "multiply_title": "Multiplicação de Strings", "multiply_desc": "Você pode \"multiplicar\" uma string por um inteiro para repeti-la. Tente abaixo! Isso mostra uma forma simples de Reconhecimento de Padrões - repetir uma sequência.",
+            "multiply_label_string": "String para Repetir:", "multiply_placeholder_string": "ex: AI",
+            "multiply_label_number": "Número de Vezes:", "multiply_placeholder_number": "ex: 3",
+            "button_run_multiply": "Repetir String", "multiply_output_label": "Resultado:", "multiply_output_placeholder": "Resultado aparece aqui...",
+            "feedback_multiply_success": "String repetida com sucesso!", "feedback_multiply_no_string": "Por favor, insira uma string.", "feedback_multiply_no_number": "Por favor, insira um número positivo válido.", "feedback_multiply_too_long": "Resultado muito longo para exibir bem. Tente menos repetições.",
+            // Activity 3: String Length
+            "length_title": "Encontrando o Comprimento da String", "length_desc": "A função `len()` informa quantos caracteres existem em uma string (incluindo espaços!). Isso é fundamental para entender o tamanho dos seus dados de texto. Insira uma string abaixo.",
+            "length_label_string": "Insira uma String:", "length_placeholder_string": "ex: Olá Mundo!",
+            "button_run_length": "Calcular Comprimento", "length_output_label": "Comprimento Calculado:", "length_output_placeholder": "Comprimento aparece aqui...",
+            "feedback_length_success": "Comprimento calculado!", "feedback_length_empty": "String vazia tem comprimento 0.",
+            // Activity 4: String Indexing
+            "index_title": "Acessando Caracteres por Índice", "index_desc": "Você pode obter um único caractere de uma string usando seu índice entre colchetes `[]`. Lembre-se: a indexação em Python começa em <strong class=\"code-font\">0</strong>! Isso é chave para como dados sequenciais são representados e acessados.",
+            "index_label_string": "Insira uma String:", "index_placeholder_string": "ex: Python",
+            "index_label_number": "Índice para Acessar (começa em 0):", "index_placeholder_number": "ex: 0",
+            "button_run_index": "Obter Caractere", "index_output_label": "Caractere no Índice:", "index_output_placeholder": "Caractere aparece aqui...",
+            "feedback_index_success": "Caractere recuperado!", "feedback_index_no_string": "Por favor, insira uma string.", "feedback_index_no_index": "Por favor, insira um índice não negativo válido.", "feedback_index_out_of_bounds": "Índice fora dos limites! O índice máximo é {max_index}.",
+            // Activity 5: Mini Missions
+            "missions_title": "Mini Missões de String!", "missions_desc": "Combine suas novas habilidades com strings! Complete estas tarefas de codificação usando a função `print()` nos editores abaixo.",
+            "mission1_title": "Missão 1: Combine Palavras", "mission1_desc": "Escreva um comando para `print`ar o resultado da união da string `\"Aplicada \"` com a string `\"IA\"`. Não esqueça o espaço se necessário!", "mission1_placeholder": "print(\"Aplicada \" + \"IA\")",
+            "button_test_mission_1": "Testar Missão 1",
+            "mission2_title": "Missão 2: Repita e Meça", "mission2_desc": "Escreva <strong>dois comandos</strong> `print()` separados. O primeiro deve imprimir a string `\"Vai! \"` repetida 3 vezes. O segundo deve imprimir o comprimento da string `\"Dados\"`. ", "mission2_placeholder": "print(\"Vai! \" * 3)\\nprint(len(\"Dados\"))",
+            "button_test_mission_2": "Testar Missão 2",
+            "mission3_title": "Missão 3: Primeiro e Último", "mission3_desc": "Dada a string `\"Modulo\"`, escreva um comando para `print`ar seu primeiro caractere (índice 0). Na <strong>próxima linha</strong>, escreva outro comando para `print`ar seu último caractere (índice 5).", "mission3_placeholder": "minha_string = \"Modulo\"\\nprint(minha_string[0])\\nprint(minha_string[5])",
+            "button_test_mission_3": "Testar Missão 3",
+            "mission_output_placeholder": "Saída...",
+            "feedback_mission_success": "Missão Cumprida!", "feedback_mission_syntax_error": "Verifique a sintaxe ou lógica do seu código.",
+            "feedback_mission1_hint": "Use `print(\"Aplicada \" + \"IA\")`.",
+            "feedback_mission2_hint": "Precisa de duas linhas `print`. Verifique a multiplicação (`* 3`) e `len(\"Dados\")`.",
+            "feedback_mission3_hint": "Precisa de duas linhas `print`. Use o índice `[0]` para o primeiro, `[5]` para o último.",
+            "feedback_missions_summary_all_done": "Todas as {totalMissions} missões de string completas! Fantástico!", "feedback_missions_summary_progress": "Completou {completedCount} de {totalMissions} missões. Continue praticando!",
+            // Completion Section
+            "completion_title": "Prática do Módulo 3 Completa!", "completion_desc": "Excelente trabalho manipulando strings! Você está pegando o jeito dos dados de texto em Python. <br> Pronto para mais? Tente a <strong>Prática Avançada</strong> do Módulo 3!",
+            "button_view_theory": "Ver Teoria Novamente", "button_start_advanced": "Iniciar Prática Avançada", "button_back_menu": "Voltar ao Menu do Curso"
+        },
+        zh: {
+            "page_title": "模块 3：Python 练习 - 文本！",
+            "tooltip_click_identify": "点击识别此部分",
+            "nav_theory": "查看理论", "nav_advanced": "高级练习", "nav_menu": "课程菜单",
+            "nav_concat": "连接", "nav_multiply": "乘法", "nav_length": "长度", "nav_index": "索引", "nav_missions": "任务",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title": "模块 3：练习 - 处理文本", "header_subtitle": "让我们来操作字符串，理解文本是如何表示的！",
+             // Activity 1: Concatenation Anatomy
+            "concat_anatomy_title": "剖析字符串连接", "concat_anatomy_desc": "使用 `+` 符号将字符串连接在一起称为连接。点击下面的部分来识别它们。这关系到我们如何组合数据片段（数据表示）。",
+            "anatomy_status_initial": "识别所有 5 个部分！", "anatomy_status_progress": "已识别 {count} / {total} 个部分。", "anatomy_status_done": "所有部分已识别！",
+            "anatomy_exp_string1": "第一个字符串字面量：`\"AI\"`", "anatomy_exp_operator1": "连接运算符：`+`（连接字符串）", "anatomy_exp_string2": "第二个字符串（一个空格）：`\" \"`", "anatomy_exp_operator2": "另一个连接运算符：`+`", "anatomy_exp_string3": "第三个字符串字面量：`\"Rocks!\"`",
+            "feedback_anatomy_correct": "太棒了！你已经识别出字符串连接的各个部分！",
+            // Activity 2: String Multiplication
+            "multiply_title": "字符串乘法", "multiply_desc": "你可以用一个整数“乘以”一个字符串来重复它。在下面试试吧！这展示了一种简单的模式识别形式 - 重复序列。",
+            "multiply_label_string": "要重复的字符串：", "multiply_placeholder_string": "例如：AI",
+            "multiply_label_number": "次数：", "multiply_placeholder_number": "例如：3",
+            "button_run_multiply": "重复字符串", "multiply_output_label": "结果：", "multiply_output_placeholder": "结果显示在此处...",
+            "feedback_multiply_success": "字符串重复成功！", "feedback_multiply_no_string": "请输入一个字符串。", "feedback_multiply_no_number": "请输入一个有效的正整数。", "feedback_multiply_too_long": "结果太长，无法很好地显示。请尝试减少重复次数。",
+            // Activity 3: String Length
+            "length_title": "获取字符串长度", "length_desc": "`len()` 函数告诉你一个字符串中有多少个字符（包括空格！）。这对于理解文本数据的大小至关重要。在下面输入一个字符串。",
+            "length_label_string": "输入一个字符串：", "length_placeholder_string": "例如：Hello World!",
+            "button_run_length": "计算长度", "length_output_label": "计算出的长度：", "length_output_placeholder": "长度显示在此处...",
+            "feedback_length_success": "长度计算完毕！", "feedback_length_empty": "空字符串的长度为 0。",
+            // Activity 4: String Indexing
+            "index_title": "通过索引访问字符", "index_desc": "你可以使用方括号 `[]` 内的索引从字符串中获取单个字符。记住：Python 索引从 <strong class=\"code-font\">0</strong> 开始！这是序列数据如何表示和访问的关键。",
+            "index_label_string": "输入一个字符串：", "index_placeholder_string": "例如：Python",
+            "index_label_number": "要访问的索引（从 0 开始）：", "index_placeholder_number": "例如：0",
+            "button_run_index": "获取字符", "index_output_label": "索引处的字符：", "index_output_placeholder": "字符显示在此处...",
+            "feedback_index_success": "字符已检索！", "feedback_index_no_string": "请输入一个字符串。", "feedback_index_no_index": "请输入一个有效的非负索引。", "feedback_index_out_of_bounds": "索引越界！最大索引为 {max_index}。",
+            // Activity 5: Mini Missions
+            "missions_title": "字符串迷你任务！", "missions_desc": "结合你新的字符串技能！使用下面编辑器中的 `print()` 函数完成这些编码任务。",
+            "mission1_title": "任务 1：合并单词", "mission1_desc": "编写一条命令来 `print` 连接字符串 `\"Applied \"` 和 `\"AI\"` 的结果。如果需要，别忘了空格！", "mission1_placeholder": "print(\"Applied \" + \"AI\")",
+            "button_test_mission_1": "测试任务 1",
+            "mission2_title": "任务 2：重复与测量", "mission2_desc": "编写 <strong>两个独立</strong> 的 `print()` 命令。第一个应该打印重复 3 次的字符串 `\"Go! \"`。第二个应该打印字符串 `\"Data\"` 的长度。", "mission2_placeholder": "print(\"Go! \" * 3)\\nprint(len(\"Data\"))",
+            "button_test_mission_2": "测试任务 2",
+            "mission3_title": "任务 3：首尾字符", "mission3_desc": "给定字符串 `\"Module\"`，编写一条命令来 `print` 它的第一个字符（索引 0）。在<strong>下一行</strong>，编写另一条命令来 `print` 它的最后一个字符（索引 5）。", "mission3_placeholder": "my_string = \"Module\"\\nprint(my_string[0])\\nprint(my_string[5])",
+            "button_test_mission_3": "测试任务 3",
+            "mission_output_placeholder": "输出...",
+            "feedback_mission_success": "任务完成！", "feedback_mission_syntax_error": "检查代码的语法或逻辑。",
+            "feedback_mission1_hint": "使用 `print(\"Applied \" + \"AI\")`。",
+            "feedback_mission2_hint": "需要两个 `print` 行。检查乘法 (`* 3`) 和 `len(\"Data\")`。",
+            "feedback_mission3_hint": "需要两个 `print` 行。第一个使用索引 `[0]`，最后一个使用索引 `[5]`。",
+            "feedback_missions_summary_all_done": "所有 {totalMissions} 个字符串任务已完成！太棒了！", "feedback_missions_summary_progress": "已完成 {completedCount} / {totalMissions} 个任务。继续练习！",
+            // Completion Section
+            "completion_title": "模块 3 练习完成！", "completion_desc": "字符串操作做得非常好！你正在掌握 Python 中的文本数据。<br> 准备好迎接更多挑战了吗？试试模块 3 的<strong>高级练习</strong>！",
+            "button_view_theory": "再次查看理论", "button_start_advanced": "开始高级练习", "button_back_menu": "返回课程菜单"
+        }
+    };
+
+
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // --- Language Management Functions (Reused from Module 0) ---
+        function getStoredLanguage() { /* ... same as Module 0 ... */
+            const storedLang = localStorage.getItem('userLanguage');
+            if (storedLang && translations[storedLang]) return storedLang;
+            const browserLang = navigator.language || navigator.userLanguage;
+            if (browserLang.startsWith('pt')) return 'pt';
+            if (browserLang.startsWith('zh')) return 'zh';
+            return 'en'; // Default to English
+         }
+        function setLanguage(lang) { /* ... same as Module 0, ensures translatePage and activity resets are called ... */
+            if (!translations[lang]) lang = 'en'; // Fallback
+            localStorage.setItem('userLanguage', lang);
+            document.documentElement.lang = lang;
+            translatePage(lang);
+
+            const langSelect = document.getElementById('languageSelect');
+            if (langSelect) langSelect.value = lang;
+
+             // Reset/Update language-dependent activities
+             if (document.getElementById('concatenation-anatomy')) setupAnatomyActivity(); // Renamed function
+             if (document.getElementById('string-multiplication')) resetMultiplySim();
+             if (document.getElementById('string-length')) resetLengthSim();
+             if (document.getElementById('string-indexing')) resetIndexSim();
+             if (document.getElementById('mini-missions') && typeof updateMissionSummary === 'function') {
+                 updateMissionSummary(); // Update summary text
+                 // Optionally reset individual mission states if needed on language change
+             }
+        }
+        function getTranslation(key, lang, replacements = {}) { /* ... same as Module 0 ... */
+            let text = translations[lang]?.[key] ?? translations['en']?.[key] ?? `[${key}]`;
+            for (const placeholder in replacements) {
+                const regex = new RegExp(`\\{${placeholder}\\}`, 'g');
+                text = text.replace(regex, replacements[placeholder]);
+            }
+            return text;
+        }
+        function translatePage(lang) { /* ... same as Module 0 ... */
+             if (!translations[lang]) lang = 'en';
+             document.querySelectorAll('[data-translate]').forEach(el => {
+                const key = el.getAttribute('data-translate');
+                const translation = getTranslation(key, lang);
+                if (el.tagName === 'TITLE') { document.title = translation; }
+                else if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') { /* Placeholders handled below */ }
+                else if (el.tagName === 'OPTION') { el.textContent = translation; }
+                else {
+                    if (translation.includes('<') && translation.includes('>')) { el.innerHTML = translation; }
+                    else { el.textContent = translation; }
+                }
+             });
+            document.querySelectorAll('[data-translate-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-translate-placeholder');
+                const translation = getTranslation(key, lang);
+                el.setAttribute('placeholder', translation);
+            });
+            document.querySelectorAll('[data-translate-title]').forEach(el => {
+                 const key = el.getAttribute('data-translate-title');
+                 const translation = getTranslation(key, lang);
+                 el.setAttribute('title', translation);
+            });
+        }
+        const initialLang = getStoredLanguage(); // Get initial language
+
+        // --- Minimal Nav Logic (Reused from Module 0) ---
+        const navToggleButton = document.getElementById('minimal-nav-toggle'); /* ... rest of nav logic ... */
+        const navPanel = document.getElementById('minimal-nav-panel');
+        const body = document.body;
+        if (navToggleButton && navPanel) {
+            navToggleButton.addEventListener('click', (event) => {
+                event.stopPropagation(); body.classList.toggle('nav-active');
+                navToggleButton.setAttribute('aria-expanded', body.classList.contains('nav-active'));
+             });
+            document.addEventListener('click', (event) => {
+                if (body.classList.contains('nav-active') && !navPanel.contains(event.target) && event.target !== navToggleButton && !navToggleButton.contains(event.target) ) {
+                    body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); }
+             });
+            navPanel.querySelectorAll('a').forEach(link => {
+                link.addEventListener('click', () => { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); }); });
+            document.addEventListener('keydown', (event) => {
+                 if (event.key === 'Escape' && body.classList.contains('nav-active')) { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); } });
+            navToggleButton.setAttribute('aria-expanded', 'false');
+        }
+
+        // --- Language Switcher Setup (Reused from Module 0) ---
+        const langSelect = document.getElementById('languageSelect');
+        if (langSelect) {
+            langSelect.addEventListener('change', (e) => { setLanguage(e.target.value); });
+        }
+
+        // --- Helper Function for Feedback (Reused from Module 0) ---
+        function showFeedback(elementId, messageKey, type = 'info', replacements = {}) { /* ... same as Module 0 ... */
+            const feedbackEl = document.getElementById(elementId);
+            if (!feedbackEl) { console.error(`Feedback element not found: ${elementId}`); return; }
+            const currentLang = getStoredLanguage();
+            const translatedMessage = getTranslation(messageKey, currentLang, replacements);
+            if (translatedMessage.includes('<') && translatedMessage.includes('>')) { feedbackEl.innerHTML = translatedMessage; }
+            else { feedbackEl.textContent = translatedMessage; }
+            feedbackEl.className = 'feedback-message'; feedbackEl.classList.add('visible', type);
+            const interactiveArea = feedbackEl.closest('.interactive-area');
+            if (!interactiveArea) return;
+            interactiveArea.classList.remove('success-glow-anim', 'shake-anim');
+            void interactiveArea.offsetWidth; // Trigger reflow
+            if (type === 'correct') { interactiveArea.classList.add('success-glow-anim'); }
+            else if (type === 'incorrect') { interactiveArea.classList.add('shake-anim'); }
+        }
+
+        // --- Activity 1: Concatenation Anatomy (Adapted from Module 0 Anatomy) ---
+        const anatomySection = document.getElementById('concatenation-anatomy');
+        let anatomyPartExplanations = {}; // Will be populated based on language
+        const totalAnatomyParts = 5; // string + op + string + op + string
+        let currentAnatomyListeners = [];
+
+        function setupAnatomyActivity() {
+            if (!anatomySection) return;
+            const currentLang = getStoredLanguage();
+            anatomyPartExplanations = {}; // Clear previous explanations
+             document.querySelectorAll('#explanation-texts span[data-key]').forEach(span => {
+                const key = span.getAttribute('data-key');
+                // Assuming explanation keys follow pattern 'anatomy_exp_PARTKEY'
+                anatomyPartExplanations[key] = getTranslation(`anatomy_exp_${key}`, currentLang);
+             });
+
+            const anatomyCode = anatomySection.querySelector('.code-block');
+            if (!anatomyCode) return;
+            const parts = anatomyCode.querySelectorAll('.code-part');
+            const explanationsDiv = anatomySection.querySelector('#anatomy-explanations');
+            const statusP = anatomySection.querySelector('#anatomy-status');
+            const feedbackDiv = anatomySection.querySelector('#anatomy-feedback');
+            let identifiedCount = 0;
+
+            // Remove old listeners
+            currentAnatomyListeners.forEach(({element, listener}) => element.removeEventListener('click', listener));
+            currentAnatomyListeners = [];
+
+            // Reset visual state
+            parts.forEach(p => p.classList.remove('identified'));
+            if (explanationsDiv) explanationsDiv.innerHTML = '';
+            if (statusP) statusP.innerHTML = getTranslation('anatomy_status_initial', currentLang);
+            if (feedbackDiv) feedbackDiv.classList.remove('visible', 'correct', 'incorrect', 'info');
+
+            parts.forEach(part => {
+                const clickListener = () => {
+                    const partType = part.dataset.part;
+                    if (!part.classList.contains('identified') && partType && anatomyPartExplanations[partType]) {
+                        part.classList.add('identified');
+                        identifiedCount++;
+                        const p = document.createElement('p');
+                        p.classList.add('part-explanation');
+                        p.innerHTML = `<i class="fas fa-check-circle" style="color: var(--success-color);"></i> <strong>${part.textContent.trim()}:</strong> ${anatomyPartExplanations[partType]}`;
+                        if (explanationsDiv) explanationsDiv.appendChild(p);
+
+                        if (statusP) statusP.innerHTML = getTranslation('anatomy_status_progress', currentLang, { count: identifiedCount, total: totalAnatomyParts });
+
+                        if (identifiedCount === totalAnatomyParts) {
+                            if (statusP) statusP.innerHTML = getTranslation('anatomy_status_done', currentLang);
+                            if (feedbackDiv) showFeedback('anatomy-feedback', 'feedback_anatomy_correct', 'correct');
+                        }
+                    } else if (!anatomyPartExplanations[partType]) {
+                        console.warn(`Anatomy explanation missing for: ${partType}`);
+                    }
+                };
+                part.addEventListener('click', clickListener);
+                currentAnatomyListeners.push({ element: part, listener: clickListener });
+            });
+        }
+
+        // --- Activity 2: String Multiplication Simulator ---
+        const multiplySection = document.getElementById('string-multiplication');
+        if (multiplySection) {
+            const stringInput = document.getElementById('multiply-string-input');
+            const numberInput = document.getElementById('multiply-number-input');
+            const runBtn = document.getElementById('run-multiply-btn');
+            const outputArea = document.getElementById('multiply-output');
+            const feedbackDivId = 'multiply-feedback';
+            const placeholder = outputArea.querySelector('.placeholder');
+
+            function resetMultiplySim() {
+                 if (stringInput) stringInput.value = '';
+                 if (numberInput) numberInput.value = '3';
+                 if (outputArea) {
+                     outputArea.innerHTML = ''; // Clear previous output
+                     const currentLang = getStoredLanguage();
+                     const placeholderSpan = document.createElement('span');
+                     placeholderSpan.className = 'placeholder';
+                     placeholderSpan.textContent = getTranslation('multiply_output_placeholder', currentLang);
+                     outputArea.appendChild(placeholderSpan);
+                 }
+                 const feedbackEl = document.getElementById(feedbackDivId);
+                 if (feedbackEl) feedbackEl.classList.remove('visible');
+            }
+
+            runBtn.addEventListener('click', () => {
+                 const str = stringInput.value; // Don't trim, space might be intended
+                 const num = parseInt(numberInput.value, 10);
+                 const currentLang = getStoredLanguage();
+
+                 outputArea.innerHTML = ''; // Clear previous output
+                 const placeholderSpan = document.createElement('span');
+                 placeholderSpan.className = 'placeholder';
+                 placeholderSpan.textContent = getTranslation('multiply_output_placeholder', currentLang);
+                 outputArea.appendChild(placeholderSpan); // Add placeholder back initially
+
+                 if (str === '') {
+                     showFeedback(feedbackDivId, 'feedback_multiply_no_string', 'incorrect');
+                     return;
+                 }
+                 if (isNaN(num) || num < 0) {
+                     showFeedback(feedbackDivId, 'feedback_multiply_no_number', 'incorrect');
+                     return;
+                 }
+
+                 try {
+                    let result = '';
+                    if (num > 0) { // Handle num = 0 separately
+                        result = str.repeat(num); // More direct than multiplication sometimes
+                    }
+
+                     if (result.length > 500) { // Limit output length
+                         showFeedback(feedbackDivId, 'feedback_multiply_too_long', 'info');
+                         outputArea.innerHTML = `<span class="output-line" style="font-style: italic;">${getTranslation('feedback_multiply_too_long', currentLang)}</span>`;
+                     } else {
+                        outputArea.innerHTML = ''; // Clear placeholder
+                        const outputLine = document.createElement('span');
+                        outputLine.classList.add('output-line', 'output-value');
+                        outputLine.textContent = `> ${result}`; // Show result
+                        outputArea.appendChild(outputLine);
+                        showFeedback(feedbackDivId, 'feedback_multiply_success', 'correct');
+                     }
+                 } catch (e) {
+                     console.error("Multiplication error:", e);
+                     showFeedback(feedbackDivId, 'feedback_mission_syntax_error', 'incorrect'); // Generic error
+                 }
+             });
+             resetMultiplySim(); // Initial setup
+        }
+
+        // --- Activity 3: String Length Simulator ---
+        const lengthSection = document.getElementById('string-length');
+        if (lengthSection) {
+            const stringInput = document.getElementById('length-string-input');
+            const runBtn = document.getElementById('run-length-btn');
+            const outputArea = document.getElementById('length-output');
+            const feedbackDivId = 'length-feedback';
+
+             function resetLengthSim() {
+                 if (stringInput) stringInput.value = '';
+                 if (outputArea) {
+                     outputArea.innerHTML = '';
+                     const currentLang = getStoredLanguage();
+                     const placeholderSpan = document.createElement('span');
+                     placeholderSpan.className = 'placeholder';
+                     placeholderSpan.textContent = getTranslation('length_output_placeholder', currentLang);
+                     outputArea.appendChild(placeholderSpan);
+                 }
+                 const feedbackEl = document.getElementById(feedbackDivId);
+                 if (feedbackEl) feedbackEl.classList.remove('visible');
+            }
+
+            runBtn.addEventListener('click', () => {
+                 const str = stringInput.value;
+                 const len = str.length;
+                 const currentLang = getStoredLanguage();
+
+                 outputArea.innerHTML = ''; // Clear placeholder
+                 const outputLine = document.createElement('span');
+                 outputLine.classList.add('output-line', 'output-value');
+                 outputLine.textContent = `> ${len}`; // Show length
+                 outputArea.appendChild(outputLine);
+
+                 if (str === '') {
+                     showFeedback(feedbackDivId, 'feedback_length_empty', 'info');
+                 } else {
+                     showFeedback(feedbackDivId, 'feedback_length_success', 'correct');
+                 }
+             });
+             resetLengthSim(); // Initial setup
+        }
+
+        // --- Activity 4: String Indexing Simulator ---
+        const indexSection = document.getElementById('string-indexing');
+        if (indexSection) {
+            const stringInput = document.getElementById('index-string-input');
+            const indexInput = document.getElementById('index-number-input');
+            const runBtn = document.getElementById('run-index-btn');
+            const outputArea = document.getElementById('index-output');
+            const feedbackDivId = 'index-feedback';
+
+            function resetIndexSim() {
+                 if (stringInput) stringInput.value = 'Python'; // Default value
+                 if (indexInput) indexInput.value = '0';
+                 if (outputArea) {
+                     outputArea.innerHTML = '';
+                     const currentLang = getStoredLanguage();
+                     const placeholderSpan = document.createElement('span');
+                     placeholderSpan.className = 'placeholder';
+                     placeholderSpan.textContent = getTranslation('index_output_placeholder', currentLang);
+                     outputArea.appendChild(placeholderSpan);
+                 }
+                 const feedbackEl = document.getElementById(feedbackDivId);
+                 if (feedbackEl) feedbackEl.classList.remove('visible');
+            }
+
+            runBtn.addEventListener('click', () => {
+                 const str = stringInput.value;
+                 const index = parseInt(indexInput.value, 10);
+                 const currentLang = getStoredLanguage();
+
+                 outputArea.innerHTML = ''; // Clear previous output
+                 const placeholderSpan = document.createElement('span');
+                 placeholderSpan.className = 'placeholder';
+                 placeholderSpan.textContent = getTranslation('index_output_placeholder', currentLang);
+                 outputArea.appendChild(placeholderSpan); // Add placeholder back initially
+
+                 if (str === '') {
+                     showFeedback(feedbackDivId, 'feedback_index_no_string', 'incorrect');
+                     return;
+                 }
+                 if (isNaN(index) || index < 0) {
+                     showFeedback(feedbackDivId, 'feedback_index_no_index', 'incorrect');
+                     return;
+                 }
+
+                 if (index >= str.length) {
+                     showFeedback(feedbackDivId, 'feedback_index_out_of_bounds', 'incorrect', { max_index: Math.max(0, str.length - 1) });
+                     return;
+                 }
+
+                 try {
+                     const char = str[index];
+                     outputArea.innerHTML = ''; // Clear placeholder
+                     const outputLine = document.createElement('span');
+                     outputLine.classList.add('output-line', 'output-value');
+                     outputLine.textContent = `> '${char}'`; // Show character in quotes
+                     outputArea.appendChild(outputLine);
+                     showFeedback(feedbackDivId, 'feedback_index_success', 'correct');
+                 } catch (e) { // Should be caught by bounds check, but just in case
+                     console.error("Indexing error:", e);
+                     showFeedback(feedbackDivId, 'feedback_mission_syntax_error', 'incorrect');
+                 }
+             });
+             resetIndexSim(); // Initial setup
+        }
+
+        // --- Activity 5: Mini Missions (Adapted Logic) ---
+        const missionsSection = document.getElementById('mini-missions');
+        let updateMissionSummary; // Define function scope
+        if (missionsSection) {
+            const missionRunButtons = missionsSection.querySelectorAll('.mission-run-btn');
+            const summaryFeedback = document.getElementById('missions-summary-feedback');
+            const allMissions = missionsSection.querySelectorAll('.mission');
+            const totalMissions = allMissions.length;
+
+            updateMissionSummary = function() { // Assign function
+                 const completedMissionsCount = missionsSection.querySelectorAll('.mission[data-completed="true"]').length;
+                 const currentLang = getStoredLanguage();
+                 if (completedMissionsCount === totalMissions) {
+                     showFeedback('missions-summary-feedback', 'feedback_missions_summary_all_done', 'correct', { totalMissions: totalMissions });
+                 } else if (completedMissionsCount > 0) {
+                     showFeedback('missions-summary-feedback', 'feedback_missions_summary_progress', 'info', { completedCount: completedMissionsCount, totalMissions: totalMissions });
+                 } else {
+                     summaryFeedback.classList.remove('visible', 'correct', 'incorrect', 'info');
+                 }
+            }
+
+            missionRunButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const missionId = button.dataset.missionId;
+                    const missionDiv = document.getElementById(`mission-${missionId}`);
+                    if (!missionDiv) return;
+                    const editor = missionDiv.querySelector('.mission-editor');
+                    const outputArea = missionDiv.querySelector('.mission-output');
+                    const feedbackDivId = `mission-feedback-${missionId}`;
+                    const feedbackDiv = document.getElementById(feedbackDivId);
+                    const statusIcon = missionDiv.querySelector('.mission-status i');
+                    const code = editor.value.trim();
+                    const currentLang = getStoredLanguage();
+
+                    outputArea.innerHTML = `<span class="placeholder">${getTranslation('mission_output_placeholder', currentLang)}</span>`; // Reset output
+                    let success = false;
+                    let feedbackMessageKey = 'feedback_mission_syntax_error';
+                    let feedbackType = 'incorrect';
+                    let expectedOutput = [];
+
+                    /* Validation Logic for Module 3 Missions */
+                    try {
+                        // Simulate execution line by line for print statements
+                        const lines = code.split('\n').map(l => l.trim()).filter(l => l && !l.startsWith('#')); // Ignore comments and empty lines
+                        let simulatedOutput = [];
+
+                        lines.forEach(line => {
+                             // Very basic simulation - look for specific print patterns
+                             if (missionId === '1') {
+                                 const concatMatch = line.match(/^print\s*\(\s*(["'])Applied (["'])\s*\+\s*(["'])AI(["'])\s*\)/);
+                                 if (concatMatch) simulatedOutput.push("Applied AI");
+                                 expectedOutput = ["Applied AI"];
+                             } else if (missionId === '2') {
+                                 const multiplyMatch = line.match(/^print\s*\(\s*(["'])Go! (["'])\s*\*\s*3\s*\)/);
+                                 const lengthMatch = line.match(/^print\s*\(\s*len\s*\(\s*(["'])Data(["'])\s*\)\s*\)/);
+                                 if (multiplyMatch) simulatedOutput.push("Go! Go! Go! ");
+                                 if (lengthMatch) simulatedOutput.push("4"); // Length of "Data"
+                                 expectedOutput = ["Go! Go! Go! ", "4"];
+                             } else if (missionId === '3') {
+                                 const firstCharMatch = line.match(/^print\s*\(\s*(["'])Module(["'])\[0\]\s*\)/) || line.match(/^print\s*\(\s*["']M["']\s*\)/); // Allow direct print or variable use simulation
+                                 const lastCharMatch = line.match(/^print\s*\(\s*(["'])Module(["'])\[5\]\s*\)/) || line.match(/^print\s*\(\s*["']e["']\s*\)/);
+                                 if (firstCharMatch) simulatedOutput.push("M");
+                                 if (lastCharMatch) simulatedOutput.push("e");
+                                 expectedOutput = ["M", "e"];
+                             }
+                        });
+
+                        // Compare simulated output to expected output
+                        if (simulatedOutput.length === expectedOutput.length &&
+                            simulatedOutput.every((val, index) => val === expectedOutput[index]))
+                        {
+                             success = true;
+                             outputArea.innerHTML = simulatedOutput.map(line => `<span class="output-line output-value">> ${line}</span>`).join('');
+                        } else {
+                           // Provide specific hints if simulation failed
+                            if (missionId === '1') feedbackMessageKey = 'feedback_mission1_hint';
+                            else if (missionId === '2') feedbackMessageKey = 'feedback_mission2_hint';
+                            else if (missionId === '3') feedbackMessageKey = 'feedback_mission3_hint';
+                        }
+
+                    } catch (error) {
+                        console.error("Mission validation error:", error);
+                        feedbackMessageKey = 'feedback_mission_syntax_error';
+                    }
+                    /* End Validation */
+
+                    if (success) {
+                        feedbackMessageKey = 'feedback_mission_success';
+                        feedbackType = 'correct';
+                        statusIcon.className = 'fas fa-check-circle';
+                        missionDiv.dataset.completed = 'true';
+                    } else {
+                        statusIcon.className = 'fas fa-times-circle';
+                        missionDiv.dataset.completed = 'false';
+                    }
+                    showFeedback(feedbackDivId, feedbackMessageKey, feedbackType);
+                    updateMissionSummary();
+                });
+            });
+
+            // Initial placeholder text setup for missions
+            allMissions.forEach(mission => {
+                 const outputArea = mission.querySelector('.mission-output');
+                 if (outputArea && !outputArea.innerHTML.trim()) {
+                     outputArea.innerHTML = `<span class="placeholder">${getTranslation('mission_output_placeholder', getStoredLanguage())}</span>`;
+                 }
+             });
+            updateMissionSummary(); // Initial call
+        }
+
+        // --- Fade-in animations on scroll (Reused from Module 0) ---
+        const fadeElements = document.querySelectorAll('.fade-in');
+        const animateOnScroll = () => { /* ... same as Module 0 ... */
+             const windowHeight = window.innerHeight;
+             fadeElements.forEach(el => {
+                 if (el.style.opacity === '1') return;
+                 const rect = el.getBoundingClientRect();
+                 if (rect.top < windowHeight - 80 && rect.bottom >= 50) {
+                     el.style.opacity = '1';
+                     el.style.transform = 'translateY(0)';
+                 }
+             });
+        };
+        const scrollHandler = () => window.requestAnimationFrame(animateOnScroll);
+        window.addEventListener('scroll', scrollHandler);
+
+        // --- Initial Language Application and Activity Setups ---
+        setLanguage(initialLang); // Apply language FIRST, which also calls activity resets/setups
+        animateOnScroll(); // Trigger initial animation check
+
+    }); // End DOMContentLoaded
+    </script>
+
+</body>
+</html>
