@@ -1,1 +1,991 @@
+<!DOCTYPE html>
+<!-- Language set by JS -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Title set by JS -->
+    <title data-translate="page_title">Module 4: Getting User Input</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
+    <style>
+        /* --- Reset & Base Styles --- */
+        :root {
+            --primary-color: #007bff;
+            --secondary-color: #6c757d;
+            --background-light: #f8f9fa;
+            --background-dark: #343a40;
+            --text-light: #f8f9fa;
+            --text-dark: #212529;
+            --accent-color: #ffc107; /* Yellow */
+            --info-color: #17a2b8;  /* Teal/Info */
+            --warning-color: #fd7e14; /* Orange */
+            --success-color: #28a745;
+            --error-color: #dc3545;
+            --border-radius: 8px;
+            --transition-speed: 0.3s;
+            --font-body: 'Roboto', sans-serif;
+            --font-title: 'Orbitron', sans-serif;
+             /* Nav Colors */
+            --nav-primary: #6e48aa;
+            --nav-success: #4cc9f0;
+            --nav-dark: #1a1a2e;
+            /* Data Type Colors */
+            --int-color: #569cd6;
+            --float-color: #b5cea8;
+            --str-color: #ce9178;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; font-size: 16px; }
+        body {
+            font-family: var(--font-body); line-height: 1.7;
+            background-color: var(--background-light); color: var(--text-dark);
+            overflow-x: hidden; display: flex; flex-direction: column; min-height: 100vh;
+        }
+        main { flex-grow: 1; }
+
+        /* --- Utility Classes --- */
+        .container { max-width: 960px; margin: 0 auto; padding: 0 15px; }
+        .text-center { text-align: center; }
+        .highlight { color: var(--primary-color); font-weight: bold; }
+        .warning-highlight { color: var(--warning-color); font-weight: bold; }
+        .fade-in { opacity: 0; transform: translateY(20px); animation: fadeInAnimation 0.8s ease-out forwards; }
+        .fade-in.delay-1 { animation-delay: 0.2s; }
+        .fade-in.delay-2 { animation-delay: 0.4s; }
+        .fade-in.delay-3 { animation-delay: 0.6s; }
+        .fade-in.delay-4 { animation-delay: 0.8s; }
+        .fade-in.delay-5 { animation-delay: 1.0s; }
+        .button-group { margin-top: 2rem; display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; }
+        .action-button {
+             display: inline-flex; align-items: center; justify-content: center; gap: 0.5em;
+             padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold;
+             color: var(--text-light); background-color: var(--primary-color); border: none;
+             border-radius: var(--border-radius); cursor: pointer;
+             transition: background-color var(--transition-speed), transform var(--transition-speed), filter var(--transition-speed), box-shadow var(--transition-speed);
+             margin-top: 1rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+             text-decoration: none; line-height: 1.2;
+        }
+        .action-button i.fas { /* Aligned by flex */ }
+        .action-button:hover:not(:disabled) { background-color: #0056b3; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+        .action-button:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none; box-shadow: none; opacity: 0.7; }
+        .action-button.success { background-color: var(--success-color); }
+        .action-button.success:hover:not(:disabled) { background-color: #218838; }
+        .action-button.secondary { background-color: var(--secondary-color); }
+        .action-button.secondary:hover:not(:disabled) { background-color: #5a6268; }
+        .action-button:active:not(:disabled) { transform: translateY(1px) scale(0.98); filter: brightness(0.95); }
+
+        /* --- Animations --- */
+        @keyframes fadeInAnimation { to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); } 50% { transform: scale(1.03); box-shadow: 0 0 15px rgba(0, 123, 255, 0.6); } 100% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); } }
+        @keyframes code-line-anim { from { width: 0; opacity: 0; } to { width: 100%; opacity: 1; } }
+        @keyframes tada { from { transform: scale3d(1, 1, 1); } 10%, 20% { transform: scale3d(.9, .9, .9) rotate3d(0, 0, 1, -3deg); } 30%, 50%, 70%, 90% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, 3deg); } 40%, 60%, 80% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, -3deg); } to { transform: scale3d(1, 1, 1); } }
+        .tada-anim { animation: tada 1s ease; }
+        @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
+        @keyframes iconAppearCorrect { 0% { transform: scale(0.5) rotate(-15deg); opacity: 0; } 60% { transform: scale(1.2) rotate(5deg); opacity: 1; } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
+        @keyframes bounceIn {
+          from, 20%, 40%, 60%, 80%, to { animation-timing-function: cubic-bezier(0.215, 0.610, 0.355, 1.000); }
+          0% { opacity: 0; transform: scale3d(.3, .3, .3); } 20% { transform: scale3d(1.1, 1.1, 1.1); }
+          40% { transform: scale3d(.9, .9, .9); } 60% { opacity: 1; transform: scale3d(1.03, 1.03, 1.03); }
+          80% { transform: scale3d(.97, .97, .97); } to { opacity: 1; transform: scale3d(1, 1, 1); }
+        }
+        .bounce-in-anim { animation: bounceIn 1s; }
+
+        /* --- Minimal Retractable Nav --- */
+        .minimal-nav-button { position: fixed; top: 15px; right: 15px; z-index: 1001; background-color: rgba(52, 58, 64, 0.75); color: var(--text-light); border: none; border-radius: var(--border-radius); padding: 8px 12px; cursor: pointer; transition: background-color var(--transition-speed), opacity var(--transition-speed), transform var(--transition-speed); font-size: 1.1rem; opacity: 0.6; box-shadow: 0 2px 5px rgba(0,0,0,0.2); line-height: 1; }
+        .minimal-nav-button:hover { background-color: rgba(52, 58, 64, 0.95); opacity: 1; transform: scale(1.05); }
+        .minimal-nav { position: fixed; top: 60px; right: 15px; z-index: 1000; background-color: var(--background-dark); border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.3); padding: 0.8rem; opacity: 0; transform: translateY(-15px) scale(0.95); transform-origin: top right; pointer-events: none; transition: opacity var(--transition-speed) ease, transform var(--transition-speed) ease; min-width: 200px; }
+        body.nav-active .minimal-nav { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+        .minimal-nav ul { list-style: none; margin: 0; padding: 0; }
+        .minimal-nav ul li { margin-bottom: 5px; }
+        .minimal-nav ul li:last-child { margin-bottom: 0; }
+        .minimal-nav ul li a { display: flex; align-items: center; color: var(--text-light); text-decoration: none; padding: 0.6rem 1rem; border-radius: 4px; transition: background-color var(--transition-speed), color var(--transition-speed); white-space: nowrap; font-weight: 400; font-size: 0.95rem; }
+        .minimal-nav ul li a i.fas { margin-right: 10px; width: 1.2em; text-align: center; opacity: 0.8; transition: opacity var(--transition-speed); }
+        .minimal-nav ul li a:hover { background-color: var(--primary-color); color: var(--text-light); }
+        .minimal-nav ul li a:hover i.fas { opacity: 1; }
+        .minimal-nav .language-switcher-item { padding: 0.5rem 1rem; border-top: 1px solid var(--secondary-color); margin-top: 8px; padding-top: 13px; }
+        #languageSelect { width: 100%; background: rgba(255,255,255,0.1); color: white; border: 1px solid var(--nav-success); border-radius: 5px; padding: 6px 30px 6px 12px; cursor: pointer; font-size: 0.9rem; appearance: none; -webkit-appearance: none; -moz-appearance: none; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%234CC9F0%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right 10px center; background-size: 10px auto; transition: background-color 0.3s ease; }
+        #languageSelect:hover { background-color: rgba(255,255,255,0.15); }
+        #languageSelect option { background: var(--nav-dark); color: var(--text-light); }
+
+        /* --- Header --- */
+        .main-header { background: linear-gradient(135deg, var(--info-color), #0d6efd); /* Changed gradient for variety */ color: var(--text-light); padding: 4rem 0 6rem; text-align: center; position: relative; overflow: hidden; }
+        .main-header h1 { font-family: var(--font-title); font-size: 3rem; margin-bottom: 0.5rem; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); animation: fadeInAnimation 1s ease-out; }
+        .main-header p { font-size: 1.2rem; font-weight: 300; opacity: 0.9; animation: fadeInAnimation 1s ease-out 0.3s forwards; opacity: 0; }
+        .header-shape { position: absolute; border-radius: 50%; background-color: rgba(255, 255, 255, 0.1); animation: pulse 5s infinite ease-in-out alternate; }
+        .shape1 { width: 150px; height: 150px; bottom: -50px; left: 10%; animation-duration: 6s; background-color: rgba(255, 255, 255, 0.15); } /* Slightly different shapes */
+        .shape2 { width: 90px; height: 90px; top: 40px; right: 15%; animation-duration: 4.5s; border-radius: 30%; }
+        .shape3 { width: 60px; height: 60px; bottom: 25px; right: 35%; animation-duration: 7s; background-color: rgba(255, 255, 255, 0.08);}
+
+        /* --- Section Styling --- */
+        section { padding: 4rem 0; border-bottom: 1px solid #eee; }
+        main section:last-of-type { border-bottom: none; }
+        section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); margin-bottom: 2rem; text-align: center; position: relative; padding-bottom: 10px; }
+        section h2::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 60px; height: 4px; background-color: var(--accent-color); border-radius: 2px; }
+        /* Custom Section H2 Colors */
+        #welcome h2 { color: var(--info-color); }
+        #using-input h2 { color: var(--primary-color); }
+        #the-catch h2 { color: var(--warning-color); }
+        #conversion-tools h2 { color: var(--success-color); }
+        #putting-it-together h2 { color: var(--nav-primary); } /* Purple */
+
+        /* --- Welcome Section (Module 4) --- */
+        #welcome p { font-size: 1.1rem; max-width: 700px; margin: 0 auto 1rem; text-align: center; }
+
+        /* --- Using Input() Section --- */
+        #using-input .input-analogy {
+            display: flex; align-items: center; justify-content: space-around;
+            background-color: #fff; padding: 2rem; border-radius: var(--border-radius);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08); margin-top: 2rem; flex-wrap: wrap; gap: 1.5rem;
+        }
+        .analogy-part { /* Reused class */
+            text-align: center; max-width: 220px; /* Slightly wider */ opacity: 0; transform: scale(0.9);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+        .analogy-part.visible { opacity: 1; transform: scale(1); }
+        .analogy-icon { /* Reused class */
+            font-size: 3rem; margin-bottom: 1rem; color: var(--primary-color);
+            display: inline-block; transition: transform var(--transition-speed) ease;
+        }
+        .analogy-part:hover .analogy-icon { transform: scale(1.15) rotate(3deg); }
+        .analogy-arrow { /* Reused class */
+            font-size: 2.5rem; color: var(--secondary-color); opacity: 0;
+            transition: opacity 0.5s ease 0.3s;
+        }
+        .analogy-arrow.visible { opacity: 0.7; }
+
+        /* --- The Catch Section --- */
+        #the-catch .catch-explanation {
+            display: flex; align-items: center; justify-content: center; gap: 2rem;
+            background-color: #fff3cd; border: 1px solid var(--warning-color); color: #664d03;
+            padding: 1.5rem 2rem; border-radius: var(--border-radius); margin-top: 2rem; flex-wrap: wrap;
+        }
+        .catch-icon { font-size: 3rem; color: var(--warning-color); animation: shake 1.5s infinite ease-in-out; }
+        .catch-text { font-size: 1.1rem; max-width: 600px; }
+        .catch-text code { background-color: rgba(253, 126, 20, 0.15); padding: 0.2em 0.4em; border-radius: 4px; font-family: 'Courier New', Courier, monospace;}
+
+        /* --- Conversion Tools Section --- */
+        #conversion-tools .features { /* Reused class name */
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); /* Adjust minmax */
+            gap: 2rem; margin-top: 2rem;
+        }
+        .feature-card { /* Reused class */
+            background-color: #fff; padding: 1.5rem; border-radius: var(--border-radius);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.07); text-align: center;
+            transition: transform var(--transition-speed) ease, box-shadow var(--transition-speed) ease;
+             opacity: 0; transform: translateY(20px); /* Keep fade in */
+            animation: fadeInAnimation 0.6s ease-out forwards; /* Keep fade in */
+            border-top: 5px solid transparent; /* Add space for colored border */
+            position: relative; /* For potential pseudo-elements */
+        }
+        .feature-card:nth-child(1) { animation-delay: 0.2s; border-top-color: var(--int-color); }
+        .feature-card:nth-child(2) { animation-delay: 0.4s; border-top-color: var(--float-color); }
+        .feature-card:nth-child(3) { animation-delay: 0.6s; border-top-color: var(--str-color); }
+        .feature-card:hover { transform: translateY(-5px) scale(1.02); box-shadow: 0 8px 20px rgba(0,0,0,0.12); }
+        .feature-icon { font-size: 2.5rem; margin-bottom: 1rem; color: var(--primary-color); /* Default */ }
+        /* Specific icon colors matching border */
+        #card-int .feature-icon { color: var(--int-color); }
+        #card-float .feature-icon { color: var(--float-color); }
+        #card-str .feature-icon { color: var(--str-color); }
+
+        .feature-card h3 { font-family: var(--font-body); font-weight: 700; font-size: 1.3rem; margin-bottom: 0.8rem; color: var(--text-dark); }
+        /* No details to expand here, keeping it simple */
+        .feature-card p { font-size: 0.95rem; color: var(--secondary-color); }
+
+
+        /* --- Putting It Together Section --- */
+        #putting-it-together .explanation { display: flex; gap: 2rem; align-items: flex-start; margin-top: 2rem; flex-wrap: wrap; }
+        .input-demo { /* Renamed from variable-demo */
+            flex-basis: 55%; background-color: var(--background-dark); color: #eee;
+            padding: 1.5rem; border-radius: var(--border-radius); font-family: 'Courier New', Courier, monospace;
+            position: relative; min-height: 330px; /* Increased height for more lines */ box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            font-size: 0.9rem; /* Slightly smaller */
+        }
+        .input-demo .code-line { margin-bottom: 0.7rem; display: block; }
+        .input-demo .code-line.comment-line { color: var(--code-comment); font-style: italic; margin-top: 0.5rem; }
+        .input-demo .code-output-area {
+            color: var(--accent-color); font-weight: bold; font-size: 1rem;
+            border-top: 1px dashed var(--secondary-color); padding-top: 1rem; margin-top: 1.5rem;
+            opacity: 0; transition: opacity 0.8s ease 1.8s; /* Delay appearance longer */
+        }
+        .input-demo .code-output-area.visible { opacity: 1; }
+        .input-text { /* Renamed from variable-text */ flex-basis: 40%; font-size: 1.05rem; }
+        .input-text p { margin-bottom: 1rem; }
+        .code-highlight { /* Reused */
+            background-color: rgba(0, 123, 255, 0.1); color: #0056b3; padding: 0.2em 0.4em;
+            border-radius: 4px; font-family: 'Courier New', Courier, monospace; font-weight: bold;
+            cursor: pointer; transition: background-color var(--transition-speed);
+            display: inline-block; position: relative;
+        }
+         /* Specific highlights */
+        .highlight-input { background-color: rgba(23, 162, 184, 0.15); color: #0d6efd; }
+        .highlight-convert { background-color: rgba(40, 167, 69, 0.15); color: var(--success-color); }
+
+        .code-highlight:hover { background-color: rgba(0, 123, 255, 0.2); }
+        .highlight-input:hover { background-color: rgba(23, 162, 184, 0.3); }
+        .highlight-convert:hover { background-color: rgba(40, 167, 69, 0.3); }
+
+        /* Tooltip */
+        .tooltip {
+            visibility: hidden; width: 200px; /* Wider for descriptions */ background-color: var(--background-dark);
+            color: var(--text-light); text-align: center; border-radius: 6px; padding: 8px 5px;
+            position: absolute; z-index: 1; bottom: 125%; left: 50%; margin-left: -100px; /* Adjusted */
+            opacity: 0; transition: opacity 0.3s; font-family: var(--font-body);
+            font-size: 0.9rem; font-weight: normal; pointer-events: none; line-height: 1.3;
+        }
+        .tooltip::after { content: ""; position: absolute; top: 100%; left: 50%; margin-left: -5px; border-width: 5px; border-style: solid; border-color: var(--background-dark) transparent transparent transparent; }
+        .code-highlight:hover .tooltip { visibility: visible; opacity: 1; }
+        /* Code syntax colors */
+        .code-variable { color: #9cdcfe; } .code-operator { color: #d4d4d4; }
+        .code-keyword { color: #569cd6; } /* print, int, float, str */
+        .code-string { color: var(--str-color); } .code-comment { color: #6a9955; }
+        .code-function { color: #dcdcaa; } /* input */
+        .code-number { color: var(--float-color); } .code-builtin { color: #4ec9b0; } /* type results */
+
+        /* --- Knowledge Check Section --- */
+        #knowledge-check { background-color: #e9ecef; }
+        .quiz-container { background-color: #fff; padding: 2rem; border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.1); max-width: 700px; margin: 2rem auto 0; }
+        .quiz-question { font-size: 1.2rem; font-weight: bold; margin-bottom: 1.5rem; color: var(--text-dark); }
+        .quiz-options button { display: block; width: 100%; padding: 1rem; margin-bottom: 1rem; text-align: left; font-size: 1rem; background-color: #f8f9fa; border: 1px solid #ced4da; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), border-color var(--transition-speed), transform var(--transition-speed); }
+        .quiz-options button:not(:disabled):hover { background-color: #e2e6ea; border-color: #adb5bd; transform: translateX(5px); }
+        .quiz-options button:disabled { cursor: default; opacity: 0.7; }
+        .quiz-options button.correct { background-color: #d4edda; border-color: var(--success-color); color: #155724; font-weight: bold; }
+        .quiz-options button.incorrect { background-color: #f8d7da; border-color: var(--error-color); color: #721c24; font-weight: bold; }
+        .quiz-options button.incorrect.shake { animation: shake 0.5s ease; }
+        .quiz-feedback { margin-top: 1.5rem; padding: 1rem; border-radius: var(--border-radius); font-weight: bold; text-align: center; opacity: 0; transition: opacity 0.5s ease; height: 0; overflow: hidden; }
+        .quiz-feedback.visible { opacity: 1; height: auto; margin-bottom: 1rem; }
+        .quiz-feedback.correct { background-color: #d4edda; color: #155724; }
+        .quiz-feedback.incorrect { background-color: #f8d7da; color: #721c24; }
+        #next-question-btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5em; margin: 1.5rem auto 0; padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold; color: var(--text-light); background-color: var(--primary-color); border: none; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), transform var(--transition-speed), opacity 0.3s, visibility 0.3s; opacity: 0; visibility: hidden; }
+        #next-question-btn:hover { background-color: #0056b3; transform: scale(1.05); }
+        #next-question-btn.visible { opacity: 1; visibility: visible; }
+
+        /* --- Completion Section Styling --- */
+        .completion-section { padding: 4rem 0; text-align: center; background-color: var(--background-light); }
+        .completion-section .icon { font-size: 4rem; color: var(--success-color); margin-bottom: 1rem; display: inline-block; opacity: 0; animation: iconAppearCorrect 1s ease-out 0.5s forwards; }
+        .completion-section .icon .fas + .fas { margin-left: 0.75rem; }
+        .completion-section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); margin-bottom: 1rem; }
+        .completion-section h2::after { display: none; } /* Remove underline */
+        .completion-section p { font-size: 1.1rem; margin-top: 1rem; color: var(--secondary-color); max-width: 700px; margin-left: auto; margin-right: auto; line-height: 1.8; }
+        .completion-section .button-group { margin-top: 2.5rem; }
+
+        /* --- Footer --- */
+        .main-footer { background-color: var(--background-dark); color: var(--text-light); text-align: center; padding: 1.5rem 0; font-size: 0.9rem; margin-top: auto; }
+
+        /* --- Responsive Design --- */
+        @media (max-width: 768px) {
+            html { font-size: 15px; }
+            .main-header h1 { font-size: 2.5rem; } .main-header p { font-size: 1.1rem; }
+            section h2 { font-size: 1.8rem; }
+            .input-analogy { flex-direction: column; gap: 1.5rem; }
+            .analogy-arrow { transform: rotate(90deg); margin: 1rem 0; }
+            #conversion-tools .features { grid-template-columns: 1fr; }
+            #putting-it-together .explanation { flex-direction: column; }
+            .input-demo, .input-text { flex-basis: 100%; }
+            .minimal-nav { min-width: 180px; } .minimal-nav ul li a { padding: 0.6rem 0.8rem; }
+            #languageSelect { font-size: 0.85rem; padding: 5px 25px 5px 10px;}
+            .completion-section h2 { font-size: 2rem; }
+            .completion-section .button-group { flex-direction: column; align-items: center; gap: 0.8rem; }
+            .completion-section .action-button { width: 80%; max-width: 350px; margin-top: 0; }
+            .catch-explanation { flex-direction: column; text-align: center; }
+        }
+        @media (max-width: 480px) {
+            html { font-size: 14px; }
+            .main-header h1 { font-size: 2rem; } .main-header p { font-size: 1rem; }
+            section h2 { font-size: 1.6rem; }
+            .quiz-options button { padding: 0.8rem; font-size: 0.95rem; }
+            .tooltip { width: 160px; margin-left: -80px; font-size: 0.8rem;} /* Adjusted tooltip width */
+            .minimal-nav-button { top: 10px; right: 10px; padding: 6px 10px; font-size: 1rem; }
+            .minimal-nav { top: 48px; right: 10px; min-width: 160px; }
+            .minimal-nav ul li a { padding: 0.5rem 0.7rem; font-size: 0.9rem;}
+            .minimal-nav ul li a i.fas { margin-right: 8px; }
+            #languageSelect { font-size: 0.8rem; padding: 4px 20px 4px 8px;}
+            .completion-section .icon { font-size: 3.5rem; }
+            .completion-section h2 { font-size: 1.8rem; } .completion-section p { font-size: 1rem; }
+            .completion-section .action-button { width: 90%; max-width: 300px; }
+            .input-demo { font-size: 0.85rem; min-height: 300px; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- ========= Minimal Nav Handle ========= -->
+    <button id="minimal-nav-toggle" class="minimal-nav-button" aria-label="Toggle Navigation Menu">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- ========= Minimal Nav Panel (with Language Switcher) ========= -->
+    <nav id="minimal-nav-panel" class="minimal-nav">
+        <ul>
+            <!-- Links to OTHER main pages - UPDATED FOR MODULE 4 -->
+            <li><a href="ctp-practice-4.html"><i class="fas fa-pencil-alt fa-fw"></i> <span data-translate="nav_practice">Practice</span></a></li>
+            <li><a href="ctp-advanced-4.html"><i class="fas fa-flask fa-fw"></i> <span data-translate="nav_advanced">Advanced Practice</span></a></li>
+            <li><a href="ctp-dashboard.html"><i class="fas fa-list fa-fw"></i> <span data-translate="nav_menu">Course Menu</span></a></li>
+             <hr style="border: none; border-top: 1px solid var(--secondary-color); margin: 8px 0;">
+             <!-- Links to sections on THIS page -->
+             <li><a href="#welcome"><i class="fas fa-door-open fa-fw"></i> <span data-translate="nav_welcome_m4">Welcome M4</span></a></li>
+             <li><a href="#using-input"><i class="fas fa-keyboard fa-fw"></i> <span data-translate="nav_using_input">Using input()</span></a></li>
+             <li><a href="#the-catch"><i class="fas fa-exclamation-triangle fa-fw"></i> <span data-translate="nav_the_catch">The Catch</span></a></li>
+             <li><a href="#conversion-tools"><i class="fas fa-exchange-alt fa-fw"></i> <span data-translate="nav_conversion">Conversion</span></a></li>
+             <li><a href="#putting-it-together"><i class="fas fa-cogs fa-fw"></i> <span data-translate="nav_putting_together">In Action</span></a></li>
+             <li><a href="#knowledge-check"><i class="fas fa-check-double fa-fw"></i> <span data-translate="nav_quiz">Knowledge Check</span></a></li>
+            <!-- Language Switcher Item -->
+            <li class="language-switcher-item">
+                 <select id="languageSelect" aria-label="Select Language">
+                     <option value="en" data-translate="lang_en">🇬🇧 English</option>
+                     <option value="pt" data-translate="lang_pt">🇧🇷 Português</option>
+                     <option value="zh" data-translate="lang_zh">🇨🇳 中文</option>
+                 </select>
+            </li>
+        </ul>
+    </nav>
+
+    <header class="main-header">
+        <!-- Decorative shapes -->
+        <div class="header-shape shape1"></div>
+        <div class="header-shape shape2"></div>
+        <div class="header-shape shape3"></div>
+
+        <div class="container">
+            <h1 data-translate="header_title_m4">Module 4: Interacting with Your AI</h1>
+            <p data-translate="header_subtitle_m4">Learn how Python gets input from users and handles different data types.</p>
+        </div>
+    </header>
+
+    <main>
+        <!-- ========= Welcome Section (Module 4) ========= -->
+        <section id="welcome">
+            <div class="container">
+                <h2 class="fade-in" data-translate="welcome_title_m4">🗣️ Let's Talk!</h2>
+                <p class="fade-in delay-1" data-translate="welcome_p1_m4">
+                    Welcome to Module 4! So far, our code runs the same way every time. But what if we want our program (or AI) to be more dynamic? What if it needs information <span class="highlight">from the user</span> while it's running?
+                </p>
+                <p class="fade-in delay-2" data-translate="welcome_p2_m4">
+                    This is crucial for setting parameters, providing data, or guiding an AI's behavior. Python has a built-in way to pause and ask the user for input. Let's see how!
+                </p>
+            </div>
+        </section>
+
+        <!-- ========= Using input() Section ========= -->
+        <section id="using-input">
+            <div class="container">
+                <h2 class="fade-in" data-translate="using_input_title">⌨️ Getting Input with `input()`</h2>
+                <p class="text-center fade-in delay-1" data-translate="using_input_subtitle">Python uses the `input()` function to ask the user a question and wait for an answer.</p>
+
+                <div class="input-analogy fade-in delay-2">
+                    <!-- Analogy: Prompt -> User Types -> Input() Captures as String -->
+                    <div class="analogy-part">
+                        <span class="analogy-icon">❓</span> <!-- Question/Prompt Icon -->
+                        <h3 data-translate="analogy_prompt_title">The Prompt</h3>
+                        <p data-translate="analogy_prompt_text">Your program displays a message asking for information.</p>
+                    </div>
+                    <div class="analogy-arrow">➡️</div>
+                    <div class="analogy-part">
+                        <span class="analogy-icon">⌨️</span> <!-- Keyboard Icon -->
+                        <h3 data-translate="analogy_typing_title">User Responds</h3>
+                        <p data-translate="analogy_typing_text">The user types their answer and presses Enter.</p>
+                    </div>
+                    <div class="analogy-arrow">➡️</div>
+                    <div class="analogy-part">
+                        <span class="analogy-icon" style="color: var(--str-color);">✉️</span> <!-- Mail/String Icon -->
+                        <h3 data-translate="analogy_result_title">`input()` Captures Text</h3>
+                        <p data-translate="analogy_result_text">The `input()` function receives the user's typed response <span class="highlight">as text (a string)</span>.</p>
+                    </div>
+                </div>
+
+                 <p class="text-center fade-in delay-3" style="margin-top: 2rem;" data-translate="using_input_conclusion">`input()` provides the bridge for user interaction, always delivering the result as text.</p>
+
+            </div>
+        </section>
+
+        <!-- ========= The Catch Section ========= -->
+        <section id="the-catch">
+            <div class="container">
+                <h2 class="fade-in" data-translate="the_catch_title">⚠️ The Catch: Everything's Text!</h2>
+                 <p class="text-center fade-in delay-1" data-translate="the_catch_subtitle">There's one crucial detail about `input()` you MUST remember.</p>
+
+                <div class="catch-explanation fade-in delay-2">
+                    <span class="catch-icon">🧐</span>
+                    <div class="catch-text">
+                        <p data-translate="the_catch_p1">No matter what the user types – even if it looks like a number – the <span class="code-highlight highlight-input" data-translate-tooltip="tooltip_input_returns">`input()`<span class="tooltip">Always returns the user's typed characters as a string (text).</span></span> function <span class="warning-highlight">ALWAYS</span> returns the data as a <span class="code-highlight" data-translate-tooltip="tooltip_string_type">string (`str`)<span class="tooltip">Remember? Text data enclosed in quotes.</span></span>.</p>
+                        <p data-translate="the_catch_p2">This means if you try to do math directly with the result, you might get unexpected behavior (like text joining instead of adding)!</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========= Conversion Tools Section ========= -->
+        <section id="conversion-tools">
+            <div class="container">
+                <h2 class="fade-in" data-translate="conversion_title">🔧 Conversion Tools: `int()`, `float()`, `str()`</h2>
+                <p class="text-center fade-in delay-1" data-translate="conversion_subtitle">Since `input()` gives us text, we often need to convert it to the *actual* type we need.</p>
+
+                <div class="features"> <!-- Reusing 'features' class -->
+                    <!-- Card 1: int() -->
+                    <div class="feature-card" id="card-int">
+                        <span class="feature-icon">🔢</span>
+                        <h3 data-translate="feature_int_title_conv">`int()`</h3>
+                        <p data-translate="feature_int_text_conv">Converts a string (or float) <span class="highlight">into a whole number (integer)</span>. Fails if the string isn't a valid whole number.</p>
+                         <!-- Example: '123' -> 123 -->
+                    </div>
+
+                    <!-- Card 2: float() -->
+                    <div class="feature-card" id="card-float">
+                        <span class="feature-icon">💧</span>
+                        <h3 data-translate="feature_float_title_conv">`float()`</h3>
+                         <p data-translate="feature_float_text_conv">Converts a string (or integer) <span class="highlight">into a decimal number (float)</span>. Fails if the string isn't a valid number.</p>
+                         <!-- Example: '3.14' -> 3.14 -->
+                    </div>
+
+                    <!-- Card 3: str() -->
+                    <div class="feature-card" id="card-str">
+                        <span class="feature-icon">🔡</span>
+                        <h3 data-translate="feature_str_title_conv">`str()`</h3>
+                        <p data-translate="feature_str_text_conv">Converts almost any other data type <span class="highlight">back into its text representation (string)</span>.</p>
+                         <!-- Example: 42 -> '42' -->
+                    </div>
+                </div>
+                 <p class="text-center fade-in delay-4" style="margin-top: 2rem;" data-translate="conversion_conclusion">These functions are essential for handling user input correctly!</p>
+            </div>
+        </section>
+
+
+        <!-- ========= Putting It Together Section ========= -->
+        <section id="putting-it-together">
+             <div class="container">
+                 <h2 class="fade-in" data-translate="putting_together_title">⚙️ Input & Conversion in Action</h2>
+                 <p class="text-center fade-in delay-1" data-translate="putting_together_subtitle">Let's ask the user for some AI parameters and use them.</p>
+
+                 <div class="explanation fade-in delay-2">
+                     <div class="input-demo">
+                        <span class="code-line">
+                            <span class="code-variable">year_prompt</span> <span class="code-operator">=</span> <span class="code-string">"Target year for AI goal: "</span>
+                        </span>
+                        <span class="code-line">
+                            <span class="code-variable">target_year_str</span> <span class="code-operator">=</span> <span class="code-function">input</span>(<span class="code-variable">year_prompt</span>) <span class="code-comment"># Get input (always str)</span>
+                        </span>
+                        <span class="code-line comment-line" data-translate="comment_need_convert"># We need an integer for calculations, so convert!</span>
+                         <span class="code-line">
+                            <span class="code-variable">target_year_int</span> <span class="code-operator">=</span> <span class="code-keyword">int</span>(<span class="code-variable">target_year_str</span>) <span class="code-comment"># Convert str to int</span>
+                        </span>
+
+                         <span class="code-line" style="margin-top: 1rem;">
+                            <span class="code-variable">accuracy_prompt</span> <span class="code-operator">=</span> <span class="code-string">"Desired accuracy (e.g., 0.95): "</span>
+                         </span>
+                         <span class="code-line">
+                            <span class="code-variable">accuracy_str</span> <span class="code-operator">=</span> <span class="code-function">input</span>(<span class="code-variable">accuracy_prompt</span>) <span class="code-comment"># Get input (always str)</span>
+                         </span>
+                         <span class="code-line comment-line" data-translate="comment_need_convert_float"># Need a float for precision, convert!</span>
+                         <span class="code-line">
+                             <span class="code-variable">accuracy_float</span> <span class="code-operator">=</span> <span class="code-keyword">float</span>(<span class="code-variable">accuracy_str</span>) <span class="code-comment"># Convert str to float</span>
+                         </span>
+
+                         <span class="code-line" style="margin-top: 1.5rem;">
+                            <span class="code-keyword">print</span>(<span class="code-string">"Setting goal for year:"</span>, <span class="code-variable">target_year_int</span>)
+                         </span>
+                         <span class="code-line">
+                            <span class="code-keyword">print</span>(<span class="code-string">"Aiming for accuracy:"</span>, <span class="code-variable">accuracy_float</span>)
+                         </span>
+                          <span class="code-line">
+                            <span class="code-keyword">print</span>(<span class="code-string">"Input types were:"</span>, <span class="code-keyword">type</span>(<span class="code-variable">target_year_str</span>), <span class="code-keyword">type</span>(<span class="code-variable">accuracy_str</span>))
+                         </span>
+                          <span class="code-line">
+                             <span class="code-keyword">print</span>(<span class="code-string">"Converted types are:"</span>, <span class="code-keyword">type</span>(<span class="code-variable">target_year_int</span>), <span class="code-keyword">type</span>(<span class="code-variable">accuracy_float</span>))
+                         </span>
+
+                        <div class="code-output-area">
+                            <!-- Output will appear here via JS - showing interaction simulation -->
+                            <!-- Example: -->
+                            <!-- Target year for AI goal: 2030 -->
+                            <!-- Desired accuracy (e.g., 0.95): 0.98 -->
+                            <!-- > Setting goal for year: 2030 -->
+                            <!-- > Aiming for accuracy: 0.98 -->
+                            <!-- > Input types were: <class 'str'> <class 'str'> -->
+                            <!-- > Converted types are: <class 'int'> <class 'float'> -->
+                        </div>
+                     </div>
+                     <div class="input-text fade-in delay-3"> <!-- Renamed class -->
+                         <p data-translate="putting_together_p1_m4">This code asks the user for two pieces of information: a target year and a desired accuracy level.</p>
+                         <p data-translate="putting_together_p2_m4">
+                             Notice how we first use <span class="code-highlight highlight-input" data-translate-tooltip="tooltip_input_use">`input()`<span class="tooltip">Gets the user's text input using the provided prompt message.</span></span> to get the data, storing the results (which are strings) in `target_year_str` and `accuracy_str`.
+                         </p>
+                         <p data-translate="putting_together_p3_m4">
+                             <span class="highlight">Crucially</span>, we then use
+                             <span class="code-highlight highlight-convert" data-translate-tooltip="tooltip_int_use">`int()`<span class="tooltip">Converts the year string into an integer number.</span></span> and
+                             <span class="code-highlight highlight-convert" data-translate-tooltip="tooltip_float_use">`float()`<span class="tooltip">Converts the accuracy string into a floating-point (decimal) number.</span></span>
+                             to convert those strings into the numerical types we actually need for potential calculations or comparisons.
+                         </p>
+                         <p data-translate="putting_together_p4_m4">
+                            Finally, we print the <span class="highlight">converted</span> values and use `type()` to confirm the successful change from `str` to `int` and `float`. This is fundamental for handling user-provided data effectively!
+                         </p>
+                     </div>
+                 </div>
+             </div>
+        </section>
+
+        <!-- ========= Knowledge Check Section ========= -->
+        <section id="knowledge-check">
+            <div class="container">
+                <h2 class="fade-in" data-translate="quiz_title">🧠 Quick Check!</h2>
+                <div class="quiz-container fade-in delay-1">
+                    <div id="quiz-area">
+                        <!-- Quiz questions will be loaded here by JavaScript -->
+                    </div>
+                    <div id="quiz-feedback" class="quiz-feedback">
+                        <!-- Feedback (Correct/Incorrect) shown here -->
+                    </div>
+                    <button id="next-question-btn" data-translate="quiz_next_button">Next Question</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========= Completion Section ========= -->
+        <section class="completion-section">
+            <div class="container">
+                 <div class="icon"> <!-- Animation applied via CSS -->
+                    <i class="fas fa-check-double"></i>
+                    <i class="fas fa-keyboard"></i> <!-- Input icon -->
+                     <i class="fas fa-exchange-alt"></i> <!-- Conversion icon -->
+                    <i class="fas fa-star"></i>
+                </div>
+                <h2 class="fade-in delay-1" data-translate="completion_theory_title_m4">Module 4 Theory Complete!</h2>
+                <p class="fade-in delay-2" data-translate="completion_theory_desc_m4">
+                    Fantastic! You now know how to make your Python programs interactive using `input()` and how to handle the data correctly with type conversions. <br>
+                    Time to practice these essential skills! Head to the <strong>Practice Zone</strong> or tackle the <strong>Advanced Practice</strong> for Module 4.
+                </p>
+                <div class="button-group">
+                    <!-- UPDATED Links for Module 4 -->
+                    <a href="ctp-dashboard.html" class="action-button secondary fade-in delay-3"><i class="fas fa-list"></i> <span data-translate="nav_menu">Course Menu</span></a>
+                    <a href="ctp-practice-4.html" class="action-button success fade-in delay-4"><i class="fas fa-pencil-alt"></i> <span data-translate="nav_practice">Start Practice</span></a>
+                    <a href="ctp-advanced-4.html" class="action-button secondary fade-in delay-5"><i class="fas fa-flask"></i> <span data-translate="nav_advanced">Advanced Practice</span></a>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="main-footer">
+        <div class="container">
+            <!-- Footer text kept minimal -->
+        </div>
+    </footer>
+
+    <script>
+    // --- Translations Object ---
+    const translations = {
+        en: {
+            "page_title": "Module 4: Getting User Input",
+            "nav_practice": "Start Practice",
+            "nav_advanced": "Advanced Practice",
+            "nav_menu": "Course Menu",
+            "nav_welcome_m4": "Welcome M4", "nav_using_input": "Using input()", "nav_the_catch": "The Catch", "nav_conversion": "Conversion", "nav_putting_together": "In Action", "nav_quiz": "Knowledge Check",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title_m4": "Module 4: Interacting with Your AI", "header_subtitle_m4": "Learn how Python gets input from users and handles different data types.",
+            "welcome_title_m4": "🗣️ Let's Talk!",
+            "welcome_p1_m4": "Welcome to Module 4! So far, our code runs the same way every time. But what if we want our program (or AI) to be more dynamic? What if it needs information from the user while it's running?",
+            "welcome_p2_m4": "This is crucial for setting parameters, providing data, or guiding an AI's behavior. Python has a built-in way to pause and ask the user for input. Let's see how!",
+            "using_input_title": "⌨️ Getting Input with `input()`", "using_input_subtitle": "Python uses the `input()` function to ask the user a question and wait for an answer.",
+            "analogy_prompt_title": "The Prompt", "analogy_prompt_text": "Your program displays a message asking for information.",
+            "analogy_typing_title": "User Responds", "analogy_typing_text": "The user types their answer and presses Enter.",
+            "analogy_result_title": "`input()` Captures Text", "analogy_result_text": "The `input()` function receives the user's typed response as text (a string).",
+            "using_input_conclusion": "`input()` provides the bridge for user interaction, always delivering the result as text.",
+            "the_catch_title": "⚠️ The Catch: Everything's Text!", "the_catch_subtitle": "There's one crucial detail about `input()` you MUST remember.",
+            "the_catch_p1": "No matter what the user types – even if it looks like a number – the <code>input()</code> function ALWAYS returns the data as a string (`str`).",
+            "the_catch_p2": "This means if you try to do math directly with the result, you might get unexpected behavior (like text joining instead of adding)!",
+            "tooltip_input_returns": "Always returns the user's typed characters as a string (text).", "tooltip_string_type": "Remember? Text data enclosed in quotes.",
+            "conversion_title": "🔧 Conversion Tools: `int()`, `float()`, `str()`", "conversion_subtitle": "Since `input()` gives us text, we often need to convert it to the *actual* type we need.",
+            "feature_int_title_conv": "`int()`", "feature_int_text_conv": "Converts a string (or float) into a whole number (integer). Fails if the string isn't a valid whole number.",
+            "feature_float_title_conv": "`float()`", "feature_float_text_conv": "Converts a string (or integer) into a decimal number (float). Fails if the string isn't a valid number.",
+            "feature_str_title_conv": "`str()`", "feature_str_text_conv": "Converts almost any other data type back into its text representation (string).",
+            "conversion_conclusion": "These functions are essential for handling user input correctly!",
+            "putting_together_title": "⚙️ Input & Conversion in Action", "putting_together_subtitle": "Let's ask the user for some AI parameters and use them.",
+            "comment_need_convert": "# We need an integer for calculations, so convert!", "comment_need_convert_float": "# Need a float for precision, convert!",
+            "putting_together_p1_m4": "This code asks the user for two pieces of information: a target year and a desired accuracy level.",
+            "putting_together_p2_m4": "Notice how we first use <code>input()</code> to get the data, storing the results (which are strings) in <code>target_year_str</code> and <code>accuracy_str</code>.",
+            "putting_together_p3_m4": "Crucially, we then use <code>int()</code> and <code>float()</code> to convert those strings into the numerical types we actually need for potential calculations or comparisons.",
+            "putting_together_p4_m4": "Finally, we print the converted values and use <code>type()</code> to confirm the successful change from `str` to `int` and `float`. This is fundamental for handling user-provided data effectively!",
+            "tooltip_input_use": "Gets the user's text input using the provided prompt message.", "tooltip_int_use": "Converts the year string into an integer number.", "tooltip_float_use": "Converts the accuracy string into a floating-point (decimal) number.",
+            "quiz_title": "🧠 Quick Check!", "quiz_next_button": "Next Question",
+            "quiz_q1_m4": "What data type does the `input()` function ALWAYS return?",
+            "quiz_q1_m4_opt1": "integer (int)", "quiz_q1_m4_opt2": "float", "quiz_q1_m4_opt3": "string (str)", "quiz_q1_m4_opt4": "It depends on what the user types.",
+            "quiz_q2_m4": "If a user types `42` in response to `input()`, and you want to perform math with it, what function should you use first?",
+            "quiz_q2_m4_opt1": "`str()`", "quiz_q2_m4_opt2": "`int()`", "quiz_q2_m4_opt3": "`print()`", "quiz_q2_m4_opt4": "`type()`",
+            "quiz_q3_m4": "Which function would you use to convert the string `'3.14159'` into a number with a decimal point?",
+            "quiz_q3_m4_opt1": "`int()`", "quiz_q3_m4_opt2": "`string()`", "quiz_q3_m4_opt3": "`float()`", "quiz_q3_m4_opt4": "`round()`",
+            "quiz_q4_m4": "What is the primary purpose of type conversion functions like `int()`, `float()`, and `str()` when working with `input()`?",
+            "quiz_q4_m4_opt1": "To make the code look cleaner.", "quiz_q4_m4_opt2": "To change the user's input before they type it.", "quiz_q4_m4_opt3": "To convert the string returned by `input()` into a usable data type (like number or back to string).", "quiz_q4_m4_opt4": "To check if the user typed the correct thing.",
+            "quiz_feedback_correct": "Correct! 🎉", "quiz_feedback_incorrect": "Not quite! The correct answer was: {correctAnswerText}",
+            "quiz_final_score_title": "Module 4 Complete!", "quiz_final_score_summary": "You answered {score} out of {total} questions correctly.",
+            "quiz_final_score_perfect": "Excellent! You understand user input and conversion.", "quiz_final_score_good": "Great progress! Practice makes perfect with input handling.",
+            "completion_theory_title_m4": "Module 4 Theory Complete!",
+            "completion_theory_desc_m4": "Fantastic! You now know how to make your Python programs interactive using `input()` and how to handle the data correctly with type conversions. <br> Time to practice these essential skills! Head to the <strong>Practice Zone</strong> or tackle the <strong>Advanced Practice</strong> for Module 4."
+        },
+        pt: {
+            "page_title": "Módulo 4: Obtendo Entrada do Usuário",
+            "nav_practice": "Iniciar Prática",
+            "nav_advanced": "Prática Avançada",
+            "nav_menu": "Menu do Curso",
+            "nav_welcome_m4": "Boas-vindas M4", "nav_using_input": "Usando input()", "nav_the_catch": "A Pegadinha", "nav_conversion": "Conversão", "nav_putting_together": "Em Ação", "nav_quiz": "Teste Rápido",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title_m4": "Módulo 4: Interagindo com sua IA", "header_subtitle_m4": "Aprenda como o Python obtém entrada dos usuários e lida com diferentes tipos de dados.",
+            "welcome_title_m4": "🗣️ Vamos Conversar!",
+            "welcome_p1_m4": "Bem-vindo ao Módulo 4! Até agora, nosso código executa da mesma forma todas as vezes. Mas e se quisermos que nosso programa (ou IA) seja mais dinâmico? E se precisar de informações do usuário enquanto está em execução?",
+            "welcome_p2_m4": "Isso é crucial para definir parâmetros, fornecer dados ou guiar o comportamento de uma IA. O Python tem uma forma integrada de pausar e pedir entrada ao usuário. Vamos ver como!",
+            "using_input_title": "⌨️ Obtendo Entrada com `input()`", "using_input_subtitle": "O Python usa a função `input()` para fazer uma pergunta ao usuário e esperar por uma resposta.",
+            "analogy_prompt_title": "A Pergunta", "analogy_prompt_text": "Seu programa exibe uma mensagem pedindo informações.",
+            "analogy_typing_title": "Usuário Responde", "analogy_typing_text": "O usuário digita sua resposta e pressiona Enter.",
+            "analogy_result_title": "`input()` Captura Texto", "analogy_result_text": "A função `input()` recebe a resposta digitada pelo usuário como texto (uma string).",
+            "using_input_conclusion": "`input()` fornece a ponte para a interação do usuário, sempre entregando o resultado como texto.",
+            "the_catch_title": "⚠️ A Pegadinha: Tudo é Texto!", "the_catch_subtitle": "Há um detalhe crucial sobre `input()` que você DEVE lembrar.",
+            "the_catch_p1": "Não importa o que o usuário digite – mesmo que pareça um número – a função <code>input()</code> SEMPRE retorna os dados como uma string (`str`).",
+            "the_catch_p2": "Isso significa que se você tentar fazer matemática diretamente com o resultado, pode ter um comportamento inesperado (como juntar texto em vez de somar)!",
+            "tooltip_input_returns": "Sempre retorna os caracteres digitados pelo usuário como uma string (texto).", "tooltip_string_type": "Lembra? Dados de texto entre aspas.",
+            "conversion_title": "🔧 Ferramentas de Conversão: `int()`, `float()`, `str()`", "conversion_subtitle": "Como `input()` nos dá texto, frequentemente precisamos convertê-lo para o tipo *real* que precisamos.",
+            "feature_int_title_conv": "`int()`", "feature_int_text_conv": "Converte uma string (ou float) em um número inteiro (integer). Falha se a string não for um número inteiro válido.",
+            "feature_float_title_conv": "`float()`", "feature_float_text_conv": "Converte uma string (ou inteiro) em um número decimal (float). Falha se a string não for um número válido.",
+            "feature_str_title_conv": "`str()`", "feature_str_text_conv": "Converte quase qualquer outro tipo de dado de volta para sua representação textual (string).",
+            "conversion_conclusion": "Estas funções são essenciais para lidar corretamente com a entrada do usuário!",
+            "putting_together_title": "⚙️ Entrada e Conversão em Ação", "putting_together_subtitle": "Vamos pedir ao usuário alguns parâmetros de IA e usá-los.",
+            "comment_need_convert": "# Precisamos de um inteiro para cálculos, então converta!", "comment_need_convert_float": "# Precisamos de um float para precisão, converta!",
+            "putting_together_p1_m4": "Este código pede ao usuário duas informações: um ano alvo e um nível de precisão desejado.",
+            "putting_together_p2_m4": "Note como primeiro usamos <code>input()</code> para obter os dados, armazenando os resultados (que são strings) em <code>target_year_str</code> e <code>accuracy_str</code>.",
+            "putting_together_p3_m4": "Crucialmente, então usamos <code>int()</code> e <code>float()</code> para converter essas strings nos tipos numéricos que realmente precisamos para potenciais cálculos ou comparações.",
+            "putting_together_p4_m4": "Finalmente, imprimimos os valores convertidos e usamos <code>type()</code> para confirmar a mudança bem-sucedida de `str` para `int` e `float`. Isso é fundamental para lidar eficazmente com dados fornecidos pelo usuário!",
+            "tooltip_input_use": "Obtém a entrada de texto do usuário usando a mensagem de prompt fornecida.", "tooltip_int_use": "Converte a string do ano em um número inteiro.", "tooltip_float_use": "Converte a string de precisão em um número de ponto flutuante (decimal).",
+            "quiz_title": "🧠 Teste Rápido!", "quiz_next_button": "Próxima Pergunta",
+            "quiz_q1_m4": "Qual tipo de dado a função `input()` SEMPRE retorna?",
+            "quiz_q1_m4_opt1": "inteiro (int)", "quiz_q1_m4_opt2": "float", "quiz_q1_m4_opt3": "string (str)", "quiz_q1_m4_opt4": "Depende do que o usuário digitar.",
+            "quiz_q2_m4": "Se um usuário digitar `42` em resposta a `input()`, e você quiser fazer matemática com isso, qual função deve usar primeiro?",
+            "quiz_q2_m4_opt1": "`str()`", "quiz_q2_m4_opt2": "`int()`", "quiz_q2_m4_opt3": "`print()`", "quiz_q2_m4_opt4": "`type()`",
+            "quiz_q3_m4": "Qual função você usaria para converter a string `'3.14159'` em um número com ponto decimal?",
+            "quiz_q3_m4_opt1": "`int()`", "quiz_q3_m4_opt2": "`string()`", "quiz_q3_m4_opt3": "`float()`", "quiz_q3_m4_opt4": "`round()`",
+            "quiz_q4_m4": "Qual é o propósito principal das funções de conversão de tipo como `int()`, `float()` e `str()` ao trabalhar com `input()`?",
+            "quiz_q4_m4_opt1": "Para deixar o código mais limpo.", "quiz_q4_m4_opt2": "Para mudar a entrada do usuário antes que ele digite.", "quiz_q4_m4_opt3": "Para converter a string retornada por `input()` em um tipo de dado utilizável (como número ou de volta para string).", "quiz_q4_m4_opt4": "Para verificar se o usuário digitou a coisa certa.",
+            "quiz_feedback_correct": "Correto! 🎉", "quiz_feedback_incorrect": "Não foi bem assim! A resposta correta era: {correctAnswerText}",
+            "quiz_final_score_title": "Módulo 4 Completo!", "quiz_final_score_summary": "Você respondeu {score} de {total} perguntas corretamente.",
+            "quiz_final_score_perfect": "Excelente! Você entendeu entrada do usuário e conversão.", "quiz_final_score_good": "Ótimo progresso! A prática leva à perfeição no manuseio de entradas.",
+            "completion_theory_title_m4": "Teoria do Módulo 4 Completa!",
+            "completion_theory_desc_m4": "Fantástico! Agora você sabe como tornar seus programas Python interativos usando `input()` e como lidar corretamente com os dados com conversões de tipo. <br> Hora de praticar essas habilidades essenciais! Vá para a <strong>Zona de Prática</strong> ou enfrente a <strong>Prática Avançada</strong> do Módulo 4."
+        },
+        zh: {
+            "page_title": "模块 4：获取用户输入",
+            "nav_practice": "开始练习",
+            "nav_advanced": "高级练习",
+            "nav_menu": "课程菜单",
+            "nav_welcome_m4": "欢迎 M4", "nav_using_input": "使用 input()", "nav_the_catch": "注意点", "nav_conversion": "转换", "nav_putting_together": "实践", "nav_quiz": "知识测验",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title_m4": "模块 4：与你的人工智能互动", "header_subtitle_m4": "学习 Python 如何从用户获取输入并处理不同的数据类型。",
+            "welcome_title_m4": "🗣️ 开始对话！",
+            "welcome_p1_m4": "欢迎来到模块 4！到目前为止，我们的代码每次都以相同的方式运行。但是，如果我们希望我们的程序（或 AI）更具动态性呢？如果它需要在运行时从用户那里获取信息呢？",
+            "welcome_p2_m4": "这对于设置参数、提供数据或指导 AI 的行为至关重要。Python 有一种内置的方法可以暂停并向用户请求输入。让我们看看如何实现！",
+            "using_input_title": "⌨️ 使用 `input()` 获取输入", "using_input_subtitle": "Python 使用 `input()` 函数向用户提问并等待答案。",
+            "analogy_prompt_title": "提示", "analogy_prompt_text": "你的程序显示一条消息，请求信息。",
+            "analogy_typing_title": "用户响应", "analogy_typing_text": "用户输入他们的答案并按 Enter 键。",
+            "analogy_result_title": "`input()` 捕获文本", "analogy_result_text": "`input()` 函数接收用户输入的响应，格式为文本（字符串）。",
+            "using_input_conclusion": "`input()` 提供了用户交互的桥梁，始终以文本形式传递结果。",
+            "the_catch_title": "⚠️ 注意点：一切都是文本！", "the_catch_subtitle": "关于 `input()`，你必须记住一个关键细节。",
+            "the_catch_p1": "无论用户输入什么——即使它看起来像一个数字——<code>input()</code> 函数始终以字符串（`str`）的形式返回数据。",
+            "the_catch_p2": "这意味着如果你尝试直接用结果进行数学运算，可能会得到意想不到的行为（例如文本连接而不是相加）！",
+            "tooltip_input_returns": "始终将用户输入的字符作为字符串（文本）返回。", "tooltip_string_type": "还记得吗？用引号括起来的文本数据。",
+            "conversion_title": "🔧 转换工具：`int()`, `float()`, `str()`", "conversion_subtitle": "由于 `input()` 返回的是文本，我们通常需要将其转换为我们实际需要的类型。",
+            "feature_int_title_conv": "`int()`", "feature_int_text_conv": "将字符串（或浮点数）转换为整数。如果字符串不是有效的整数，则会失败。",
+            "feature_float_title_conv": "`float()`", "feature_float_text_conv": "将字符串（或整数）转换为带小数的数字（浮点数）。如果字符串不是有效的数字，则会失败。",
+            "feature_str_title_conv": "`str()`", "feature_str_text_conv": "将几乎任何其他数据类型转换回其文本表示（字符串）。",
+            "conversion_conclusion": "这些函数对于正确处理用户输入至关重要！",
+            "putting_together_title": "⚙️ 输入与转换实战", "putting_together_subtitle": "让我们向用户询问一些 AI 参数并使用它们。",
+            "comment_need_convert": "# 我们需要一个整数来进行计算，所以进行转换！", "comment_need_convert_float": "# 需要一个浮点数来保证精度，进行转换！",
+            "putting_together_p1_m4": "这段代码向用户询问两条信息：目标年份和期望的准确率。",
+            "putting_together_p2_m4": "注意我们首先如何使用 <code>input()</code> 获取数据，将结果（它们是字符串）存储在 <code>target_year_str</code> 和 <code>accuracy_str</code> 中。",
+            "putting_together_p3_m4": "至关重要的是，我们然后使用 <code>int()</code> 和 <code>float()</code> 将这些字符串转换为我们实际进行潜在计算或比较所需的数值类型。",
+            "putting_together_p4_m4": "最后，我们打印转换后的值，并使用 <code>type()</code> 确认从 `str` 到 `int` 和 `float` 的成功更改。这对于有效处理用户提供的数据至关重要！",
+            "tooltip_input_use": "使用提供的提示信息获取用户的文本输入。", "tooltip_int_use": "将年份字符串转换为整数。", "tooltip_float_use": "将准确率字符串转换为浮点（小数）数。",
+            "quiz_title": "🧠 快速测验！", "quiz_next_button": "下一题",
+            "quiz_q1_m4": "`input()` 函数始终返回哪种数据类型？",
+            "quiz_q1_m4_opt1": "整数 (int)", "quiz_q1_m4_opt2": "浮点数 (float)", "quiz_q1_m4_opt3": "字符串 (str)", "quiz_q1_m4_opt4": "取决于用户输入的内容。",
+            "quiz_q2_m4": "如果用户在响应 `input()` 时输入 `42`，并且您想用它进行数学运算，应该首先使用哪个函数？",
+            "quiz_q2_m4_opt1": "`str()`", "quiz_q2_m4_opt2": "`int()`", "quiz_q2_m4_opt3": "`print()`", "quiz_q2_m4_opt4": "`type()`",
+            "quiz_q3_m4": "您将使用哪个函数将字符串 `'3.14159'` 转换为带小数点的数字？",
+            "quiz_q3_m4_opt1": "`int()`", "quiz_q3_m4_opt2": "`string()`", "quiz_q3_m4_opt3": "`float()`", "quiz_q3_m4_opt4": "`round()`",
+            "quiz_q4_m4": "在使用 `input()` 时，像 `int()`, `float()`, `str()` 这样的类型转换函数的主要目的是什么？",
+            "quiz_q4_m4_opt1": "使代码看起来更简洁。", "quiz_q4_m4_opt2": "在用户输入之前更改用户的输入。", "quiz_q4_m4_opt3": "将 `input()` 返回的字符串转换为可用的数据类型（如数字或转换回字符串）。", "quiz_q4_m4_opt4": "检查用户是否输入了正确的内容。",
+            "quiz_feedback_correct": "正确！🎉", "quiz_feedback_incorrect": "不太对哦！正确答案是：{correctAnswerText}",
+            "quiz_final_score_title": "模块 4 完成！", "quiz_final_score_summary": "你答对了 {score} / {total} 题。",
+            "quiz_final_score_perfect": "非常棒！你理解了用户输入和转换。", "quiz_final_score_good": "进步很大！熟能生巧，多加练习处理输入。",
+            "completion_theory_title_m4": "模块 4 理论完成！",
+            "completion_theory_desc_m4": "太棒了！您现在知道如何使用 `input()` 使您的 Python 程序具有交互性，以及如何使用类型转换正确处理数据。<br> 是时候练习这些基本技能了！前往模块 4 的<strong>练习区</strong>或挑战<strong>高级练习</strong>。"
+        }
+    };
+
+
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // --- Language Management Functions ---
+        function getStoredLanguage() { /* ... (same as previous modules) ... */
+            const storedLang = localStorage.getItem('userLanguage');
+            if (storedLang && translations[storedLang]) return storedLang;
+            const browserLang = navigator.language || navigator.userLanguage;
+            if (browserLang.startsWith('pt')) return 'pt';
+            if (browserLang.startsWith('zh')) return 'zh';
+            return 'en'; // Default to English
+        }
+
+        function setLanguage(lang) { /* ... (same as previous modules, including quiz reload logic) ... */
+            if (!translations[lang]) lang = 'en'; // Fallback
+            localStorage.setItem('userLanguage', lang);
+            document.documentElement.lang = lang;
+            translatePage(lang);
+
+            const langSelect = document.getElementById('languageSelect');
+            if (langSelect) langSelect.value = lang;
+
+            // Potentially update quiz if language changes mid-quiz
+             if(quizArea && currentQuestionIndex < quizData.length) {
+                 if (!quizArea.querySelector('[data-translate="quiz_final_score_title"]')) {
+                    loadQuestion(); // Reload current question with new language
+                 }
+             }
+        }
+
+        function getTranslation(key, lang, replacements = {}) { /* ... (same as previous modules) ... */
+            let text = translations[lang]?.[key] ?? translations['en']?.[key] ?? `[${key}]`;
+            for (const placeholder in replacements) {
+                const regex = new RegExp(`\\{${placeholder}\\}`, 'g');
+                text = text.replace(regex, replacements[placeholder]);
+            }
+            // Allow basic HTML in translations (like <code>)
+             // text = text.replace(/</g, '<').replace(/>/g, '>'); // Basic unescaping if needed, but handled better below
+            return text;
+        }
+
+
+        function translatePage(lang) { /* ... (same as previous modules, handles data-translate, tooltips, specific comments) ... */
+             if (!translations[lang]) lang = 'en';
+
+             document.querySelectorAll('[data-translate]').forEach(el => {
+                 const key = el.getAttribute('data-translate');
+                 const translation = getTranslation(key, lang);
+                  if (el.tagName === 'TITLE') { document.title = translation; }
+                  else if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') { /* Skip placeholders */ }
+                  else if (el.tagName === 'OPTION') { el.textContent = translation; }
+                  else {
+                       // Use innerHTML only if the translation likely contains HTML (like code or strong tags)
+                       if (translation.includes('<') && translation.includes('>')) {
+                          el.innerHTML = translation;
+                       } else {
+                          el.textContent = translation;
+                       }
+                  }
+             });
+
+             document.querySelectorAll('[data-translate-placeholder]').forEach(el => {
+                 const key = el.getAttribute('data-translate-placeholder');
+                 el.setAttribute('placeholder', getTranslation(key, lang));
+             });
+
+              document.querySelectorAll('.code-highlight').forEach(el => {
+                  const tooltipKey = el.getAttribute('data-translate-tooltip');
+                  const tooltipSpan = el.querySelector('.tooltip');
+                  if(tooltipSpan && tooltipKey) {
+                     tooltipSpan.innerHTML = getTranslation(tooltipKey, lang); // Use innerHTML for tooltips
+                  }
+              });
+
+               // Translate code comments specifically
+               document.querySelectorAll('.code-comment[data-translate], .comment-line[data-translate]').forEach(commentSpan => {
+                   const key = commentSpan.getAttribute('data-translate');
+                   const translatedText = getTranslation(key, lang);
+                   const commentContent = translatedText.includes('#') ? translatedText.substring(translatedText.indexOf('#') + 1).trim() : translatedText.trim();
+                   commentSpan.textContent = '# ' + commentContent; // Ensure space after #
+               });
+        }
+
+        // --- Initialize Language ---
+        const initialLang = getStoredLanguage();
+
+
+        // --- Minimal Nav Logic ---
+        /* ... (same as previous modules) ... */
+        const navToggleButton = document.getElementById('minimal-nav-toggle');
+        const navPanel = document.getElementById('minimal-nav-panel');
+        const body = document.body;
+
+        if (navToggleButton && navPanel) {
+            navToggleButton.addEventListener('click', (event) => { event.stopPropagation(); body.classList.toggle('nav-active'); navToggleButton.setAttribute('aria-expanded', body.classList.contains('nav-active')); });
+            document.addEventListener('click', (event) => { if (body.classList.contains('nav-active') && !navPanel.contains(event.target) && event.target !== navToggleButton && !navToggleButton.contains(event.target)) { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); } });
+            navPanel.querySelectorAll('a').forEach(link => { link.addEventListener('click', () => { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); }); });
+            document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && body.classList.contains('nav-active')) { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); } });
+            navToggleButton.setAttribute('aria-expanded', 'false');
+        }
+
+        // --- Language Switcher Setup ---
+        const langSelect = document.getElementById('languageSelect');
+        if (langSelect) {
+            langSelect.addEventListener('change', (e) => {
+                setLanguage(e.target.value);
+            });
+        }
+
+
+        // --- Intersection Observer for Animations ---
+        /* ... (same as previous modules - targets .analogy-part, .analogy-arrow, .fade-in by default now via CSS) ... */
+         const observerOptions = { root: null, rootMargin: '0px', threshold: 0.1 };
+         const observerCallback = (entries, observer) => { entries.forEach(entry => { if (entry.isIntersecting) { entry.target.classList.add('visible'); } }); };
+         const observer = new IntersectionObserver(observerCallback, observerOptions);
+         document.querySelectorAll('.analogy-part, .analogy-arrow').forEach(el => { observer.observe(el); });
+
+
+        // --- Feature Card Interactivity (Not needed for Module 4 conversion cards) ---
+        // --- Input Demo Output Simulation ---
+        const inputOutputArea = document.querySelector('#putting-it-together .code-output-area');
+        if (inputOutputArea) {
+             const inputObserver = new IntersectionObserver((entries) => {
+                 entries.forEach(entry => {
+                     if (entry.isIntersecting && !inputOutputArea.classList.contains('visible')) {
+                        // Simulate the prompts and output
+                        // NOTE: This is a *simulation*. Real input requires user interaction.
+                        setTimeout(() => {
+                            inputOutputArea.innerHTML = `
+                                <span style="color: #eee;">Target year for AI goal: </span><span style="color: var(--accent-color);">2030</span> <span style="color:#666;">(User Typed)</span><br>
+                                <span style="color: #eee;">Desired accuracy (e.g., 0.95): </span><span style="color: var(--accent-color);">0.98</span> <span style="color:#666;">(User Typed)</span><br>
+                                <br>
+                                > Setting goal for year: <span class="code-number">2030</span><br>
+                                > Aiming for accuracy: <span class="code-number">0.98</span><br>
+                                > Input types were: <class '<span class="code-builtin">str</span>'> <class '<span class="code-builtin">str</span>'><br>
+                                > Converted types are: <class '<span class="code-builtin">int</span>'> <class '<span class="code-builtin">float</span>'>
+                            `;
+                            inputOutputArea.classList.add('visible');
+                        }, 1500); // Slightly longer delay
+                        inputObserver.unobserve(entry.target);
+                     }
+                 });
+             }, { threshold: 0.3 }); // Adjust threshold if needed
+             inputObserver.observe(document.querySelector('.input-demo'));
+        }
+
+
+        // --- Tooltip Setup (CSS Hover handles this) ---
+
+
+        // --- Knowledge Check / Quiz ---
+        // UPDATED quizData for Module 4
+        const quizData = [
+            { questionKey: "quiz_q1_m4", optionKeys: ["quiz_q1_m4_opt1", "quiz_q1_m4_opt2", "quiz_q1_m4_opt3", "quiz_q1_m4_opt4"], correctAnswer: 2 },
+            { questionKey: "quiz_q2_m4", optionKeys: ["quiz_q2_m4_opt1", "quiz_q2_m4_opt2", "quiz_q2_m4_opt3", "quiz_q2_m4_opt4"], correctAnswer: 1 },
+            { questionKey: "quiz_q3_m4", optionKeys: ["quiz_q3_m4_opt1", "quiz_q3_m4_opt2", "quiz_q3_m4_opt3", "quiz_q3_m4_opt4"], correctAnswer: 2 },
+            { questionKey: "quiz_q4_m4", optionKeys: ["quiz_q4_m4_opt1", "quiz_q4_m4_opt2", "quiz_q4_m4_opt3", "quiz_q4_m4_opt4"], correctAnswer: 2 }
+        ];
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        const quizArea = document.getElementById('quiz-area');
+        const feedbackArea = document.getElementById('quiz-feedback');
+        const nextButton = document.getElementById('next-question-btn');
+
+        function loadQuestion() { /* ... (same logic as previous modules, uses current M4 quizData) ... */
+              const currentLang = getStoredLanguage();
+              if (!quizArea || currentQuestionIndex >= quizData.length) {
+                  if (quizArea && !quizArea.querySelector('[data-translate="quiz_final_score_title"]')) {
+                     showFinalScore();
+                  }
+                  return;
+              }
+
+              const currentQuiz = quizData[currentQuestionIndex];
+              const questionText = getTranslation(currentQuiz.questionKey, currentLang);
+              quizArea.innerHTML = `
+                  <div class="quiz-question">${currentQuestionIndex + 1}. ${questionText.replace(/`(.*?)`/g, '<code>$1</code>')}</div>
+                  <div class="quiz-options">
+                      ${currentQuiz.optionKeys.map((optionKey, index) => `
+                          <button class="quiz-option-btn" data-index="${index}">${getTranslation(optionKey, currentLang)}</button>
+                      `).join('')}
+                  </div>
+              `;
+
+              feedbackArea.classList.remove('visible', 'correct', 'incorrect');
+              feedbackArea.textContent = '';
+              nextButton.classList.remove('visible');
+              nextButton.disabled = true;
+
+              document.querySelectorAll('.quiz-option-btn').forEach(button => {
+                  button.addEventListener('click', handleAnswer);
+              });
+        }
+
+        function handleAnswer(event) { /* ... (same logic as previous modules, including animations) ... */
+              const currentLang = getStoredLanguage();
+              const selectedButton = event.target;
+              const selectedIndex = parseInt(selectedButton.dataset.index);
+              const correctIndex = quizData[currentQuestionIndex].correctAnswer;
+              const correctOptionKey = quizData[currentQuestionIndex].optionKeys[correctIndex];
+              const correctAnswerText = getTranslation(correctOptionKey, currentLang);
+
+              document.querySelectorAll('.quiz-option-btn').forEach(btn => {
+                 btn.disabled = true;
+                 btn.classList.remove('shake');
+             });
+
+              feedbackArea.classList.add('visible');
+
+              if (selectedIndex === correctIndex) {
+                  selectedButton.classList.add('correct');
+                  feedbackArea.innerHTML = getTranslation('quiz_feedback_correct', currentLang);
+                  feedbackArea.classList.add('correct');
+                  feedbackArea.classList.remove('incorrect');
+                  score++;
+                  selectedButton.classList.add('tada-anim');
+              } else {
+                  selectedButton.classList.add('incorrect');
+                  // Use innerHTML for feedback to allow the strong tag for the correct answer
+                  feedbackArea.innerHTML = getTranslation('quiz_feedback_incorrect', currentLang, { correctAnswerText: `<strong>${correctAnswerText}</strong>` });
+                  feedbackArea.classList.add('incorrect');
+                  feedbackArea.classList.remove('correct');
+                  const correctButton = document.querySelector(`.quiz-option-btn[data-index="${correctIndex}"]`);
+                  if(correctButton) correctButton.classList.add('correct');
+                  selectedButton.classList.add('shake');
+              }
+
+               selectedButton.addEventListener('animationend', () => {
+                    selectedButton.classList.remove('tada-anim', 'shake');
+               }, { once: true });
+
+              nextButton.classList.add('visible');
+              nextButton.disabled = false;
+        }
+
+         function showFinalScore() { /* ... (same logic as previous modules, uses M4 final score keys) ... */
+               const currentLang = getStoredLanguage();
+               const totalQuestions = quizData.length;
+               let resultMessageKey = score === totalQuestions ? 'quiz_final_score_perfect' : 'quiz_final_score_good';
+
+               quizArea.innerHTML = `
+                   <div class="quiz-question text-center" data-translate="quiz_final_score_title" style="font-size: 1.5rem;">${getTranslation('quiz_final_score_title', currentLang)}</div>
+                   <p class="text-center" style="font-size: 1.2rem; margin-bottom: 1rem;">${getTranslation('quiz_final_score_summary', currentLang, { score: score, total: totalQuestions })}</p>
+                   <p class="text-center" style="color: ${score === totalQuestions ? 'var(--success-color)' : 'var(--primary-color)'}; font-weight: bold;">${getTranslation(resultMessageKey, currentLang)}</p>
+               `;
+               feedbackArea.classList.remove('visible');
+               nextButton.style.display = 'none'; // Hide next button
+               quizArea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+           }
+
+
+        nextButton.addEventListener('click', () => { /* ... (same as previous modules) ... */
+             currentQuestionIndex++;
+             loadQuestion();
+         });
+
+        // --- Initial Language Application and Load ---
+        setLanguage(initialLang); // Apply language FIRST
+        if (quizArea) { loadQuestion(); } // Initial quiz load for M4
+
+        // Trigger fade-in animations for elements initially in view (handled by CSS)
+        // Observers handle elements coming into view later.
+
+    }); // End DOMContentLoaded
+    </script>
+
+</body>
+</html>
