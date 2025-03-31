@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<!-- Language set by JS -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Title set by JS -->
+    <title data-translate="page_title">Module 27: Algorithms - Search</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* --- Reset & Base Styles --- */
+        :root {
+            --primary-color: #007bff; /* Blue */
+            --secondary-color: #6c757d; /* Grey */
+            --background-light: #f8f9fa;
+            --background-dark: #343a40;
+            --text-light: #f8f9fa;
+            --text-dark: #212529;
+            --accent-color: #ffc107; /* Yellow */
+            --success-color: #28a745; /* Green */
+            --error-color: #dc3545; /* Red */
+            --info-color: #17a2b8; /* Teal */
+            --border-radius: 8px;
+            --transition-speed: 0.3s;
+            --font-body: 'Roboto', sans-serif;
+            --font-title: 'Orbitron', sans-serif;
+             /* Nav Colors from other page */
+            --nav-primary: #6e48aa;
+            --nav-success: #4cc9f0;
+            --nav-dark: #1a1a2e;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; font-size: 16px; }
+        body {
+            font-family: var(--font-body); line-height: 1.7;
+            background-color: var(--background-light); color: var(--text-dark);
+            overflow-x: hidden; display: flex; flex-direction: column; min-height: 100vh;
+        }
+        main { flex-grow: 1; }
+
+        /* --- Utility Classes --- */
+        .container { max-width: 960px; margin: 0 auto; padding: 0 15px; }
+        .text-center { text-align: center; }
+        .highlight { color: var(--primary-color); font-weight: bold; }
+        .fade-in { opacity: 0; transform: translateY(20px); animation: fadeInAnimation 0.8s ease-out forwards; }
+        .fade-in.delay-1 { animation-delay: 0.2s; }
+        .fade-in.delay-2 { animation-delay: 0.4s; }
+        .fade-in.delay-3 { animation-delay: 0.6s; }
+        .fade-in.delay-4 { animation-delay: 0.8s; }
+        .fade-in.delay-5 { animation-delay: 1.0s; }
+        .button-group { margin-top: 2rem; display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; }
+        .action-button {
+             display: inline-flex; align-items: center; justify-content: center; gap: 0.5em;
+             padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold; color: var(--text-light);
+             background-color: var(--primary-color); border: none; border-radius: var(--border-radius);
+             cursor: pointer; transition: background-color var(--transition-speed), transform var(--transition-speed), filter var(--transition-speed), box-shadow var(--transition-speed);
+             margin-top: 1rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1); text-decoration: none; line-height: 1.2;
+        }
+        .action-button i.fas { /* No extra styles needed with flex gap */ }
+        .action-button:hover:not(:disabled) { background-color: #0056b3; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+        .action-button:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none; box-shadow: none; opacity: 0.7; }
+        .action-button.success { background-color: var(--success-color); }
+        .action-button.success:hover:not(:disabled) { background-color: #218838; }
+        .action-button.secondary { background-color: var(--secondary-color); }
+        .action-button.secondary:hover:not(:disabled) { background-color: #5a6268; }
+        .action-button:active:not(:disabled) { transform: translateY(1px) scale(0.98); filter: brightness(0.95); }
+
+        /* --- Animations --- */
+        @keyframes fadeInAnimation { to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); } 50% { transform: scale(1.03); box-shadow: 0 0 15px rgba(0, 123, 255, 0.6); } 100% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); } }
+        @keyframes code-line-anim { from { width: 0; opacity: 0; } to { width: 100%; opacity: 1; } }
+        @keyframes tada { from { transform: scale3d(1, 1, 1); } 10%, 20% { transform: scale3d(.9, .9, .9) rotate3d(0, 0, 1, -3deg); } 30%, 50%, 70%, 90% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, 3deg); } 40%, 60%, 80% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, -3deg); } to { transform: scale3d(1, 1, 1); } }
+        .tada-anim { animation: tada 1s ease; }
+        @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
+        @keyframes iconAppearCorrect { 0% { transform: scale(0.5) rotate(-15deg); opacity: 0; } 60% { transform: scale(1.2) rotate(5deg); opacity: 1; } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
+
+        /* --- Minimal Retractable Nav --- */
+        .minimal-nav-button { position: fixed; top: 15px; right: 15px; z-index: 1001; background-color: rgba(52, 58, 64, 0.75); color: var(--text-light); border: none; border-radius: var(--border-radius); padding: 8px 12px; cursor: pointer; transition: background-color var(--transition-speed), opacity var(--transition-speed), transform var(--transition-speed); font-size: 1.1rem; opacity: 0.6; box-shadow: 0 2px 5px rgba(0,0,0,0.2); line-height: 1; }
+        .minimal-nav-button:hover { background-color: rgba(52, 58, 64, 0.95); opacity: 1; transform: scale(1.05); }
+        .minimal-nav { position: fixed; top: 60px; right: 15px; z-index: 1000; background-color: var(--background-dark); border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.3); padding: 0.8rem; opacity: 0; transform: translateY(-15px) scale(0.95); transform-origin: top right; pointer-events: none; transition: opacity var(--transition-speed) ease, transform var(--transition-speed) ease; min-width: 200px; }
+        body.nav-active .minimal-nav { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+        .minimal-nav ul { list-style: none; margin: 0; padding: 0; }
+        .minimal-nav ul li { margin-bottom: 5px; }
+        .minimal-nav ul li:last-child { margin-bottom: 0; }
+        .minimal-nav ul li a { display: flex; align-items: center; color: var(--text-light); text-decoration: none; padding: 0.6rem 1rem; border-radius: 4px; transition: background-color var(--transition-speed), color var(--transition-speed); white-space: nowrap; font-weight: 400; font-size: 0.95rem; }
+        .minimal-nav ul li a i.fas { margin-right: 10px; width: 1.2em; text-align: center; opacity: 0.8; transition: opacity var(--transition-speed); }
+        .minimal-nav ul li a:hover { background-color: var(--primary-color); color: var(--text-light); }
+        .minimal-nav ul li a:hover i.fas { opacity: 1; }
+        .minimal-nav .language-switcher-item { padding: 0.5rem 1rem; border-top: 1px solid var(--secondary-color); margin-top: 8px; padding-top: 13px; }
+        #languageSelect { width: 100%; background: rgba(255,255,255,0.1); color: white; border: 1px solid var(--nav-success); border-radius: 5px; padding: 6px 30px 6px 12px; cursor: pointer; font-size: 0.9rem; appearance: none; -webkit-appearance: none; -moz-appearance: none; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%234CC9F0%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right 10px center; background-size: 10px auto; transition: background-color 0.3s ease; }
+        #languageSelect:hover { background-color: rgba(255,255,255,0.15); }
+        #languageSelect option { background: var(--nav-dark); color: var(--text-light); }
+
+        /* --- Header --- */
+        .main-header { background: linear-gradient(135deg, var(--info-color), #0e7e8e); /* Adjusted gradient */ color: var(--text-light); padding: 4rem 0 6rem; text-align: center; position: relative; overflow: hidden; }
+        .main-header h1 { font-family: var(--font-title); font-size: 3rem; margin-bottom: 0.5rem; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); animation: fadeInAnimation 1s ease-out; }
+        .main-header p { font-size: 1.2rem; font-weight: 300; opacity: 0.9; animation: fadeInAnimation 1s ease-out 0.3s forwards; opacity: 0; }
+        .header-shape { position: absolute; border-radius: 50%; background-color: rgba(255, 255, 255, 0.1); animation: pulse 5s infinite ease-in-out alternate; }
+        .shape1 { width: 150px; height: 150px; bottom: -50px; left: 10%; animation-duration: 6s; }
+        .shape2 { width: 80px; height: 80px; top: 50px; right: 15%; animation-duration: 4s; }
+        .shape3 { width: 50px; height: 50px; bottom: 20px; right: 30%; animation-duration: 7s; }
+
+        /* --- Section Styling --- */
+        section { padding: 4rem 0; border-bottom: 1px solid #eee; }
+        main section:last-of-type { border-bottom: none; } /* Remove border from completion section */
+        section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); margin-bottom: 2rem; text-align: center; position: relative; padding-bottom: 10px; }
+        section h2::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 60px; height: 4px; background-color: var(--accent-color); border-radius: 2px; }
+
+        /* --- Intro Section --- */
+        #intro p { font-size: 1.1rem; max-width: 700px; margin: 0 auto 1rem; text-align: center; }
+
+        /* --- What is Linear Search Section --- */
+        #what-is-linear .search-analogy { display: flex; align-items: center; justify-content: space-around; background-color: #fff; padding: 2rem; border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.08); margin-top: 2rem; flex-wrap: wrap; gap: 1rem; }
+        .analogy-part { text-align: center; max-width: 200px; opacity: 0; transform: scale(0.9); transition: opacity 0.5s ease, transform 0.5s ease; }
+        .analogy-part.visible { opacity: 1; transform: scale(1); }
+        .analogy-icon { font-size: 3rem; margin-bottom: 1rem; color: var(--primary-color); display: inline-block; transition: transform var(--transition-speed) ease; }
+        .analogy-part:hover .analogy-icon { transform: scale(1.2) rotate(5deg); }
+        .analogy-arrow { font-size: 2.5rem; color: var(--secondary-color); opacity: 0; transition: opacity 0.5s ease 0.3s; }
+        .analogy-arrow.visible { opacity: 0.7; }
+
+        /* --- How Linear Search Works Section --- */
+        #how-linear-works .search-steps {
+            display: flex; justify-content: center; align-items: stretch; /* Align items vertically */
+            gap: 1rem; margin-top: 2.5rem; flex-wrap: wrap;
+        }
+        .search-step {
+            background-color: #fff; padding: 1.5rem; border-radius: var(--border-radius);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.07); text-align: center;
+            flex: 1; min-width: 180px; max-width: 220px; /* Control width */
+            opacity: 0; transform: translateY(20px);
+            animation: fadeInAnimation 0.6s ease-out forwards;
+            display: flex; flex-direction: column; justify-content: flex-start; /* Align content top */
+        }
+        .search-step:nth-child(1) { animation-delay: 0.2s; }
+        .search-step:nth-child(2) { animation-delay: 0.4s; }
+        .search-step:nth-child(3) { animation-delay: 0.6s; }
+        .search-step:nth-child(4) { animation-delay: 0.8s; }
+        .step-number {
+            background-color: var(--primary-color); color: var(--text-light);
+            border-radius: 50%; width: 35px; height: 35px; line-height: 35px;
+            font-weight: bold; font-size: 1.1rem; margin: 0 auto 1rem;
+            font-family: var(--font-title);
+        }
+        .search-step h3 { font-weight: 700; font-size: 1.1rem; margin-bottom: 0.8rem; color: var(--text-dark); }
+        .search-step p { font-size: 0.95rem; color: var(--secondary-color); }
+
+        /* --- Python Example Section --- */
+        #python-example .explanation { display: flex; gap: 2rem; align-items: flex-start; margin-top: 2rem; flex-wrap: wrap; }
+        .code-demo { /* Renamed from hello-world-demo */
+            flex-basis: 55%; background-color: var(--background-dark); color: #eee;
+            padding: 2rem; border-radius: var(--border-radius); font-family: 'Courier New', Courier, monospace;
+            position: relative; min-height: 180px; /* Increased height for more code */
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            overflow-x: auto; /* Handle potential code overflow */
+        }
+        .code-demo pre { margin: 0; } /* Ensure pre doesn't add extra margin */
+        .code-demo code { display: block; /* Ensure code block fills width */ white-space: pre; }
+        .python-example-text { flex-basis: 40%; font-size: 1.05rem; } /* Renamed */
+        .python-example-text p { margin-bottom: 1rem; }
+        .code-highlight { background-color: rgba(0, 123, 255, 0.1); color: #0056b3; padding: 0.2em 0.4em; border-radius: 4px; font-family: 'Courier New', Courier, monospace; font-weight: bold; cursor: pointer; transition: background-color var(--transition-speed); display: inline-block; position: relative; }
+        .code-highlight:hover { background-color: rgba(0, 123, 255, 0.2); }
+        .tooltip { visibility: hidden; width: 160px; background-color: var(--background-dark); color: var(--text-light); text-align: center; border-radius: 6px; padding: 8px 5px; position: absolute; z-index: 1; bottom: 125%; left: 50%; margin-left: -80px; opacity: 0; transition: opacity 0.3s; font-family: var(--font-body); font-size: 0.9rem; font-weight: normal; pointer-events: none; }
+        .tooltip::after { content: ""; position: absolute; top: 100%; left: 50%; margin-left: -5px; border-width: 5px; border-style: solid; border-color: var(--background-dark) transparent transparent transparent; }
+        .code-highlight:hover .tooltip { visibility: visible; opacity: 1; }
+        /* Code syntax colors */
+        .code-keyword { color: #569cd6; } /* def, for, in, if, return */
+        .code-function { color: #dcdcaa; } /* function name */
+        .code-parameter { color: #9cdcfe; } /* function parameters */
+        .code-variable { color: #9cdcfe; } /* local variables */
+        .code-operator { color: #d4d4d4; } /* =, ==, : */
+        .code-builtin { color: #4ec9b0; } /* range, len */
+        .code-number { color: #b5cea8; }
+        .code-string { color: #ce9178; }
+        .code-comment { color: #6a9955; font-style: italic; }
+        .code-none { color: #569cd6; font-style: italic;} /* None keyword */
+
+        /* --- Knowledge Check Section --- */
+        #knowledge-check { background-color: #e9ecef; }
+        .quiz-container { background-color: #fff; padding: 2rem; border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.1); max-width: 700px; margin: 2rem auto 0; }
+        .quiz-question { font-size: 1.2rem; font-weight: bold; margin-bottom: 1.5rem; color: var(--text-dark); }
+        .quiz-options button { display: block; width: 100%; padding: 1rem; margin-bottom: 1rem; text-align: left; font-size: 1rem; background-color: #f8f9fa; border: 1px solid #ced4da; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), border-color var(--transition-speed), transform var(--transition-speed); }
+        .quiz-options button:not(:disabled):hover { background-color: #e2e6ea; border-color: #adb5bd; transform: translateX(5px); }
+        .quiz-options button:disabled { cursor: default; opacity: 0.7; }
+        .quiz-options button.correct { background-color: #d4edda; border-color: var(--success-color); color: #155724; font-weight: bold; }
+        .quiz-options button.incorrect { background-color: #f8d7da; border-color: var(--error-color); color: #721c24; font-weight: bold; }
+        .quiz-options button.incorrect.shake { animation: shake 0.5s ease; }
+        .quiz-feedback { margin-top: 1.5rem; padding: 1rem; border-radius: var(--border-radius); font-weight: bold; text-align: center; opacity: 0; transition: opacity 0.5s ease; height: 0; overflow: hidden; }
+        .quiz-feedback.visible { opacity: 1; height: auto; margin-bottom: 1rem; }
+        .quiz-feedback.correct { background-color: #d4edda; color: #155724; }
+        .quiz-feedback.incorrect { background-color: #f8d7da; color: #721c24; }
+        #next-question-btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5em; margin: 1.5rem auto 0; padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold; color: var(--text-light); background-color: var(--primary-color); border: none; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), transform var(--transition-speed), opacity 0.3s, visibility 0.3s; opacity: 0; visibility: hidden; }
+        #next-question-btn:hover { background-color: #0056b3; transform: scale(1.05); }
+        #next-question-btn.visible { opacity: 1; visibility: visible; }
+
+        /* --- Completion Section Styling --- */
+        .completion-section { padding: 4rem 0; text-align: center; background-color: var(--background-light); /* No border needed */ }
+        .completion-section .icon { font-size: 4rem; color: var(--success-color); margin-bottom: 1rem; display: inline-block; opacity: 0; animation: iconAppearCorrect 1s ease-out 0.5s forwards; }
+        .completion-section .icon .fas + .fas { margin-left: 0.75rem; }
+        .completion-section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); margin-bottom: 1rem; }
+        .completion-section h2::after { display: none; } /* No underline */
+        .completion-section p { font-size: 1.1rem; margin-top: 1rem; color: var(--secondary-color); max-width: 700px; margin-left: auto; margin-right: auto; line-height: 1.8; }
+        .completion-section .button-group { margin-top: 2.5rem; }
+
+        /* --- Removed Footer --- */
+        /* .main-footer removed */
+
+        /* --- Responsive Design --- */
+        @media (max-width: 768px) {
+            html { font-size: 15px; }
+            .main-header h1 { font-size: 2.5rem; }
+            .main-header p { font-size: 1.1rem; }
+            section h2 { font-size: 1.8rem; }
+            .search-analogy { flex-direction: column; gap: 1.5rem; } /* Updated class name */
+            .analogy-arrow { transform: rotate(90deg); margin: 1rem 0; }
+            #how-linear-works .search-steps { gap: 1.5rem; } /* Allow wrapping */
+            .search-step { min-width: 250px; /* Allow wider steps on tablet */ }
+            #python-example .explanation { flex-direction: column; }
+            .code-demo, .python-example-text { flex-basis: 100%; } /* Updated class names */
+            .minimal-nav { min-width: 180px; }
+            .minimal-nav ul li a { padding: 0.6rem 0.8rem; }
+            #languageSelect { font-size: 0.85rem; padding: 5px 25px 5px 10px;}
+            .completion-section h2 { font-size: 2rem; }
+            .completion-section .button-group { flex-direction: column; align-items: center; gap: 0.8rem; }
+            .completion-section .action-button { width: 80%; max-width: 350px; margin-top: 0; }
+        }
+        @media (max-width: 480px) {
+            html { font-size: 14px; }
+            .main-header h1 { font-size: 2rem; }
+            .main-header p { font-size: 1rem; }
+            section h2 { font-size: 1.6rem; }
+            .search-step { min-width: 80%; /* Take more width on small screens */ }
+            .quiz-options button { padding: 0.8rem; font-size: 0.95rem; }
+            .tooltip { width: 120px; margin-left: -60px; font-size: 0.8rem;}
+            .minimal-nav-button { top: 10px; right: 10px; padding: 6px 10px; font-size: 1rem; }
+            .minimal-nav { top: 48px; right: 10px; min-width: 160px; }
+            .minimal-nav ul li a { padding: 0.5rem 0.7rem; font-size: 0.9rem;}
+            .minimal-nav ul li a i.fas { margin-right: 8px; }
+            #languageSelect { font-size: 0.8rem; padding: 4px 20px 4px 8px;}
+            .completion-section .icon { font-size: 3.5rem; }
+            .completion-section h2 { font-size: 1.8rem; }
+            .completion-section p { font-size: 1rem; }
+            .completion-section .action-button { width: 90%; max-width: 300px; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- ========= Minimal Nav Handle ========= -->
+    <button id="minimal-nav-toggle" class="minimal-nav-button" aria-label="Toggle Navigation Menu">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- ========= Minimal Nav Panel (with Language Switcher) ========= -->
+    <nav id="minimal-nav-panel" class="minimal-nav">
+        <ul>
+            <!-- Links to OTHER main pages -->
+            <li><a href="ctp-practice-27.html"><i class="fas fa-pencil-alt fa-fw"></i> <span data-translate="nav_practice">Practice</span></a></li>
+            <li><a href="ctp-advanced-27.html"><i class="fas fa-flask fa-fw"></i> <span data-translate="nav_advanced">Advanced Practice</span></a></li>
+            <li><a href="ctp-dashboard.html"><i class="fas fa-list fa-fw"></i> <span data-translate="nav_menu">Course Menu</span></a></li>
+             <hr style="border: none; border-top: 1px solid var(--secondary-color); margin: 8px 0;">
+             <!-- Links to sections on THIS page -->
+             <li><a href="#intro"><i class="fas fa-book-open fa-fw"></i> <span data-translate="nav_intro">Introduction</span></a></li>
+             <li><a href="#what-is-linear"><i class="fas fa-search fa-fw"></i> <span data-translate="nav_what_linear">What is Linear Search?</span></a></li>
+             <li><a href="#how-linear-works"><i class="fas fa-tasks fa-fw"></i> <span data-translate="nav_how_linear">How it Works</span></a></li>
+             <li><a href="#python-example"><i class="fab fa-python fa-fw"></i> <span data-translate="nav_python_example">Python Example</span></a></li>
+             <li><a href="#knowledge-check"><i class="fas fa-check-double fa-fw"></i> <span data-translate="nav_quiz">Knowledge Check</span></a></li>
+            <!-- Language Switcher Item -->
+            <li class="language-switcher-item">
+                 <select id="languageSelect" aria-label="Select Language">
+                     <option value="en" data-translate="lang_en">🇬🇧 English</option>
+                     <option value="pt" data-translate="lang_pt">🇧🇷 Português</option>
+                     <option value="zh" data-translate="lang_zh">🇨🇳 中文</option>
+                 </select>
+            </li>
+        </ul>
+    </nav>
+
+    <header class="main-header">
+        <!-- Decorative shapes -->
+        <div class="header-shape shape1"></div>
+        <div class="header-shape shape2"></div>
+        <div class="header-shape shape3"></div>
+
+        <div class="container">
+            <h1 data-translate="header_title">Module 27: Finding Needles in Haystacks</h1>
+            <p data-translate="header_subtitle">Exploring simple search algorithms: the Linear Search.</p>
+        </div>
+    </header>
+
+    <main>
+        <!-- ========= Introduction Section ========= -->
+        <section id="intro">
+            <div class="container">
+                <h2 class="fade-in" data-translate="intro_title">🔍 The Quest for Information</h2>
+                <p class="fade-in delay-1" data-translate="intro_p1">
+                    Imagine trying to find a specific book in a massive, unorganized library. How would you do it? In programming, we often face similar tasks: finding specific data within collections like lists or arrays.
+                </p>
+                <p class="fade-in delay-2" data-translate="intro_p2">
+                    An <span class="highlight">algorithm</span> is just a set of steps to solve a problem. A <span class="highlight">search algorithm</span> provides the steps to find an item. Let's start with the most straightforward one: Linear Search.
+                </p>
+            </div>
+        </section>
+
+        <!-- ========= What is Linear Search Section ========= -->
+        <section id="what-is-linear">
+            <div class="container">
+                <h2 class="fade-in" data-translate="what_linear_title">🚶 What is Linear Search?</h2>
+                <p class="text-center fade-in delay-1" data-translate="what_linear_subtitle">It's like checking items one by one, in order.</p>
+
+                <div class="search-analogy fade-in delay-2">
+                     <!-- We'll use JS to add 'visible' class on scroll -->
+                    <div class="analogy-part">
+                        <span class="analogy-icon">🎯</span>
+                        <h3 data-translate="analogy_goal_title">The Goal</h3>
+                        <p data-translate="analogy_goal_text">You have a list of items and a specific item (target) you're looking for.</p>
+                    </div>
+                    <div class="analogy-arrow">➡️</div>
+                    <div class="analogy-part">
+                        <span class="analogy-icon">👀</span>
+                        <h3 data-translate="analogy_process_title">The Process</h3>
+                        <p data-translate="analogy_process_text">Start at the beginning. Check the first item. Is it the target? No? Check the second. Repeat.</p>
+                    </div>
+                     <div class="analogy-arrow">➡️</div>
+                    <div class="analogy-part">
+                        <span class="analogy-icon">🏁</span>
+                        <h3 data-translate="analogy_result_title">The Result</h3>
+                        <p data-translate="analogy_result_text">Stop when you find the target (Success!) or when you've checked every item (Not Found).</p>
+                    </div>
+                </div>
+
+                 <p class="text-center fade-in delay-3" style="margin-top: 2rem;" data-translate="what_linear_conclusion">Simple, intuitive, but can be slow for very large, unsorted lists.</p>
+            </div>
+        </section>
+
+        <!-- ========= How Linear Search Works Section ========= -->
+        <section id="how-linear-works">
+            <div class="container">
+                <h2 class="fade-in" data-translate="how_linear_title">⚙️ How It Works: Step-by-Step</h2>
+                <p class="text-center fade-in delay-1" data-translate="how_linear_subtitle">Let's visualize searching for the number <span class="highlight">42</span> in a list: [10, 5, 42, 19, 8].</p>
+
+                <div class="search-steps">
+                    <!-- Card 1 -->
+                    <div class="search-step">
+                        <div class="step-number">1</div>
+                        <h3 data-translate="step1_title">Start at Index 0</h3>
+                        <p data-translate="step1_desc">Look at the first item: <strong>10</strong>. Is it 42? <span style="color: var(--error-color);">No.</span></p>
+                    </div>
+                    <!-- Card 2 -->
+                    <div class="search-step">
+                        <div class="step-number">2</div>
+                        <h3 data-translate="step2_title">Move to Index 1</h3>
+                        <p data-translate="step2_desc">Look at the next item: <strong>5</strong>. Is it 42? <span style="color: var(--error-color);">No.</span></p>
+                    </div>
+                    <!-- Card 3 -->
+                    <div class="search-step">
+                        <div class="step-number">3</div>
+                        <h3 data-translate="step3_title">Move to Index 2</h3>
+                        <p data-translate="step3_desc">Look at the next item: <strong>42</strong>. Is it 42? <span style="color: var(--success-color);">Yes!</span></p>
+                    </div>
+                    <!-- Card 4 -->
+                    <div class="search-step">
+                        <div class="step-number">✓</div>
+                        <h3 data-translate="step4_title">Target Found!</h3>
+                        <p data-translate="step4_desc">Stop searching. The item was found at index 2.</p>
+                    </div>
+                </div>
+                 <p class="text-center fade-in delay-4" style="margin-top: 2rem;" data-translate="how_linear_efficiency">This required checking 3 items.</p>
+            </div>
+        </section>
+
+
+        <!-- ========= Python Example Section ========= -->
+        <section id="python-example">
+             <div class="container">
+                 <h2 class="fade-in" data-translate="python_example_title">🐍 Linear Search in Python</h2>
+                 <p class="text-center fade-in delay-1" data-translate="python_example_subtitle">Here's how you might write a simple linear search function.</p>
+
+                 <div class="explanation fade-in delay-2">
+                     <div class="code-demo">
+<pre><code><span class="code-keyword">def</span> <span class="code-function">linear_search</span>(<span class="code-parameter">data_list</span>, <span class="code-parameter">target</span>):
+    <span class="code-keyword">for</span> <span class="code-variable">index</span> <span class="code-keyword">in</span> <span class="code-builtin">range</span>(<span class="code-builtin">len</span>(<span class="code-parameter">data_list</span>)): <span class="code-comment" data-translate="linear_code_comment_loop"># Loop through indices</span>
+        <span class="code-keyword">if</span> <span class="code-parameter">data_list</span>[<span class="code-variable">index</span>] <span class="code-operator">==</span> <span class="code-parameter">target</span>: <span class="code-comment" data-translate="linear_code_comment_check"># Check item at current index</span>
+            <span class="code-keyword">return</span> <span class="code-variable">index</span>  <span class="code-comment" data-translate="linear_code_comment_found"># Found it! Return the index</span>
+    <span class="code-keyword">return</span> <span class="code-none">None</span> <span class="code-comment" data-translate="linear_code_comment_notfound"># Went through the whole list, not found</span>
+
+<span class="code-comment"># Example usage:</span>
+my_list = [10, 5, 42, 19, 8]
+found_at = linear_search(my_list, 42) <span class="code-comment"># found_at will be 2</span>
+not_found = linear_search(my_list, 99) <span class="code-comment"># not_found will be None</span></code></pre>
+                     </div>
+                     <div class="python-example-text fade-in delay-3">
+                         <p data-translate="python_example_text_p1">This function takes a list (`data_list`) and the item to find (`target`) as input.</p>
+                         <p data-translate="python_example_text_p2">
+                             It uses a <span class="code-highlight" data-translate-tooltip="tooltip_loop">for loop<span class="tooltip">Repeats code for each item in a sequence (here, indices 0, 1, 2...)</span></span> with `range(len(data_list))` to get each index number (0, 1, 2, etc.) of the list.
+                         </p>
+                         <p data-translate="python_example_text_p3">
+                            Inside the loop, an <span class="code-highlight" data-translate-tooltip="tooltip_if">if statement<span class="tooltip">Checks if a condition is true.</span></span> compares the element at the current `index` (`data_list[index]`) with the `target`.
+                         </p>
+                         <p data-translate="python_example_text_p4">
+                             If they match, the function immediately stops and <span class="code-highlight" data-translate-tooltip="tooltip_return_index">returns the index<span class="tooltip">Sends the index back as the result.</span></span>. If the loop finishes without finding the target, it <span class="code-highlight" data-translate-tooltip="tooltip_return_none">returns None<span class="tooltip">A special value indicating 'nothing' or 'not found'.</span></span>.
+                         </p>
+                     </div>
+                 </div>
+             </div>
+        </section>
+
+        <!-- ========= Knowledge Check Section ========= -->
+        <section id="knowledge-check">
+            <div class="container">
+                <h2 class="fade-in" data-translate="quiz_title">🧠 Quick Check!</h2>
+                <div class="quiz-container fade-in delay-1">
+                    <div id="quiz-area">
+                        <!-- Quiz questions will be loaded here by JavaScript -->
+                    </div>
+                    <div id="quiz-feedback" class="quiz-feedback">
+                        <!-- Feedback (Correct/Incorrect) shown here -->
+                    </div>
+                    <button id="next-question-btn" data-translate="quiz_next_button">Next Question</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========= Completion Section ========= -->
+        <section class="completion-section">
+            <div class="container">
+                 <div class="icon"> <!-- Animation applied via CSS -->
+                    <i class="fas fa-check-double"></i>
+                    <i class="fas fa-search-location"></i> <!-- Relevant Icon -->
+                    <i class="fas fa-star"></i>
+                </div>
+                <h2 class="fade-in delay-1" data-translate="completion_theory_title">Module 27 Theory Complete!</h2>
+                <p class="fade-in delay-2" data-translate="completion_theory_desc">
+                    You've grasped the basics of Linear Search! It's a fundamental building block. <br>
+                    Ready to practice implementing it or explore more advanced concepts?
+                </p>
+                <div class="button-group">
+                    <a href="ctp-dashboard.html" class="action-button secondary fade-in delay-3"><i class="fas fa-list"></i> <span data-translate="nav_menu">Course Menu</span></a>
+                    <a href="ctp-practice-27.html" class="action-button success fade-in delay-4"><i class="fas fa-pencil-alt"></i> <span data-translate="nav_practice">Start Practice</span></a>
+                    <a href="ctp-advanced-27.html" class="action-button secondary fade-in delay-5"><i class="fas fa-flask"></i> <span data-translate="nav_advanced">Advanced Practice</span></a>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer Removed -->
+
+    <script>
+    // --- Translations Object ---
+    const translations = {
+        en: {
+            "page_title": "Module 27: Algorithms - Search",
+            "nav_practice": "Start Practice", "nav_advanced": "Advanced Practice", "nav_menu": "Course Menu",
+            "nav_intro": "Introduction", "nav_what_linear": "What is Linear Search?", "nav_how_linear": "How it Works", "nav_python_example": "Python Example", "nav_quiz": "Knowledge Check",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title": "Module 27: Finding Needles in Haystacks", "header_subtitle": "Exploring simple search algorithms: the Linear Search.",
+            "intro_title": "🔍 The Quest for Information",
+            "intro_p1": "Imagine trying to find a specific book in a massive, unorganized library. How would you do it? In programming, we often face similar tasks: finding specific data within collections like lists or arrays.",
+            "intro_p2": "An <span class=\"highlight\">algorithm</span> is just a set of steps to solve a problem. A <span class=\"highlight\">search algorithm</span> provides the steps to find an item. Let's start with the most straightforward one: Linear Search.",
+            "what_linear_title": "🚶 What is Linear Search?", "what_linear_subtitle": "It's like checking items one by one, in order.",
+            "analogy_goal_title": "The Goal", "analogy_goal_text": "You have a list of items and a specific item (target) you're looking for.",
+            "analogy_process_title": "The Process", "analogy_process_text": "Start at the beginning. Check the first item. Is it the target? No? Check the second. Repeat.",
+            "analogy_result_title": "The Result", "analogy_result_text": "Stop when you find the target (Success!) or when you've checked every item (Not Found).",
+            "what_linear_conclusion": "Simple, intuitive, but can be slow for very large, unsorted lists.",
+            "how_linear_title": "⚙️ How It Works: Step-by-Step", "how_linear_subtitle": "Let's visualize searching for the number <span class=\"highlight\">42</span> in a list: [10, 5, 42, 19, 8].",
+            "step1_title": "Start at Index 0", "step1_desc": "Look at the first item: <strong>10</strong>. Is it 42? <span style=\"color: var(--error-color);\">No.</span>",
+            "step2_title": "Move to Index 1", "step2_desc": "Look at the next item: <strong>5</strong>. Is it 42? <span style=\"color: var(--error-color);\">No.</span>",
+            "step3_title": "Move to Index 2", "step3_desc": "Look at the next item: <strong>42</strong>. Is it 42? <span style=\"color: var(--success-color);\">Yes!</span>",
+            "step4_title": "Target Found!", "step4_desc": "Stop searching. The item was found at index 2.",
+            "how_linear_efficiency": "This required checking 3 items.",
+            "python_example_title": "🐍 Linear Search in Python", "python_example_subtitle": "Here's how you might write a simple linear search function.",
+            "linear_code_comment_loop": "# Loop through indices", "linear_code_comment_check": "# Check item at current index", "linear_code_comment_found": "# Found it! Return the index", "linear_code_comment_notfound": "# Went through the whole list, not found",
+            "python_example_text_p1": "This function takes a list (`data_list`) and the item to find (`target`) as input.",
+            "python_example_text_p2": "It uses a <span class=\"code-highlight\" data-translate-tooltip=\"tooltip_loop\">for loop<span class=\"tooltip\">Repeats code for each item in a sequence (here, indices 0, 1, 2...)</span></span> with `range(len(data_list))` to get each index number (0, 1, 2, etc.) of the list.",
+            "python_example_text_p3": "Inside the loop, an <span class=\"code-highlight\" data-translate-tooltip=\"tooltip_if\">if statement<span class=\"tooltip\">Checks if a condition is true.</span></span> compares the element at the current `index` (`data_list[index]`) with the `target`.",
+            "python_example_text_p4": "If they match, the function immediately stops and <span class=\"code-highlight\" data-translate-tooltip=\"tooltip_return_index\">returns the index<span class=\"tooltip\">Sends the index back as the result.</span></span>. If the loop finishes without finding the target, it <span class=\"code-highlight\" data-translate-tooltip=\"tooltip_return_none\">returns None<span class=\"tooltip\">A special value indicating 'nothing' or 'not found'.</span></span>.",
+            "tooltip_loop": "Repeats code for each item in a sequence (here, indices 0, 1, 2...)", "tooltip_if": "Checks if a condition is true.", "tooltip_return_index": "Sends the index back as the result.", "tooltip_return_none": "A special value indicating 'nothing' or 'not found'.",
+            "quiz_title": "🧠 Quick Check!", "quiz_next_button": "Next Question",
+            "quiz_q1": "What is the main idea behind Linear Search?",
+            "quiz_q1_opt1": "Divide the list in half repeatedly.", "quiz_q1_opt2": "Check each item in the list sequentially from the start.", "quiz_q1_opt3": "Sort the list first, then jump to the middle.", "quiz_q1_opt4": "Guess the position randomly.",
+            "quiz_q2": "When does Linear Search stop successfully?",
+            "quiz_q2_opt1": "When it reaches the end of the list.", "quiz_q2_opt2": "When the target item is found.", "quiz_q2_opt3": "After checking exactly half the items.", "quiz_q2_opt4": "When it finds an item smaller than the target.",
+            "quiz_q3": "In the worst-case scenario, how many items does Linear Search need to check in a list of 'N' items?",
+            "quiz_q3_opt1": "1 item", "quiz_q3_opt2": "About N/2 items", "quiz_q3_opt3": "N items (all of them)", "quiz_q3_opt4": "log N items",
+            "quiz_q4": "What does the Python function `linear_search` (shown earlier) typically return if the target is NOT found in the list?",
+            "quiz_q4_opt1": "The number 0", "quiz_q4_opt2": "The value -1", "quiz_q4_opt3": "An empty string \"\"", "quiz_q4_opt4": "The special value `None`",
+            "quiz_feedback_correct": "Correct! 🎉", "quiz_feedback_incorrect": "Not quite! The correct answer was: {correctAnswerText}",
+            "quiz_final_score_title": "Module 27 Complete!", "quiz_final_score_summary": "You answered {score} out of {total} questions correctly.",
+            "quiz_final_score_perfect": "Excellent work! You've got the linear approach down.", "quiz_final_score_good": "Great start! Review the steps if needed.",
+            "completion_theory_title": "Module 27 Theory Complete!",
+            "completion_theory_desc": "You've grasped the basics of Linear Search! It's a fundamental building block. <br> Ready to practice implementing it or explore more advanced concepts?",
+        },
+        pt: {
+            "page_title": "Módulo 27: Algoritmos - Busca",
+            "nav_practice": "Iniciar Prática", "nav_advanced": "Prática Avançada", "nav_menu": "Menu do Curso",
+            "nav_intro": "Introdução", "nav_what_linear": "O que é Busca Linear?", "nav_how_linear": "Como Funciona", "nav_python_example": "Exemplo Python", "nav_quiz": "Teste Rápido",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title": "Módulo 27: Encontrando Agulhas no Palheiro", "header_subtitle": "Explorando algoritmos de busca simples: a Busca Linear.",
+            "intro_title": "🔍 A Busca por Informação",
+            "intro_p1": "Imagine tentar encontrar um livro específico em uma biblioteca enorme e desorganizada. Como você faria? Em programação, frequentemente enfrentamos tarefas semelhantes: encontrar dados específicos em coleções como listas ou arrays.",
+            "intro_p2": "Um <span class=\"highlight\">algoritmo</span> é apenas um conjunto de passos para resolver um problema. Um <span class=\"highlight\">algoritmo de busca</span> fornece os passos para encontrar um item. Vamos começar com o mais direto: Busca Linear.",
+            "what_linear_title": "🚶 O que é Busca Linear?", "what_linear_subtitle": "É como verificar os itens um por um, em ordem.",
+            "analogy_goal_title": "O Objetivo", "analogy_goal_text": "Você tem uma lista de itens e um item específico (alvo) que está procurando.",
+            "analogy_process_title": "O Processo", "analogy_process_text": "Comece pelo início. Verifique o primeiro item. É o alvo? Não? Verifique o segundo. Repita.",
+            "analogy_result_title": "O Resultado", "analogy_result_text": "Pare quando encontrar o alvo (Sucesso!) ou quando tiver verificado todos os itens (Não encontrado).",
+            "what_linear_conclusion": "Simples, intuitivo, mas pode ser lento para listas muito grandes e não ordenadas.",
+            "how_linear_title": "⚙️ Como Funciona: Passo a Passo", "how_linear_subtitle": "Vamos visualizar a busca pelo número <span class=\"highlight\">42</span> na lista: [10, 5, 42, 19, 8].",
+            "step1_title": "Comece no Índice 0", "step1_desc": "Olhe o primeiro item: <strong>10</strong>. É 42? <span style=\"color: var(--error-color);\">Não.</span>",
+            "step2_title": "Vá para o Índice 1", "step2_desc": "Olhe o próximo item: <strong>5</strong>. É 42? <span style=\"color: var(--error-color);\">Não.</span>",
+            "step3_title": "Vá para o Índice 2", "step3_desc": "Olhe o próximo item: <strong>42</strong>. É 42? <span style=\"color: var(--success-color);\">Sim!</span>",
+            "step4_title": "Alvo Encontrado!", "step4_desc": "Pare de procurar. O item foi encontrado no índice 2.",
+            "how_linear_efficiency": "Isso exigiu a verificação de 3 itens.",
+            "python_example_title": "🐍 Busca Linear em Python", "python_example_subtitle": "Veja como você pode escrever uma função simples de busca linear.",
+            "linear_code_comment_loop": "# Percorre os índices", "linear_code_comment_check": "# Verifica o item no índice atual", "linear_code_comment_found": "# Encontrou! Retorna o índice", "linear_code_comment_notfound": "# Percorreu a lista toda, não encontrou",
+            "python_example_text_p1": "Esta função recebe uma lista (`data_list`) e o item a ser encontrado (`target`) como entrada.",
+            "python_example_text_p2": "Ela usa um <span class=\"code-highlight\" data-translate-tooltip=\"tooltip_loop\">loop for<span class=\"tooltip\">Repete código para cada item em uma sequência (aqui, índices 0, 1, 2...)</span></span> com `range(len(data_list))` para obter cada número de índice (0, 1, 2, etc.) da lista.",
+            "python_example_text_p3": "Dentro do loop, uma <span class=\"code-highlight\" data-translate-tooltip=\"tooltip_if\">instrução if<span class=\"tooltip\">Verifica se uma condição é verdadeira.</span></span> compara o elemento no `index` atual (`data_list[index]`) com o `target`.",
+            "python_example_text_p4": "Se eles corresponderem, a função para imediatamente e <span class=\"code-highlight\" data-translate-tooltip=\"tooltip_return_index\">retorna o índice<span class=\"tooltip\">Envia o índice de volta como resultado.</span></span>. Se o loop terminar sem encontrar o alvo, ele <span class=\"code-highlight\" data-translate-tooltip=\"tooltip_return_none\">retorna None<span class=\"tooltip\">Um valor especial que indica 'nada' ou 'não encontrado'.</span></span>.",
+            "tooltip_loop": "Repete código para cada item em uma sequência (aqui, índices 0, 1, 2...)", "tooltip_if": "Verifica se uma condição é verdadeira.", "tooltip_return_index": "Envia o índice de volta como resultado.", "tooltip_return_none": "Um valor especial que indica 'nada' ou 'não encontrado'.",
+            "quiz_title": "🧠 Teste Rápido!", "quiz_next_button": "Próxima Pergunta",
+            "quiz_q1": "Qual é a ideia principal por trás da Busca Linear?",
+            "quiz_q1_opt1": "Dividir a lista pela metade repetidamente.", "quiz_q1_opt2": "Verificar cada item na lista sequencialmente desde o início.", "quiz_q1_opt3": "Ordenar a lista primeiro, depois pular para o meio.", "quiz_q1_opt4": "Adivinhar a posição aleatoriamente.",
+            "quiz_q2": "Quando a Busca Linear para com sucesso?",
+            "quiz_q2_opt1": "Quando chega ao final da lista.", "quiz_q2_opt2": "Quando o item alvo é encontrado.", "quiz_q2_opt3": "Após verificar exatamente metade dos itens.", "quiz_q2_opt4": "Quando encontra um item menor que o alvo.",
+            "quiz_q3": "No pior cenário, quantos itens a Busca Linear precisa verificar em uma lista de 'N' itens?",
+            "quiz_q3_opt1": "1 item", "quiz_q3_opt2": "Cerca de N/2 itens", "quiz_q3_opt3": "N itens (todos eles)", "quiz_q3_opt4": "log N itens",
+            "quiz_q4": "O que a função Python `linear_search` (mostrada anteriormente) normalmente retorna se o alvo NÃO for encontrado na lista?",
+            "quiz_q4_opt1": "O número 0", "quiz_q4_opt2": "O valor -1", "quiz_q4_opt3": "Uma string vazia \"\"", "quiz_q4_opt4": "O valor especial `None`",
+            "quiz_feedback_correct": "Correto! 🎉", "quiz_feedback_incorrect": "Não foi bem assim! A resposta correta era: {correctAnswerText}",
+            "quiz_final_score_title": "Módulo 27 Completo!", "quiz_final_score_summary": "Você respondeu {score} de {total} perguntas corretamente.",
+            "quiz_final_score_perfect": "Excelente trabalho! Você dominou a abordagem linear.", "quiz_final_score_good": "Ótimo começo! Revise os passos se necessário.",
+            "completion_theory_title": "Teoria do Módulo 27 Completa!",
+            "completion_theory_desc": "Você compreendeu os fundamentos da Busca Linear! É um bloco de construção fundamental. <br> Pronto para praticar a implementação ou explorar conceitos mais avançados?",
+        },
+        zh: {
+            "page_title": "模块 27：算法 - 搜索",
+            "nav_practice": "开始练习", "nav_advanced": "高级练习", "nav_menu": "课程菜单",
+            "nav_intro": "介绍", "nav_what_linear": "什么是线性搜索？", "nav_how_linear": "工作原理", "nav_python_example": "Python 示例", "nav_quiz": "知识测验",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title": "模块 27：大海捞针", "header_subtitle": "探索简单的搜索算法：线性搜索。",
+            "intro_title": "🔍 信息的探索",
+            "intro_p1": "想象一下，试图在一个巨大、杂乱无章的图书馆里找到一本特定的书。你会怎么做？在编程中，我们经常面临类似的任务：在列表或数组等集合中查找特定数据。",
+            "intro_p2": "一个 <span class=\"highlight\">算法</span> 只是一套解决问题的步骤。一个 <span class=\"highlight\">搜索算法</span> 提供了查找项目的步骤。让我们从最直接的一个开始：线性搜索。",
+            "what_linear_title": "🚶 什么是线性搜索？", "what_linear_subtitle": "就像按顺序逐个检查项目。",
+            "analogy_goal_title": "目标", "analogy_goal_text": "你有一个项目列表和一个你正在寻找的特定项目（目标）。",
+            "analogy_process_title": "过程", "analogy_process_text": "从头开始。检查第一个项目。是目标吗？不是？检查第二个。重复。",
+            "analogy_result_title": "结果", "analogy_result_text": "找到目标时停止（成功！）或检查完所有项目时停止（未找到）。",
+            "what_linear_conclusion": "简单、直观，但对于非常大的、未排序的列表可能很慢。",
+            "how_linear_title": "⚙️ 工作原理：分步详解", "how_linear_subtitle": "让我们可视化在列表 [10, 5, 42, 19, 8] 中搜索数字 <span class=\"highlight\">42</span> 的过程。",
+            "step1_title": "从索引 0 开始", "step1_desc": "查看第一个项目：<strong>10</strong>。是 42 吗？<span style=\"color: var(--error-color);\">否。</span>",
+            "step2_title": "移至索引 1", "step2_desc": "查看下一个项目：<strong>5</strong>。是 42 吗？<span style=\"color: var(--error-color);\">否。</span>",
+            "step3_title": "移至索引 2", "step3_desc": "查看下一个项目：<strong>42</strong>。是 42 吗？<span style=\"color: var(--success-color);\">是！</span>",
+            "step4_title": "找到目标！", "step4_desc": "停止搜索。在索引 2 处找到该项目。",
+            "how_linear_efficiency": "这需要检查 3 个项目。",
+            "python_example_title": "🐍 Python 中的线性搜索", "python_example_subtitle": "这是一个简单的线性搜索函数的写法。",
+            "linear_code_comment_loop": "# 遍历索引", "linear_code_comment_check": "# 检查当前索引处的项目", "linear_code_comment_found": "# 找到了！返回索引", "linear_code_comment_notfound": "# 遍历完整个列表，未找到",
+            "python_example_text_p1": "此函数接收一个列表 (`data_list`) 和要查找的项目 (`target`) 作为输入。",
+            "python_example_text_p2": "它使用一个带有 `range(len(data_list))` 的 <span class=\"code-highlight\" data-translate-tooltip=\"tooltip_loop\">for 循环<span class=\"tooltip\">对序列中的每个项目（此处为索引 0, 1, 2...）重复代码</span></span> 来获取列表的每个索引号（0, 1, 2 等）。",
+            "python_example_text_p3": "在循环内部，一个 <span class=\"code-highlight\" data-translate-tooltip=\"tooltip_if\">if 语句<span class=\"tooltip\">检查条件是否为真。</span></span> 将当前 `index` 处的元素 (`data_list[index]`) 与 `target` 进行比较。",
+            "python_example_text_p4": "如果它们匹配，函数立即停止并<span class=\"code-highlight\" data-translate-tooltip=\"tooltip_return_index\">返回索引<span class=\"tooltip\">将索引作为结果发送回去。</span></span>。如果循环完成而没有找到目标，它将<span class=\"code-highlight\" data-translate-tooltip=\"tooltip_return_none\">返回 None<span class=\"tooltip\">一个特殊值，表示‘无’或‘未找到’。</span></span>。",
+            "tooltip_loop": "对序列中的每个项目（此处为索引 0, 1, 2...）重复代码", "tooltip_if": "检查条件是否为真。", "tooltip_return_index": "将索引作为结果发送回去。", "tooltip_return_none": "一个特殊值，表示‘无’或‘未找到’。",
+            "quiz_title": "🧠 快速测验！", "quiz_next_button": "下一题",
+            "quiz_q1": "线性搜索背后的主要思想是什么？",
+            "quiz_q1_opt1": "重复将列表分成两半。", "quiz_q1_opt2": "从头开始按顺序检查列表中的每个项目。", "quiz_q1_opt3": "首先对列表进行排序，然后跳到中间。", "quiz_q1_opt4": "随机猜测位置。",
+            "quiz_q2": "线性搜索何时成功停止？",
+            "quiz_q2_opt1": "当它到达列表末尾时。", "quiz_q2_opt2": "当找到目标项目时。", "quiz_q2_opt3": "在检查完恰好一半的项目后。", "quiz_q2_opt4": "当它找到一个小于目标的项目时。",
+            "quiz_q3": "在最坏的情况下，线性搜索需要在包含 'N' 个项目的列表中检查多少个项目？",
+            "quiz_q3_opt1": "1 个项目", "quiz_q3_opt2": "大约 N/2 个项目", "quiz_q3_opt3": "N 个项目（全部）", "quiz_q3_opt4": "log N 个项目",
+            "quiz_q4": "如果目标未在列表中找到，（前面展示的）Python 函数 `linear_search` 通常返回什么？",
+            "quiz_q4_opt1": "数字 0", "quiz_q4_opt2": "值 -1", "quiz_q4_opt3": "空字符串 \"\"", "quiz_q4_opt4": "特殊值 `None`",
+            "quiz_feedback_correct": "正确！🎉", "quiz_feedback_incorrect": "不太对！正确答案是：{correctAnswerText}",
+            "quiz_final_score_title": "模块 27 完成！", "quiz_final_score_summary": "你答对了 {score} / {total} 题。",
+            "quiz_final_score_perfect": "做得好！你已经掌握了线性方法。", "quiz_final_score_good": "很棒的开始！如果需要，请回顾这些步骤。",
+            "completion_theory_title": "模块 27 理论完成！",
+            "completion_theory_desc": "你已经掌握了线性搜索的基础知识！这是一个基本的构建块。 <br> 准备好练习实施它或探索更高级的概念了吗？",
+        }
+    };
+
+
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // --- Language Management Functions ---
+        function getStoredLanguage() { /* ... (Keep original function) ... */
+            const storedLang = localStorage.getItem('userLanguage');
+            if (storedLang && translations[storedLang]) return storedLang;
+            const browserLang = navigator.language || navigator.userLanguage;
+            if (browserLang.startsWith('pt')) return 'pt';
+            if (browserLang.startsWith('zh')) return 'zh';
+            return 'en'; // Default to English
+        }
+
+        function setLanguage(lang) { /* ... (Keep original function) ... */
+            if (!translations[lang]) lang = 'en'; // Fallback
+            localStorage.setItem('userLanguage', lang);
+            document.documentElement.lang = lang;
+            translatePage(lang);
+
+            const langSelect = document.getElementById('languageSelect');
+            if (langSelect) { langSelect.value = lang; }
+
+             if(quizArea && currentQuestionIndex < quizData.length) {
+                 if (!quizArea.querySelector('[data-translate="quiz_final_score_title"]')) {
+                    loadQuestion();
+                 }
+             }
+        }
+
+        function getTranslation(key, lang, replacements = {}) { /* ... (Keep original function) ... */
+            let text = translations[lang]?.[key] ?? translations['en']?.[key] ?? `[${key}]`;
+            for (const placeholder in replacements) {
+                const regex = new RegExp(`\\{${placeholder}\\}`, 'g');
+                text = text.replace(regex, replacements[placeholder]);
+            }
+            return text;
+        }
+
+
+        function translatePage(lang) { /* ... (Keep original function, ensure it handles <code> correctly if needed) ... */
+            if (!translations[lang]) lang = 'en';
+
+             document.querySelectorAll('[data-translate]').forEach(el => {
+                const key = el.getAttribute('data-translate');
+                const translation = getTranslation(key, lang);
+                 if (el.tagName === 'TITLE') { document.title = translation; }
+                 else if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') { /* Skip placeholders */ }
+                 else if (el.tagName === 'OPTION') { el.textContent = translation; }
+                 else {
+                     // Use innerHTML if translation contains HTML tags (like span, strong, code)
+                     if (translation.includes('<') && translation.includes('>')) {
+                         el.innerHTML = translation;
+                     } else {
+                         el.textContent = translation;
+                     }
+                 }
+            });
+
+            document.querySelectorAll('[data-translate-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-translate-placeholder');
+                el.setAttribute('placeholder', getTranslation(key, lang));
+            });
+
+             document.querySelectorAll('.code-highlight').forEach(el => {
+                 const tooltipKey = el.getAttribute('data-translate-tooltip');
+                 const tooltipSpan = el.querySelector('.tooltip');
+                 if(tooltipSpan && tooltipKey) {
+                    tooltipSpan.textContent = getTranslation(tooltipKey, lang);
+                 }
+             });
+
+              // Translate code comments specifically (Find by key and update text content)
+              document.querySelectorAll('.code-comment[data-translate]').forEach(commentEl => {
+                  const key = commentEl.getAttribute('data-translate');
+                  const translatedText = getTranslation(key, lang);
+                  // Preserve the leading '#' and space if present
+                   const commentContent = translatedText.startsWith('#') ? translatedText.substring(1).trim() : translatedText;
+                  commentEl.textContent = '# ' + commentContent;
+              });
+
+        }
+
+        // --- Initialize Language ---
+        const initialLang = getStoredLanguage();
+
+        // --- Minimal Nav Logic ---
+        /* ... (Keep original logic) ... */
+        const navToggleButton = document.getElementById('minimal-nav-toggle');
+        const navPanel = document.getElementById('minimal-nav-panel');
+        const body = document.body;
+
+        if (navToggleButton && navPanel) {
+             navToggleButton.addEventListener('click', (event) => { event.stopPropagation(); body.classList.toggle('nav-active'); navToggleButton.setAttribute('aria-expanded', body.classList.contains('nav-active')); });
+             document.addEventListener('click', (event) => { if (body.classList.contains('nav-active') && !navPanel.contains(event.target) && event.target !== navToggleButton && !navToggleButton.contains(event.target)) { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); } });
+             navPanel.querySelectorAll('a').forEach(link => { link.addEventListener('click', () => { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); }); });
+             document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && body.classList.contains('nav-active')) { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); } });
+             navToggleButton.setAttribute('aria-expanded', 'false');
+         }
+
+        // --- Language Switcher Setup ---
+        /* ... (Keep original logic) ... */
+        const langSelect = document.getElementById('languageSelect');
+        if (langSelect) { langSelect.addEventListener('change', (e) => { setLanguage(e.target.value); }); }
+
+
+        // --- Intersection Observer for Animations ---
+        /* ... (Keep original logic - observe new elements like analogy parts, steps) ... */
+        const observerOptions = { root: null, rootMargin: '0px', threshold: 0.1 };
+        const observerCallback = (entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    // Optionally unobserve simple fade-ins if they don't need to repeat
+                    if (entry.target.classList.contains('fade-in')) {
+                       // observer.unobserve(entry.target);
+                    }
+                }
+            });
+        };
+        const observer = new IntersectionObserver(observerCallback, observerOptions);
+        // Observe analogy parts and search steps
+        document.querySelectorAll('.analogy-part, .analogy-arrow, .search-step').forEach(el => {
+             observer.observe(el);
+        });
+        // Observe initial fade-ins (header, section titles etc. if needed, CSS handles most)
+
+
+        // --- Feature Card Interactivity (Not needed for Module 27 structure) ---
+
+
+        // --- "Hello World" Simulation (Not needed, Python code is static) ---
+
+
+        // --- Tooltip Setup (CSS handles this) ---
+
+
+        // --- Knowledge Check / Quiz ---
+        // UPDATED QUIZ DATA for Module 27
+        const quizData = [
+             { questionKey: "quiz_q1", optionKeys: ["quiz_q1_opt1", "quiz_q1_opt2", "quiz_q1_opt3", "quiz_q1_opt4"], correctAnswer: 1 }, // Check sequentially
+             { questionKey: "quiz_q2", optionKeys: ["quiz_q2_opt1", "quiz_q2_opt2", "quiz_q2_opt3", "quiz_q2_opt4"], correctAnswer: 1 }, // When target found
+             { questionKey: "quiz_q3", optionKeys: ["quiz_q3_opt1", "quiz_q3_opt2", "quiz_q3_opt3", "quiz_q3_opt4"], correctAnswer: 2 }, // N items (worst case)
+             { questionKey: "quiz_q4", optionKeys: ["quiz_q4_opt1", "quiz_q4_opt2", "quiz_q4_opt3", "quiz_q4_opt4"], correctAnswer: 3 }  // Returns None
+        ];
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        const quizArea = document.getElementById('quiz-area');
+        const feedbackArea = document.getElementById('quiz-feedback');
+        const nextButton = document.getElementById('next-question-btn');
+
+        function loadQuestion() { /* ... (Keep original function, ensure it handles code tags in questions/options) ... */
+             const currentLang = getStoredLanguage();
+             if (!quizArea || currentQuestionIndex >= quizData.length) {
+                 if (quizArea && !quizArea.querySelector('[data-translate="quiz_final_score_title"]')) {
+                    showFinalScore();
+                 }
+                 return;
+             }
+
+             const currentQuiz = quizData[currentQuestionIndex];
+             const questionText = getTranslation(currentQuiz.questionKey, currentLang);
+             // Use innerHTML for question text to render potential code tags
+             quizArea.innerHTML = `
+                 <div class="quiz-question">${currentQuestionIndex + 1}. ${questionText}</div>
+                 <div class="quiz-options">
+                     ${currentQuiz.optionKeys.map((optionKey, index) => {
+                         const optionText = getTranslation(optionKey, currentLang);
+                         // Use innerHTML for option text as well
+                         return `<button class="quiz-option-btn" data-index="${index}">${optionText}</button>`;
+                     }).join('')}
+                 </div>
+             `;
+
+             feedbackArea.classList.remove('visible', 'correct', 'incorrect');
+             feedbackArea.textContent = '';
+             nextButton.classList.remove('visible');
+             nextButton.disabled = true;
+
+             document.querySelectorAll('.quiz-option-btn').forEach(button => {
+                 button.addEventListener('click', handleAnswer);
+             });
+         }
+
+        function handleAnswer(event) { /* ... (Keep original function) ... */
+             const currentLang = getStoredLanguage();
+             const selectedButton = event.target;
+             const selectedIndex = parseInt(selectedButton.dataset.index);
+             const correctIndex = quizData[currentQuestionIndex].correctAnswer;
+             const correctOptionKey = quizData[currentQuestionIndex].optionKeys[correctIndex];
+             const correctAnswerText = getTranslation(correctOptionKey, currentLang); // Get raw text
+
+             document.querySelectorAll('.quiz-option-btn').forEach(btn => {
+                btn.disabled = true;
+                btn.classList.remove('shake');
+            });
+
+             feedbackArea.classList.add('visible');
+
+             if (selectedIndex === correctIndex) {
+                 selectedButton.classList.add('correct');
+                 feedbackArea.innerHTML = getTranslation('quiz_feedback_correct', currentLang); // innerHTML for potential emoji
+                 feedbackArea.classList.add('correct');
+                 feedbackArea.classList.remove('incorrect');
+                 score++;
+                 selectedButton.classList.add('tada-anim');
+             } else {
+                 selectedButton.classList.add('incorrect');
+                  // Use innerHTML for feedback, make correct answer bold
+                 feedbackArea.innerHTML = getTranslation('quiz_feedback_incorrect', currentLang, { correctAnswerText: `<strong>${correctAnswerText}</strong>` });
+                 feedbackArea.classList.add('incorrect');
+                 feedbackArea.classList.remove('correct');
+                 const correctButton = document.querySelector(`.quiz-option-btn[data-index="${correctIndex}"]`);
+                 if(correctButton) correctButton.classList.add('correct');
+                 selectedButton.classList.add('shake');
+             }
+
+              selectedButton.addEventListener('animationend', () => {
+                   selectedButton.classList.remove('tada-anim', 'shake');
+              }, { once: true });
+
+             nextButton.classList.add('visible');
+             nextButton.disabled = false;
+         }
+
+        function showFinalScore() { /* ... (Keep original function, update final message keys if needed) ... */
+            const currentLang = getStoredLanguage();
+            const totalQuestions = quizData.length;
+            // Use Module 27 specific keys if defined, otherwise fallback or keep generic
+            let titleKey = "quiz_final_score_title"; // Re-use title key maybe
+            let summaryKey = "quiz_final_score_summary";
+            let resultMessageKey;
+
+             if (score === totalQuestions) {
+                 resultMessageKey = translations[currentLang]?.quiz_final_score_perfect_m27 ? 'quiz_final_score_perfect_m27' : 'quiz_final_score_perfect';
+             } else {
+                 resultMessageKey = translations[currentLang]?.quiz_final_score_good_m27 ? 'quiz_final_score_good_m27' : 'quiz_final_score_good';
+             }
+             // If Module 27 specific keys are not added, it will use the default ones which is fine.
+             // For this example, we just reuse the keys from module 0 as defined in the translation object.
+
+             quizArea.innerHTML = `
+                 <div class="quiz-question text-center" data-translate="${titleKey}" style="font-size: 1.5rem;">${getTranslation(titleKey, currentLang)}</div>
+                 <p class="text-center" style="font-size: 1.2rem; margin-bottom: 1rem;">${getTranslation(summaryKey, currentLang, { score: score, total: totalQuestions })}</p>
+                 <p class="text-center" style="color: ${score === totalQuestions ? 'var(--success-color)' : 'var(--primary-color)'}; font-weight: bold;">${getTranslation(resultMessageKey, currentLang)}</p>
+             `;
+             feedbackArea.classList.remove('visible');
+             nextButton.style.display = 'none';
+             quizArea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        nextButton.addEventListener('click', () => { /* ... (Keep original logic) ... */
+             currentQuestionIndex++;
+             loadQuestion();
+         });
+
+        // --- Initial Language Application and Load ---
+        setLanguage(initialLang); // Apply language FIRST
+        if (quizArea) { loadQuestion(); } // Initial quiz load
+
+        // Trigger fade-in animations for elements initially in view
+        document.querySelectorAll('.fade-in').forEach(el => { /* ... (Keep original logic) ... */
+             const rect = el.getBoundingClientRect();
+             if(rect.top < window.innerHeight && rect.bottom >= 0) {
+                // Element initially visible, CSS handles animation start
+             }
+         });
+
+    }); // End DOMContentLoaded
+    </script>
+
+</body>
+</html>

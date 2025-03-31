@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<!-- Language set by JS -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Title set by JS -->
+    <title data-translate="page_title">Module 24: Writing to Files</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* --- Reset & Base Styles --- */
+        :root {
+            --primary-color: #007bff; /* Keeping blue theme */
+            --secondary-color: #6c757d;
+            --background-light: #f8f9fa;
+            --background-dark: #343a40;
+            --text-light: #f8f9fa;
+            --text-dark: #212529;
+            --accent-color: #ffc107; /* Yellow accent */
+            --success-color: #28a745;
+            --error-color: #dc3545;
+            --file-write-color: #fd7e14; /* Orange for writing */
+            --file-append-color: #20c997; /* Teal for appending */
+            --border-radius: 8px;
+            --transition-speed: 0.3s;
+            --font-body: 'Roboto', sans-serif;
+            --font-title: 'Orbitron', sans-serif;
+            /* Nav Colors from other page */
+            --nav-primary: #6e48aa;
+            --nav-success: #4cc9f0;
+            --nav-dark: #1a1a2e;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; font-size: 16px; }
+        body {
+            font-family: var(--font-body); line-height: 1.7;
+            background-color: var(--background-light); color: var(--text-dark);
+            overflow-x: hidden; display: flex; flex-direction: column; min-height: 100vh;
+        }
+        main { flex-grow: 1; }
+
+        /* --- Utility Classes --- */
+        .container { max-width: 960px; margin: 0 auto; padding: 0 15px; }
+        .text-center { text-align: center; }
+        .highlight { color: var(--primary-color); font-weight: bold; }
+        .highlight-write { color: var(--file-write-color); font-weight: bold; }
+        .highlight-append { color: var(--file-append-color); font-weight: bold; }
+        .highlight-safe { color: var(--success-color); font-weight: bold; }
+        .fade-in { opacity: 0; transform: translateY(20px); animation: fadeInAnimation 0.8s ease-out forwards; }
+        .fade-in.delay-1 { animation-delay: 0.2s; }
+        .fade-in.delay-2 { animation-delay: 0.4s; }
+        .fade-in.delay-3 { animation-delay: 0.6s; }
+        .fade-in.delay-4 { animation-delay: 0.8s; }
+        .fade-in.delay-5 { animation-delay: 1.0s; }
+        .button-group { margin-top: 2rem; display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; }
+        .action-button {
+            display: inline-flex; align-items: center; justify-content: center; gap: 0.5em;
+            padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold; color: var(--text-light);
+            background-color: var(--primary-color); border: none; border-radius: var(--border-radius);
+            cursor: pointer; transition: background-color var(--transition-speed), transform var(--transition-speed), filter var(--transition-speed), box-shadow var(--transition-speed);
+            margin-top: 1rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1); text-decoration: none; line-height: 1.2;
+        }
+        .action-button:hover:not(:disabled) { background-color: #0056b3; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+        .action-button:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none; box-shadow: none; opacity: 0.7; }
+        .action-button.success { background-color: var(--success-color); }
+        .action-button.success:hover:not(:disabled) { background-color: #218838; }
+        .action-button.secondary { background-color: var(--secondary-color); }
+        .action-button.secondary:hover:not(:disabled) { background-color: #5a6268; }
+        .action-button:active:not(:disabled) { transform: translateY(1px) scale(0.98); filter: brightness(0.95); }
+
+        /* --- Animations --- */
+        @keyframes fadeInAnimation { to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); } 50% { transform: scale(1.03); box-shadow: 0 0 15px rgba(0, 123, 255, 0.6); } 100% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); } }
+        @keyframes tada { from { transform: scale3d(1, 1, 1); } 10%, 20% { transform: scale3d(.9, .9, .9) rotate3d(0, 0, 1, -3deg); } 30%, 50%, 70%, 90% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, 3deg); } 40%, 60%, 80% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, -3deg); } to { transform: scale3d(1, 1, 1); } }
+        .tada-anim { animation: tada 1s ease; }
+        @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
+        @keyframes iconAppearCorrect { 0% { transform: scale(0.5) rotate(-15deg); opacity: 0; } 60% { transform: scale(1.2) rotate(5deg); opacity: 1; } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
+        @keyframes fileContentAppear { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- Minimal Retractable Nav --- */
+        /* Styles are identical to Module 0, no changes needed */
+        .minimal-nav-button {
+            position: fixed; top: 15px; right: 15px; z-index: 1001;
+            background-color: rgba(52, 58, 64, 0.75); color: var(--text-light); border: none;
+            border-radius: var(--border-radius); padding: 8px 12px; cursor: pointer;
+            transition: background-color var(--transition-speed), opacity var(--transition-speed), transform var(--transition-speed);
+            font-size: 1.1rem; opacity: 0.6; box-shadow: 0 2px 5px rgba(0,0,0,0.2); line-height: 1;
+        }
+        .minimal-nav-button:hover { background-color: rgba(52, 58, 64, 0.95); opacity: 1; transform: scale(1.05); }
+        .minimal-nav {
+            position: fixed; top: 60px; right: 15px; z-index: 1000; background-color: var(--background-dark);
+            border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.3); padding: 0.8rem;
+            opacity: 0; transform: translateY(-15px) scale(0.95); transform-origin: top right;
+            pointer-events: none; transition: opacity var(--transition-speed) ease, transform var(--transition-speed) ease; min-width: 200px;
+        }
+        body.nav-active .minimal-nav { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+        .minimal-nav ul { list-style: none; margin: 0; padding: 0; }
+        .minimal-nav ul li { margin-bottom: 5px; }
+        .minimal-nav ul li:last-child { margin-bottom: 0; }
+        .minimal-nav ul li a {
+            display: flex; align-items: center; color: var(--text-light); text-decoration: none;
+            padding: 0.6rem 1rem; border-radius: 4px; transition: background-color var(--transition-speed), color var(--transition-speed);
+            white-space: nowrap; font-weight: 400; font-size: 0.95rem;
+        }
+        .minimal-nav ul li a i.fas { margin-right: 10px; width: 1.2em; text-align: center; opacity: 0.8; transition: opacity var(--transition-speed); }
+        .minimal-nav ul li a:hover { background-color: var(--primary-color); color: var(--text-light); }
+        .minimal-nav ul li a:hover i.fas { opacity: 1; }
+        .minimal-nav .language-switcher-item { padding: 0.5rem 1rem; border-top: 1px solid var(--secondary-color); margin-top: 8px; padding-top: 13px; }
+        #languageSelect {
+            width: 100%; background: rgba(255,255,255,0.1); color: white; border: 1px solid var(--nav-success);
+            border-radius: 5px; padding: 6px 30px 6px 12px; cursor: pointer; font-size: 0.9rem; appearance: none; -webkit-appearance: none; -moz-appearance: none;
+            background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%234CC9F0%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E');
+            background-repeat: no-repeat; background-position: right 10px center; background-size: 10px auto; transition: background-color 0.3s ease;
+        }
+        #languageSelect:hover { background-color: rgba(255,255,255,0.15); }
+        #languageSelect option { background: var(--nav-dark); color: var(--text-light); }
+        /* --- End Minimal Retractable Nav --- */
+
+        /* --- Header --- */
+        /* Styles are identical to Module 0, no changes needed */
+        .main-header {
+            background: linear-gradient(135deg, var(--primary-color), #0056b3); color: var(--text-light);
+            padding: 4rem 0 6rem; text-align: center; position: relative; overflow: hidden;
+        }
+        .main-header h1 {
+            font-family: var(--font-title); font-size: 3rem; margin-bottom: 0.5rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); animation: fadeInAnimation 1s ease-out;
+        }
+        .main-header p {
+            font-size: 1.2rem; font-weight: 300; opacity: 0.9;
+            animation: fadeInAnimation 1s ease-out 0.3s forwards; opacity: 0;
+        }
+        .header-shape { position: absolute; border-radius: 50%; background-color: rgba(255, 255, 255, 0.1); animation: pulse 5s infinite ease-in-out alternate; }
+        .shape1 { width: 150px; height: 150px; bottom: -50px; left: 10%; animation-duration: 6s; }
+        .shape2 { width: 80px; height: 80px; top: 50px; right: 15%; animation-duration: 4s; }
+        .shape3 { width: 50px; height: 50px; bottom: 20px; right: 30%; animation-duration: 7s; }
+
+        /* --- Section Styling --- */
+        /* Styles are identical to Module 0, no changes needed */
+        section { padding: 4rem 0; border-bottom: 1px solid #eee; }
+        main section:last-of-type { border-bottom: none; }
+        section h2 {
+            font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color);
+            margin-bottom: 2rem; text-align: center; position: relative; padding-bottom: 10px;
+        }
+        section h2::after {
+            content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+            width: 60px; height: 4px; background-color: var(--accent-color); border-radius: 2px;
+        }
+
+        /* --- Specific Section Styles for Module 24 --- */
+
+        /* Intro Persistence Section */
+        #intro-persistence p { font-size: 1.1rem; max-width: 750px; margin: 0 auto 1rem; text-align: center; }
+
+        /* Writing Modes Section */
+        #writing-modes .modes-container {
+            display: flex; justify-content: space-around; gap: 2rem; margin-top: 2.5rem;
+            flex-wrap: wrap;
+        }
+        .mode-card {
+            background-color: #fff; padding: 2rem 1.5rem; border-radius: var(--border-radius);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08); text-align: center;
+            flex: 1; min-width: 220px; max-width: 300px;
+            opacity: 0; transform: translateY(20px); animation: fadeInAnimation 0.6s ease-out forwards;
+            border-top: 5px solid; /* Color set below */
+            transition: transform var(--transition-speed), box-shadow var(--transition-speed);
+        }
+        .mode-card:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(0,0,0,0.12); }
+        .mode-card.write { border-color: var(--file-write-color); }
+        .mode-card.append { border-color: var(--file-append-color); }
+        .mode-card:nth-child(1) { animation-delay: 0.2s; }
+        .mode-card:nth-child(2) { animation-delay: 0.4s; }
+        .mode-icon { font-size: 2.8rem; margin-bottom: 1rem; }
+        .mode-icon.write { color: var(--file-write-color); }
+        .mode-icon.append { color: var(--file-append-color); }
+        .mode-card h3 { font-family: var(--font-body); font-size: 1.4rem; margin-bottom: 0.8rem; }
+        .mode-card code { background-color: rgba(0,0,0,0.05); padding: 0.2em 0.5em; border-radius: 4px; font-family: 'Courier New', Courier, monospace; font-weight: bold; font-size: 1.1em;}
+        .mode-card p { font-size: 1rem; color: var(--secondary-color); margin-top: 1rem; }
+
+        /* Using Write & Newline Section */
+        #using-write .content-split { display: flex; gap: 2rem; align-items: center; margin-top: 2rem; flex-wrap: wrap; }
+        .write-text { flex: 1; min-width: 280px; }
+        .write-text p { margin-bottom: 1rem; font-size: 1.05rem; }
+        .write-demo {
+            flex: 1; min-width: 280px;
+            background-color: var(--background-dark); color: var(--text-light); padding: 1.5rem;
+            border-radius: var(--border-radius); font-family: 'Courier New', Courier, monospace;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15); font-size: 0.95rem;
+        }
+        .write-demo code { display: block; margin-bottom: 0.5rem; }
+
+        /* With Statement Section */
+        #with-statement .with-explanation {
+            display: flex; align-items: center; gap: 2.5rem; margin-top: 2rem; flex-wrap: wrap;
+            background: linear-gradient(145deg, rgba(40, 167, 69, 0.05), rgba(40, 167, 69, 0.15));
+            padding: 2rem; border-radius: var(--border-radius); border-left: 5px solid var(--success-color);
+        }
+        .with-icon { font-size: 4rem; color: var(--success-color); flex-shrink: 0; }
+        .with-text { flex-grow: 1; }
+        .with-text h3 { font-size: 1.5rem; color: var(--success-color); margin-bottom: 1rem; }
+        .with-text p { font-size: 1.05rem; }
+
+        /* Code in Action Section */
+        #code-in-action .code-container { display: flex; gap: 2rem; margin-top: 2rem; flex-wrap: wrap; }
+        .python-code-block {
+             flex: 1.5; min-width: 300px; background-color: var(--background-dark);
+             color: #eee; padding: 2rem; border-radius: var(--border-radius);
+             font-family: 'Courier New', Courier, monospace; font-size: 1rem;
+             box-shadow: 0 5px 15px rgba(0,0,0,0.2); position: relative;
+        }
+        .file-output-simulation {
+            flex: 1; min-width: 250px; background-color: #fff; border: 1px solid #ddd;
+            padding: 1.5rem; border-radius: var(--border-radius);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.07); position: relative;
+        }
+        .file-output-simulation h4 {
+            margin-bottom: 1rem; font-family: var(--font-body); color: var(--secondary-color);
+            border-bottom: 1px solid #eee; padding-bottom: 0.5rem; font-size: 1rem;
+            display: flex; align-items: center; gap: 0.5em;
+        }
+        .file-output-simulation pre {
+            background: none; padding: 0; margin: 0; color: var(--text-dark);
+            font-family: 'Courier New', Courier, monospace; white-space: pre-wrap; /* Allow wrapping */
+            word-wrap: break-word; line-height: 1.6; font-size: 0.95rem;
+            opacity: 0; /* Starts hidden */
+            animation: fileContentAppear 0.8s ease-out 0.5s forwards; /* Fade in after delay */
+        }
+        /* Code syntax colors */
+        .code-keyword { color: #569cd6; font-weight: bold; } .code-string { color: #ce9178; }
+        .code-comment { color: #6a9955; font-style: italic; } .code-function { color: #dcdcaa; }
+        .code-variable { color: #9cdcfe; } .code-method { color: #dcdcaa; }
+        .code-escape { color: #d7ba7d; font-weight: bold; } /* For \n */
+        .code-mode { color: var(--accent-color); } /* For 'w', 'a' */
+
+        /* --- Knowledge Check Section --- */
+        /* Styles are identical to Module 0, adapted for general quiz use */
+        #knowledge-check { background-color: #e9ecef; }
+        .quiz-container { background-color: #fff; padding: 2rem; border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.1); max-width: 700px; margin: 2rem auto 0; }
+        .quiz-question { font-size: 1.2rem; font-weight: bold; margin-bottom: 1.5rem; color: var(--text-dark); }
+        .quiz-options button {
+            display: block; width: 100%; padding: 1rem; margin-bottom: 1rem; text-align: left;
+            font-size: 1rem; background-color: #f8f9fa; border: 1px solid #ced4da;
+            border-radius: var(--border-radius); cursor: pointer;
+            transition: background-color var(--transition-speed), border-color var(--transition-speed), transform var(--transition-speed);
+        }
+        .quiz-options button:not(:disabled):hover { background-color: #e2e6ea; border-color: #adb5bd; transform: translateX(5px); }
+        .quiz-options button:disabled { cursor: default; opacity: 0.7; }
+        .quiz-options button code { background-color: rgba(0,0,0,0.07); padding: 0.1em 0.4em; border-radius: 3px; font-family: 'Courier New', Courier, monospace; }
+        .quiz-options button.correct { background-color: #d4edda; border-color: var(--success-color); color: #155724; font-weight: bold; }
+        .quiz-options button.incorrect { background-color: #f8d7da; border-color: var(--error-color); color: #721c24; font-weight: bold; }
+        .quiz-options button.incorrect.shake { animation: shake 0.5s ease; }
+        .quiz-feedback {
+            margin-top: 1.5rem; padding: 1rem; border-radius: var(--border-radius); font-weight: bold;
+            text-align: center; opacity: 0; transition: opacity 0.5s ease; height: 0; overflow: hidden;
+        }
+        .quiz-feedback.visible { opacity: 1; height: auto; margin-bottom: 1rem; }
+        .quiz-feedback.correct { background-color: #d4edda; color: #155724; }
+        .quiz-feedback.incorrect { background-color: #f8d7da; color: #721c24; }
+        #next-question-btn {
+            display: inline-flex; align-items: center; justify-content: center; gap: 0.5em;
+            margin: 1.5rem auto 0; padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold;
+            color: var(--text-light); background-color: var(--primary-color); border: none;
+            border-radius: var(--border-radius); cursor: pointer;
+            transition: background-color var(--transition-speed), transform var(--transition-speed), opacity 0.3s, visibility 0.3s;
+            opacity: 0; visibility: hidden;
+        }
+        #next-question-btn:hover { background-color: #0056b3; transform: scale(1.05); }
+        #next-question-btn.visible { opacity: 1; visibility: visible; }
+
+        /* --- Completion Section Styling --- */
+        /* Styles are identical to Module 0 */
+        .completion-section { padding: 4rem 0; text-align: center; background-color: var(--background-light); }
+        .completion-section .icon {
+            font-size: 4rem; color: var(--success-color); margin-bottom: 1rem;
+            display: inline-block; opacity: 0; animation: iconAppearCorrect 1s ease-out 0.5s forwards;
+        }
+        .completion-section .icon .fas + .fas { margin-left: 0.75rem; }
+        .completion-section h2 {
+            font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+        .completion-section h2::after { display: none; } /* No underline for completion */
+        .completion-section p {
+            font-size: 1.1rem; margin-top: 1rem; color: var(--secondary-color); max-width: 700px;
+            margin-left: auto; margin-right: auto; line-height: 1.8;
+        }
+        .completion-section .button-group { margin-top: 2.5rem; }
+
+        /* --- Footer --- */
+        .main-footer {
+            background-color: var(--background-dark); color: var(--text-light); text-align: center;
+            padding: 1.5rem 0; font-size: 0.9rem; margin-top: auto;
+        }
+        .main-footer .container { /* Ensure container is used, but content is empty */
+           min-height: 1em; /* Optional: ensure footer takes some space even if empty */
+        }
+
+        /* --- Responsive Design --- */
+        /* Styles mostly identical to Module 0, adjustments made for new layouts */
+        @media (max-width: 768px) {
+            html { font-size: 15px; }
+            .main-header h1 { font-size: 2.5rem; }
+            .main-header p { font-size: 1.1rem; }
+            section h2 { font-size: 1.8rem; }
+            #writing-modes .modes-container { flex-direction: column; align-items: center; }
+            .mode-card { max-width: 90%; }
+            #using-write .content-split { flex-direction: column; }
+            #with-statement .with-explanation { flex-direction: column; text-align: center; gap: 1.5rem; }
+            #code-in-action .code-container { flex-direction: column; }
+            .minimal-nav { min-width: 180px; }
+            .minimal-nav ul li a { padding: 0.6rem 0.8rem; }
+            #languageSelect { font-size: 0.85rem; padding: 5px 25px 5px 10px;}
+            .completion-section h2 { font-size: 2rem; }
+            .completion-section .button-group { flex-direction: column; align-items: center; gap: 0.8rem; }
+            .completion-section .action-button { width: 80%; max-width: 350px; margin-top: 0; }
+        }
+        @media (max-width: 480px) {
+            html { font-size: 14px; }
+            .main-header h1 { font-size: 2rem; }
+            .main-header p { font-size: 1rem; }
+            section h2 { font-size: 1.6rem; }
+            .mode-card { padding: 1.5rem 1rem; }
+            .mode-icon { font-size: 2.5rem; }
+            .mode-card h3 { font-size: 1.2rem; }
+            .python-code-block, .file-output-simulation { padding: 1.5rem; font-size: 0.9rem;}
+            .file-output-simulation h4 { font-size: 0.95rem;}
+            .file-output-simulation pre { font-size: 0.9rem; }
+            .quiz-options button { padding: 0.8rem; font-size: 0.95rem; }
+            .minimal-nav-button { top: 10px; right: 10px; padding: 6px 10px; font-size: 1rem; }
+            .minimal-nav { top: 48px; right: 10px; min-width: 160px; }
+            .minimal-nav ul li a { padding: 0.5rem 0.7rem; font-size: 0.9rem;}
+            .minimal-nav ul li a i.fas { margin-right: 8px; }
+            #languageSelect { font-size: 0.8rem; padding: 4px 20px 4px 8px;}
+            .completion-section .icon { font-size: 3.5rem; }
+            .completion-section h2 { font-size: 1.8rem; }
+            .completion-section p { font-size: 1rem; }
+            .completion-section .action-button { width: 90%; max-width: 300px; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- ========= Minimal Nav Handle ========= -->
+    <button id="minimal-nav-toggle" class="minimal-nav-button" aria-label="Toggle Navigation Menu">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- ========= Minimal Nav Panel (with Language Switcher) ========= -->
+    <nav id="minimal-nav-panel" class="minimal-nav">
+        <ul>
+            <!-- Links to OTHER main pages -->
+            <li><a href="ctp-practice-24.html"><i class="fas fa-pencil-alt fa-fw"></i> <span data-translate="nav_practice">Practice</span></a></li>
+            <li><a href="ctp-advanced-24.html"><i class="fas fa-flask fa-fw"></i> <span data-translate="nav_advanced">Advanced Practice</span></a></li>
+            <li><a href="ctp-dashboard.html"><i class="fas fa-list fa-fw"></i> <span data-translate="nav_menu">Course Menu</span></a></li>
+             <hr style="border: none; border-top: 1px solid var(--secondary-color); margin: 8px 0;">
+             <!-- Links to sections on THIS page -->
+             <li><a href="#intro-persistence"><i class="fas fa-save fa-fw"></i> <span data-translate="nav_intro">Why Save Data?</span></a></li>
+             <li><a href="#writing-modes"><i class="fas fa-file-signature fa-fw"></i> <span data-translate="nav_modes">Writing Modes</span></a></li>
+             <li><a href="#using-write"><i class="fas fa-keyboard fa-fw"></i> <span data-translate="nav_write">Using .write()</span></a></li>
+             <li><a href="#with-statement"><i class="fas fa-shield-alt fa-fw"></i> <span data-translate="nav_with">The 'with' Block</span></a></li>
+             <li><a href="#code-in-action"><i class="fas fa-laptop-code fa-fw"></i> <span data-translate="nav_code_demo">Code Demo</span></a></li>
+             <li><a href="#knowledge-check"><i class="fas fa-check-double fa-fw"></i> <span data-translate="nav_quiz">Knowledge Check</span></a></li>
+            <!-- Language Switcher Item -->
+            <li class="language-switcher-item">
+                 <select id="languageSelect" aria-label="Select Language">
+                     <option value="en" data-translate="lang_en">🇬🇧 English</option>
+                     <option value="pt" data-translate="lang_pt">🇧🇷 Português</option>
+                     <option value="zh" data-translate="lang_zh">🇨🇳 中文</option>
+                 </select>
+            </li>
+        </ul>
+    </nav>
+
+    <header class="main-header">
+        <!-- Decorative shapes -->
+        <div class="header-shape shape1"></div>
+        <div class="header-shape shape2"></div>
+        <div class="header-shape shape3"></div>
+
+        <div class="container">
+            <h1 data-translate="header_title">Module 24: Making Data Stick - Writing Files</h1>
+            <p data-translate="header_subtitle">Learn how to save your program's output and results permanently.</p>
+        </div>
+    </header>
+
+    <main>
+        <!-- ========= Intro Persistence Section ========= -->
+        <section id="intro-persistence">
+            <div class="container">
+                <h2 class="fade-in" data-translate="intro_title">💾 Why Save Data? The Power of Persistence</h2>
+                <p class="fade-in delay-1" data-translate="intro_p1">
+                    Imagine your AI analyzes data, but when the program closes, *poof*! Everything is gone. That's not very useful!
+                    We need <span class="highlight">Data Persistence</span> – the ability to save information beyond a single run of our program.
+                </p>
+                <p class="fade-in delay-2" data-translate="intro_p2">
+                    Writing to <span class="highlight">files</span> is a fundamental way to achieve this. We can store results, logs, user data, configurations, and much more, making our applications truly functional.
+                </p>
+            </div>
+        </section>
+
+        <!-- ========= Writing Modes Section ========= -->
+        <section id="writing-modes">
+            <div class="container">
+                <h2 class="fade-in" data-translate="modes_title">🔑 Opening Files: Choosing Your Mode</h2>
+                <p class="text-center fade-in delay-1" data-translate="modes_subtitle">Before writing, you need to open a file using the `open()` function, specifying a *mode*.</p>
+
+                <div class="modes-container fade-in delay-2">
+                    <div class="mode-card write">
+                        <span class="mode-icon write"><i class="fas fa-file-export"></i></span>
+                        <h3><code data-translate="modes_w_code">'w'</code> <span data-translate="modes_w_title">– Write Mode</span></h3>
+                        <p data-translate="modes_w_desc">
+                            <strong class="highlight-write">Overwrites!</strong> Opens the file for writing. If the file exists, its current content is <span class="highlight-write">deleted</span>. If it doesn't exist, a new file is created.
+                        </p>
+                    </div>
+                    <div class="mode-card append">
+                         <span class="mode-icon append"><i class="fas fa-file-medical"></i></span>
+                        <h3><code data-translate="modes_a_code">'a'</code> <span data-translate="modes_a_title">– Append Mode</span></h3>
+                        <p data-translate="modes_a_desc">
+                           <strong class="highlight-append">Adds To End!</strong> Opens the file for writing, but adds new content to the <span class="highlight-append">end</span> of the file without deleting existing content. If the file doesn't exist, it's created.
+                        </p>
+                    </div>
+                </div>
+                 <p class="text-center fade-in delay-3" style="margin-top: 2rem;" data-translate="modes_caution">Choose wisely! Mode `'w'` can accidentally erase important data.</p>
+            </div>
+        </section>
+
+        <!-- ========= Using Write & Newline Section ========= -->
+        <section id="using-write">
+            <div class="container">
+                <h2 class="fade-in" data-translate="write_title">✍️ Writing Content with `.write()`</h2>
+                <p class="text-center fade-in delay-1" data-translate="write_subtitle">Once a file is open (in 'w' or 'a' mode), you use the `.write()` method.</p>
+
+                <div class="content-split fade-in delay-2">
+                     <div class="write-text">
+                         <p data-translate="write_p1">
+                            The <code class="code-method">.write()</code> method takes a <span class="highlight">string</span> as input and writes that string to the file at the current position (end of file for 'a' mode, beginning for 'w' mode initially).
+                         </p>
+                         <p data-translate="write_p2">
+                            <strong class="highlight">Important:</strong> <code>.write()</code> does <span class="highlight">not</span> automatically add a new line. If you want each piece of text on a separate line, you must explicitly add the <span class="highlight">newline character</span>: <code class="code-escape">\n</code>.
+                         </p>
+                     </div>
+                     <div class="write-demo">
+                         <code data-translate="write_demo_line1"><span class="code-variable">file</span>.<span class="code-method">write</span>(<span class="code-string">"First line of text."</span>)</code>
+                         <code data-translate="write_demo_line2"><span class="code-variable">file</span>.<span class="code-method">write</span>(<span class="code-string">"Second line, same line!"</span>)</code>
+                         <code data-translate="write_demo_line3"><span class="code-variable">file</span>.<span class="code-method">write</span>(<span class="code-string">"Third line."</span> <span class="code-keyword">+</span> <span class="code-string">"<span class="code-escape">\n</span>"</span>) <span class="code-comment"># Add newline</span></code>
+                         <code data-translate="write_demo_line4"><span class="code-variable">file</span>.<span class="code-method">write</span>(<span class="code-string">"Fourth line starts fresh.<span class="code-escape">\n</span>"</span>)</code>
+                     </div>
+                </div>
+            </div>
+        </section>
+
+         <!-- ========= With Statement Section ========= -->
+        <section id="with-statement">
+             <div class="container">
+                 <h2 class="fade-in" data-translate="with_title">🛡️ The Safe Way: `with open(...)`</h2>
+                 <p class="text-center fade-in delay-1" data-translate="with_subtitle">Handling files requires care. What if your program crashes before you close the file?</p>
+
+                 <div class="with-explanation fade-in delay-2">
+                     <span class="with-icon"><i class="fas fa-lock"></i></span>
+                     <div class="with-text">
+                        <h3 data-translate="with_heading">Automatic Cleanup with `with`</h3>
+                         <p data-translate="with_p1">
+                            Python's <code class="code-keyword">with</code> statement provides a <span class="highlight-safe">safer and cleaner</span> way to work with files (and other resources).
+                         </p>
+                         <p data-translate="with_p2">
+                            When you use <code class="code-keyword">with open(...) as file_variable:</code>, Python <span class="highlight-safe">guarantees</span> that the file will be properly closed automatically when you exit the `with` block, even if errors occur inside the block.
+                         </p>
+                         <p data-translate="with_p3">
+                             <strong data-translate="with_recommendation">This is the recommended way to handle files in Python!</strong>
+                         </p>
+                     </div>
+                 </div>
+             </div>
+        </section>
+
+        <!-- ========= Code in Action Section ========= -->
+        <section id="code-in-action">
+            <div class="container">
+                <h2 class="fade-in" data-translate="code_demo_title">⚙️ Code in Action: Writing a Log File</h2>
+                <p class="text-center fade-in delay-1" data-translate="code_demo_subtitle">Let's combine these concepts to write multiple lines to a file called `app_log.txt`.</p>
+
+                <div class="code-container fade-in delay-2">
+                    <div class="python-code-block">
+                        <pre><code class="code-comment"># Use 'with' for safety, 'a' to append</code>
+<span class="code-keyword">with</span> <span class="code-function">open</span>(<span class="code-string">'app_log.txt'</span>, <span class="code-string code-mode">'a'</span>) <span class="code-keyword">as</span> <span class="code-variable">log_file</span>:
+    <span class="code-variable">log_file</span>.<span class="code-method">write</span>(<span class="code-string">"INFO: Application started.<span class="code-escape">\n</span>"</span>)
+    <span class="code-variable">log_file</span>.<span class="code-method">write</span>(<span class="code-string">"DEBUG: Configuration loaded.<span class="code-escape">\n</span>"</span>)
+    <span class="code-variable">log_file</span>.<span class="code-method">write</span>(<span class="code-string">"WARNING: Low disk space detected!<span class="code-escape">\n</span>"</span>)
+
+<span class="code-function">print</span>(<span class="code-string">"Log entries added to app_log.txt"</span>) <code class="code-comment"># Confirmation</code></pre>
+                    </div>
+                    <div class="file-output-simulation">
+                        <h4 data-translate="output_file_title"><i class="fas fa-file-alt"></i> Simulating `app_log.txt` Content</h4>
+                        <pre id="file-content-output"> <!-- Content appears here --> </pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========= Knowledge Check Section ========= -->
+        <section id="knowledge-check">
+            <div class="container">
+                <h2 class="fade-in" data-translate="quiz_title">🧠 Quick Check!</h2>
+                <div class="quiz-container fade-in delay-1">
+                    <div id="quiz-area">
+                        <!-- Quiz questions will be loaded here by JavaScript -->
+                    </div>
+                    <div id="quiz-feedback" class="quiz-feedback">
+                        <!-- Feedback (Correct/Incorrect) shown here -->
+                    </div>
+                    <button id="next-question-btn" data-translate="quiz_next_button">Next Question</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========= Completion Section ========= -->
+        <section class="completion-section">
+            <div class="container">
+                 <div class="icon"> <!-- Animation applied via CSS -->
+                    <i class="fas fa-check-double"></i>
+                    <i class="fas fa-save"></i> <!-- Changed icon -->
+                    <i class="fas fa-star"></i>
+                </div>
+                <h2 class="fade-in delay-1" data-translate="completion_theory_title">Module 24 Theory Complete!</h2>
+                <p class="fade-in delay-2" data-translate="completion_theory_desc">
+                    You've learned how to make your data persist by writing to files using Python! Practice makes perfect. <br>
+                    Head to the <strong>Practice Zone</strong> or challenge yourself with the <strong>Advanced Practice</strong> for this module.
+                </p>
+                <div class="button-group">
+                    <!-- Button Order: Menu (Left, Grey), Practice (Center, Green), Advanced (Right, Grey) -->
+                    <a href="ctp-dashboard.html" class="action-button secondary fade-in delay-3"><i class="fas fa-list"></i> <span data-translate="nav_menu">Course Menu</span></a>
+                    <a href="ctp-practice-24.html" class="action-button success fade-in delay-4"><i class="fas fa-pencil-alt"></i> <span data-translate="nav_practice">Start Practice</span></a>
+                    <a href="ctp-advanced-24.html" class="action-button secondary fade-in delay-5"><i class="fas fa-flask"></i> <span data-translate="nav_advanced">Advanced Practice</span></a>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="main-footer">
+        <div class="container">
+            <!-- Footer content removed as requested -->
+        </div>
+    </footer>
+
+    <script>
+    // --- Translations Object ---
+    const translations = {
+        en: {
+            "page_title": "Module 24: Writing to Files",
+            "nav_practice": "Start Practice", "nav_advanced": "Advanced Practice", "nav_menu": "Course Menu",
+            "nav_intro": "Why Save Data?", "nav_modes": "Writing Modes", "nav_write": "Using .write()", "nav_with": "The 'with' Block", "nav_code_demo": "Code Demo", "nav_quiz": "Knowledge Check",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title": "Module 24: Making Data Stick - Writing Files", "header_subtitle": "Learn how to save your program's output and results permanently.",
+            "intro_title": "💾 Why Save Data? The Power of Persistence",
+            "intro_p1": "Imagine your AI analyzes data, but when the program closes, *poof*! Everything is gone. That's not very useful! We need Data Persistence – the ability to save information beyond a single run of our program.",
+            "intro_p2": "Writing to files is a fundamental way to achieve this. We can store results, logs, user data, configurations, and much more, making our applications truly functional.",
+            "modes_title": "🔑 Opening Files: Choosing Your Mode", "modes_subtitle": "Before writing, you need to open a file using the `open()` function, specifying a *mode*.",
+            "modes_w_code": "'w'", "modes_w_title": "– Write Mode", "modes_w_desc": "<strong class=\"highlight-write\">Overwrites!</strong> Opens the file for writing. If the file exists, its current content is <span class=\"highlight-write\">deleted</span>. If it doesn't exist, a new file is created.",
+            "modes_a_code": "'a'", "modes_a_title": "– Append Mode", "modes_a_desc": "<strong class=\"highlight-append\">Adds To End!</strong> Opens the file for writing, but adds new content to the <span class=\"highlight-append\">end</span> of the file without deleting existing content. If the file doesn't exist, it's created.",
+            "modes_caution": "Choose wisely! Mode `'w'` can accidentally erase important data.",
+            "write_title": "✍️ Writing Content with `.write()`", "write_subtitle": "Once a file is open (in 'w' or 'a' mode), you use the `.write()` method.",
+            "write_p1": "The `.write()` method takes a string as input and writes that string to the file at the current position (end of file for 'a' mode, beginning for 'w' mode initially).",
+            "write_p2": "<strong class=\"highlight\">Important:</strong> `.write()` does <span class=\"highlight\">not</span> automatically add a new line. If you want each piece of text on a separate line, you must explicitly add the <span class=\"highlight\">newline character</span>: `\\n`.",
+            "write_demo_line1": "file.write(\"First line of text.\")", "write_demo_line2": "file.write(\"Second line, same line!\")", "write_demo_line3": "file.write(\"Third line.\" + \"\\n\") # Add newline", "write_demo_line4": "file.write(\"Fourth line starts fresh.\\n\")",
+            "with_title": "🛡️ The Safe Way: `with open(...)`", "with_subtitle": "Handling files requires care. What if your program crashes before you close the file?",
+            "with_heading": "Automatic Cleanup with `with`",
+            "with_p1": "Python's `with` statement provides a <span class=\"highlight-safe\">safer and cleaner</span> way to work with files (and other resources).",
+            "with_p2": "When you use `with open(...) as file_variable:`, Python <span class=\"highlight-safe\">guarantees</span> that the file will be properly closed automatically when you exit the `with` block, even if errors occur inside the block.",
+            "with_p3": "<strong>This is the recommended way to handle files in Python!</strong>",
+            "with_recommendation": "This is the recommended way to handle files in Python!", // Added for consistency if needed separately
+            "code_demo_title": "⚙️ Code in Action: Writing a Log File", "code_demo_subtitle": "Let's combine these concepts to write multiple lines to a file called `app_log.txt`.",
+            "output_file_title": "Simulating `app_log.txt` Content",
+            "output_file_content": "INFO: Application started.\nDEBUG: Configuration loaded.\nWARNING: Low disk space detected!\n", // Simulated content
+            "quiz_title": "🧠 Quick Check!", "quiz_next_button": "Next Question",
+            "quiz_q1": "Which mode for `open()` completely overwrites the file if it exists?",
+            "quiz_q1_opt1": "`'r'` (Read)", "quiz_q1_opt2": "`'a'` (Append)", "quiz_q1_opt3": "`'w'` (Write)", "quiz_q1_opt4": "`'x'` (Exclusive creation)",
+            "quiz_q2": "What does the `.write()` method require as its input?",
+            "quiz_q2_opt1": "A number", "quiz_q2_opt2": "A list", "quiz_q2_opt3": "A boolean (True/False)", "quiz_q2_opt4": "A string",
+            "quiz_q3": "How do you ensure the next `.write()` starts on a new line in the file?",
+            "quiz_q3_opt1": "It happens automatically.", "quiz_q3_opt2": "Use `.writeline()` instead.", "quiz_q3_opt3": "Add `\\n` (newline character) to the end of the string you write.", "quiz_q3_opt4": "Call `file.newline()` after writing.",
+            "quiz_q4": "What is the main benefit of using the `with open(...)` statement?",
+            "quiz_q4_opt1": "It makes the code run faster.", "quiz_q4_opt2": "It automatically encrypts the file.", "quiz_q4_opt3": "It ensures the file is automatically and safely closed.", "quiz_q4_opt4": "It allows writing numbers directly without converting to strings.",
+            "quiz_feedback_correct": "Correct! 🎉", "quiz_feedback_incorrect": "Not quite! The correct answer was: {correctAnswerText}",
+            "quiz_final_score_title": "Module 24 Complete!", "quiz_final_score_summary": "You answered {score} out of {total} questions correctly.",
+            "quiz_final_score_perfect": "Excellent work! You've mastered file writing basics.", "quiz_final_score_good": "Great job! Keep practicing, and you'll get even better.",
+            "completion_theory_title": "Module 24 Theory Complete!",
+            "completion_theory_desc": "You've learned how to make your data persist by writing to files using Python! Practice makes perfect. <br> Head to the <strong>Practice Zone</strong> or challenge yourself with the <strong>Advanced Practice</strong> for this module.",
+        },
+        pt: {
+            "page_title": "Módulo 24: Escrevendo em Arquivos",
+            "nav_practice": "Iniciar Prática", "nav_advanced": "Prática Avançada", "nav_menu": "Menu do Curso",
+            "nav_intro": "Por que Salvar?", "nav_modes": "Modos de Escrita", "nav_write": "Usando .write()", "nav_with": "Bloco 'with'", "nav_code_demo": "Demo de Código", "nav_quiz": "Teste Rápido",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title": "Módulo 24: Fazendo os Dados Durarem - Escrevendo Arquivos", "header_subtitle": "Aprenda como salvar a saída e os resultados do seu programa permanentemente.",
+            "intro_title": "💾 Por que Salvar Dados? O Poder da Persistência",
+            "intro_p1": "Imagine sua IA analisando dados, mas quando o programa fecha, *puff*! Tudo some. Isso não é muito útil! Precisamos de Persistência de Dados – a capacidade de salvar informações além de uma única execução do nosso programa.",
+            "intro_p2": "Escrever em arquivos é uma forma fundamental de conseguir isso. Podemos armazenar resultados, logs, dados de usuário, configurações e muito more, tornando nossas aplicações verdadeiramente funcionais.",
+            "modes_title": "🔑 Abrindo Arquivos: Escolhendo Seu Modo", "modes_subtitle": "Antes de escrever, você precisa abrir um arquivo usando a função `open()`, especificando um *modo*.",
+            "modes_w_code": "'w'", "modes_w_title": "– Modo de Escrita", "modes_w_desc": "<strong class=\"highlight-write\">Sobrescreve!</strong> Abre o arquivo para escrita. Se o arquivo existir, seu conteúdo atual é <span class=\"highlight-write\">apagado</span>. Se não existir, um novo arquivo é criado.",
+            "modes_a_code": "'a'", "modes_a_title": "– Modo de Anexar", "modes_a_desc": "<strong class=\"highlight-append\">Adiciona ao Final!</strong> Abre o arquivo para escrita, mas adiciona novo conteúdo ao <span class=\"highlight-append\">final</span> do arquivo sem apagar o conteúdo existente. Se o arquivo não existir, ele é criado.",
+            "modes_caution": "Escolha com sabedoria! O modo `'w'` pode apagar dados importantes acidentalmente.",
+            "write_title": "✍️ Escrevendo Conteúdo com `.write()`", "write_subtitle": "Uma vez que um arquivo está aberto (no modo 'w' ou 'a'), você usa o método `.write()`.",
+            "write_p1": "O método `.write()` recebe uma string como entrada e escreve essa string no arquivo na posição atual (final do arquivo para o modo 'a', início para o modo 'w' inicialmente).",
+            "write_p2": "<strong class=\"highlight\">Importante:</strong> `.write()` <span class=\"highlight\">não</span> adiciona automaticamente uma nova linha. Se você quiser cada pedaço de texto em uma linha separada, deve adicionar explicitamente o <span class=\"highlight\">caractere de nova linha</span>: `\\n`.",
+            "write_demo_line1": "arquivo.write(\"Primeira linha de texto.\")", "write_demo_line2": "arquivo.write(\"Segunda linha, mesma linha!\")", "write_demo_line3": "arquivo.write(\"Terceira linha.\" + \"\\n\") # Adiciona nova linha", "write_demo_line4": "arquivo.write(\"Quarta linha começa nova.\\n\")",
+            "with_title": "🛡️ O Jeito Seguro: `with open(...)`", "with_subtitle": "Manusear arquivos requer cuidado. E se seu programa travar antes de fechar o arquivo?",
+            "with_heading": "Limpeza Automática com `with`",
+            "with_p1": "A declaração `with` do Python fornece uma maneira <span class=\"highlight-safe\">mais segura e limpa</span> de trabalhar com arquivos (e outros recursos).",
+            "with_p2": "Quando você usa `with open(...) as variavel_arquivo:`, o Python <span class=\"highlight-safe\">garante</span> que o arquivo será fechado corretamente de forma automática ao sair do bloco `with`, mesmo que ocorram erros dentro do bloco.",
+            "with_p3": "<strong>Esta é a maneira recomendada de lidar com arquivos em Python!</strong>",
+            "with_recommendation": "Esta é a maneira recomendada de lidar com arquivos em Python!",
+            "code_demo_title": "⚙️ Código em Ação: Escrevendo um Arquivo de Log", "code_demo_subtitle": "Vamos combinar esses conceitos para escrever múltiplas linhas em um arquivo chamado `app_log.txt`.",
+            "output_file_title": "Simulando Conteúdo de `app_log.txt`",
+            "output_file_content": "INFO: Aplicação iniciada.\nDEBUG: Configuração carregada.\nWARNING: Espaço em disco baixo detectado!\n", // Simulated content pt
+            "quiz_title": "🧠 Teste Rápido!", "quiz_next_button": "Próxima Pergunta",
+            "quiz_q1": "Qual modo para `open()` sobrescreve completamente o arquivo se ele existir?",
+            "quiz_q1_opt1": "`'r'` (Leitura)", "quiz_q1_opt2": "`'a'` (Anexar)", "quiz_q1_opt3": "`'w'` (Escrita)", "quiz_q1_opt4": "`'x'` (Criação exclusiva)",
+            "quiz_q2": "O que o método `.write()` requer como entrada?",
+            "quiz_q2_opt1": "Um número", "quiz_q2_opt2": "Uma lista", "quiz_q2_opt3": "Um booleano (True/False)", "quiz_q2_opt4": "Uma string",
+            "quiz_q3": "Como você garante que o próximo `.write()` comece em uma nova linha no arquivo?",
+            "quiz_q3_opt1": "Acontece automaticamente.", "quiz_q3_opt2": "Use `.writeline()` em vez disso.", "quiz_q3_opt3": "Adicione `\\n` (caractere de nova linha) ao final da string que você escreve.", "quiz_q3_opt4": "Chame `arquivo.newline()` após escrever.",
+            "quiz_q4": "Qual é o principal benefício de usar a declaração `with open(...)`?",
+            "quiz_q4_opt1": "Faz o código rodar mais rápido.", "quiz_q4_opt2": "Criptografa automaticamente o arquivo.", "quiz_q4_opt3": "Garante que o arquivo seja fechado automaticamente e com segurança.", "quiz_q4_opt4": "Permite escrever números diretamente sem converter para strings.",
+            "quiz_feedback_correct": "Correto! 🎉", "quiz_feedback_incorrect": "Não foi bem assim! A resposta correta era: {correctAnswerText}",
+            "quiz_final_score_title": "Módulo 24 Completo!", "quiz_final_score_summary": "Você respondeu {score} de {total} perguntas corretamente.",
+            "quiz_final_score_perfect": "Excelente trabalho! Você dominou o básico de escrita em arquivos.", "quiz_final_score_good": "Ótimo trabalho! Continue praticando e você ficará ainda melhor.",
+            "completion_theory_title": "Teoria do Módulo 24 Completa!",
+            "completion_theory_desc": "Você aprendeu como fazer seus dados persistirem escrevendo em arquivos com Python! A prática leva à perfeição. <br> Vá para a <strong>Zona de Prática</strong> ou desafie-se com a <strong>Prática Avançada</strong> para este módulo.",
+        },
+        zh: {
+            "page_title": "模块 24：写入文件",
+            "nav_practice": "开始练习", "nav_advanced": "高级练习", "nav_menu": "课程菜单",
+            "nav_intro": "为何保存？", "nav_modes": "写入模式", "nav_write": "使用.write()", "nav_with": "'with' 语句块", "nav_code_demo": "代码演示", "nav_quiz": "知识测验",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title": "模块 24：让数据持久化 - 写入文件", "header_subtitle": "学习如何永久保存程序的输出和结果。",
+            "intro_title": "💾 为何要保存数据？持久化的力量",
+            "intro_p1": "想象一下你的人工智能分析了数据，但程序关闭时，*噗*！一切都消失了。这不太有用！我们需要数据持久化——即在程序单次运行之外保存信息的能力。",
+            "intro_p2": "写入文件是实现这一目标的基本方法。我们可以存储结果、日志、用户数据、配置等等，使我们的应用程序真正实用。",
+            "modes_title": "🔑 打开文件：选择你的模式", "modes_subtitle": "在写入之前，你需要使用 `open()` 函数打开一个文件，并指定一个*模式*。",
+            "modes_w_code": "'w'", "modes_w_title": "– 写入模式", "modes_w_desc": "<strong class=\"highlight-write\">覆盖！</strong> 打开文件用于写入。如果文件存在，其当前内容将被<span class=\"highlight-write\">删除</span>。如果文件不存在，则创建新文件。",
+            "modes_a_code": "'a'", "modes_a_title": "– 追加模式", "modes_a_desc": "<strong class=\"highlight-append\">添加到末尾！</strong> 打开文件用于写入，但将新内容添加到文件的<span class=\"highlight-append\">末尾</span>，而不删除现有内容。如果文件不存在，则创建它。",
+            "modes_caution": "请谨慎选择！模式 `'w'` 可能会意外擦除重要数据。",
+            "write_title": "✍️ 使用 `.write()` 写入内容", "write_subtitle": "一旦文件以 'w' 或 'a' 模式打开，就使用 `.write()` 方法。",
+            "write_p1": "`.write()` 方法接受一个字符串作为输入，并将该字符串写入文件的当前位置（对于 'a' 模式是文件末尾，对于 'w' 模式最初是文件开头）。",
+            "write_p2": "<strong class=\"highlight\">重要提示：</strong> `.write()` <span class=\"highlight\">不会</span>自动添加新行。如果你希望每段文本占单独一行，则必须显式添加<span class=\"highlight\">换行符</span>：`\\n`。",
+            "write_demo_line1": "wenjian.write(\"第一行文本。\")", "write_demo_line2": "wenjian.write(\"第二行，在同一行！\")", "write_demo_line3": "wenjian.write(\"第三行。\" + \"\\n\") # 添加换行符", "write_demo_line4": "wenjian.write(\"第四行重新开始。\\n\")",
+            "with_title": "🛡️ 安全方式：`with open(...)`", "with_subtitle": "处理文件需要小心。如果程序在关闭文件之前崩溃了怎么办？",
+            "with_heading": "使用 `with` 自动清理",
+            "with_p1": "Python 的 `with` 语句提供了一种<span class=\"highlight-safe\">更安全、更简洁</span>的方式来处理文件（以及其他资源）。",
+            "with_p2": "当你使用 `with open(...) as wenjian_bianliang:` 时，Python <span class=\"highlight-safe\">保证</span>在你退出 `with` 块时文件会被自动正确关闭，即使块内发生错误也是如此。",
+            "with_p3": "<strong>这是 Python 中处理文件的推荐方式！</strong>",
+            "with_recommendation": "这是 Python 中处理文件的推荐方式！",
+            "code_demo_title": "⚙️ 代码实战：写入日志文件", "code_demo_subtitle": "让我们结合这些概念，将多行内容写入一个名为 `app_log.txt` 的文件。",
+            "output_file_title": "模拟 `app_log.txt` 内容",
+            "output_file_content": "信息：应用程序已启动。\n调试：配置已加载。\n警告：检测到磁盘空间不足！\n", // Simulated content zh
+            "quiz_title": "🧠 快速测验！", "quiz_next_button": "下一题",
+            "quiz_q1": "用于 `open()` 的哪个模式会在文件存在时完全覆盖它？",
+            "quiz_q1_opt1": "`'r'` (读取)", "quiz_q1_opt2": "`'a'` (追加)", "quiz_q1_opt3": "`'w'` (写入)", "quiz_q1_opt4": "`'x'` (独占创建)",
+            "quiz_q2": "`.write()` 方法需要什么作为其输入？",
+            "quiz_q2_opt1": "一个数字", "quiz_q2_opt2": "一个列表", "quiz_q2_opt3": "一个布尔值 (True/False)", "quiz_q2_opt4": "一个字符串",
+            "quiz_q3": "如何确保下一次 `.write()` 在文件的新行开始？",
+            "quiz_q3_opt1": "自动发生。", "quiz_q3_opt2": "改用 `.writeline()`。", "quiz_q3_opt3": "在你写入的字符串末尾添加 `\\n` (换行符)。", "quiz_q3_opt4": "写入后调用 `file.newline()`。",
+            "quiz_q4": "使用 `with open(...)` 语句的主要好处是什么？",
+            "quiz_q4_opt1": "它使代码运行更快。", "quiz_q4_opt2": "它自动加密文件。", "quiz_q4_opt3": "它确保文件被自动、安全地关闭。", "quiz_q4_opt4": "它允许直接写入数字而无需转换为字符串。",
+            "quiz_feedback_correct": "正确！🎉", "quiz_feedback_incorrect": "不太对哦！正确答案是：{correctAnswerText}",
+            "quiz_final_score_title": "模块 24 完成！", "quiz_final_score_summary": "你答对了 {score} / {total} 题。",
+            "quiz_final_score_perfect": "非常棒！你已经掌握了文件写入的基础知识。", "quiz_final_score_good": "做得很好！继续练习，你会变得更好。",
+            "completion_theory_title": "模块 24 理论完成！",
+            "completion_theory_desc": "你已经学会了如何使用 Python 写入文件来使数据持久化！熟能生巧。<br> 前往本模块的<strong>练习区</strong>或通过<strong>高级练习</strong>挑战自己。",
+        }
+    };
+
+
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // --- Language Management Functions (Identical to Module 0) ---
+        function getStoredLanguage() {
+            const storedLang = localStorage.getItem('userLanguage');
+            if (storedLang && translations[storedLang]) return storedLang;
+            const browserLang = navigator.language || navigator.userLanguage;
+            if (browserLang.startsWith('pt')) return 'pt';
+            if (browserLang.startsWith('zh')) return 'zh';
+            return 'en';
+        }
+
+        function setLanguage(lang) {
+            if (!translations[lang]) lang = 'en';
+            localStorage.setItem('userLanguage', lang);
+            document.documentElement.lang = lang;
+            translatePage(lang);
+            const langSelect = document.getElementById('languageSelect');
+            if (langSelect) langSelect.value = lang;
+            // Update quiz if language changes mid-quiz
+            if(quizArea && currentQuestionIndex < quizData.length) {
+                if (!quizArea.querySelector('[data-translate="quiz_final_score_title"]')) {
+                    loadQuestion(); // Reload current question
+                }
+            }
+            // Update simulated file content
+             updateFileSimulationContent(lang);
+        }
+
+        function getTranslation(key, lang, replacements = {}) {
+            let text = translations[lang]?.[key] ?? translations['en']?.[key] ?? `[${key}]`;
+            for (const placeholder in replacements) {
+                const regex = new RegExp(`\\{${placeholder}\\}`, 'g');
+                text = text.replace(regex, replacements[placeholder]);
+            }
+            return text;
+        }
+
+        function translatePage(lang) {
+            if (!translations[lang]) lang = 'en';
+            document.querySelectorAll('[data-translate]').forEach(el => {
+                const key = el.getAttribute('data-translate');
+                const translation = getTranslation(key, lang);
+                if (el.tagName === 'TITLE') { document.title = translation; }
+                else if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') { /* Skip */ }
+                else if (el.tagName === 'OPTION') { el.textContent = translation; }
+                else {
+                    // Use innerHTML only if translation contains HTML tags we trust (like <strong>, <code>, <span>)
+                    if (/[<](strong|code|span|br)/i.test(translation)) {
+                        el.innerHTML = translation;
+                    } else {
+                         // Safely handle potential code tags from quiz answers etc.
+                         // Let's assume quiz answers might contain `code`, but others usually don't need innerHTML
+                         if(el.closest('.quiz-options') || el.classList.contains('quiz-question')) {
+                              el.innerHTML = translation.replace(/`(.*?)`/g, '<code>$1</code>');
+                         } else {
+                            el.textContent = translation;
+                         }
+                    }
+                }
+            });
+             document.querySelectorAll('[data-translate-placeholder]').forEach(el => {
+                 const key = el.getAttribute('data-translate-placeholder');
+                 el.setAttribute('placeholder', getTranslation(key, lang));
+             });
+             // Translate tooltips (if any were added for this module)
+             // Translate code comments (if any were added with data-translate)
+        }
+
+         // --- Function to Update Simulated File Content ---
+         function updateFileSimulationContent(lang) {
+             const fileContentElement = document.getElementById('file-content-output');
+             if (fileContentElement) {
+                 const contentKey = "output_file_content"; // Key for the simulated file lines
+                 const translatedContent = getTranslation(contentKey, lang);
+                 // Set text content, preserving line breaks from the translation string
+                 fileContentElement.textContent = translatedContent;
+             }
+         }
+
+        // --- Initialize Language ---
+        const initialLang = getStoredLanguage();
+
+        // --- Minimal Nav Logic (Identical to Module 0) ---
+        const navToggleButton = document.getElementById('minimal-nav-toggle');
+        const navPanel = document.getElementById('minimal-nav-panel');
+        const body = document.body;
+        if (navToggleButton && navPanel) {
+            navToggleButton.addEventListener('click', (event) => { event.stopPropagation(); body.classList.toggle('nav-active'); navToggleButton.setAttribute('aria-expanded', body.classList.contains('nav-active')); });
+            document.addEventListener('click', (event) => { if (body.classList.contains('nav-active') && !navPanel.contains(event.target) && event.target !== navToggleButton && !navToggleButton.contains(event.target)) { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); } });
+            navPanel.querySelectorAll('a').forEach(link => { link.addEventListener('click', () => { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); }); });
+            document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && body.classList.contains('nav-active')) { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); } });
+            navToggleButton.setAttribute('aria-expanded', 'false');
+        }
+
+        // --- Language Switcher Setup (Identical to Module 0) ---
+        const langSelect = document.getElementById('languageSelect');
+        if (langSelect) {
+            langSelect.addEventListener('change', (e) => { setLanguage(e.target.value); });
+        }
+
+        // --- Intersection Observer for Animations (Identical to Module 0) ---
+        const observerOptions = { root: null, rootMargin: '0px', threshold: 0.1 };
+        const observerCallback = (entries, observer) => {
+            entries.forEach(entry => { if (entry.isIntersecting) { entry.target.classList.add('visible'); } });
+        };
+        const observer = new IntersectionObserver(observerCallback, observerOptions);
+        // Observe elements that need fade-in on scroll (can add more if needed)
+        document.querySelectorAll('.mode-card').forEach(el => { observer.observe(el); });
+
+
+        // --- Knowledge Check / Quiz ---
+        // *** NEW Quiz Data for Module 24 ***
+        const quizData = [
+            { questionKey: "quiz_q1", optionKeys: ["quiz_q1_opt1", "quiz_q1_opt2", "quiz_q1_opt3", "quiz_q1_opt4"], correctAnswer: 2 }, // 'w'
+            { questionKey: "quiz_q2", optionKeys: ["quiz_q2_opt1", "quiz_q2_opt2", "quiz_q2_opt3", "quiz_q2_opt4"], correctAnswer: 3 }, // A string
+            { questionKey: "quiz_q3", optionKeys: ["quiz_q3_opt1", "quiz_q3_opt2", "quiz_q3_opt3", "quiz_q3_opt4"], correctAnswer: 2 }, // Add \n
+            { questionKey: "quiz_q4", optionKeys: ["quiz_q4_opt1", "quiz_q4_opt2", "quiz_q4_opt3", "quiz_q4_opt4"], correctAnswer: 2 }  // Auto close safely
+        ];
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        const quizArea = document.getElementById('quiz-area');
+        const feedbackArea = document.getElementById('quiz-feedback');
+        const nextButton = document.getElementById('next-question-btn');
+
+        function loadQuestion() {
+            const currentLang = getStoredLanguage();
+            if (!quizArea || currentQuestionIndex >= quizData.length) {
+                if (quizArea && !quizArea.querySelector('[data-translate="quiz_final_score_title"]')) {
+                   showFinalScore();
+                }
+                return;
+            }
+
+            const currentQuiz = quizData[currentQuestionIndex];
+            const questionText = getTranslation(currentQuiz.questionKey, currentLang);
+            quizArea.innerHTML = `
+                <div class="quiz-question">${currentQuestionIndex + 1}. ${questionText.replace(/`(.*?)`/g, '<code>$1</code>')}</div>
+                <div class="quiz-options">
+                    ${currentQuiz.optionKeys.map((optionKey, index) => {
+                        let optionText = getTranslation(optionKey, currentLang);
+                        // Render code tags within options safely
+                        optionText = optionText.replace(/`(.*?)`/g, '<code>$1</code>');
+                        return `<button class="quiz-option-btn" data-index="${index}">${optionText}</button>`;
+                    }).join('')}
+                </div>
+            `;
+
+            feedbackArea.classList.remove('visible', 'correct', 'incorrect');
+            feedbackArea.textContent = '';
+            nextButton.classList.remove('visible');
+            nextButton.disabled = true;
+
+            document.querySelectorAll('.quiz-option-btn').forEach(button => {
+                button.addEventListener('click', handleAnswer);
+            });
+        }
+
+        function handleAnswer(event) {
+            const currentLang = getStoredLanguage();
+            const selectedButton = event.target.closest('.quiz-option-btn'); // Handle clicks inside code tags
+            const selectedIndex = parseInt(selectedButton.dataset.index);
+            const correctIndex = quizData[currentQuestionIndex].correctAnswer;
+            let correctOptionKey = quizData[currentQuestionIndex].optionKeys[correctIndex];
+            let correctAnswerText = getTranslation(correctOptionKey, currentLang);
+            // Render code tags in feedback safely
+             correctAnswerText = correctAnswerText.replace(/`(.*?)`/g, '<code>$1</code>');
+
+
+            document.querySelectorAll('.quiz-option-btn').forEach(btn => {
+               btn.disabled = true;
+               btn.classList.remove('shake');
+           });
+
+            feedbackArea.classList.add('visible');
+
+            if (selectedIndex === correctIndex) {
+                selectedButton.classList.add('correct');
+                feedbackArea.innerHTML = getTranslation('quiz_feedback_correct', currentLang);
+                feedbackArea.classList.add('correct');
+                feedbackArea.classList.remove('incorrect');
+                score++;
+                selectedButton.classList.add('tada-anim');
+            } else {
+                selectedButton.classList.add('incorrect');
+                feedbackArea.innerHTML = getTranslation('quiz_feedback_incorrect', currentLang, { correctAnswerText: `<strong>${correctAnswerText}</strong>` });
+                feedbackArea.classList.add('incorrect');
+                feedbackArea.classList.remove('correct');
+                const correctButton = document.querySelector(`.quiz-option-btn[data-index="${correctIndex}"]`);
+                if(correctButton) correctButton.classList.add('correct');
+                selectedButton.classList.add('shake');
+            }
+
+             selectedButton.addEventListener('animationend', () => {
+                  selectedButton.classList.remove('tada-anim', 'shake');
+             }, { once: true });
+
+            nextButton.classList.add('visible');
+            nextButton.disabled = false;
+            // Scroll feedback into view smoothly if needed
+             setTimeout(() => {
+                 feedbackArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+             }, 100); // Small delay to ensure layout settled
+        }
+
+        function showFinalScore() {
+             const currentLang = getStoredLanguage();
+             const totalQuestions = quizData.length;
+             let resultMessageKey;
+             const percentage = (score / totalQuestions) * 100;
+             if (percentage === 100) {
+                 resultMessageKey = 'quiz_final_score_perfect';
+             } else { // Keep it simple, just 'good' for anything less than perfect
+                 resultMessageKey = 'quiz_final_score_good';
+             }
+
+             quizArea.innerHTML = `
+                 <div class="quiz-question text-center" data-translate="quiz_final_score_title" style="font-size: 1.5rem;">${getTranslation('quiz_final_score_title', currentLang)}</div>
+                 <p class="text-center" style="font-size: 1.2rem; margin-bottom: 1rem;">${getTranslation('quiz_final_score_summary', currentLang, { score: score, total: totalQuestions })}</p>
+                 <p class="text-center" style="color: ${percentage === 100 ? 'var(--success-color)' : 'var(--primary-color)'}; font-weight: bold;">${getTranslation(resultMessageKey, currentLang)}</p>
+             `;
+             feedbackArea.classList.remove('visible');
+             nextButton.style.display = 'none';
+             quizArea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+         }
+
+        nextButton.addEventListener('click', () => {
+            currentQuestionIndex++;
+            loadQuestion();
+        });
+
+        // --- Initial Language Application and Load ---
+        setLanguage(initialLang); // Apply language FIRST, this also calls updateFileSimulationContent
+        if (quizArea) { loadQuestion(); } // Initial quiz load
+
+        // Trigger fade-in animations for elements initially in view
+        document.querySelectorAll('.fade-in').forEach(el => {
+            const rect = el.getBoundingClientRect();
+            if(rect.top < window.innerHeight && rect.bottom >= 0) {
+                // Element is initially visible, CSS handles the animation
+            }
+        });
+
+         // --- File Output Simulation Trigger (Observer) ---
+         const fileOutputElement = document.getElementById('file-content-output');
+         if(fileOutputElement) {
+             const fileObserver = new IntersectionObserver((entries) => {
+                 entries.forEach(entry => {
+                     if (entry.isIntersecting && !fileOutputElement.style.opacity) { // Check if animation hasn't run yet
+                         // CSS animation 'fileContentAppear' handles the actual fade-in effect
+                         // We just need to trigger it once it's potentially visible
+                         // The animation has a delay built-in via CSS
+                         fileObserver.unobserve(entry.target); // Stop observing once triggered
+                     }
+                 });
+             }, { threshold: 0.3 }); // Trigger when 30% visible
+             fileObserver.observe(fileOutputElement.closest('.file-output-simulation'));
+         }
+
+
+    }); // End DOMContentLoaded
+    </script>
+
+</body>
+</html>

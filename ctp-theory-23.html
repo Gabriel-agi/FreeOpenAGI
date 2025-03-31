@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<!-- Language set by JS -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Title set by JS -->
+    <title data-translate="page_title">Module 23: Reading from Files</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* --- Reset & Base Styles --- */
+        :root {
+            --primary-color: #007bff; /* Keeping original theme */
+            --secondary-color: #6c757d;
+            --background-light: #f8f9fa;
+            --background-dark: #343a40;
+            --text-light: #f8f9fa;
+            --text-dark: #212529;
+            --accent-color: #ffc107; /* Yellow accent */
+            --success-color: #28a745;
+            --error-color: #dc3545;
+            --file-color: #fd7e14; /* Orange for file concepts */
+            --io-color: #17a2b8; /* Teal for I/O */
+            --border-radius: 8px;
+            --transition-speed: 0.3s;
+            --font-body: 'Roboto', sans-serif;
+            --font-title: 'Orbitron', sans-serif;
+             /* Nav Colors from other page */
+            --nav-primary: #6e48aa;
+            --nav-success: #4cc9f0;
+            --nav-dark: #1a1a2e;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; font-size: 16px; }
+
+        body {
+            font-family: var(--font-body);
+            line-height: 1.7;
+            background-color: var(--background-light);
+            color: var(--text-dark);
+            overflow-x: hidden;
+            display: flex; /* Use flexbox for layout */
+            flex-direction: column; /* Stack body content */
+            min-height: 100vh; /* Ensure body takes full viewport height */
+        }
+
+        main {
+             flex-grow: 1; /* Allow main content to grow and push footer (removed) down */
+        }
+
+        /* --- Utility Classes --- */
+        .container { max-width: 960px; margin: 0 auto; padding: 0 15px; }
+        .text-center { text-align: center; }
+        .highlight { color: var(--primary-color); font-weight: bold; }
+        .highlight-file { color: var(--file-color); font-weight: bold; }
+        .highlight-io { color: var(--io-color); font-weight: bold; }
+        .fade-in { opacity: 0; transform: translateY(20px); animation: fadeInAnimation 0.8s ease-out forwards; }
+        .fade-in.delay-1 { animation-delay: 0.2s; }
+        .fade-in.delay-2 { animation-delay: 0.4s; }
+        .fade-in.delay-3 { animation-delay: 0.6s; }
+        .fade-in.delay-4 { animation-delay: 0.8s; }
+        .fade-in.delay-5 { animation-delay: 1.0s; }
+        .button-group { margin-top: 2rem; display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; }
+        .action-button { display: inline-flex; align-items: center; justify-content: center; gap: 0.5em; padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold; color: var(--text-light); background-color: var(--primary-color); border: none; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), transform var(--transition-speed), filter var(--transition-speed), box-shadow var(--transition-speed); margin-top: 1rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1); text-decoration: none; line-height: 1.2; }
+        .action-button i.fas { /* Aligned by inline-flex */ }
+        .action-button:hover:not(:disabled) { background-color: #0056b3; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+        .action-button:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none; box-shadow: none; opacity: 0.7; }
+        .action-button.success { background-color: var(--success-color); }
+        .action-button.success:hover:not(:disabled) { background-color: #218838; }
+        .action-button.secondary { background-color: var(--secondary-color); }
+        .action-button.secondary:hover:not(:disabled) { background-color: #5a6268; }
+        .action-button:active:not(:disabled) { transform: translateY(1px) scale(0.98); filter: brightness(0.95); }
+
+        /* --- Animations --- */
+        @keyframes fadeInAnimation { to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); } 50% { transform: scale(1.03); box-shadow: 0 0 15px rgba(0, 123, 255, 0.6); } 100% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); } }
+        @keyframes code-line-anim { from { width: 0; opacity: 0; } to { width: 100%; opacity: 1; } }
+        @keyframes tada { from { transform: scale3d(1, 1, 1); } 10%, 20% { transform: scale3d(.9, .9, .9) rotate3d(0, 0, 1, -3deg); } 30%, 50%, 70%, 90% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, 3deg); } 40%, 60%, 80% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, -3deg); } to { transform: scale3d(1, 1, 1); } }
+        .tada-anim { animation: tada 1s ease; }
+        @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
+        @keyframes iconAppearCorrect { 0% { transform: scale(0.5) rotate(-15deg); opacity: 0; } 60% { transform: scale(1.2) rotate(5deg); opacity: 1; } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
+
+        /* --- Minimal Retractable Nav --- */
+        .minimal-nav-button { position: fixed; top: 15px; right: 15px; z-index: 1001; background-color: rgba(52, 58, 64, 0.75); color: var(--text-light); border: none; border-radius: var(--border-radius); padding: 8px 12px; cursor: pointer; transition: background-color var(--transition-speed), opacity var(--transition-speed), transform var(--transition-speed); font-size: 1.1rem; opacity: 0.6; box-shadow: 0 2px 5px rgba(0,0,0,0.2); line-height: 1; }
+        .minimal-nav-button:hover { background-color: rgba(52, 58, 64, 0.95); opacity: 1; transform: scale(1.05); }
+        .minimal-nav { position: fixed; top: 60px; right: 15px; z-index: 1000; background-color: var(--background-dark); border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.3); padding: 0.8rem; opacity: 0; transform: translateY(-15px) scale(0.95); transform-origin: top right; pointer-events: none; transition: opacity var(--transition-speed) ease, transform var(--transition-speed) ease; min-width: 200px; }
+        body.nav-active .minimal-nav { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+        .minimal-nav ul { list-style: none; margin: 0; padding: 0; }
+        .minimal-nav ul li { margin-bottom: 5px; }
+        .minimal-nav ul li:last-child { margin-bottom: 0; }
+        .minimal-nav ul li a { display: flex; align-items: center; color: var(--text-light); text-decoration: none; padding: 0.6rem 1rem; border-radius: 4px; transition: background-color var(--transition-speed), color var(--transition-speed); white-space: nowrap; font-weight: 400; font-size: 0.95rem; }
+        .minimal-nav ul li a i.fas { margin-right: 10px; width: 1.2em; text-align: center; opacity: 0.8; transition: opacity var(--transition-speed); }
+        .minimal-nav ul li a:hover { background-color: var(--primary-color); color: var(--text-light); }
+        .minimal-nav ul li a:hover i.fas { opacity: 1; }
+        .minimal-nav .language-switcher-item { padding: 0.5rem 1rem; border-top: 1px solid var(--secondary-color); margin-top: 8px; padding-top: 13px; }
+        #languageSelect { width: 100%; background: rgba(255,255,255,0.1); color: white; border: 1px solid var(--nav-success); border-radius: 5px; padding: 6px 30px 6px 12px; cursor: pointer; font-size: 0.9rem; appearance: none; -webkit-appearance: none; -moz-appearance: none; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%234CC9F0%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right 10px center; background-size: 10px auto; transition: background-color 0.3s ease; }
+        #languageSelect:hover { background-color: rgba(255,255,255,0.15); }
+        #languageSelect option { background: var(--nav-dark); color: var(--text-light); }
+
+        /* --- Header --- */
+        .main-header { background: linear-gradient(135deg, var(--primary-color), #0056b3); color: var(--text-light); padding: 4rem 0 6rem; text-align: center; position: relative; overflow: hidden; }
+        .main-header h1 { font-family: var(--font-title); font-size: 3rem; margin-bottom: 0.5rem; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); animation: fadeInAnimation 1s ease-out; }
+        .main-header p { font-size: 1.2rem; font-weight: 300; opacity: 0.9; animation: fadeInAnimation 1s ease-out 0.3s forwards; opacity: 0; }
+        .header-shape { position: absolute; border-radius: 50%; background-color: rgba(255, 255, 255, 0.1); animation: pulse 5s infinite ease-in-out alternate; }
+        .shape1 { width: 150px; height: 150px; bottom: -50px; left: 10%; animation-duration: 6s; }
+        .shape2 { width: 80px; height: 80px; top: 50px; right: 15%; animation-duration: 4s; }
+        .shape3 { width: 50px; height: 50px; bottom: 20px; right: 30%; animation-duration: 7s; }
+
+        /* --- Section Styling --- */
+        section { padding: 4rem 0; border-bottom: 1px solid #eee; }
+        main section:last-of-type { border-bottom: none; }
+        section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); margin-bottom: 2rem; text-align: center; position: relative; padding-bottom: 10px; }
+        section h2::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 60px; height: 4px; background-color: var(--accent-color); border-radius: 2px; }
+
+        /* --- Welcome/Intro Section --- */
+        #welcome p { font-size: 1.1rem; max-width: 700px; margin: 0 auto 1rem; text-align: center; }
+
+        /* --- Opening Files Section --- */
+        #opening-files .content-split { display: flex; gap: 2rem; align-items: flex-start; flex-wrap: wrap; }
+        #opening-files .text-content { flex-basis: 55%; }
+        #opening-files .visual-aid { flex-basis: 40%; text-align: center; padding-top: 1rem; }
+        #opening-files .visual-aid i { font-size: 6rem; color: var(--file-color); opacity: 0.8; }
+        #opening-files code { background-color: rgba(0, 123, 255, 0.1); color: #0056b3; padding: 0.2em 0.4em; border-radius: 4px; font-family: 'Courier New', Courier, monospace; font-weight: bold; }
+
+        /* --- Reading Methods Section (Using Feature Cards) --- */
+        #reading-methods .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 2rem; margin-top: 2rem; }
+        .feature-card { background-color: #fff; padding: 1.5rem; border-radius: var(--border-radius); box-shadow: 0 4px 10px rgba(0,0,0,0.07); text-align: center; transition: transform var(--transition-speed) ease, box-shadow var(--transition-speed) ease; cursor: pointer; opacity: 0; transform: translateY(20px); animation: fadeInAnimation 0.6s ease-out forwards; }
+        .feature-card:nth-child(1) { animation-delay: 0.2s; }
+        .feature-card:nth-child(2) { animation-delay: 0.4s; }
+        .feature-card:nth-child(3) { animation-delay: 0.6s; }
+        .feature-card:hover { transform: translateY(-5px) scale(1.02); box-shadow: 0 8px 20px rgba(0,0,0,0.12); }
+        .feature-icon { font-size: 2.5rem; margin-bottom: 1rem; color: var(--primary-color); }
+        .feature-card h3 { font-family: var(--font-body); font-weight: 700; font-size: 1.3rem; margin-bottom: 0.8rem; color: var(--text-dark); }
+        .feature-details { max-height: 0; overflow: hidden; transition: max-height 0.5s ease-out, margin-top 0.5s ease-out; font-size: 0.95rem; color: var(--secondary-color); margin-top: 0; }
+        .feature-card.active .feature-details { max-height: 200px; margin-top: 1rem; }
+
+        /* --- File Reading Example Section --- */
+        #file-reading-example .explanation { display: flex; gap: 2rem; align-items: flex-start; margin-top: 2rem; flex-wrap: wrap; }
+        .file-reading-demo { flex-basis: 55%; position: relative; }
+        .simulated-file { background-color: #fff; border: 1px dashed var(--secondary-color); padding: 1.5rem; border-radius: var(--border-radius); margin-bottom: 1.5rem; font-family: 'Courier New', Courier, monospace; font-size: 0.95rem; box-shadow: 0 3px 8px rgba(0,0,0,0.05); }
+        .simulated-file-title { font-weight: bold; margin-bottom: 0.8rem; color: var(--text-dark); border-bottom: 1px solid #eee; padding-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5em; }
+        .simulated-file-title i { color: var(--file-color); }
+        .simulated-file-content span { display: block; white-space: pre-wrap; } /* Preserve lines */
+        .python-code-block { background-color: var(--background-dark); color: #eee; padding: 1.5rem 2rem; border-radius: var(--border-radius); font-family: 'Courier New', Courier, monospace; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+        .python-code-block .code-line { display: block; margin-bottom: 0.5rem; }
+        .python-code-block .output-area { color: var(--accent-color); font-weight: bold; font-size: 1.05rem; border-top: 1px dashed var(--secondary-color); padding-top: 1rem; margin-top: 1.5rem; opacity: 0; transition: opacity 0.8s ease 1s; min-height: 40px; /* Reserve space */ white-space: pre-wrap; /* Show multiple lines */ }
+        .python-code-block .output-area.visible { opacity: 1; }
+        .file-reading-text { flex-basis: 40%; font-size: 1.05rem; }
+        .file-reading-text p { margin-bottom: 1rem; }
+        .code-highlight { background-color: rgba(0, 123, 255, 0.1); color: #0056b3; padding: 0.2em 0.4em; border-radius: 4px; font-family: 'Courier New', Courier, monospace; font-weight: bold; cursor: pointer; transition: background-color var(--transition-speed); display: inline-block; position: relative; }
+        .code-highlight:hover { background-color: rgba(0, 123, 255, 0.2); }
+        .tooltip { visibility: hidden; width: 170px; background-color: var(--background-dark); color: var(--text-light); text-align: center; border-radius: 6px; padding: 8px 5px; position: absolute; z-index: 1; bottom: 125%; left: 50%; margin-left: -85px; opacity: 0; transition: opacity 0.3s; font-family: var(--font-body); font-size: 0.9rem; font-weight: normal; pointer-events: none; }
+        .tooltip::after { content: ""; position: absolute; top: 100%; left: 50%; margin-left: -5px; border-width: 5px; border-style: solid; border-color: var(--background-dark) transparent transparent transparent; }
+        .code-highlight:hover .tooltip { visibility: visible; opacity: 1; }
+        .code-keyword { color: #569cd6; } .code-string { color: #ce9178; }
+        .code-comment { color: #6a9955; } .code-function { color: #dcdcaa; }
+        .code-variable { color: #9cdcfe; } .code-method { color: #dcdcaa;}
+
+        /* --- Knowledge Check Section --- */
+        #knowledge-check { background-color: #e9ecef; }
+        .quiz-container { background-color: #fff; padding: 2rem; border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.1); max-width: 700px; margin: 2rem auto 0; }
+        .quiz-question { font-size: 1.2rem; font-weight: bold; margin-bottom: 1.5rem; color: var(--text-dark); }
+        .quiz-options button { display: block; width: 100%; padding: 1rem; margin-bottom: 1rem; text-align: left; font-size: 1rem; background-color: #f8f9fa; border: 1px solid #ced4da; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), border-color var(--transition-speed), transform var(--transition-speed); }
+        .quiz-options button:not(:disabled):hover { background-color: #e2e6ea; border-color: #adb5bd; transform: translateX(5px); }
+        .quiz-options button:disabled { cursor: default; opacity: 0.7; }
+        .quiz-options button.correct { background-color: #d4edda; border-color: var(--success-color); color: #155724; font-weight: bold; }
+        .quiz-options button.incorrect { background-color: #f8d7da; border-color: var(--error-color); color: #721c24; font-weight: bold; }
+        .quiz-options button.incorrect.shake { animation: shake 0.5s ease; }
+        .quiz-feedback { margin-top: 1.5rem; padding: 1rem; border-radius: var(--border-radius); font-weight: bold; text-align: center; opacity: 0; transition: opacity 0.5s ease; height: 0; overflow: hidden; }
+        .quiz-feedback.visible { opacity: 1; height: auto; margin-bottom: 1rem; }
+        .quiz-feedback.correct { background-color: #d4edda; color: #155724; }
+        .quiz-feedback.incorrect { background-color: #f8d7da; color: #721c24; }
+        #next-question-btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5em; margin: 1.5rem auto 0; padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold; color: var(--text-light); background-color: var(--primary-color); border: none; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), transform var(--transition-speed), opacity 0.3s, visibility 0.3s; opacity: 0; visibility: hidden; }
+        #next-question-btn:hover { background-color: #0056b3; transform: scale(1.05); }
+        #next-question-btn.visible { opacity: 1; visibility: visible; }
+
+        /* --- Completion Section Styling --- */
+        .completion-section { padding: 4rem 0; text-align: center; background-color: var(--background-light); }
+        .completion-section .icon { font-size: 4rem; color: var(--success-color); margin-bottom: 1rem; display: inline-block; opacity: 0; animation: iconAppearCorrect 1s ease-out 0.5s forwards; }
+         .completion-section .icon .fas + .fas { margin-left: 0.75rem; }
+        .completion-section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); margin-bottom: 1rem; }
+         .completion-section h2::after { display: none; }
+        .completion-section p { font-size: 1.1rem; margin-top: 1rem; color: var(--secondary-color); max-width: 700px; margin-left: auto; margin-right: auto; line-height: 1.8; }
+        .completion-section .button-group { margin-top: 2.5rem; }
+
+        /* --- Responsive Design --- */
+        @media (max-width: 768px) {
+            html { font-size: 15px; }
+            .main-header h1 { font-size: 2.5rem; }
+            .main-header p { font-size: 1.1rem; }
+            section h2 { font-size: 1.8rem; }
+            #opening-files .content-split { flex-direction: column; }
+            #opening-files .visual-aid { margin-top: 1rem; }
+            #reading-methods .features { grid-template-columns: 1fr; }
+            #file-reading-example .explanation { flex-direction: column; }
+            .file-reading-demo, .file-reading-text { flex-basis: 100%; }
+            .minimal-nav { min-width: 180px; }
+            .minimal-nav ul li a { padding: 0.6rem 0.8rem; }
+            #languageSelect { font-size: 0.85rem; padding: 5px 25px 5px 10px;}
+             .completion-section h2 { font-size: 2rem; }
+             .completion-section .button-group { flex-direction: column; align-items: center; gap: 0.8rem; }
+             .completion-section .action-button { width: 80%; max-width: 350px; margin-top: 0; }
+        }
+        @media (max-width: 480px) {
+            html { font-size: 14px; }
+            .main-header h1 { font-size: 2rem; }
+            .main-header p { font-size: 1rem; }
+            section h2 { font-size: 1.6rem; }
+            .quiz-options button { padding: 0.8rem; font-size: 0.95rem; }
+            .tooltip { width: 140px; margin-left: -70px; font-size: 0.8rem;}
+             .minimal-nav-button { top: 10px; right: 10px; padding: 6px 10px; font-size: 1rem; }
+             .minimal-nav { top: 48px; right: 10px; min-width: 160px; }
+             .minimal-nav ul li a { padding: 0.5rem 0.7rem; font-size: 0.9rem;}
+             .minimal-nav ul li a i.fas { margin-right: 8px; }
+             #languageSelect { font-size: 0.8rem; padding: 4px 20px 4px 8px;}
+             .completion-section .icon { font-size: 3.5rem; }
+             .completion-section h2 { font-size: 1.8rem; }
+             .completion-section p { font-size: 1rem; }
+             .completion-section .action-button { width: 90%; max-width: 300px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ========= Minimal Nav Handle ========= -->
+    <button id="minimal-nav-toggle" class="minimal-nav-button" aria-label="Toggle Navigation Menu">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- ========= Minimal Nav Panel (with Language Switcher) ========= -->
+    <nav id="minimal-nav-panel" class="minimal-nav">
+        <ul>
+            <!-- Links to OTHER main pages -->
+            <li><a href="ctp-practice-23.html"><i class="fas fa-pencil-alt fa-fw"></i> <span data-translate="nav_practice">Practice</span></a></li>
+            <li><a href="ctp-advanced-23.html"><i class="fas fa-flask fa-fw"></i> <span data-translate="nav_advanced">Advanced Practice</span></a></li>
+            <li><a href="ctp-dashboard.html"><i class="fas fa-list fa-fw"></i> <span data-translate="nav_menu">Course Menu</span></a></li>
+             <hr style="border: none; border-top: 1px solid var(--secondary-color); margin: 8px 0;">
+             <!-- Links to sections on THIS page -->
+             <li><a href="#welcome"><i class="fas fa-door-open fa-fw"></i> <span data-translate="nav_welcome">Welcome</span></a></li>
+             <li><a href="#opening-files"><i class="fas fa-folder-open fa-fw"></i> <span data-translate="nav_opening_files">Opening Files</span></a></li>
+             <li><a href="#reading-methods"><i class="fas fa-book-reader fa-fw"></i> <span data-translate="nav_reading_methods">Reading Methods</span></a></li>
+             <li><a href="#file-reading-example"><i class="fas fa-file-alt fa-fw"></i> <span data-translate="nav_example">Example</span></a></li>
+             <li><a href="#knowledge-check"><i class="fas fa-check-double fa-fw"></i> <span data-translate="nav_quiz">Knowledge Check</span></a></li>
+            <!-- Language Switcher Item -->
+            <li class="language-switcher-item">
+                 <select id="languageSelect" aria-label="Select Language">
+                     <option value="en" data-translate="lang_en">🇬🇧 English</option>
+                     <option value="pt" data-translate="lang_pt">🇧🇷 Português</option>
+                     <option value="zh" data-translate="lang_zh">🇨🇳 中文</option>
+                 </select>
+            </li>
+        </ul>
+    </nav>
+
+    <header class="main-header">
+        <!-- Decorative shapes -->
+        <div class="header-shape shape1"></div>
+        <div class="header-shape shape2"></div>
+        <div class="header-shape shape3"></div>
+
+        <div class="container">
+            <h1 data-translate="header_title">Module 23: Reading from Files</h1>
+            <p data-translate="header_subtitle">Learn how to access and read data stored in external files using Python.</p>
+        </div>
+    </header>
+
+    <main>
+        <!-- ========= Welcome Section ========= -->
+        <section id="welcome">
+            <div class="container">
+                <h2 class="fade-in" data-translate="welcome_title">📂 Accessing External Data</h2>
+                <p class="fade-in delay-1" data-translate="welcome_p1">
+                    So far, our program's data disappears when it stops running. What if we want to store information permanently or read data created by other programs? That's where files come in!
+                </p>
+                <p class="fade-in delay-2" data-translate="welcome_p2">
+                    Reading from files allows our Python scripts to load data from text files, configuration files, datasets, and more. This is fundamental for <span class="highlight-file" data-translate="pc_persistence">Data Persistence</span> – making data last beyond a single program run. Let's see how!
+                </p>
+            </div>
+        </section>
+
+        <!-- ========= Opening Files Section ========= -->
+        <section id="opening-files">
+            <div class="container">
+                <h2 class="fade-in" data-translate="opening_files_title">🔑 Opening the Door: `open()` and `with`</h2>
+                <div class="content-split">
+                    <div class="text-content fade-in delay-1">
+                        <p data-translate="opening_files_p1">Before you can read from a file, you need to 'open' it. Python has a built-in function <code>open()</code> for this.</p>
+                        <p data-translate="opening_files_p2">The most common way to open a file for reading is: <code>open('filename.txt', 'r')</code>. The <code>'r'</code> stands for 'read mode'.</p>
+                        <p data-translate="opening_files_p3">
+                            <strong class="highlight">Crucially:</strong> Files should always be closed after use to free up resources. The best practice in Python is to use the <span class="highlight">`with`</span> statement, which handles closing automatically, even if errors occur:
+                        </p>
+                        <pre style="background:#eee; padding: 10px; border-radius: 5px; margin-top:1rem; font-size:0.95em;"><code class="code-keyword">with</code> <code class="code-function">open</code>(<code class="code-string">'my_data.txt'</code>, <code class="code-string">'r'</code>) <code class="code-keyword">as</code> <code class="code-variable">file_object</code>:
+    <code class="code-comment"># Code to read from file_object goes here</code>
+<code class="code-comment"># File is automatically closed outside the 'with' block</code></pre>
+                        <p data-translate="opening_files_p4" style="margin-top:1rem;">The <code>with</code> statement ensures our interaction with the file is safe and efficient.</p>
+                    </div>
+                    <div class="visual-aid fade-in delay-2">
+                        <i class="fas fa-folder-open"></i>
+                        <p style="margin-top: 1rem;" data-translate="opening_files_visual_caption">The `with open(...)` statement safely opens and prepares the file for reading.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========= Reading Methods Section ========= -->
+        <section id="reading-methods">
+            <div class="container">
+                <h2 class="fade-in" data-translate="reading_methods_title">📖 Ways to Read File Content</h2>
+                <p class="text-center fade-in delay-1" data-translate="reading_methods_subtitle">Once a file is open (inside the `with` block), Python offers several methods to read its contents.</p>
+
+                <div class="features">
+                    <!-- Card 1: .read() -->
+                    <div class="feature-card" id="card-read">
+                        <span class="feature-icon">📜</span>
+                        <h3 data-translate="feature_read_title">`.read()`</h3>
+                        <div class="feature-details">
+                            <p data-translate="feature_read_text">Reads the <span class="highlight">entire</span> content of the file into a <span class="highlight">single string</span>. Best for small files where loading everything into memory is okay.</p>
+                        </div>
+                    </div>
+
+                    <!-- Card 2: .readline() -->
+                    <div class="feature-card" id="card-readline">
+                        <span class="feature-icon">➖</span>
+                        <h3 data-translate="feature_readline_title">`.readline()`</h3>
+                        <div class="feature-details">
+                            <p data-translate="feature_readline_text">Reads just <span class="highlight">one line</span> from the file, including the newline character (`\n`) at the end. Call it again to get the next line. Good for processing line by line without loading the whole file.</p>
+                        </div>
+                    </div>
+
+                    <!-- Card 3: .readlines() -->
+                    <div class="feature-card" id="card-readlines">
+                        <span class="feature-icon">📑</span>
+                        <h3 data-translate="feature_readlines_title">`.readlines()`</h3>
+                        <div class="feature-details">
+                            <p data-translate="feature_readlines_text">Reads <span class="highlight">all lines</span> of the file into a <span class="highlight">list</span>, where each list item is a string representing one line (including `\n`). Useful if you need random access to lines.</p>
+                        </div>
+                    </div>
+                </div>
+                 <p class="text-center fade-in delay-4" style="margin-top: 2rem;" data-translate="feature_cta">Click on the cards above to reveal more!</p>
+            </div>
+        </section>
+
+        <!-- ========= File Reading Example Section ========= -->
+        <section id="file-reading-example">
+             <div class="container">
+                 <h2 class="fade-in" data-translate="example_title">⚙️ Reading in Action</h2>
+                 <p class="text-center fade-in delay-1" data-translate="example_subtitle">Let's see how to read data from a simple file named `data.txt`.</p>
+
+                 <div class="explanation fade-in delay-2">
+                     <div class="file-reading-demo">
+                         <!-- Simulated File -->
+                         <div class="simulated-file">
+                             <div class="simulated-file-title"><i class="fas fa-file-alt"></i> <span data-translate="example_file_name">data.txt</span></div>
+                             <div class="simulated-file-content">
+                                 <span data-translate="example_file_line1">Line 1: Hello from the file!</span>
+                                 <span data-translate="example_file_line2">Line 2: Python is fun.</span>
+                                 <span data-translate="example_file_line3">Line 3: End of data.</span>
+                             </div>
+                         </div>
+                         <!-- Python Code Block -->
+                         <div class="python-code-block">
+                             <span class="code-line">
+                                 <span class="code-keyword">with</span> <code class="code-function">open</code>(<span class="code-string">'data.txt'</span>, <span class="code-string">'r'</span>) <span class="code-keyword">as</span> <code class="code-variable">f</code>:
+                             </span>
+                              <span class="code-line" style="padding-left: 2em;">
+                                 <code class="code-variable">content</code> = <code class="code-variable">f</code>.<code class="code-method">read</code>()&nbsp;&nbsp;<span class="code-comment" data-translate="example_code_comment"># Read the whole file</span>
+                              </span>
+                             <span class="code-line">
+                                 <code class="code-function">print</code>(<code class="code-variable">content</code>)
+                             </span>
+                             <div class="output-area">
+                                 <!-- Output will appear here via JS -->
+                             </div>
+                         </div>
+                     </div>
+                     <div class="file-reading-text fade-in delay-3">
+                         <p data-translate="example_text_p1">
+                             Imagine the text on the left is inside a file named `data.txt`.
+                         </p>
+                         <p data-translate="example_text_p2">
+                             The Python code uses
+                             <span class="code-highlight" data-translate-tooltip="tooltip_with">with open()<span class="tooltip">Safely opens the file 'data.txt' in read mode ('r') and assigns it to the variable 'f'. Ensures the file is closed afterwards.</span></span>
+                             to open the file.
+                         </p>
+                         <p data-translate="example_text_p3">
+                             Inside the `with` block, <code class="code-highlight" data-translate-tooltip="tooltip_read">f.read()<span class="tooltip">The .read() method reads the entire content of the file 'f' into the 'content' variable as a single string.</span></code> reads all the text from the file into the `content` variable.
+                         </p>
+                         <p data-translate="example_text_p4">
+                             Finally, <code class="code-highlight" data-translate-tooltip="tooltip_print_content">print(content)<span class="tooltip">Displays the value stored in the 'content' variable (which is the text read from the file) to the screen.</span></code> shows the file's content. This demonstrates basic <span class="highlight-io" data-translate="pc_io">Input/Output (I/O)</span> - reading data *in* from a file.
+                         </p>
+                     </div>
+                 </div>
+             </div>
+        </section>
+
+        <!-- ========= Knowledge Check Section ========= -->
+        <section id="knowledge-check">
+            <div class="container">
+                <h2 class="fade-in" data-translate="quiz_title">🧠 Quick Check!</h2>
+                <div class="quiz-container fade-in delay-1">
+                    <div id="quiz-area">
+                        <!-- Quiz questions will be loaded here by JavaScript -->
+                    </div>
+                    <div id="quiz-feedback" class="quiz-feedback">
+                        <!-- Feedback (Correct/Incorrect) shown here -->
+                    </div>
+                    <button id="next-question-btn" data-translate="quiz_next_button">Next Question</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========= Completion Section ========= -->
+        <section class="completion-section">
+            <div class="container">
+                 <div class="icon"> <!-- Animation applied via CSS -->
+                    <i class="fas fa-file-import"></i>
+                    <i class="fas fa-check-double"></i>
+                    <i class="fas fa-lightbulb"></i>
+                </div>
+                <h2 class="fade-in delay-1" data-translate="completion_theory_title">Module 23 Theory Complete!</h2>
+                <p class="fade-in delay-2" data-translate="completion_theory_desc">
+                    You've learned the essentials of reading data from files in Python! This is a vital skill for working with real-world data. <br>
+                    Ready to practice? Head to the <strong>Practice Zone</strong> or tackle the <strong>Advanced Practice</strong>.
+                </p>
+                <div class="button-group">
+                    <a href="ctp-dashboard.html" class="action-button secondary fade-in delay-3"><i class="fas fa-list"></i> <span data-translate="nav_menu">Course Menu</span></a>
+                    <a href="ctp-practice-23.html" class="action-button success fade-in delay-4"><i class="fas fa-pencil-alt"></i> <span data-translate="nav_practice">Start Practice</span></a>
+                    <a href="ctp-advanced-23.html" class="action-button secondary fade-in delay-5"><i class="fas fa-flask"></i> <span data-translate="nav_advanced">Advanced Practice</span></a>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer Removed -->
+
+    <script>
+    // --- Translations Object ---
+    const translations = {
+        en: {
+            "page_title": "Module 23: Reading from Files",
+            "nav_practice": "Start Practice", "nav_advanced": "Advanced Practice", "nav_menu": "Course Menu",
+            "nav_welcome": "Welcome", "nav_opening_files": "Opening Files", "nav_reading_methods": "Reading Methods", "nav_example": "Example", "nav_quiz": "Knowledge Check",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title": "Module 23: Reading from Files", "header_subtitle": "Learn how to access and read data stored in external files using Python.",
+            "welcome_title": "📂 Accessing External Data",
+            "welcome_p1": "So far, our program's data disappears when it stops running. What if we want to store information permanently or read data created by other programs? That's where files come in!",
+            "welcome_p2": "Reading from files allows our Python scripts to load data from text files, configuration files, datasets, and more. This is fundamental for Data Persistence – making data last beyond a single program run. Let's see how!",
+            "pc_persistence": "Data Persistence",
+            "opening_files_title": "🔑 Opening the Door: `open()` and `with`",
+            "opening_files_p1": "Before you can read from a file, you need to 'open' it. Python has a built-in function `open()` for this.",
+            "opening_files_p2": "The most common way to open a file for reading is: `open('filename.txt', 'r')`. The `'r'` stands for 'read mode'.",
+            "opening_files_p3": "<strong>Crucially:</strong> Files should always be closed after use to free up resources. The best practice in Python is to use the <span class='highlight'>`with`</span> statement, which handles closing automatically, even if errors occur:",
+            "opening_files_p4": "The `with` statement ensures our interaction with the file is safe and efficient.",
+            "opening_files_visual_caption": "The `with open(...)` statement safely opens and prepares the file for reading.",
+            "reading_methods_title": "📖 Ways to Read File Content", "reading_methods_subtitle": "Once a file is open (inside the `with` block), Python offers several methods to read its contents.",
+            "feature_read_title": ".read()", "feature_read_text": "Reads the <span class='highlight'>entire</span> content of the file into a <span class='highlight'>single string</span>. Best for small files where loading everything into memory is okay.",
+            "feature_readline_title": ".readline()", "feature_readline_text": "Reads just <span class='highlight'>one line</span> from the file, including the newline character (`\\n`) at the end. Call it again to get the next line. Good for processing line by line without loading the whole file.",
+            "feature_readlines_title": ".readlines()", "feature_readlines_text": "Reads <span class='highlight'>all lines</span> of the file into a <span class='highlight'>list</span>, where each list item is a string representing one line (including `\\n`). Useful if you need random access to lines.",
+            "feature_cta": "Click on the cards above to reveal more!",
+            "example_title": "⚙️ Reading in Action", "example_subtitle": "Let's see how to read data from a simple file named `data.txt`.",
+            "example_file_name": "data.txt",
+            "example_file_line1": "Line 1: Hello from the file!", "example_file_line2": "Line 2: Python is fun.", "example_file_line3": "Line 3: End of data.",
+            "example_code_comment": "# Read the whole file",
+            "example_text_p1": "Imagine the text on the left is inside a file named `data.txt`.",
+            "example_text_p2": "The Python code uses `with open()` to open the file.",
+            "example_text_p3": "Inside the `with` block, `f.read()` reads all the text from the file into the `content` variable.",
+            "example_text_p4": "Finally, `print(content)` shows the file's content. This demonstrates basic Input/Output (I/O) - reading data *in* from a file.",
+            "pc_io": "Input/Output (I/O)",
+            "tooltip_with": "Safely opens 'data.txt' in read mode ('r'), assigns to 'f'. Ensures file is closed.",
+            "tooltip_read": ".read() method reads entire content of file 'f' into 'content' variable as a single string.",
+            "tooltip_print_content": "Displays the value stored in 'content' (text read from file) to the screen.",
+            "quiz_title": "🧠 Quick Check!", "quiz_next_button": "Next Question",
+            "quiz_q1": "What is the main purpose of opening a file in `'r'` mode?",
+            "quiz_q1_opt1": "To write new data to the file.", "quiz_q1_opt2": "To read existing data from the file.", "quiz_q1_opt3": "To rename the file.", "quiz_q1_opt4": "To delete the file.",
+            "quiz_q2": "What is the primary benefit of using the `with open(...)` statement?",
+            "quiz_q2_opt1": "It makes the code shorter.", "quiz_q2_opt2": "It automatically imports necessary libraries.", "quiz_q2_opt3": "It ensures the file is automatically closed, even if errors occur.", "quiz_q2_opt4": "It reads the file faster.",
+            "quiz_q3": "Which file reading method returns the entire file content as a single string?",
+            "quiz_q3_opt1": ".readline()", "quiz_q3_opt2": ".readlines()", "quiz_q3_opt3": ".read()", "quiz_q3_opt4": ".open()",
+            "quiz_q4": "If you want to process a large file line by line without loading it all into memory, which method is generally best?",
+            "quiz_q4_opt1": ".read()", "quiz_q4_opt2": ".readlines()", "quiz_q4_opt3": ".seek(0)", "quiz_q4_opt4": ".readline() (often used in a loop)",
+            "quiz_feedback_correct": "Correct! 🎉", "quiz_feedback_incorrect": "Not quite! The correct answer was: {correctAnswerText}",
+            "quiz_final_score_title": "Module 23 Complete!", "quiz_final_score_summary": "You answered {score} out of {total} questions correctly.",
+            "quiz_final_score_perfect": "Excellent work! You're ready to read files.", "quiz_final_score_good": "Great job! Review the methods, and you'll master file reading.",
+            "completion_theory_title": "Module 23 Theory Complete!",
+            "completion_theory_desc": "You've learned the essentials of reading data from files in Python! This is a vital skill for working with real-world data. <br> Ready to practice? Head to the <strong>Practice Zone</strong> or tackle the <strong>Advanced Practice</strong>.",
+        },
+        pt: {
+            "page_title": "Módulo 23: Lendo de Arquivos",
+            "nav_practice": "Iniciar Prática", "nav_advanced": "Prática Avançada", "nav_menu": "Menu do Curso",
+            "nav_welcome": "Boas-vindas", "nav_opening_files": "Abrindo Arquivos", "nav_reading_methods": "Métodos de Leitura", "nav_example": "Exemplo", "nav_quiz": "Teste Rápido",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title": "Módulo 23: Lendo de Arquivos", "header_subtitle": "Aprenda como acessar e ler dados armazenados em arquivos externos usando Python.",
+            "welcome_title": "📂 Acessando Dados Externos",
+            "welcome_p1": "Até agora, os dados do nosso programa desaparecem quando ele para de rodar. E se quisermos armazenar informações permanentemente ou ler dados criados por outros programas? É aí que entram os arquivos!",
+            "welcome_p2": "Ler de arquivos permite que nossos scripts Python carreguem dados de arquivos de texto, arquivos de configuração, conjuntos de dados e muito mais. Isso é fundamental para a <span class='highlight-file'>Persistência de Dados</span> – fazer os dados durarem além de uma única execução do programa. Vamos ver como!",
+            "pc_persistence": "Persistência de Dados",
+            "opening_files_title": "🔑 Abrindo a Porta: `open()` e `with`",
+            "opening_files_p1": "Antes de poder ler de um arquivo, você precisa 'abri-lo'. Python tem uma função embutida `open()` para isso.",
+            "opening_files_p2": "A forma mais comum de abrir um arquivo para leitura é: `open('nome_arquivo.txt', 'r')`. O `'r'` significa 'modo de leitura' (read mode).",
+            "opening_files_p3": "<strong>Crucialmente:</strong> Arquivos devem sempre ser fechados após o uso para liberar recursos. A melhor prática em Python é usar a declaração <span class='highlight'>`with`</span>, que lida com o fechamento automaticamente, mesmo se ocorrerem erros:",
+            "opening_files_p4": "A declaração `with` garante que nossa interação com o arquivo seja segura e eficiente.",
+            "opening_files_visual_caption": "A declaração `with open(...)` abre com segurança e prepara o arquivo para leitura.",
+            "reading_methods_title": "📖 Maneiras de Ler Conteúdo de Arquivo", "reading_methods_subtitle": "Uma vez que um arquivo está aberto (dentro do bloco `with`), Python oferece vários métodos para ler seu conteúdo.",
+            "feature_read_title": ".read()", "feature_read_text": "Lê o conteúdo <span class='highlight'>inteiro</span> do arquivo em uma <span class='highlight'>única string</span>. Melhor para arquivos pequenos onde carregar tudo na memória está ok.",
+            "feature_readline_title": ".readline()", "feature_readline_text": "Lê apenas <span class='highlight'>uma linha</span> do arquivo, incluindo o caractere de nova linha (`\\n`) no final. Chame novamente para obter a próxima linha. Bom para processar linha por linha sem carregar o arquivo inteiro.",
+            "feature_readlines_title": ".readlines()", "feature_readlines_text": "Lê <span class='highlight'>todas as linhas</span> do arquivo em uma <span class='highlight'>lista</span>, onde cada item da lista é uma string representando uma linha (incluindo `\\n`). Útil se você precisar de acesso aleatório às linhas.",
+            "feature_cta": "Clique nos cards acima para revelar mais!",
+            "example_title": "⚙️ Leitura em Ação", "example_subtitle": "Vamos ver como ler dados de um arquivo simples chamado `data.txt`.",
+            "example_file_name": "data.txt",
+            "example_file_line1": "Linha 1: Olá do arquivo!", "example_file_line2": "Linha 2: Python é divertido.", "example_file_line3": "Linha 3: Fim dos dados.",
+            "example_code_comment": "# Lê o arquivo inteiro",
+            "example_text_p1": "Imagine que o texto à esquerda está dentro de um arquivo chamado `data.txt`.",
+            "example_text_p2": "O código Python usa `with open()` para abrir o arquivo.",
+            "example_text_p3": "Dentro do bloco `with`, `f.read()` lê todo o texto do arquivo para a variável `content`.",
+            "example_text_p4": "Finalmente, `print(content)` mostra o conteúdo do arquivo. Isso demonstra a <span class='highlight-io'>Entrada/Saída (E/S)</span> básica - lendo dados *para dentro* a partir de um arquivo.",
+             "pc_io": "Entrada/Saída (E/S)",
+            "tooltip_with": "Abre 'data.txt' com segurança em modo leitura ('r'), atribui a 'f'. Garante que o arquivo seja fechado.",
+            "tooltip_read": "Método .read() lê todo o conteúdo do arquivo 'f' para a variável 'content' como uma única string.",
+            "tooltip_print_content": "Exibe o valor armazenado em 'content' (texto lido do arquivo) na tela.",
+            "quiz_title": "🧠 Teste Rápido!", "quiz_next_button": "Próxima Pergunta",
+            "quiz_q1": "Qual é o propósito principal de abrir um arquivo no modo `'r'`?",
+            "quiz_q1_opt1": "Para escrever novos dados no arquivo.", "quiz_q1_opt2": "Para ler dados existentes do arquivo.", "quiz_q1_opt3": "Para renomear o arquivo.", "quiz_q1_opt4": "Para deletar o arquivo.",
+            "quiz_q2": "Qual é o benefício principal de usar a declaração `with open(...)`?",
+            "quiz_q2_opt1": "Torna o código mais curto.", "quiz_q2_opt2": "Importa automaticamente bibliotecas necessárias.", "quiz_q2_opt3": "Garante que o arquivo seja fechado automaticamente, mesmo se ocorrerem erros.", "quiz_q2_opt4": "Lê o arquivo mais rapidamente.",
+            "quiz_q3": "Qual método de leitura de arquivo retorna todo o conteúdo do arquivo como uma única string?",
+            "quiz_q3_opt1": ".readline()", "quiz_q3_opt2": ".readlines()", "quiz_q3_opt3": ".read()", "quiz_q3_opt4": ".open()",
+            "quiz_q4": "Se você quer processar um arquivo grande linha por linha sem carregá-lo todo na memória, qual método geralmente é melhor?",
+            "quiz_q4_opt1": ".read()", "quiz_q4_opt2": ".readlines()", "quiz_q4_opt3": ".seek(0)", "quiz_q4_opt4": ".readline() (frequentemente usado em um loop)",
+            "quiz_feedback_correct": "Correto! 🎉", "quiz_feedback_incorrect": "Não foi bem assim! A resposta correta era: {correctAnswerText}",
+            "quiz_final_score_title": "Módulo 23 Completo!", "quiz_final_score_summary": "Você respondeu {score} de {total} perguntas corretamente.",
+            "quiz_final_score_perfect": "Excelente trabalho! Você está pronto para ler arquivos.", "quiz_final_score_good": "Ótimo trabalho! Revise os métodos e você dominará a leitura de arquivos.",
+            "completion_theory_title": "Teoria do Módulo 23 Completa!",
+            "completion_theory_desc": "Você aprendeu o essencial sobre leitura de dados de arquivos em Python! Esta é uma habilidade vital para trabalhar com dados do mundo real. <br> Pronto para praticar? Vá para a <strong>Zona de Prática</strong> ou encare a <strong>Prática Avançada</strong>.",
+        },
+        zh: {
+            "page_title": "模块 23：从文件读取",
+            "nav_practice": "开始练习", "nav_advanced": "高级练习", "nav_menu": "课程菜单",
+            "nav_welcome": "欢迎", "nav_opening_files": "打开文件", "nav_reading_methods": "读取方法", "nav_example": "示例", "nav_quiz": "知识测验",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title": "模块 23：从文件读取", "header_subtitle": "学习如何使用 Python 访问和读取存储在外部文件中的数据。",
+            "welcome_title": "📂 访问外部数据",
+            "welcome_p1": "到目前为止，我们程序的数据在停止运行时会消失。如果我们想永久存储信息或读取其他程序创建的数据该怎么办？这就是文件发挥作用的地方！",
+            "welcome_p2": "从文件读取允许我们的 Python 脚本从文本文件、配置文件、数据集等加载数据。这对于<span class='highlight-file'>数据持久化</span>至关重要——让数据在单次程序运行之外持续存在。让我们看看如何做！",
+            "pc_persistence": "数据持久化",
+            "opening_files_title": "🔑 打开大门：`open()` 与 `with`",
+            "opening_files_p1": "在读取文件之前，你需要“打开”它。Python 有一个内置函数 `open()` 来完成此操作。",
+            "opening_files_p2": "打开文件进行读取最常用的方式是：`open('filename.txt', 'r')`。 `'r'` 代表'读取模式'（read mode）。",
+            "opening_files_p3": "<strong>关键：</strong> 使用后应始终关闭文件以释放资源。Python 中的最佳实践是使用 <span class='highlight'>`with`</span> 语句，它会自动处理关闭，即使发生错误也是如此：",
+            "opening_files_p4": "`with` 语句确保我们与文件的交互是安全和高效的。",
+            "opening_files_visual_caption": "`with open(...)` 语句安全地打开并准备文件以供读取。",
+            "reading_methods_title": "📖 读取文件内容的方式", "reading_methods_subtitle": "一旦文件打开（在 `with` 块内），Python 提供了几种方法来读取其内容。",
+            "feature_read_title": ".read()", "feature_read_text": "将文件的<span class='highlight'>全部</span>内容读入<span class='highlight'>单个字符串</span>。最适合将所有内容加载到内存中没问题的小文件。",
+            "feature_readline_title": ".readline()", "feature_readline_text": "仅从文件中读取<span class='highlight'>一行</span>，包括末尾的换行符 (`\\n`)。再次调用它以获取下一行。适用于逐行处理而无需加载整个文件。",
+            "feature_readlines_title": ".readlines()", "feature_readlines_text": "将文件的<span class='highlight'>所有行</span>读入一个<span class='highlight'>列表</span>，其中每个列表项是代表一行（包括 `\\n`）的字符串。如果您需要随机访问行，则很有用。",
+            "feature_cta": "点击上面的卡片以了解更多！",
+            "example_title": "⚙️ 读取实战", "example_subtitle": "让我们看看如何从一个名为 `data.txt` 的简单文件中读取数据。",
+            "example_file_name": "data.txt",
+            "example_file_line1": "第 1 行：来自文件的问候！", "example_file_line2": "第 2 行：Python 很有趣。", "example_file_line3": "第 3 行：数据结束。",
+            "example_code_comment": "# 读取整个文件",
+            "example_text_p1": "想象一下左边的文本位于一个名为 `data.txt` 的文件中。",
+            "example_text_p2": "Python 代码使用 `with open()` 打开文件。",
+            "example_text_p3": "在 `with` 块内部，`f.read()` 将文件中的所有文本读取到 `content` 变量中。",
+            "example_text_p4": "最后，`print(content)` 显示文件的内容。这演示了基本的<span class='highlight-io'>输入/输出 (I/O)</span>——从文件*读入*数据。",
+            "pc_io": "输入/输出 (I/O)",
+            "tooltip_with": "以读取模式（'r'）安全地打开 'data.txt'，赋给 'f'。确保文件之后被关闭。",
+            "tooltip_read": ".read() 方法将文件 'f' 的全部内容作为单个字符串读入 'content' 变量。",
+            "tooltip_print_content": "将存储在 'content' 中的值（从文件读取的文本）显示到屏幕上。",
+            "quiz_title": "🧠 快速测验！", "quiz_next_button": "下一题",
+            "quiz_q1": "以 `'r'` 模式打开文件的主要目的是什么？",
+            "quiz_q1_opt1": "向文件写入新数据。", "quiz_q1_opt2": "从文件读取现有数据。", "quiz_q1_opt3": "重命名文件。", "quiz_q1_opt4": "删除文件。",
+            "quiz_q2": "使用 `with open(...)` 语句的主要好处是什么？",
+            "quiz_q2_opt1": "它使代码更短。", "quiz_q2_opt2": "它自动导入必要的库。", "quiz_q2_opt3": "它确保文件被自动关闭，即使发生错误也是如此。", "quiz_q2_opt4": "它读取文件更快。",
+            "quiz_q3": "哪个文件读取方法将整个文件内容作为单个字符串返回？",
+            "quiz_q3_opt1": ".readline()", "quiz_q3_opt2": ".readlines()", "quiz_q3_opt3": ".read()", "quiz_q3_opt4": ".open()",
+            "quiz_q4": "如果你想逐行处理一个大文件而不将其全部加载到内存中，通常哪个方法最好？",
+            "quiz_q4_opt1": ".read()", "quiz_q4_opt2": ".readlines()", "quiz_q4_opt3": ".seek(0)", "quiz_q4_opt4": ".readline() (常在循环中使用)",
+            "quiz_feedback_correct": "正确！🎉", "quiz_feedback_incorrect": "不太对哦！正确答案是：{correctAnswerText}",
+            "quiz_final_score_title": "模块 23 完成！", "quiz_final_score_summary": "你答对了 {score} / {total} 题。",
+            "quiz_final_score_perfect": "非常棒！你已经准备好读取文件了。", "quiz_final_score_good": "做得很好！复习一下这些方法，你将掌握文件读取。",
+            "completion_theory_title": "模块 23 理论完成！",
+            "completion_theory_desc": "您已经学习了在 Python 中从文件读取数据的要点！这是处理真实世界数据的一项至关重要的技能。<br>准备好练习了吗？ 前往<strong>练习区</strong>或挑战<strong>高级练习</strong>。"
+        }
+    };
+
+
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // --- Language Management Functions ---
+        function getStoredLanguage() {
+            const storedLang = localStorage.getItem('userLanguage');
+            if (storedLang && translations[storedLang]) return storedLang;
+            const browserLang = navigator.language || navigator.userLanguage;
+            if (browserLang.startsWith('pt')) return 'pt';
+            if (browserLang.startsWith('zh')) return 'zh';
+            return 'en'; // Default to English
+        }
+
+        function setLanguage(lang) {
+            if (!translations[lang]) lang = 'en'; // Fallback
+            localStorage.setItem('userLanguage', lang);
+            document.documentElement.lang = lang;
+            translatePage(lang);
+            const langSelect = document.getElementById('languageSelect');
+            if (langSelect) langSelect.value = lang;
+             if(quizArea && currentQuestionIndex < quizData.length && !quizArea.querySelector('[data-translate="quiz_final_score_title"]')) {
+                loadQuestion();
+             }
+             // Update simulated file content on language change
+             updateSimulatedFileContent(lang);
+             // Update simulated output on language change (if already visible)
+             const outputArea = document.querySelector('#file-reading-example .output-area');
+             if (outputArea && outputArea.classList.contains('visible')) {
+                  simulateFileReadOutput(lang);
+             }
+        }
+
+        function getTranslation(key, lang, replacements = {}) {
+            let text = translations[lang]?.[key] ?? translations['en']?.[key] ?? `[${key}]`;
+            for (const placeholder in replacements) {
+                const regex = new RegExp(`\\{${placeholder}\\}`, 'g');
+                text = text.replace(regex, replacements[placeholder]);
+            }
+            return text;
+        }
+
+
+        function translatePage(lang) {
+            if (!translations[lang]) lang = 'en';
+            document.querySelectorAll('[data-translate]').forEach(el => {
+                const key = el.getAttribute('data-translate');
+                const translation = getTranslation(key, lang);
+                 if (el.tagName === 'TITLE') { document.title = translation; }
+                 else if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') { /* Skip */ }
+                 else if (el.tagName === 'OPTION') { el.textContent = translation; }
+                 else {
+                     // Use innerHTML only if it contains known safe HTML or highlights
+                     if ( (translation.includes('<') && translation.includes('>')) || translation.includes('class=') ) {
+                         el.innerHTML = translation;
+                     } else {
+                         el.textContent = translation;
+                     }
+                 }
+            });
+            document.querySelectorAll('[data-translate-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-translate-placeholder');
+                el.setAttribute('placeholder', getTranslation(key, lang));
+            });
+             document.querySelectorAll('.code-highlight').forEach(el => {
+                 const tooltipKey = el.getAttribute('data-translate-tooltip');
+                 const tooltipSpan = el.querySelector('.tooltip');
+                 if(tooltipSpan && tooltipKey) {
+                    tooltipSpan.textContent = getTranslation(tooltipKey, lang);
+                 }
+             });
+              const exampleComment = document.querySelector('.code-comment[data-translate="example_code_comment"]');
+              if (exampleComment) {
+                  const translatedText = getTranslation("example_code_comment", lang);
+                  const commentContent = translatedText.substring(translatedText.indexOf('#') + 1).trim();
+                  exampleComment.textContent = '# ' + commentContent;
+              }
+        }
+
+         // --- Update Simulated File Content ---
+         function updateSimulatedFileContent(lang) {
+             const fileContentDiv = document.querySelector('.simulated-file-content');
+             if (fileContentDiv) {
+                const line1 = getTranslation("example_file_line1", lang);
+                const line2 = getTranslation("example_file_line2", lang);
+                const line3 = getTranslation("example_file_line3", lang);
+                // Update spans directly - safer than innerHTML if content is purely text
+                const spans = fileContentDiv.querySelectorAll('span');
+                if (spans.length === 3) {
+                    spans[0].textContent = line1;
+                    spans[1].textContent = line2;
+                    spans[2].textContent = line3;
+                } else { // Fallback if structure changed
+                   fileContentDiv.innerHTML = `<span>${line1}</span><span>${line2}</span><span>${line3}</span>`;
+                }
+             }
+         }
+
+         // --- Simulate File Read Output ---
+         function simulateFileReadOutput(lang) {
+             const outputArea = document.querySelector('#file-reading-example .output-area');
+             if (outputArea) {
+                 const line1 = getTranslation("example_file_line1", lang);
+                 const line2 = getTranslation("example_file_line2", lang);
+                 const line3 = getTranslation("example_file_line3", lang);
+                 // Simulate .read() output - includes newlines
+                 outputArea.textContent = `> ${line1}\n> ${line2}\n> ${line3}`;
+                 outputArea.classList.add('visible');
+             }
+         }
+
+        // --- Initialize Language ---
+        const initialLang = getStoredLanguage();
+
+
+        // --- Minimal Nav Logic ---
+        const navToggleButton = document.getElementById('minimal-nav-toggle');
+        const navPanel = document.getElementById('minimal-nav-panel');
+        const body = document.body;
+        if (navToggleButton && navPanel) {
+            navToggleButton.addEventListener('click', (event) => { event.stopPropagation(); body.classList.toggle('nav-active'); navToggleButton.setAttribute('aria-expanded', body.classList.contains('nav-active')); });
+            document.addEventListener('click', (event) => { if (body.classList.contains('nav-active') && !navPanel.contains(event.target) && event.target !== navToggleButton && !navToggleButton.contains(event.target)) { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); } });
+            navPanel.querySelectorAll('a').forEach(link => { link.addEventListener('click', () => { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); }); });
+            document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && body.classList.contains('nav-active')) { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); } });
+            navToggleButton.setAttribute('aria-expanded', 'false');
+        }
+
+        // --- Language Switcher Setup ---
+        const langSelect = document.getElementById('languageSelect');
+        if (langSelect) {
+            langSelect.addEventListener('change', (e) => { setLanguage(e.target.value); });
+        }
+
+        // --- Intersection Observer for Animations ---
+        const observerOptions = { root: null, rootMargin: '0px', threshold: 0.1 };
+        const observerCallback = (entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    // Specific observer for file read simulation
+                    if (entry.target.matches('#file-reading-example .python-code-block')) {
+                        const outputArea = entry.target.querySelector('.output-area');
+                        if (outputArea && !outputArea.classList.contains('visible')) {
+                            setTimeout(() => {
+                                simulateFileReadOutput(getStoredLanguage()); // Use current lang
+                            }, 800); // Delay simulation
+                        }
+                        // observer.unobserve(entry.target); // Keep observing if needed, e.g., re-scroll
+                    }
+                }
+            });
+        };
+        const observer = new IntersectionObserver(observerCallback, observerOptions);
+        document.querySelectorAll('.fade-in, .feature-card').forEach(el => observer.observe(el));
+        // Observe specific elements if needed, like the code block for timed simulation
+        const codeBlockForSim = document.querySelector('#file-reading-example .python-code-block');
+        if (codeBlockForSim) { observer.observe(codeBlockForSim); }
+
+
+        // --- Feature Card Interactivity ---
+        const featureCards = document.querySelectorAll('.feature-card');
+        featureCards.forEach(card => {
+            card.addEventListener('click', () => {
+                const isActive = card.classList.contains('active');
+                featureCards.forEach(otherCard => otherCard.classList.remove('active'));
+                if (!isActive) card.classList.add('active'); // Toggle behavior
+            });
+        });
+
+
+        // --- Knowledge Check / Quiz ---
+        const quizData = [
+            { questionKey: "quiz_q1", optionKeys: ["quiz_q1_opt1", "quiz_q1_opt2", "quiz_q1_opt3", "quiz_q1_opt4"], correctAnswer: 1 }, // Read data
+            { questionKey: "quiz_q2", optionKeys: ["quiz_q2_opt1", "quiz_q2_opt2", "quiz_q2_opt3", "quiz_q2_opt4"], correctAnswer: 2 }, // Auto-close
+            { questionKey: "quiz_q3", optionKeys: ["quiz_q3_opt1", "quiz_q3_opt2", "quiz_q3_opt3", "quiz_q3_opt4"], correctAnswer: 2 }, // .read()
+            { questionKey: "quiz_q4", optionKeys: ["quiz_q4_opt1", "quiz_q4_opt2", "quiz_q4_opt3", "quiz_q4_opt4"], correctAnswer: 3 }  // .readline() in loop
+        ];
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        const quizArea = document.getElementById('quiz-area');
+        const feedbackArea = document.getElementById('quiz-feedback');
+        const nextButton = document.getElementById('next-question-btn');
+
+        function loadQuestion() {
+             const currentLang = getStoredLanguage();
+             if (!quizArea || currentQuestionIndex >= quizData.length) {
+                 if (quizArea && !quizArea.querySelector('[data-translate="quiz_final_score_title"]')) {
+                    showFinalScore();
+                 }
+                 return;
+             }
+
+             const currentQuiz = quizData[currentQuestionIndex];
+             const questionText = getTranslation(currentQuiz.questionKey, currentLang);
+             quizArea.innerHTML = `
+                 <div class="quiz-question">${currentQuestionIndex + 1}. ${questionText.replace(/`(.*?)`/g, '<code>$1</code>')}</div>
+                 <div class="quiz-options">
+                     ${currentQuiz.optionKeys.map((optionKey, index) => `
+                         <button class="quiz-option-btn" data-index="${index}">${getTranslation(optionKey, currentLang).replace(/`(.*?)`/g, '<code>$1</code>')}</button>
+                     `).join('')}
+                 </div>
+             `;
+
+             feedbackArea.classList.remove('visible', 'correct', 'incorrect');
+             feedbackArea.textContent = '';
+             nextButton.classList.remove('visible');
+             nextButton.disabled = true;
+
+             document.querySelectorAll('.quiz-option-btn').forEach(button => {
+                 button.addEventListener('click', handleAnswer);
+             });
+         }
+
+        function handleAnswer(event) {
+             const currentLang = getStoredLanguage();
+             const selectedButton = event.target;
+             const selectedIndex = parseInt(selectedButton.dataset.index);
+             const correctIndex = quizData[currentQuestionIndex].correctAnswer;
+             const correctOptionKey = quizData[currentQuestionIndex].optionKeys[correctIndex];
+             // Get raw text, then manually add code tags if needed for feedback
+             let correctAnswerTextRaw = getTranslation(correctOptionKey, currentLang);
+             let correctAnswerTextFormatted = correctAnswerTextRaw.replace(/`(.*?)`/g, '<code>$1</code>');
+
+
+             document.querySelectorAll('.quiz-option-btn').forEach(btn => {
+                btn.disabled = true;
+                btn.classList.remove('shake');
+            });
+
+             feedbackArea.classList.add('visible');
+
+             if (selectedIndex === correctIndex) {
+                 selectedButton.classList.add('correct');
+                 feedbackArea.innerHTML = getTranslation('quiz_feedback_correct', currentLang);
+                 feedbackArea.classList.add('correct');
+                 feedbackArea.classList.remove('incorrect');
+                 score++;
+                 selectedButton.classList.add('tada-anim');
+             } else {
+                 selectedButton.classList.add('incorrect');
+                 feedbackArea.innerHTML = getTranslation('quiz_feedback_incorrect', currentLang, { correctAnswerText: `<strong>${correctAnswerTextFormatted}</strong>` });
+                 feedbackArea.classList.add('incorrect');
+                 feedbackArea.classList.remove('correct');
+                 const correctButton = document.querySelector(`.quiz-option-btn[data-index="${correctIndex}"]`);
+                 if(correctButton) correctButton.classList.add('correct');
+                 selectedButton.classList.add('shake');
+             }
+
+              selectedButton.addEventListener('animationend', () => {
+                   selectedButton.classList.remove('tada-anim', 'shake');
+              }, { once: true });
+
+             nextButton.classList.add('visible');
+             nextButton.disabled = false;
+         }
+
+         function showFinalScore() {
+              const currentLang = getStoredLanguage();
+              const totalQuestions = quizData.length;
+              let resultMessageKey = score === totalQuestions ? 'quiz_final_score_perfect' : 'quiz_final_score_good';
+
+              quizArea.innerHTML = `
+                  <div class="quiz-question text-center" data-translate="quiz_final_score_title" style="font-size: 1.5rem;">${getTranslation('quiz_final_score_title', currentLang)}</div>
+                  <p class="text-center" style="font-size: 1.2rem; margin-bottom: 1rem;">${getTranslation('quiz_final_score_summary', currentLang, { score: score, total: totalQuestions })}</p>
+                  <p class="text-center" style="color: ${score === totalQuestions ? 'var(--success-color)' : 'var(--primary-color)'}; font-weight: bold;">${getTranslation(resultMessageKey, currentLang)}</p>
+              `;
+              feedbackArea.classList.remove('visible');
+              nextButton.style.display = 'none';
+              // Optional: Scroll quiz into view
+              // quizArea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+
+
+        nextButton.addEventListener('click', () => {
+             currentQuestionIndex++;
+             loadQuestion();
+         });
+
+        // --- Initial Language Application and Load ---
+        setLanguage(initialLang); // Apply language FIRST (this also calls translatePage and updateSimulatedFile)
+        if (quizArea) { loadQuestion(); } // Initial quiz load
+
+        // Trigger fade-in animations for elements initially in view (CSS handles this via :not(.visible) opacity)
+        // The Intersection Observer takes care of elements scrolled into view.
+
+    }); // End DOMContentLoaded
+    </script>
+
+</body>
+</html>

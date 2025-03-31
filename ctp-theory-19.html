@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<!-- Language set by JS -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Title set by JS -->
+    <title data-translate="page_title">Module 19: Understanding Scope</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* --- Reset & Base Styles --- */
+        :root {
+            --primary-color: #007bff; /* Standard Blue */
+            --secondary-color: #6c757d; /* Grey */
+            --background-light: #f8f9fa; /* Off-white */
+            --background-dark: #343a40; /* Dark Grey */
+            --text-light: #f8f9fa;
+            --text-dark: #212529;
+            --accent-color: #ffc107; /* Yellow */
+            --success-color: #28a745; /* Green */
+            --error-color: #dc3545; /* Red */
+            --info-color: #17a2b8; /* Teal */
+            --border-radius: 8px;
+            --transition-speed: 0.3s;
+            --font-body: 'Roboto', sans-serif;
+            --font-title: 'Orbitron', sans-serif;
+            /* Nav Colors */
+            --nav-primary: #6e48aa; /* Purpleish */
+            --nav-success: #4cc9f0; /* Light Blue */
+            --nav-dark: #1a1a2e; /* Very Dark Blue */
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; font-size: 16px; }
+        body {
+            font-family: var(--font-body); line-height: 1.7;
+            background-color: var(--background-light); color: var(--text-dark);
+            overflow-x: hidden; display: flex; flex-direction: column; min-height: 100vh;
+        }
+        main { flex-grow: 1; }
+
+        /* --- Utility Classes --- */
+        .container { max-width: 960px; margin: 0 auto; padding: 0 15px; }
+        .text-center { text-align: center; }
+        .highlight { color: var(--primary-color); font-weight: bold; }
+        .code-inline {
+            background-color: rgba(0, 123, 255, 0.1); color: #0056b3; padding: 0.2em 0.4em;
+            border-radius: 4px; font-family: 'Courier New', Courier, monospace; font-weight: bold;
+        }
+        .fade-in { opacity: 0; transform: translateY(20px); animation: fadeInAnimation 0.8s ease-out forwards; }
+        .fade-in.delay-1 { animation-delay: 0.2s; }
+        .fade-in.delay-2 { animation-delay: 0.4s; }
+        .fade-in.delay-3 { animation-delay: 0.6s; }
+        .fade-in.delay-4 { animation-delay: 0.8s; }
+        .fade-in.delay-5 { animation-delay: 1.0s; }
+        .button-group { margin-top: 2rem; display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; }
+        .action-button {
+            display: inline-flex; align-items: center; justify-content: center; gap: 0.5em;
+            padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold;
+            color: var(--text-light); background-color: var(--primary-color); border: none;
+            border-radius: var(--border-radius); cursor: pointer;
+            transition: background-color var(--transition-speed), transform var(--transition-speed), filter var(--transition-speed), box-shadow var(--transition-speed);
+            margin-top: 1rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            text-decoration: none; line-height: 1.2;
+        }
+        .action-button:hover:not(:disabled) { background-color: #0056b3; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+        .action-button:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none; box-shadow: none; opacity: 0.7; }
+        .action-button.success { background-color: var(--success-color); }
+        .action-button.success:hover:not(:disabled) { background-color: #218838; }
+        .action-button.secondary { background-color: var(--secondary-color); }
+        .action-button.secondary:hover:not(:disabled) { background-color: #5a6268; }
+        .action-button:active:not(:disabled) { transform: translateY(1px) scale(0.98); filter: brightness(0.95); }
+
+        /* --- Animations --- */
+        @keyframes fadeInAnimation { to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); } 50% { transform: scale(1.03); box-shadow: 0 0 15px rgba(0, 123, 255, 0.6); } 100% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); } }
+        @keyframes tada { from { transform: scale3d(1, 1, 1); } 10%, 20% { transform: scale3d(.9, .9, .9) rotate3d(0, 0, 1, -3deg); } 30%, 50%, 70%, 90% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, 3deg); } 40%, 60%, 80% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, -3deg); } to { transform: scale3d(1, 1, 1); } }
+        .tada-anim { animation: tada 1s ease; }
+        @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
+        @keyframes iconAppearCorrect { 0% { transform: scale(0.5) rotate(-15deg); opacity: 0; } 60% { transform: scale(1.2) rotate(5deg); opacity: 1; } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
+
+        /* --- Minimal Retractable Nav --- */
+        .minimal-nav-button { position: fixed; top: 15px; right: 15px; z-index: 1001; background-color: rgba(52, 58, 64, 0.75); color: var(--text-light); border: none; border-radius: var(--border-radius); padding: 8px 12px; cursor: pointer; transition: background-color var(--transition-speed), opacity var(--transition-speed), transform var(--transition-speed); font-size: 1.1rem; opacity: 0.6; box-shadow: 0 2px 5px rgba(0,0,0,0.2); line-height: 1; }
+        .minimal-nav-button:hover { background-color: rgba(52, 58, 64, 0.95); opacity: 1; transform: scale(1.05); }
+        .minimal-nav { position: fixed; top: 60px; right: 15px; z-index: 1000; background-color: var(--background-dark); border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.3); padding: 0.8rem; opacity: 0; transform: translateY(-15px) scale(0.95); transform-origin: top right; pointer-events: none; transition: opacity var(--transition-speed) ease, transform var(--transition-speed) ease; min-width: 200px; }
+        body.nav-active .minimal-nav { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+        .minimal-nav ul { list-style: none; margin: 0; padding: 0; }
+        .minimal-nav ul li { margin-bottom: 5px; }
+        .minimal-nav ul li:last-child { margin-bottom: 0; }
+        .minimal-nav ul li a { display: flex; align-items: center; color: var(--text-light); text-decoration: none; padding: 0.6rem 1rem; border-radius: 4px; transition: background-color var(--transition-speed), color var(--transition-speed); white-space: nowrap; font-weight: 400; font-size: 0.95rem; }
+        .minimal-nav ul li a i.fas { margin-right: 10px; width: 1.2em; text-align: center; opacity: 0.8; transition: opacity var(--transition-speed); }
+        .minimal-nav ul li a:hover { background-color: var(--primary-color); color: var(--text-light); }
+        .minimal-nav ul li a:hover i.fas { opacity: 1; }
+        .minimal-nav .language-switcher-item { padding: 0.5rem 1rem; border-top: 1px solid var(--secondary-color); margin-top: 8px; padding-top: 13px; }
+        #languageSelect { width: 100%; background: rgba(255,255,255,0.1); color: white; border: 1px solid var(--nav-success); border-radius: 5px; padding: 6px 30px 6px 12px; cursor: pointer; font-size: 0.9rem; appearance: none; -webkit-appearance: none; -moz-appearance: none; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%234CC9F0%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right 10px center; background-size: 10px auto; transition: background-color 0.3s ease; }
+        #languageSelect:hover { background-color: rgba(255,255,255,0.15); }
+        #languageSelect option { background: var(--nav-dark); color: var(--text-light); }
+
+        /* --- Header --- */
+        .main-header { background: linear-gradient(135deg, var(--primary-color), var(--info-color)); color: var(--text-light); padding: 4rem 0 6rem; text-align: center; position: relative; overflow: hidden; }
+        .main-header h1 { font-family: var(--font-title); font-size: 3rem; margin-bottom: 0.5rem; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); animation: fadeInAnimation 1s ease-out; }
+        .main-header p { font-size: 1.2rem; font-weight: 300; opacity: 0.9; animation: fadeInAnimation 1s ease-out 0.3s forwards; opacity: 0; }
+        .header-shape { position: absolute; border-radius: 50%; background-color: rgba(255, 255, 255, 0.1); animation: pulse 5s infinite ease-in-out alternate; }
+        .shape1 { width: 150px; height: 150px; bottom: -50px; left: 10%; animation-duration: 6s; }
+        .shape2 { width: 80px; height: 80px; top: 50px; right: 15%; animation-duration: 4s; }
+        .shape3 { width: 50px; height: 50px; bottom: 20px; right: 30%; animation-duration: 7s; }
+
+        /* --- Section Styling --- */
+        section { padding: 4rem 0; border-bottom: 1px solid #eee; }
+        main section:last-of-type { border-bottom: none; }
+        section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); margin-bottom: 2rem; text-align: center; position: relative; padding-bottom: 10px; }
+        section h2::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 60px; height: 4px; background-color: var(--accent-color); border-radius: 2px; }
+
+        /* --- Scope Intro Section --- */
+        #scope-intro p { font-size: 1.1rem; max-width: 700px; margin: 0 auto 1rem; text-align: center; }
+
+        /* --- Local vs Global Section --- */
+        #local-global .scope-explanation { display: flex; gap: 2rem; align-items: flex-start; margin-top: 2rem; flex-wrap: wrap; }
+        .scope-code-demo {
+            flex-basis: 55%; background-color: var(--background-dark); color: #eee;
+            padding: 2rem; border-radius: var(--border-radius); font-family: 'Courier New', Courier, monospace;
+            position: relative; box-shadow: 0 5px 15px rgba(0,0,0,0.2); font-size: 0.95rem; line-height: 1.6;
+        }
+        .scope-text { flex-basis: 40%; font-size: 1.05rem; }
+        .scope-text p { margin-bottom: 1rem; }
+        /* Code Highlighting Styles */
+        .code-highlight { background-color: rgba(0, 123, 255, 0.1); color: #0056b3; padding: 0.2em 0.4em; border-radius: 4px; font-family: 'Courier New', Courier, monospace; font-weight: bold; cursor: pointer; transition: background-color var(--transition-speed); display: inline-block; position: relative; }
+        .code-highlight:hover { background-color: rgba(0, 123, 255, 0.2); }
+        .tooltip { visibility: hidden; width: 180px; background-color: var(--background-dark); color: var(--text-light); text-align: center; border-radius: 6px; padding: 8px 5px; position: absolute; z-index: 1; bottom: 125%; left: 50%; margin-left: -90px; opacity: 0; transition: opacity 0.3s; font-family: var(--font-body); font-size: 0.9rem; font-weight: normal; pointer-events: none; }
+        .tooltip::after { content: ""; position: absolute; top: 100%; left: 50%; margin-left: -5px; border-width: 5px; border-style: solid; border-color: var(--background-dark) transparent transparent transparent; }
+        .code-highlight:hover .tooltip { visibility: visible; opacity: 1; }
+        /* Specific Code Element Styles */
+        .code-keyword { color: #569cd6; } /* Blue for keywords like def, global */
+        .code-variable { color: #9cdcfe; } /* Light blue for variables */
+        .code-string { color: #ce9178; } /* Orange/brown for strings */
+        .code-comment { color: #6a9955; font-style: italic; } /* Green for comments */
+        .code-function { color: #dcdcaa; } /* Yellow for function names/calls */
+        .code-number { color: #b5cea8; } /* Light green for numbers */
+        .code-error { color: var(--error-color); text-decoration: underline wavy var(--error-color); } /* For illustrating errors */
+
+        /* --- PC Connection Section --- */
+        #pc-connection .pc-concepts { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 2rem; margin-top: 2rem; }
+        .concept-card { background-color: #fff; padding: 2rem; border-radius: var(--border-radius); box-shadow: 0 4px 10px rgba(0,0,0,0.07); text-align: center; transition: transform var(--transition-speed) ease, box-shadow var(--transition-speed) ease; opacity: 0; transform: translateY(20px); animation: fadeInAnimation 0.6s ease-out forwards; }
+        .concept-card:nth-child(1) { animation-delay: 0.2s; }
+        .concept-card:nth-child(2) { animation-delay: 0.4s; }
+        .concept-card:hover { transform: translateY(-5px) scale(1.02); box-shadow: 0 8px 20px rgba(0,0,0,0.12); }
+        .concept-icon { font-size: 3rem; margin-bottom: 1.5rem; color: var(--info-color); }
+        .concept-card h3 { font-family: var(--font-body); font-weight: 700; font-size: 1.4rem; margin-bottom: 1rem; color: var(--text-dark); }
+        .concept-card p { font-size: 1rem; color: var(--secondary-color); }
+
+
+        /* --- Knowledge Check Section --- */
+        #knowledge-check { background-color: #e9ecef; }
+        .quiz-container { background-color: #fff; padding: 2rem; border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.1); max-width: 700px; margin: 2rem auto 0; }
+        .quiz-question { font-size: 1.2rem; font-weight: bold; margin-bottom: 1.5rem; color: var(--text-dark); }
+        .quiz-options button { display: block; width: 100%; padding: 1rem; margin-bottom: 1rem; text-align: left; font-size: 1rem; background-color: #f8f9fa; border: 1px solid #ced4da; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), border-color var(--transition-speed), transform var(--transition-speed); }
+        .quiz-options button:not(:disabled):hover { background-color: #e2e6ea; border-color: #adb5bd; transform: translateX(5px); }
+        .quiz-options button:disabled { cursor: default; opacity: 0.7; }
+        .quiz-options button.correct { background-color: #d4edda; border-color: var(--success-color); color: #155724; font-weight: bold; }
+        .quiz-options button.incorrect { background-color: #f8d7da; border-color: var(--error-color); color: #721c24; font-weight: bold; }
+        .quiz-options button.incorrect.shake { animation: shake 0.5s ease; }
+        .quiz-feedback { margin-top: 1.5rem; padding: 1rem; border-radius: var(--border-radius); font-weight: bold; text-align: center; opacity: 0; transition: opacity 0.5s ease; height: 0; overflow: hidden; }
+        .quiz-feedback.visible { opacity: 1; height: auto; margin-bottom: 1rem; }
+        .quiz-feedback.correct { background-color: #d4edda; color: #155724; }
+        .quiz-feedback.incorrect { background-color: #f8d7da; color: #721c24; }
+        #next-question-btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5em; margin: 1.5rem auto 0; padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold; color: var(--text-light); background-color: var(--primary-color); border: none; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), transform var(--transition-speed), opacity 0.3s, visibility 0.3s; opacity: 0; visibility: hidden; }
+        #next-question-btn:hover { background-color: #0056b3; transform: scale(1.05); }
+        #next-question-btn.visible { opacity: 1; visibility: visible; }
+
+        /* --- Completion Section Styling --- */
+        .completion-section { padding: 4rem 0; text-align: center; background-color: var(--background-light); }
+        .completion-section .icon { font-size: 4rem; color: var(--success-color); margin-bottom: 1rem; display: inline-block; opacity: 0; animation: iconAppearCorrect 1s ease-out 0.5s forwards; }
+        .completion-section .icon .fas + .fas { margin-left: 0.75rem; }
+        .completion-section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); margin-bottom: 1rem; }
+        .completion-section h2::after { display: none; }
+        .completion-section p { font-size: 1.1rem; margin-top: 1rem; color: var(--secondary-color); max-width: 700px; margin-left: auto; margin-right: auto; line-height: 1.8; }
+        .completion-section .button-group { margin-top: 2.5rem; }
+
+        /* --- Footer --- */
+        .main-footer { background-color: var(--background-dark); padding: 0.5rem 0; /* Minimal padding */ margin-top: auto; }
+
+        /* --- Responsive Design --- */
+        @media (max-width: 768px) {
+            html { font-size: 15px; }
+            .main-header h1 { font-size: 2.5rem; }
+            .main-header p { font-size: 1.1rem; }
+            section h2 { font-size: 1.8rem; }
+            #local-global .scope-explanation { flex-direction: column; }
+            .scope-code-demo, .scope-text { flex-basis: 100%; }
+            #pc-connection .pc-concepts { grid-template-columns: 1fr; }
+            .minimal-nav { min-width: 180px; }
+            .minimal-nav ul li a { padding: 0.6rem 0.8rem; }
+            #languageSelect { font-size: 0.85rem; padding: 5px 25px 5px 10px; }
+            .completion-section h2 { font-size: 2rem; }
+            .completion-section .button-group { flex-direction: column; align-items: center; gap: 0.8rem; }
+            .completion-section .action-button { width: 80%; max-width: 350px; margin-top: 0; }
+        }
+        @media (max-width: 480px) {
+            html { font-size: 14px; }
+            .main-header h1 { font-size: 2rem; }
+            .main-header p { font-size: 1rem; }
+            section h2 { font-size: 1.6rem; }
+            .scope-code-demo { font-size: 0.9rem; padding: 1.5rem; }
+            .tooltip { width: 140px; margin-left: -70px; font-size: 0.8rem; }
+            .quiz-options button { padding: 0.8rem; font-size: 0.95rem; }
+            .minimal-nav-button { top: 10px; right: 10px; padding: 6px 10px; font-size: 1rem; }
+            .minimal-nav { top: 48px; right: 10px; min-width: 160px; }
+            .minimal-nav ul li a { padding: 0.5rem 0.7rem; font-size: 0.9rem; }
+            .minimal-nav ul li a i.fas { margin-right: 8px; }
+            #languageSelect { font-size: 0.8rem; padding: 4px 20px 4px 8px; }
+            .completion-section .icon { font-size: 3.5rem; }
+            .completion-section h2 { font-size: 1.8rem; }
+            .completion-section p { font-size: 1rem; }
+            .completion-section .action-button { width: 90%; max-width: 300px; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- ========= Minimal Nav Handle ========= -->
+    <button id="minimal-nav-toggle" class="minimal-nav-button" aria-label="Toggle Navigation Menu" aria-expanded="false">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- ========= Minimal Nav Panel (with Language Switcher) ========= -->
+    <nav id="minimal-nav-panel" class="minimal-nav">
+        <ul>
+            <!-- Links to OTHER main pages -->
+            <li><a href="ctp-practice-19.html"><i class="fas fa-pencil-alt fa-fw"></i> <span data-translate="nav_practice">Practice</span></a></li>
+            <li><a href="ctp-advanced-19.html"><i class="fas fa-flask fa-fw"></i> <span data-translate="nav_advanced">Advanced Practice</span></a></li>
+            <li><a href="ctp-dashboard.html"><i class="fas fa-list fa-fw"></i> <span data-translate="nav_menu">Course Menu</span></a></li>
+             <hr style="border: none; border-top: 1px solid var(--secondary-color); margin: 8px 0;">
+             <!-- Links to sections on THIS page -->
+             <li><a href="#scope-intro"><i class="fas fa-map-marker-alt fa-fw"></i> <span data-translate="nav_intro">Introduction</span></a></li>
+             <li><a href="#local-global"><i class="fas fa-house-user fa-fw"></i> <span data-translate="nav_local_global">Local vs Global</span></a></li>
+             <li><a href="#pc-connection"><i class="fas fa-brain fa-fw"></i> <span data-translate="nav_pc">PC Connection</span></a></li>
+             <li><a href="#knowledge-check"><i class="fas fa-check-double fa-fw"></i> <span data-translate="nav_quiz">Knowledge Check</span></a></li>
+            <!-- Language Switcher Item -->
+            <li class="language-switcher-item">
+                 <select id="languageSelect" aria-label="Select Language">
+                     <option value="en" data-translate="lang_en">🇬🇧 English</option>
+                     <option value="pt" data-translate="lang_pt">🇧🇷 Português</option>
+                     <option value="zh" data-translate="lang_zh">🇨🇳 中文</option>
+                 </select>
+            </li>
+        </ul>
+    </nav>
+
+    <header class="main-header">
+        <!-- Decorative shapes -->
+        <div class="header-shape shape1"></div>
+        <div class="header-shape shape2"></div>
+        <div class="header-shape shape3"></div>
+
+        <div class="container">
+            <h1 data-translate="header_title">Módulo 19: Entendendo Escopo</h1>
+            <p data-translate="header_subtitle">Onde suas variáveis "vivem" e por que isso importa.</p>
+        </div>
+    </header>
+
+    <main>
+        <!-- ========= Scope Intro Section ========= -->
+        <section id="scope-intro">
+            <div class="container">
+                <h2 class="fade-in" data-translate="intro_title">📍 Onde está Minha Variável?</h2>
+                <p class="fade-in delay-1" data-translate="intro_p1">
+                    Em programação, nem toda variável está acessível de qualquer lugar no seu código. O <span class="highlight">escopo</span> define onde uma variável pode ser usada.
+                </p>
+                <p class="fade-in delay-2" data-translate="intro_p2">
+                    Pense nisso como cômodos em uma casa: algumas coisas pertencem a um cômodo específico (<span class="code-inline">local</span>), enquanto outras podem ser vistas de quase qualquer lugar ( <span class="code-inline">global</span> - use com cuidado!). Entender isso é crucial!
+                </p>
+            </div>
+        </section>
+
+        <!-- ========= Local vs Global Section ========= -->
+        <section id="local-global">
+            <div class="container">
+                <h2 class="fade-in" data-translate="local_global_title">🏠 Local vs. Global</h2>
+                <p class="text-center fade-in delay-1" data-translate="local_global_subtitle">Variáveis têm "casas" diferentes no seu código.</p>
+
+                <div class="scope-explanation fade-in delay-2">
+                    <div class="scope-code-demo">
+                        <pre><code><span class="code-variable">nome_planeta</span> = <span class="code-string">"Terra"</span> <span class="code-comment" data-translate="code_comment_global"># Variável Global</span>
+
+<span class="code-keyword">def</span> <span class="code-function">visitar_marte</span>():
+    <span class="code-variable">ferramenta</span> = <span class="code-string">"Rover"</span> <span class="code-comment" data-translate="code_comment_local"># Variável Local</span>
+    <span class="code-function">print</span>(<span class="code-string">f"Usando <span class="code-highlight" data-translate-tooltip="tooltip_local_var">{ferramenta}</span><span class="tooltip">Só existe dentro desta função!</span></span> em Marte.")
+    <span class="code-comment" data-translate="code_comment_access_global"># Podemos VER a variável global aqui:</span>
+    <span class="code-function">print</span>(<span class="code-string">f"Viemos de <span class="code-highlight" data-translate-tooltip="tooltip_global_var">{nome_planeta}</span><span class="tooltip">Acessível em qualquer lugar (depois de definida).</span></span>.")
+
+<span class="code-function">visitar_marte</span>()
+
+<span class="code-function">print</span>(<span class="code-string">f"Estamos de volta à <span class="code-highlight">{nome_planeta}</span>.")</span>
+<span class="code-comment" data-translate="code_comment_error"># A linha abaixo causaria um ERRO:</span>
+<span class="code-comment"># print(f"A ferramenta ainda é {ferramenta}?")</span>
+<span class="code-error" data-translate="code_error_text"># NameError: name 'ferramenta' is not defined</span></code></pre>
+                    </div>
+                    <div class="scope-text fade-in delay-3">
+                        <h3 data-translate="local_global_h3">Entendendo o Exemplo:</h3>
+                        <p data-translate="local_global_p1">
+                            <span class="code-highlight" data-translate-tooltip="tooltip_global_var2">nome_planeta<span class="tooltip">Definida fora de qualquer função.</span></span> é <span class="highlight">global</span>. Ela é definida fora de qualquer função e pode ser acessada (lida) em qualquer lugar depois de sua definição.
+                        </p>
+                        <p data-translate="local_global_p2">
+                             <span class="code-highlight" data-translate-tooltip="tooltip_local_var2">ferramenta<span class="tooltip">Definida dentro da função `visitar_marte`.</span></span> é <span class="highlight">local</span> à função <span class="code-inline">visitar_marte()</span>. Ela só existe e pode ser usada *dentro* dessa função.
+                        </p>
+                        <p data-translate="local_global_p3">
+                            Tentar usar <code class="code-inline">ferramenta</code> fora da função <code class="code-inline">visitar_marte()</code> resulta em um <code class="code-inline">NameError</code>, pois ela não é "visível" naquele escopo.
+                        </p>
+                        <p data-translate="local_global_p4">
+                            <strong data-translate="tip_title">Dica:</strong> Geralmente, prefira variáveis locais. Elas tornam seu código mais organizado e evitam modificações acidentais de variáveis usadas em outras partes do programa.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========= PC Connection Section ========= -->
+        <section id="pc-connection">
+            <div class="container">
+                <h2 class="fade-in" data-translate="pc_title">🧠 Conexão com Pensamento Computacional</h2>
+                <p class="text-center fade-in delay-1" data-translate="pc_subtitle">Como o escopo se relaciona com princípios chave?</p>
+
+                <div class="pc-concepts">
+                    <!-- Abstraction -->
+                    <div class="concept-card" id="card-abstraction">
+                        <span class="concept-icon"><i class="fas fa-layer-group"></i></span> <!-- Changed icon -->
+                        <h3 data-translate="pc_abstraction_title">Abstração</h3>
+                        <p data-translate="pc_abstraction_text">
+                            O escopo ajuda a <span class="highlight">esconder detalhes</span>. Funções usam variáveis locais para fazer seu trabalho interno. Quem usa a função não precisa saber sobre essas variáveis locais, apenas o que a função faz (sua interface). Isso simplifica o uso.
+                        </p>
+                    </div>
+
+                    <!-- Debugging -->
+                    <div class="concept-card" id="card-debugging">
+                        <span class="concept-icon"><i class="fas fa-bug-slash"></i></span> <!-- Changed icon -->
+                        <h3 data-translate="pc_debugging_title">Depuração (Debugging)</h3>
+                         <p data-translate="pc_debugging_text">
+                            Entender o escopo é vital para depurar! Muitos erros (<code class="code-inline">NameError</code>) ocorrem porque uma variável é usada fora de seu escopo. Saber onde as variáveis "vivem" ajuda a <span class="highlight">prevenir e encontrar</span> esses erros rapidamente.
+                         </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========= Knowledge Check Section ========= -->
+        <section id="knowledge-check">
+            <div class="container">
+                <h2 class="fade-in" data-translate="quiz_title">🧠 Teste Rápido!</h2>
+                <div class="quiz-container fade-in delay-1">
+                    <div id="quiz-area">
+                        <!-- Quiz questions will be loaded here by JavaScript -->
+                    </div>
+                    <div id="quiz-feedback" class="quiz-feedback">
+                        <!-- Feedback (Correct/Incorrect) shown here -->
+                    </div>
+                    <button id="next-question-btn" data-translate="quiz_next_button">Próxima Pergunta <i class="fas fa-arrow-right"></i></button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========= Completion Section ========= -->
+        <section class="completion-section">
+            <div class="container">
+                 <div class="icon"> <!-- Animation applied via CSS -->
+                    <i class="fas fa-map-signs"></i> <!-- Changed icons -->
+                    <i class="fas fa-lightbulb"></i>
+                    <i class="fas fa-award"></i>
+                </div>
+                <h2 class="fade-in delay-1" data-translate="completion_theory_title">Teoria do Módulo 19 Completa!</h2>
+                <p class="fade-in delay-2" data-translate="completion_theory_desc">
+                    Você agora entende os conceitos básicos de escopo local e global e como eles se conectam à abstração e depuração. Excelente! <br>
+                    Hora de praticar esses conceitos na <strong>Zona de Prática</strong> ou se desafiar na <strong>Prática Avançada</strong>.
+                </p>
+                <div class="button-group">
+                    <a href="ctp-dashboard.html" class="action-button secondary fade-in delay-3"><i class="fas fa-list"></i> <span data-translate="nav_menu">Menu do Curso</span></a>
+                    <a href="ctp-practice-19.html" class="action-button success fade-in delay-4"><i class="fas fa-pencil-alt"></i> <span data-translate="nav_practice">Iniciar Prática</span></a>
+                    <a href="ctp-advanced-19.html" class="action-button secondary fade-in delay-5"><i class="fas fa-flask"></i> <span data-translate="nav_advanced">Prática Avançada</span></a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="main-footer">
+        <!-- Footer is intentionally left blank -->
+    </footer>
+
+    <script>
+    // --- Translations Object ---
+    const translations = {
+        en: {
+            "page_title": "Module 19: Understanding Scope",
+            "nav_practice": "Start Practice", "nav_advanced": "Advanced Practice", "nav_menu": "Course Menu",
+            "nav_intro": "Introduction", "nav_local_global": "Local vs Global", "nav_pc": "CT Connection", "nav_quiz": "Knowledge Check",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title": "Module 19: Understanding Scope", "header_subtitle": "Where your variables 'live' and why it matters.",
+            "intro_title": "📍 Where's My Variable?",
+            "intro_p1": "In programming, not every variable is accessible from anywhere in your code. The <span class=\"highlight\">scope</span> defines where a variable can be used.",
+            "intro_p2": "Think of it like rooms in a house: some things belong to a specific room (<span class=\"code-inline\">local</span>), while others can be seen from almost anywhere (<span class=\"code-inline\">global</span> - use with care!). Understanding this is crucial!",
+            "local_global_title": "🏠 Local vs. Global", "local_global_subtitle": "Variables have different 'homes' in your code.",
+            "code_comment_global": "# Global Variable", "code_comment_local": "# Local Variable", "code_comment_access_global": "# We can SEE the global variable here:", "code_comment_error": "# The line below would cause an ERROR:", "code_error_text": "# NameError: name 'tool' is not defined",
+            "tooltip_local_var": "Only exists inside this function!", "tooltip_global_var": "Accessible anywhere (after definition).", "tooltip_local_var2": "Defined inside the `visit_mars` function.", "tooltip_global_var2": "Defined outside any function.",
+            "local_global_h3": "Understanding the Example:",
+            "local_global_p1": "<span class=\"code-highlight\" data-translate-tooltip=\"tooltip_global_var2\">planet_name<span class=\"tooltip\">Defined outside any function.</span></span> is <span class=\"highlight\">global</span>. It's defined outside any function and can be accessed (read) anywhere after its definition.",
+            "local_global_p2": "<span class=\"code-highlight\" data-translate-tooltip=\"tooltip_local_var2\">tool<span class=\"tooltip\">Defined inside the `visit_mars` function.</span></span> is <span class=\"highlight\">local</span> to the function <span class=\"code-inline\">visit_mars()</span>. It only exists and can be used *inside* that function.",
+            "local_global_p3": "Trying to use <code class=\"code-inline\">tool</code> outside the <code class=\"code-inline\">visit_mars()</code> function results in a <code class=\"code-inline\">NameError</code>, because it's not 'visible' in that scope.",
+            "local_global_p4": "<strong data-translate='tip_title'>Tip:</strong> Generally, prefer local variables. They make your code more organized and prevent accidental modification of variables used elsewhere.",
+            "tip_title": "Tip:", // Separate key for the bold part if needed
+            "pc_title": "🧠 Computational Thinking Connection", "pc_subtitle": "How does scope relate to key principles?",
+            "pc_abstraction_title": "Abstraction", "pc_abstraction_text": "Scope helps <span class=\"highlight\">hide details</span>. Functions use local variables for their internal work. The user of the function doesn't need to know about these local variables, only what the function does (its interface). This simplifies usage.",
+            "pc_debugging_title": "Debugging", "pc_debugging_text": "Understanding scope is vital for debugging! Many errors (<code class=\"code-inline\">NameError</code>) occur because a variable is used outside its scope. Knowing where variables 'live' helps <span class=\"highlight\">prevent and find</span> these errors quickly.",
+            "quiz_title": "🧠 Quick Check!", "quiz_next_button": "Next Question <i class=\"fas fa-arrow-right\"></i>",
+            "quiz_q1": "What is a variable defined inside a function called?",
+            "quiz_q1_opt1": "Global Variable", "quiz_q1_opt2": "Local Variable", "quiz_q1_opt3": "Universal Variable", "quiz_q1_opt4": "Function Variable",
+            "quiz_q2": "Where can a global variable typically be accessed?",
+            "quiz_q2_opt1": "Only inside the function where it's used.", "quiz_q2_opt2": "Only in the line right after it's defined.", "quiz_q2_opt3": "Anywhere in the script *after* it has been defined.", "quiz_q2_opt4": "Only outside of all functions.",
+            "quiz_q3": "Which Computational Thinking principle is strongly supported by scope hiding internal function details?",
+            "quiz_q3_opt1": "Decomposition", "quiz_q3_opt2": "Pattern Recognition", "quiz_q3_opt3": "Algorithm Design", "quiz_q3_opt4": "Abstraction",
+            "quiz_q4": "Why is understanding scope helpful for Debugging?",
+            "quiz_q4_opt1": "It makes code run faster.", "quiz_q4_opt2": "It helps identify and prevent `NameError` exceptions.", "quiz_q4_opt3": "It automatically corrects syntax errors.", "quiz_q4_opt4": "It allows using variables before they are defined.",
+            "quiz_feedback_correct": "Correct! 🎉", "quiz_feedback_incorrect": "Not quite! The correct answer was: {correctAnswerText}",
+            "quiz_final_score_title": "Module 19 Complete!", "quiz_final_score_summary": "You answered {score} out of {total} questions correctly.",
+            "quiz_final_score_perfect": "Excellent work! You've grasped the scope concepts.", "quiz_final_score_good": "Great effort! Reviewing scope rules will solidify your understanding.",
+            "completion_theory_title": "Module 19 Theory Complete!",
+            "completion_theory_desc": "You now understand the basics of local and global scope and how they connect to abstraction and debugging. Excellent! <br> Time to practice these concepts in the <strong>Practice Zone</strong> or challenge yourself in the <strong>Advanced Practice</strong>.",
+        },
+        pt: {
+            "page_title": "Módulo 19: Entendendo Escopo",
+            "nav_practice": "Iniciar Prática", "nav_advanced": "Prática Avançada", "nav_menu": "Menu do Curso",
+            "nav_intro": "Introdução", "nav_local_global": "Local vs Global", "nav_pc": "Conexão PC", "nav_quiz": "Teste Rápido",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title": "Módulo 19: Entendendo Escopo", "header_subtitle": "Onde suas variáveis \"vivem\" e por que isso importa.",
+            "intro_title": "📍 Onde está Minha Variável?",
+            "intro_p1": "Em programação, nem toda variável está acessível de qualquer lugar no seu código. O <span class=\"highlight\">escopo</span> define onde uma variável pode ser usada.",
+            "intro_p2": "Pense nisso como cômodos em uma casa: algumas coisas pertencem a um cômodo específico (<span class=\"code-inline\">local</span>), enquanto outras podem ser vistas de quase qualquer lugar (<span class=\"code-inline\">global</span> - use com cuidado!). Entender isso é crucial!",
+            "local_global_title": "🏠 Local vs. Global", "local_global_subtitle": "Variáveis têm \"casas\" diferentes no seu código.",
+            "code_comment_global": "# Variável Global", "code_comment_local": "# Variável Local", "code_comment_access_global": "# Podemos VER a variável global aqui:", "code_comment_error": "# A linha abaixo causaria um ERRO:", "code_error_text": "# NameError: name 'ferramenta' is not defined",
+            "tooltip_local_var": "Só existe dentro desta função!", "tooltip_global_var": "Acessível em qualquer lugar (depois de definida).", "tooltip_local_var2": "Definida dentro da função `visitar_marte`.", "tooltip_global_var2": "Definida fora de qualquer função.",
+            "local_global_h3": "Entendendo o Exemplo:",
+            "local_global_p1": "<span class=\"code-highlight\" data-translate-tooltip=\"tooltip_global_var2\">nome_planeta<span class=\"tooltip\">Definida fora de qualquer função.</span></span> é <span class=\"highlight\">global</span>. Ela é definida fora de qualquer função e pode ser acessada (lida) em qualquer lugar depois de sua definição.",
+            "local_global_p2": "<span class=\"code-highlight\" data-translate-tooltip=\"tooltip_local_var2\">ferramenta<span class=\"tooltip\">Definida dentro da função `visitar_marte`.</span></span> é <span class=\"highlight\">local</span> à função <span class=\"code-inline\">visitar_marte()</span>. Ela só existe e pode ser usada *dentro* dessa função.",
+            "local_global_p3": "Tentar usar <code class=\"code-inline\">ferramenta</code> fora da função <code class=\"code-inline\">visitar_marte()</code> resulta em um <code class=\"code-inline\">NameError</code>, pois ela não é \"visível\" naquele escopo.",
+            "local_global_p4": "<strong data-translate='tip_title'>Dica:</strong> Geralmente, prefira variáveis locais. Elas tornam seu código mais organizado e evitam modificações acidentais de variáveis usadas em outras partes do programa.",
+            "tip_title": "Dica:",
+            "pc_title": "🧠 Conexão com Pensamento Computacional", "pc_subtitle": "Como o escopo se relaciona com princípios chave?",
+            "pc_abstraction_title": "Abstração", "pc_abstraction_text": "O escopo ajuda a <span class=\"highlight\">esconder detalhes</span>. Funções usam variáveis locais para fazer seu trabalho interno. Quem usa a função não precisa saber sobre essas variáveis locais, apenas o que a função faz (sua interface). Isso simplifica o uso.",
+            "pc_debugging_title": "Depuração (Debugging)", "pc_debugging_text": "Entender o escopo é vital para depurar! Muitos erros (<code class=\"code-inline\">NameError</code>) ocorrem porque uma variável é usada fora de seu escopo. Saber onde as variáveis \"vivem\" ajuda a <span class=\"highlight\">prevenir e encontrar</span> esses erros rapidamente.",
+            "quiz_title": "🧠 Teste Rápido!", "quiz_next_button": "Próxima Pergunta <i class=\"fas fa-arrow-right\"></i>",
+            "quiz_q1": "Como se chama uma variável definida dentro de uma função?",
+            "quiz_q1_opt1": "Variável Global", "quiz_q1_opt2": "Variável Local", "quiz_q1_opt3": "Variável Universal", "quiz_q1_opt4": "Variável de Função",
+            "quiz_q2": "Onde uma variável global pode tipicamente ser acessada?",
+            "quiz_q2_opt1": "Apenas dentro da função onde é usada.", "quiz_q2_opt2": "Apenas na linha logo após ser definida.", "quiz_q2_opt3": "Em qualquer lugar no script *depois* de ter sido definida.", "quiz_q2_opt4": "Apenas fora de todas as funções.",
+            "quiz_q3": "Qual princípio do Pensamento Computacional é fortemente apoiado pelo escopo ao esconder detalhes internos da função?",
+            "quiz_q3_opt1": "Decomposição", "quiz_q3_opt2": "Reconhecimento de Padrões", "quiz_q3_opt3": "Design de Algoritmos", "quiz_q3_opt4": "Abstração",
+            "quiz_q4": "Por que entender o escopo é útil para a Depuração?",
+            "quiz_q4_opt1": "Faz o código rodar mais rápido.", "quiz_q4_opt2": "Ajuda a identificar e prevenir exceções `NameError`.", "quiz_q4_opt3": "Corrige automaticamente erros de sintaxe.", "quiz_q4_opt4": "Permite usar variáveis antes de serem definidas.",
+            "quiz_feedback_correct": "Correto! 🎉", "quiz_feedback_incorrect": "Quase lá! A resposta correta era: {correctAnswerText}",
+            "quiz_final_score_title": "Módulo 19 Completo!", "quiz_final_score_summary": "Você respondeu {score} de {total} perguntas corretamente.",
+            "quiz_final_score_perfect": "Excelente trabalho! Você compreendeu os conceitos de escopo.", "quiz_final_score_good": "Ótimo esforço! Revisar as regras de escopo solidificará seu entendimento.",
+            "completion_theory_title": "Teoria do Módulo 19 Completa!",
+            "completion_theory_desc": "Você agora entende os conceitos básicos de escopo local e global e como eles se conectam à abstração e depuração. Excelente! <br> Hora de praticar esses conceitos na <strong>Zona de Prática</strong> ou se desafiar na <strong>Prática Avançada</strong>.",
+        },
+        zh: {
+            "page_title": "模块 19：理解作用域",
+            "nav_practice": "开始练习", "nav_advanced": "高级练习", "nav_menu": "课程菜单",
+            "nav_intro": "简介", "nav_local_global": "局部与全局", "nav_pc": "计算思维连接", "nav_quiz": "知识测验",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title": "模块 19：理解作用域", "header_subtitle": "你的变量“居住”在哪里以及为何这很重要。",
+            "intro_title": "📍 我的变量在哪里？",
+            "intro_p1": "在编程中，并非每个变量都能在代码的任何地方访问。<span class=\"highlight\">作用域</span> 定义了变量可以在哪里被使用。",
+            "intro_p2": "把它想象成房子里的房间：有些东西属于特定的房间（<span class=\"code-inline\">局部</span>），而有些东西几乎可以从任何地方看到（<span class=\"code-inline\">全局</span> - 谨慎使用！）。理解这一点至关重要！",
+            "local_global_title": "🏠 局部 vs. 全局", "local_global_subtitle": "变量在你的代码中有不同的“家”。",
+            "code_comment_global": "# 全局变量", "code_comment_local": "# 局部变量", "code_comment_access_global": "# 我们可以在这里看到全局变量:", "code_comment_error": "# 下面这行会引起错误:", "code_error_text": "# NameError: name 'tool' is not defined (名称错误：名称 'tool' 未定义)",
+            "tooltip_local_var": "只在这个函数内部存在！", "tooltip_global_var": "（定义后）随处可访问。", "tooltip_local_var2": "在 `visit_mars` 函数内部定义。", "tooltip_global_var2": "在任何函数外部定义。",
+            "local_global_h3": "理解示例：",
+            "local_global_p1": "<span class=\"code-highlight\" data-translate-tooltip=\"tooltip_global_var2\">planet_name<span class=\"tooltip\">在任何函数外部定义。</span></span> 是 <span class=\"highlight\">全局</span> 的。它在任何函数之外定义，并且在定义之后可以在任何地方被访问（读取）。",
+            "local_global_p2": "<span class=\"code-highlight\" data-translate-tooltip=\"tooltip_local_var2\">tool<span class=\"tooltip\">在 `visit_mars` 函数内部定义。</span></span> 是函数 <span class=\"code-inline\">visit_mars()</span> 的 <span class=\"highlight\">局部</span> 变量。它只在该函数*内部*存在并可以使用。",
+            "local_global_p3": "试图在 <code class=\"code-inline\">visit_mars()</code> 函数外部使用 <code class=\"code-inline\">tool</code> 会导致 <code class=\"code-inline\">NameError</code>，因为它在那个作用域中是不可见的。",
+            "local_global_p4": "<strong data-translate='tip_title'>提示：</strong> 通常，优先使用局部变量。它们使你的代码更有条理，并防止意外修改在其他地方使用的变量。",
+            "tip_title": "提示：",
+            "pc_title": "🧠 计算思维连接", "pc_subtitle": "作用域与关键原则有何关联？",
+            "pc_abstraction_title": "抽象", "pc_abstraction_text": "作用域有助于<span class=\"highlight\">隐藏细节</span>。函数使用局部变量来完成其内部工作。函数的使用者不需要了解这些局部变量，只需要知道函数做什么（它的接口）。这简化了使用。",
+            "pc_debugging_title": "调试", "pc_debugging_text": "理解作用域对于调试至关重要！许多错误（<code class=\"code-inline\">NameError</code>）的发生是因为变量在其作用域之外被使用。知道变量“居住”在哪里有助于快速<span class=\"highlight\">预防和查找</span>这些错误。",
+            "quiz_title": "🧠 快速测验！", "quiz_next_button": "下一题 <i class=\"fas fa-arrow-right\"></i>",
+            "quiz_q1": "在函数内部定义的变量称为什么？",
+            "quiz_q1_opt1": "全局变量", "quiz_q1_opt2": "局部变量", "quiz_q1_opt3": "通用变量", "quiz_q1_opt4": "函数变量",
+            "quiz_q2": "全局变量通常可以在哪里访问？",
+            "quiz_q2_opt1": "只能在它被使用的函数内部。", "quiz_q2_opt2": "只能在它被定义后的紧接着那一行。", "quiz_q2_opt3": "在脚本中它被定义*之后*的任何地方。", "quiz_q2_opt4": "只能在所有函数之外。",
+            "quiz_q3": "作用域通过隐藏函数内部细节，强力支持了计算思维的哪个原则？",
+            "quiz_q3_opt1": "分解", "quiz_q3_opt2": "模式识别", "quiz_q3_opt3": "算法设计", "quiz_q3_opt4": "抽象",
+            "quiz_q4": "为什么理解作用域对调试有帮助？",
+            "quiz_q4_opt1": "它使代码运行更快。", "quiz_q4_opt2": "它有助于识别和预防 `NameError` 异常。", "quiz_q4_opt3": "它自动纠正语法错误。", "quiz_q4_opt4": "它允许在变量定义之前使用它们。",
+            "quiz_feedback_correct": "正确！🎉", "quiz_feedback_incorrect": "不太对哦！正确答案是：{correctAnswerText}",
+            "quiz_final_score_title": "模块 19 完成！", "quiz_final_score_summary": "你答对了 {score} / {total} 题。",
+            "quiz_final_score_perfect": "太棒了！你已经掌握了作用域的概念。", "quiz_final_score_good": "很努力！复习作用域规则将巩固你的理解。",
+            "completion_theory_title": "模块 19 理论完成！",
+            "completion_theory_desc": "你现在理解了局部和全局作用域的基础知识，以及它们如何与抽象和调试联系起来。太棒了！<br> 是时候在<strong>练习区</strong>练习这些概念，或在<strong>高级练习</strong>中挑战自己了。",
+        }
+    };
+
+
+    document.addEventListener('DOMContentLoaded', () => {
+
+        function getStoredLanguage() { /* ... (same as module 0) ... */
+            const storedLang = localStorage.getItem('userLanguage');
+            if (storedLang && translations[storedLang]) return storedLang;
+            const browserLang = navigator.language || navigator.userLanguage;
+            if (browserLang.startsWith('pt')) return 'pt';
+            if (browserLang.startsWith('zh')) return 'zh';
+            return 'en'; // Default to English
+        }
+
+        function setLanguage(lang) { /* ... (same as module 0, calls translatePage) ... */
+            if (!translations[lang]) lang = 'en'; // Fallback
+            localStorage.setItem('userLanguage', lang);
+            document.documentElement.lang = lang;
+            translatePage(lang); // Call translation function
+
+            // Update language selector dropdown
+            const langSelect = document.getElementById('languageSelect');
+            if (langSelect) {
+                langSelect.value = lang;
+            }
+             // Update quiz if language changes mid-quiz
+             if(quizArea && currentQuestionIndex < quizData.length) {
+                 if (!quizArea.querySelector('[data-translate="quiz_final_score_title"]')) {
+                    loadQuestion(); // Reload current question with new language
+                 }
+             }
+        }
+
+        function getTranslation(key, lang, replacements = {}) { /* ... (same as module 0) ... */
+             let text = translations[lang]?.[key] ?? translations['en']?.[key] ?? `[${key}]`; // Fallback shows key
+             for (const placeholder in replacements) {
+                 const regex = new RegExp(`\\{${placeholder}\\}`, 'g');
+                 text = text.replace(regex, replacements[placeholder]);
+             }
+             return text;
+        }
+
+        function translatePage(lang) { /* ... (same as module 0, includes tooltip translation) ... */
+            if (!translations[lang]) lang = 'en';
+
+            // Translate all elements with data-translate attribute
+            document.querySelectorAll('[data-translate]').forEach(el => {
+                const key = el.getAttribute('data-translate');
+                const translation = getTranslation(key, lang);
+                 if (el.tagName === 'TITLE') { document.title = translation; }
+                 else if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') { /* Skip placeholders */ }
+                 else if (el.tagName === 'OPTION') { el.textContent = translation; }
+                 else {
+                     if (translation.includes('<') && translation.includes('>')) {
+                         el.innerHTML = translation; // Use innerHTML if translation contains HTML tags
+                     } else {
+                         el.textContent = translation; // Otherwise, use textContent
+                     }
+                 }
+            });
+
+            // Translate placeholders
+            document.querySelectorAll('[data-translate-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-translate-placeholder');
+                el.setAttribute('placeholder', getTranslation(key, lang));
+            });
+
+             // Translate tooltips (data-translate-tooltip on parent, text in .tooltip child)
+             document.querySelectorAll('[data-translate-tooltip]').forEach(el => {
+                 const tooltipKey = el.getAttribute('data-translate-tooltip');
+                 const tooltipSpan = el.querySelector('.tooltip');
+                 if(tooltipSpan && tooltipKey) {
+                    tooltipSpan.textContent = getTranslation(tooltipKey, lang);
+                 }
+             });
+
+              // Translate specific code comments
+              document.querySelectorAll('.code-comment[data-translate]').forEach(el => {
+                const key = el.getAttribute('data-translate');
+                const translatedText = getTranslation(key, lang);
+                 // Keep the '#' symbol and space
+                 const commentContent = translatedText.startsWith('# ') ? translatedText.substring(2) : translatedText;
+                 el.textContent = '# ' + commentContent;
+              });
+               // Translate error text specifically, keeping formatting
+               const errorSpan = document.querySelector('.code-error[data-translate="code_error_text"]');
+               if (errorSpan) {
+                   const translatedText = getTranslation("code_error_text", lang);
+                   const errorContent = translatedText.startsWith('# ') ? translatedText.substring(2) : translatedText;
+                   errorSpan.textContent = '# ' + errorContent;
+               }
+        }
+
+        // --- Initialize Language ---
+        const initialLang = getStoredLanguage();
+
+
+        // --- Minimal Nav Logic ---
+        const navToggleButton = document.getElementById('minimal-nav-toggle'); /* ... (same as module 0) ... */
+        const navPanel = document.getElementById('minimal-nav-panel');
+        const body = document.body;
+        if (navToggleButton && navPanel) {
+            navToggleButton.addEventListener('click', (event) => {
+                event.stopPropagation(); body.classList.toggle('nav-active');
+                navToggleButton.setAttribute('aria-expanded', body.classList.contains('nav-active'));
+             });
+            document.addEventListener('click', (event) => {
+                if (body.classList.contains('nav-active') && !navPanel.contains(event.target) &&
+                    event.target !== navToggleButton && !navToggleButton.contains(event.target)) {
+                    body.classList.remove('nav-active');
+                    navToggleButton.setAttribute('aria-expanded', 'false');
+                }
+             });
+            navPanel.querySelectorAll('a').forEach(link => {
+                link.addEventListener('click', () => {
+                    body.classList.remove('nav-active');
+                    navToggleButton.setAttribute('aria-expanded', 'false');
+                });
+             });
+             document.addEventListener('keydown', (event) => {
+                 if (event.key === 'Escape' && body.classList.contains('nav-active')) {
+                    body.classList.remove('nav-active');
+                    navToggleButton.setAttribute('aria-expanded', 'false');
+                 }
+             });
+        }
+
+        // --- Language Switcher Setup ---
+        const langSelect = document.getElementById('languageSelect'); /* ... (same as module 0) ... */
+        if (langSelect) {
+            langSelect.addEventListener('change', (e) => {
+                setLanguage(e.target.value);
+            });
+        }
+
+        // --- Intersection Observer for Animations (if needed for future elements) ---
+        const observerOptions = { root: null, rootMargin: '0px', threshold: 0.1 }; /* ... (same as module 0) ... */
+        const observerCallback = (entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    // Optional: Unobserve after animation starts if it only runs once
+                    // observer.unobserve(entry.target);
+                }
+            });
+        };
+        const observer = new IntersectionObserver(observerCallback, observerOptions);
+        // Example: Observe elements with class 'fade-on-scroll' if you add any
+        // document.querySelectorAll('.fade-on-scroll').forEach(el => observer.observe(el));
+        // Observe concept cards for fade-in (already handled by CSS animation, but good practice)
+        document.querySelectorAll('.concept-card').forEach(el => observer.observe(el));
+
+
+        // --- Tooltip Setup (CSS Hover handles visibility) ---
+        // No JS needed for basic hover tooltips defined in CSS
+
+        // --- Knowledge Check / Quiz Data for Module 19 ---
+        const quizData = [
+            { questionKey: "quiz_q1", optionKeys: ["quiz_q1_opt1", "quiz_q1_opt2", "quiz_q1_opt3", "quiz_q1_opt4"], correctAnswer: 1 }, // Local Variable
+            { questionKey: "quiz_q2", optionKeys: ["quiz_q2_opt1", "quiz_q2_opt2", "quiz_q2_opt3", "quiz_q2_opt4"], correctAnswer: 2 }, // Anywhere after defined
+            { questionKey: "quiz_q3", optionKeys: ["quiz_q3_opt1", "quiz_q3_opt2", "quiz_q3_opt3", "quiz_q3_opt4"], correctAnswer: 3 }, // Abstraction
+            { questionKey: "quiz_q4", optionKeys: ["quiz_q4_opt1", "quiz_q4_opt2", "quiz_q4_opt3", "quiz_q4_opt4"], correctAnswer: 1 }  // Helps identify NameError
+        ];
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        const quizArea = document.getElementById('quiz-area');
+        const feedbackArea = document.getElementById('quiz-feedback');
+        const nextButton = document.getElementById('next-question-btn');
+
+        function loadQuestion() { /* ... (same as module 0, uses getTranslation) ... */
+             const currentLang = getStoredLanguage();
+             if (!quizArea || currentQuestionIndex >= quizData.length) {
+                 if (quizArea && !quizArea.querySelector('[data-translate="quiz_final_score_title"]')) {
+                    showFinalScore();
+                 }
+                 return;
+             }
+
+             const currentQuiz = quizData[currentQuestionIndex];
+             const questionText = getTranslation(currentQuiz.questionKey, currentLang);
+             // Use innerHTML for question text to allow code formatting
+             quizArea.innerHTML = `
+                 <div class="quiz-question">${currentQuestionIndex + 1}. ${questionText.replace(/`(.*?)`/g, '<code class="code-inline">$1</code>')}</div>
+                 <div class="quiz-options">
+                     ${currentQuiz.optionKeys.map((optionKey, index) => `
+                         <button class="quiz-option-btn" data-index="${index}">${getTranslation(optionKey, currentLang).replace(/`(.*?)`/g, '<code class="code-inline">$1</code>')}</button>
+                     `).join('')}
+                 </div>
+             `;
+
+             feedbackArea.classList.remove('visible', 'correct', 'incorrect');
+             feedbackArea.textContent = '';
+             nextButton.classList.remove('visible');
+             nextButton.disabled = true; // Disable until answer selected
+
+             document.querySelectorAll('.quiz-option-btn').forEach(button => {
+                 button.addEventListener('click', handleAnswer);
+             });
+        }
+
+        function handleAnswer(event) { /* ... (same as module 0, uses getTranslation) ... */
+             const currentLang = getStoredLanguage();
+             const selectedButton = event.target;
+             const selectedIndex = parseInt(selectedButton.dataset.index);
+             const correctIndex = quizData[currentQuestionIndex].correctAnswer;
+             const correctOptionKey = quizData[currentQuestionIndex].optionKeys[correctIndex];
+             // Get raw correct answer text first
+             const rawCorrectAnswerText = getTranslation(correctOptionKey, currentLang);
+             // Format it for display in feedback
+             const formattedCorrectAnswerText = rawCorrectAnswerText.replace(/`(.*?)`/g, '<code class="code-inline">$1</code>');
+
+
+             document.querySelectorAll('.quiz-option-btn').forEach(btn => {
+                btn.disabled = true;
+                btn.classList.remove('shake'); // Reset shake class
+             });
+
+             feedbackArea.classList.add('visible');
+
+             if (selectedIndex === correctIndex) {
+                 selectedButton.classList.add('correct');
+                 feedbackArea.innerHTML = getTranslation('quiz_feedback_correct', currentLang);
+                 feedbackArea.classList.add('correct');
+                 feedbackArea.classList.remove('incorrect');
+                 score++;
+                 selectedButton.classList.add('tada-anim'); // Correct animation
+             } else {
+                 selectedButton.classList.add('incorrect');
+                 // Pass the formatted correct answer text for interpolation
+                 feedbackArea.innerHTML = getTranslation('quiz_feedback_incorrect', currentLang, { correctAnswerText: `<strong>${formattedCorrectAnswerText}</strong>` });
+                 feedbackArea.classList.add('incorrect');
+                 feedbackArea.classList.remove('correct');
+                 // Highlight the correct answer
+                 const correctButton = document.querySelector(`.quiz-option-btn[data-index="${correctIndex}"]`);
+                 if(correctButton) correctButton.classList.add('correct'); // Show correct one
+                 selectedButton.classList.add('shake'); // Incorrect animation
+             }
+
+              // Remove animation classes after they play
+              selectedButton.addEventListener('animationend', () => {
+                   selectedButton.classList.remove('tada-anim', 'shake');
+              }, { once: true });
+
+
+             nextButton.classList.add('visible'); // Show next button
+             nextButton.disabled = false; // Enable next button
+        }
+
+         function showFinalScore() { /* ... (same as module 0, uses getTranslation) ... */
+              const currentLang = getStoredLanguage();
+              const totalQuestions = quizData.length;
+              let resultMessageKey = '';
+              if (score === totalQuestions) {
+                  resultMessageKey = 'quiz_final_score_perfect';
+              } else {
+                   resultMessageKey = 'quiz_final_score_good';
+              }
+
+              quizArea.innerHTML = `
+                  <div class="quiz-question text-center" data-translate="quiz_final_score_title" style="font-size: 1.5rem;">${getTranslation('quiz_final_score_title', currentLang)}</div>
+                  <p class="text-center" style="font-size: 1.2rem; margin-bottom: 1rem;">${getTranslation('quiz_final_score_summary', currentLang, { score: score, total: totalQuestions })}</p>
+                  <p class="text-center" style="color: ${score === totalQuestions ? 'var(--success-color)' : 'var(--primary-color)'}; font-weight: bold;">${getTranslation(resultMessageKey, currentLang)}</p>
+              `;
+              feedbackArea.classList.remove('visible'); // Hide feedback area
+              nextButton.style.display = 'none'; // Hide next button
+              // Optional: Scroll to the results
+               quizArea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+
+
+        if (nextButton) { /* ... (same as module 0) ... */
+             nextButton.addEventListener('click', () => {
+                  currentQuestionIndex++;
+                  loadQuestion();
+              });
+        }
+
+        // --- Initial Language Application and Load ---
+        setLanguage(initialLang); // Apply language FIRST
+        if (quizArea) { loadQuestion(); } // Initial quiz load
+
+        // Trigger fade-in animations for elements initially in view
+         document.querySelectorAll('.fade-in').forEach(el => {
+             const rect = el.getBoundingClientRect();
+             if(rect.top < window.innerHeight && rect.bottom >= 0) {
+                 // Element is initially visible, CSS animation handles it automatically
+             }
+         });
+
+    }); // End DOMContentLoaded
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<!-- Language set by JS -->
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Title set by JS -->
+    <title data-translate="page_title">Módulo 15: Controlando Loops</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* --- Reset & Base Styles --- */
+        :root {
+            --primary-color: #007bff; /* Keeping blue for consistency, but can be themed per module */
+            --secondary-color: #6c757d;
+            --background-light: #f8f9fa;
+            --background-dark: #343a40;
+            --text-light: #f8f9fa;
+            --text-dark: #212529;
+            --accent-color: #ffc107; /* Yellow accent */
+            --success-color: #28a745;
+            --error-color: #dc3545;
+            --break-color: #dc3545; /* Color for 'break' emphasis */
+            --continue-color: #ffc107; /* Color for 'continue' emphasis */
+            --border-radius: 8px;
+            --transition-speed: 0.3s;
+            --font-body: 'Roboto', sans-serif;
+            --font-title: 'Orbitron', sans-serif;
+             /* Nav Colors */
+            --nav-primary: #6e48aa;
+            --nav-success: #4cc9f0;
+            --nav-dark: #1a1a2e;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; font-size: 16px; }
+        body {
+            font-family: var(--font-body); line-height: 1.7; background-color: var(--background-light);
+            color: var(--text-dark); overflow-x: hidden; display: flex; flex-direction: column; min-height: 100vh;
+        }
+        main { flex-grow: 1; } /* Allows main content to push elements down */
+
+        /* --- Utility Classes --- */
+        .container { max-width: 960px; margin: 0 auto; padding: 0 15px; }
+        .text-center { text-align: center; }
+        .highlight { color: var(--primary-color); font-weight: bold; }
+        .highlight-break { color: var(--break-color); font-weight: bold; }
+        .highlight-continue { color: var(--continue-color); font-weight: bold; }
+        .fade-in { opacity: 0; transform: translateY(20px); animation: fadeInAnimation 0.8s ease-out forwards; }
+        .fade-in.delay-1 { animation-delay: 0.2s; } .fade-in.delay-2 { animation-delay: 0.4s; }
+        .fade-in.delay-3 { animation-delay: 0.6s; } .fade-in.delay-4 { animation-delay: 0.8s; }
+        .fade-in.delay-5 { animation-delay: 1.0s; }
+        .button-group { margin-top: 2rem; display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; }
+        .action-button {
+             display: inline-flex; align-items: center; justify-content: center; gap: 0.5em; padding: 0.8rem 1.5rem;
+             font-size: 1rem; font-weight: bold; color: var(--text-light); background-color: var(--primary-color);
+             border: none; border-radius: var(--border-radius); cursor: pointer;
+             transition: background-color var(--transition-speed), transform var(--transition-speed), filter var(--transition-speed), box-shadow var(--transition-speed);
+             margin-top: 1rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1); text-decoration: none; line-height: 1.2;
+        }
+        .action-button:hover:not(:disabled) { background-color: #0056b3; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+        .action-button:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none; box-shadow: none; opacity: 0.7; }
+        .action-button.success { background-color: var(--success-color); }
+        .action-button.success:hover:not(:disabled) { background-color: #218838; }
+        .action-button.secondary { background-color: var(--secondary-color); }
+        .action-button.secondary:hover:not(:disabled) { background-color: #5a6268; }
+        .action-button:active:not(:disabled) { transform: translateY(1px) scale(0.98); filter: brightness(0.95); }
+
+        /* --- Animations --- */
+        @keyframes fadeInAnimation { to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); } 50% { transform: scale(1.03); box-shadow: 0 0 15px rgba(0, 123, 255, 0.6); } 100% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); } }
+        @keyframes code-line-anim { from { width: 0; opacity: 0; } to { width: 100%; opacity: 1; } }
+        @keyframes tada { from { transform: scale3d(1, 1, 1); } 10%, 20% { transform: scale3d(.9, .9, .9) rotate3d(0, 0, 1, -3deg); } 30%, 50%, 70%, 90% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, 3deg); } 40%, 60%, 80% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, -3deg); } to { transform: scale3d(1, 1, 1); } }
+        .tada-anim { animation: tada 1s ease; }
+        @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
+        @keyframes iconAppearCorrect { 0% { transform: scale(0.5) rotate(-15deg); opacity: 0; } 60% { transform: scale(1.2) rotate(5deg); opacity: 1; } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
+
+        /* --- Minimal Retractable Nav --- */
+        .minimal-nav-button { position: fixed; top: 15px; right: 15px; z-index: 1001; background-color: rgba(52, 58, 64, 0.75); color: var(--text-light); border: none; border-radius: var(--border-radius); padding: 8px 12px; cursor: pointer; transition: background-color var(--transition-speed), opacity var(--transition-speed), transform var(--transition-speed); font-size: 1.1rem; opacity: 0.6; box-shadow: 0 2px 5px rgba(0,0,0,0.2); line-height: 1; }
+        .minimal-nav-button:hover { background-color: rgba(52, 58, 64, 0.95); opacity: 1; transform: scale(1.05); }
+        .minimal-nav { position: fixed; top: 60px; right: 15px; z-index: 1000; background-color: var(--background-dark); border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.3); padding: 0.8rem; opacity: 0; transform: translateY(-15px) scale(0.95); transform-origin: top right; pointer-events: none; transition: opacity var(--transition-speed) ease, transform var(--transition-speed) ease; min-width: 200px; }
+        body.nav-active .minimal-nav { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+        .minimal-nav ul { list-style: none; margin: 0; padding: 0; }
+        .minimal-nav ul li { margin-bottom: 5px; } .minimal-nav ul li:last-child { margin-bottom: 0; }
+        .minimal-nav ul li a { display: flex; align-items: center; color: var(--text-light); text-decoration: none; padding: 0.6rem 1rem; border-radius: 4px; transition: background-color var(--transition-speed), color var(--transition-speed); white-space: nowrap; font-weight: 400; font-size: 0.95rem; }
+        .minimal-nav ul li a i.fas { margin-right: 10px; width: 1.2em; text-align: center; opacity: 0.8; transition: opacity var(--transition-speed); }
+        .minimal-nav ul li a:hover { background-color: var(--primary-color); color: var(--text-light); }
+        .minimal-nav ul li a:hover i.fas { opacity: 1; }
+        /* Language Switcher Styles */
+        .minimal-nav .language-switcher-item { padding: 0.5rem 1rem; border-top: 1px solid var(--secondary-color); margin-top: 8px; padding-top: 13px; }
+        #languageSelect { width: 100%; background: rgba(255,255,255,0.1); color: white; border: 1px solid var(--nav-success); border-radius: 5px; padding: 6px 30px 6px 12px; cursor: pointer; font-size: 0.9rem; appearance: none; -webkit-appearance: none; -moz-appearance: none; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%234CC9F0%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right 10px center; background-size: 10px auto; transition: background-color 0.3s ease; }
+        #languageSelect:hover { background-color: rgba(255,255,255,0.15); }
+        #languageSelect option { background: var(--nav-dark); color: var(--text-light); }
+        /* --- End Minimal Retractable Nav --- */
+
+        /* --- Header --- */
+        .main-header {
+            background: linear-gradient(135deg, var(--primary-color), #004a9a);
+            color: var(--text-light); padding: 4rem 0 6rem; text-align: center; position: relative; overflow: hidden;
+        }
+        .main-header h1 { font-family: var(--font-title); font-size: 3rem; margin-bottom: 0.5rem; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); animation: fadeInAnimation 1s ease-out; }
+        .main-header p { font-size: 1.2rem; font-weight: 300; opacity: 0.9; animation: fadeInAnimation 1s ease-out 0.3s forwards; opacity: 0; }
+        /* Decorative shapes */
+        .header-shape { position: absolute; border-radius: 50%; background-color: rgba(255, 255, 255, 0.1); animation: pulse 5s infinite ease-in-out alternate; }
+        .shape1 { width: 150px; height: 150px; bottom: -50px; left: 10%; animation-duration: 6s; }
+        .shape2 { width: 80px; height: 80px; top: 50px; right: 15%; animation-duration: 4s; }
+        .shape3 { width: 50px; height: 50px; bottom: 20px; right: 30%; animation-duration: 7s; }
+
+        /* --- Section Styling --- */
+        section { padding: 4rem 0; border-bottom: 1px solid #eee; }
+        /* Remove border from last section before footer replacement (Completion Section)*/
+        main section:last-of-type { border-bottom: none; padding-bottom: 4rem; /* Ensure spacing above potential implicit footer */ }
+        section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); margin-bottom: 2rem; text-align: center; position: relative; padding-bottom: 10px; }
+        section h2::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 60px; height: 4px; background-color: var(--accent-color); border-radius: 2px; }
+
+        /* --- Intro Section --- */
+        #intro-loops p { font-size: 1.1rem; max-width: 700px; margin: 0 auto 1rem; text-align: center; }
+
+        /* --- Break Statement Section --- */
+        #break-statement .explanation-box, #continue-statement .explanation-box {
+            background-color: #fff; padding: 2rem; border-radius: var(--border-radius);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08); margin-top: 2rem; text-align: center;
+        }
+        .explanation-icon { font-size: 3rem; margin-bottom: 1rem; display: inline-block; }
+        .explanation-icon.break { color: var(--break-color); }
+        .explanation-icon.continue { color: var(--continue-color); }
+        .explanation-box h3 { font-size: 1.5rem; margin-bottom: 1rem; color: var(--text-dark); }
+        .explanation-box p { font-size: 1.05rem; color: var(--secondary-color); max-width: 600px; margin: 0 auto; }
+        .explanation-box code { font-weight: bold; font-family: 'Courier New', Courier, monospace; }
+        .code-break { color: var(--break-color); }
+        .code-continue { color: var(--continue-color); }
+
+        /* --- Continue Statement / When to Use Section --- */
+        #when-to-use .features {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem; margin-top: 2rem;
+        }
+        .feature-card {
+            background-color: #fff; padding: 1.5rem; border-radius: var(--border-radius);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.07); text-align: center;
+            transition: transform var(--transition-speed) ease, box-shadow var(--transition-speed) ease;
+            opacity: 0; transform: translateY(20px); animation: fadeInAnimation 0.6s ease-out forwards;
+            border-top: 4px solid transparent;
+        }
+        .feature-card.break { border-top-color: var(--break-color); }
+        .feature-card.continue { border-top-color: var(--continue-color); }
+        .feature-card:nth-child(1) { animation-delay: 0.2s; }
+        .feature-card:nth-child(2) { animation-delay: 0.4s; }
+        .feature-card:hover { transform: translateY(-5px) scale(1.02); box-shadow: 0 8px 20px rgba(0,0,0,0.12); }
+        .feature-icon { font-size: 2.5rem; margin-bottom: 1rem; }
+        .feature-icon.break { color: var(--break-color); }
+        .feature-icon.continue { color: var(--continue-color); }
+        .feature-card h3 { font-family: var(--font-body); font-weight: 700; font-size: 1.3rem; margin-bottom: 0.8rem; color: var(--text-dark); }
+        .feature-card p { font-size: 0.95rem; color: var(--secondary-color); }
+
+        /* --- Code Examples Section --- */
+        #loop-control-examples .example-pair { display: flex; flex-wrap: wrap; gap: 2rem; align-items: stretch; margin-top: 2rem; }
+        .code-demo-box {
+            flex: 1; min-width: 300px;
+            background-color: var(--background-dark); color: #eee;
+            padding: 1.5rem; border-radius: var(--border-radius); font-family: 'Courier New', Courier, monospace;
+            position: relative; box-shadow: 0 5px 15px rgba(0,0,0,0.2); display: flex; flex-direction: column;
+        }
+        .code-demo-box h4 { font-family: var(--font-body); font-weight: bold; color: var(--accent-color); margin-bottom: 1rem; border-bottom: 1px solid var(--secondary-color); padding-bottom: 0.5rem; font-size: 1.1rem;}
+        .code-input { margin-bottom: 1rem; white-space: pre-wrap; line-height: 1.5;}
+        .code-output {
+            border-top: 1px dashed var(--secondary-color); padding-top: 1rem; margin-top: auto;
+            color: #a6e22e; font-size: 1rem; min-height: 60px;
+            opacity: 0; transition: opacity 0.8s ease 0.5s; white-space: pre-wrap;
+        }
+        .code-output.visible { opacity: 1; }
+        .code-output strong { color: var(--accent-color); }
+        .code-comment { color: #6a9955; } .code-keyword { color: #f92672; }
+        .code-function { color: #66d9ef; } .code-string { color: #e6db74; }
+        .code-number { color: #ae81ff; }
+        .code-highlight { background-color: rgba(255, 255, 0, 0.15); padding: 0.1em 0.3em; border-radius: 3px; }
+        .code-highlight.break { background-color: rgba(220, 53, 69, 0.2); }
+        .code-highlight.continue { background-color: rgba(255, 193, 7, 0.2); }
+
+        /* --- Knowledge Check Section --- */
+        #knowledge-check { background-color: #e9ecef; }
+        .quiz-container { background-color: #fff; padding: 2rem; border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.1); max-width: 700px; margin: 2rem auto 0; }
+        .quiz-question { font-size: 1.2rem; font-weight: bold; margin-bottom: 1.5rem; color: var(--text-dark); }
+        .quiz-options button { display: block; width: 100%; padding: 1rem; margin-bottom: 1rem; text-align: left; font-size: 1rem; background-color: #f8f9fa; border: 1px solid #ced4da; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), border-color var(--transition-speed), transform var(--transition-speed); }
+        .quiz-options button:not(:disabled):hover { background-color: #e2e6ea; border-color: #adb5bd; transform: translateX(5px); }
+        .quiz-options button:disabled { cursor: default; opacity: 0.7; }
+        .quiz-options button.correct { background-color: #d4edda; border-color: var(--success-color); color: #155724; font-weight: bold; }
+        .quiz-options button.incorrect { background-color: #f8d7da; border-color: var(--error-color); color: #721c24; font-weight: bold; }
+        .quiz-options button.incorrect.shake { animation: shake 0.5s ease; }
+        .quiz-feedback { margin-top: 1.5rem; padding: 1rem; border-radius: var(--border-radius); font-weight: bold; text-align: center; opacity: 0; transition: opacity 0.5s ease; height: 0; overflow: hidden; }
+        .quiz-feedback.visible { opacity: 1; height: auto; margin-bottom: 1rem; }
+        .quiz-feedback.correct { background-color: #d4edda; color: #155724; }
+        .quiz-feedback.incorrect { background-color: #f8d7da; color: #721c24; }
+        #next-question-btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5em; margin: 1.5rem auto 0; padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold; color: var(--text-light); background-color: var(--primary-color); border: none; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), transform var(--transition-speed), opacity 0.3s, visibility 0.3s; opacity: 0; visibility: hidden; }
+        #next-question-btn:hover { background-color: #0056b3; transform: scale(1.05); }
+        #next-question-btn.visible { opacity: 1; visibility: visible; }
+
+        /* --- Completion Section Styling --- */
+        .completion-section { padding: 4rem 0; text-align: center; background-color: var(--background-light); }
+        .completion-section .icon { font-size: 4rem; color: var(--success-color); margin-bottom: 1rem; display: inline-block; opacity: 0; animation: iconAppearCorrect 1s ease-out 0.5s forwards; }
+        .completion-section .icon .fas + .fas { margin-left: 0.75rem; }
+        .completion-section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); margin-bottom: 1rem; }
+        .completion-section h2::after { display: none; }
+        .completion-section p { font-size: 1.1rem; margin-top: 1rem; color: var(--secondary-color); max-width: 700px; margin-left: auto; margin-right: auto; line-height: 1.8; }
+        .completion-section .button-group { margin-top: 2.5rem; }
+
+        /* --- Footer --- */
+        /* Footer removed */
+
+        /* --- Responsive Design --- */
+        @media (max-width: 768px) {
+            html { font-size: 15px; }
+            .main-header h1 { font-size: 2.5rem; } .main-header p { font-size: 1.1rem; }
+            section h2 { font-size: 1.8rem; }
+            #when-to-use .features { grid-template-columns: 1fr; }
+            .code-demo-box { min-width: 90%; }
+            .minimal-nav { min-width: 180px; } .minimal-nav ul li a { padding: 0.6rem 0.8rem; }
+            #languageSelect { font-size: 0.85rem; padding: 5px 25px 5px 10px;}
+            .completion-section h2 { font-size: 2rem; }
+            .completion-section .button-group { flex-direction: column; align-items: center; gap: 0.8rem; }
+            .completion-section .action-button { width: 80%; max-width: 350px; margin-top: 0; }
+        }
+        @media (max-width: 480px) {
+            html { font-size: 14px; }
+            .main-header h1 { font-size: 2rem; } .main-header p { font-size: 1rem; }
+            section h2 { font-size: 1.6rem; }
+            .quiz-options button { padding: 0.8rem; font-size: 0.95rem; }
+            .minimal-nav-button { top: 10px; right: 10px; padding: 6px 10px; font-size: 1rem; }
+            .minimal-nav { top: 48px; right: 10px; min-width: 160px; }
+            .minimal-nav ul li a { padding: 0.5rem 0.7rem; font-size: 0.9rem;}
+            .minimal-nav ul li a i.fas { margin-right: 8px; }
+            #languageSelect { font-size: 0.8rem; padding: 4px 20px 4px 8px;}
+            .completion-section .icon { font-size: 3.5rem; } .completion-section h2 { font-size: 1.8rem; }
+            .completion-section p { font-size: 1rem; }
+            .completion-section .action-button { width: 90%; max-width: 300px; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- ========= Minimal Nav Handle ========= -->
+    <button id="minimal-nav-toggle" class="minimal-nav-button" aria-label="Toggle Navigation Menu">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- ========= Minimal Nav Panel (with Language Switcher) ========= -->
+    <nav id="minimal-nav-panel" class="minimal-nav">
+        <ul>
+            <!-- Links to OTHER main pages (UPDATE MODULE NUMBER) -->
+            <li><a href="ctp-practice-15.html"><i class="fas fa-pencil-alt fa-fw"></i> <span data-translate="nav_practice">Start Practice</span></a></li>
+            <li><a href="ctp-advanced-15.html"><i class="fas fa-flask fa-fw"></i> <span data-translate="nav_advanced">Advanced Practice</span></a></li>
+            <li><a href="ctp-dashboard.html"><i class="fas fa-list fa-fw"></i> <span data-translate="nav_menu">Course Menu</span></a></li>
+             <hr style="border: none; border-top: 1px solid var(--secondary-color); margin: 8px 0;">
+             <!-- Links to sections on THIS page -->
+             <li><a href="#intro-loops"><i class="fas fa-cogs fa-fw"></i> <span data-translate="nav_intro">Introduction</span></a></li>
+             <li><a href="#break-statement"><i class="fas fa-door-open fa-fw"></i> <span data-translate="nav_break">Break</span></a></li>
+             <li><a href="#continue-statement"><i class="fas fa-forward fa-fw"></i> <span data-translate="nav_continue">Continue</span></a></li>
+             <li><a href="#when-to-use"><i class="fas fa-question-circle fa-fw"></i> <span data-translate="nav_when_use">When to Use</span></a></li>
+             <li><a href="#loop-control-examples"><i class="fas fa-laptop-code fa-fw"></i> <span data-translate="nav_examples">Examples</span></a></li>
+             <li><a href="#knowledge-check"><i class="fas fa-check-double fa-fw"></i> <span data-translate="nav_quiz">Knowledge Check</span></a></li>
+            <!-- Language Switcher Item -->
+            <li class="language-switcher-item">
+                 <select id="languageSelect" aria-label="Select Language">
+                     <option value="en" data-translate="lang_en">🇬🇧 English</option>
+                     <option value="pt" data-translate="lang_pt">🇧🇷 Português</option>
+                     <option value="zh" data-translate="lang_zh">🇨🇳 中文</option>
+                 </select>
+            </li>
+        </ul>
+    </nav>
+
+    <header class="main-header">
+        <!-- Decorative shapes -->
+        <div class="header-shape shape1"></div>
+        <div class="header-shape shape2"></div>
+        <div class="header-shape shape3"></div>
+
+        <div class="container">
+            <h1 data-translate="header_title">Módulo 15: Controlando Loops</h1>
+            <p data-translate="header_subtitle">Ajuste fino da sua iteração com 'break' e 'continue'.</p>
+        </div>
+    </header>
+
+    <main>
+        <!-- ========= Introduction Section ========= -->
+        <section id="intro-loops">
+            <div class="container">
+                <h2 class="fade-in" data-translate="intro_title">⚙️ Controle Fino de Loops</h2>
+                <p class="fade-in delay-1" data-translate="intro_p1">
+                    Loops são ótimos para repetição, mas às vezes você precisa de mais controle. E se você quiser parar <span class="highlight">no meio</span> do caminho? Ou pular apenas <span class="highlight">uma iteração</span> específica?
+                </p>
+                <p class="fade-in delay-2" data-translate="intro_p2">
+                    É aí que entram <code class="highlight-break">break</code> e <code class="highlight-continue">continue</code>. Eles permitem que você altere o fluxo normal de um loop.
+                </p>
+            </div>
+        </section>
+
+        <!-- ========= Break Statement Section ========= -->
+        <section id="break-statement">
+            <div class="container">
+                <h2 class="fade-in" data-translate="break_title"><span class="highlight-break">break</span>: A Saída de Emergência</h2>
+                <div class="explanation-box fade-in delay-1">
+                    <span class="explanation-icon break"><i class="fas fa-sign-out-alt"></i></span>
+                    <h3 data-translate="break_h3">Parada Imediata</h3>
+                    <p data-translate="break_p1">
+                        A instrução <code class="code-break">break</code> encerra <span class="highlight">imediatamente</span> o loop <span class="highlight">inteiro</span> em que está contida (o loop `for` ou `while` mais interno).
+                    </p>
+                     <p data-translate="break_p2" style="margin-top: 0.5rem;">
+                         Pense nisso como apertar o botão de parada de emergência. Tudo para, e a execução do programa continua <span class="highlight">após</span> o loop.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========= Continue Statement Section ========= -->
+        <section id="continue-statement">
+            <div class="container">
+                 <h2 class="fade-in" data-translate="continue_title"><span class="highlight-continue">continue</span>: Pule Esta Etapa</h2>
+                 <div class="explanation-box fade-in delay-1">
+                     <span class="explanation-icon continue"><i class="fas fa-step-forward"></i></span>
+                     <h3 data-translate="continue_h3">Pular a Iteração Atual</h3>
+                     <p data-translate="continue_p1">
+                        A instrução <code class="code-continue">continue</code> <span class="highlight">interrompe</span> a iteração <span class="highlight">atual</span> do loop e <span class="highlight">pula imediatamente</span> para o início da <span class="highlight">próxima</span> iteração.
+                    </p>
+                    <p data-translate="continue_p2" style="margin-top: 0.5rem;">
+                         Qualquer código restante dentro do loop <span class="highlight">após</span> o `continue` <span class="highlight">não</span> é executado naquela iteração específica. O loop em si não termina.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+         <!-- ========= When to Use Section ========= -->
+        <section id="when-to-use">
+            <div class="container">
+                <h2 class="fade-in" data-translate="when_use_title">🤔 Quando Usar Qual?</h2>
+                <p class="text-center fade-in delay-1" data-translate="when_use_subtitle">Escolher entre `break` e `continue` depende do seu objetivo:</p>
+
+                <div class="features">
+                    <!-- Card 1: break -->
+                    <div class="feature-card break fade-in delay-2" id="card-break-use">
+                        <span class="feature-icon break"><i class="fas fa-search-location"></i></span>
+                        <h3 data-translate="when_break_title">Use <code class="code-break">break</code> para...</h3>
+                         <p data-translate="when_break_text">Sair completamente de um loop quando uma condição específica é atendida (ex: encontrar um item, detectar um erro, atingir um limite).</p>
+                    </div>
+
+                    <!-- Card 2: continue -->
+                    <div class="feature-card continue fade-in delay-3" id="card-continue-use">
+                        <span class="feature-icon continue"><i class="fas fa-filter"></i></span>
+                        <h3 data-translate="when_continue_title">Use <code class="code-continue">continue</code> para...</h3>
+                        <p data-translate="when_continue_text">Ignorar certas iterações que não atendem aos critérios, mas continuar processando o restante dos itens no loop (ex: pular dados inválidos, processar apenas tipos específicos).</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ========= Code Examples Section ========= -->
+        <section id="loop-control-examples">
+             <div class="container">
+                 <h2 class="fade-in" data-translate="examples_title">💻 Exemplos em Ação</h2>
+                 <p class="text-center fade-in delay-1" data-translate="examples_subtitle">Veja como `break` e `continue` funcionam na prática.</p>
+
+                 <div class="example-pair fade-in delay-2">
+                     <!-- Break Example -->
+                     <div class="code-demo-box" id="break-example-box">
+                        <h4 data-translate="break_example_title">Exemplo: Encontrando o Primeiro Múltiplo de 7</h4>
+                        <div class="code-input">
+<pre><span class="code-keyword">numeros</span> = [<span class="code-number">2</span>, <span class="code-number">13</span>, <span class="code-number">5</span>, <span class="code-number">21</span>, <span class="code-number">8</span>, <span class="code-number">49</span>, <span class="code-number">11</span>]
+<span class="code-keyword">encontrado</span> = <span class="code-keyword">None</span>
+
+<span class="code-keyword">for</span> num <span class="code-keyword">in</span> numeros:
+  <span class="code-function">print</span>(<span class="code-string">f"Checando {num}..."</span>)
+  <span class="code-keyword">if</span> num % <span class="code-number">7</span> == <span class="code-number">0</span>:
+    <span class="code-function">print</span>(<span class="code-string">" Múltiplo de 7 encontrado!"</span>)
+    encontrado = num
+    <span class="code-keyword code-highlight break">break</span> <span class="code-comment"># Sai do loop imediatamente</span>
+
+<span class="code-keyword">if</span> encontrado:
+  <span class="code-function">print</span>(<span class="code-string">f"\nO primeiro múltiplo de 7 é {encontrado}"</span>)
+<span class="code-keyword">else</span>:
+  <span class="code-function">print</span>(<span class="code-string">"\nNenhum múltiplo de 7 encontrado."</span>)
+</pre>
+                        </div>
+                        <div class="code-output" id="break-output">
+                            <!-- Output will appear here via JS -->
+                        </div>
+                     </div>
+
+                     <!-- Continue Example -->
+                     <div class="code-demo-box" id="continue-example-box">
+                         <h4 data-translate="continue_example_title">Exemplo: Imprimindo Apenas Números Ímpares</h4>
+                         <div class="code-input">
+<pre><span class="code-keyword">numeros</span> = [<span class="code-number">1</span>, <span class="code-number">2</span>, <span class="code-number">3</span>, <span class="code-number">4</span>, <span class="code-number">5</span>, <span class="code-number">6</span>, <span class="code-number">7</span>, <span class="code-number">8</span>]
+<span class="code-function">print</span>(<span class="code-string">"Números ímpares:"</span>)
+
+<span class="code-keyword">for</span> num <span class="code-keyword">in</span> numeros:
+  <span class="code-keyword">if</span> num % <span class="code-number">2</span> == <span class="code-number">0</span>: <span class="code-comment"># Se for par</span>
+    <span class="code-keyword code-highlight continue">continue</span> <span class="code-comment"># Pula para a próxima iteração</span>
+  <span class="code-comment"># Este print só executa se não for 'continue'</span>
+  <span class="code-function">print</span>(num, end=<span class="code-string">" "</span>)
+
+<span class="code-function">print</span>(<span class="code-string">"\nFim do loop."</span>)
+</pre>
+                        </div>
+                        <div class="code-output" id="continue-output">
+                             <!-- Output will appear here via JS -->
+                        </div>
+                     </div>
+                 </div>
+             </div>
+        </section>
+
+        <!-- ========= Knowledge Check Section ========= -->
+        <section id="knowledge-check">
+            <div class="container">
+                <h2 class="fade-in" data-translate="quiz_title">🧠 Teste Rápido!</h2>
+                <div class="quiz-container fade-in delay-1">
+                    <div id="quiz-area">
+                        <!-- Quiz questions will be loaded here by JavaScript -->
+                    </div>
+                    <div id="quiz-feedback" class="quiz-feedback">
+                        <!-- Feedback (Correct/Incorrect) shown here -->
+                    </div>
+                    <button id="next-question-btn" data-translate="quiz_next_button">Próxima Pergunta</button> <!-- Changed default text to Portuguese -->
+                </div>
+            </div>
+        </section>
+
+        <!-- ========= Completion Section ========= -->
+        <section class="completion-section">
+            <div class="container">
+                 <div class="icon"> <!-- Animation applied via CSS -->
+                    <i class="fas fa-check-double"></i>
+                    <i class="fas fa-project-diagram"></i> <!-- Changed icon -->
+                    <i class="fas fa-star"></i>
+                </div>
+                <h2 class="fade-in delay-1" data-translate="completion_theory_title">Teoria do Módulo 15 Completa!</h2>
+                <p class="fade-in delay-2" data-translate="completion_theory_desc">
+                    Você dominou o controle fino de loops com `break` e `continue`! Agora é hora de aplicar esse conhecimento. <br>
+                    Vá para a <strong>Zona de Prática</strong> ou desafie-se com a <strong>Prática Avançada</strong>.
+                </p>
+                <div class="button-group">
+                    <!-- Button Order: Menu (Left, Grey), Practice (Center, Green), Advanced (Right, Grey) -->
+                    <!-- UPDATE MODULE NUMBER IN HREF -->
+                    <a href="ctp-dashboard.html" class="action-button secondary fade-in delay-3"><i class="fas fa-list"></i> <span data-translate="nav_menu">Menu do Curso</span></a>
+                    <a href="ctp-practice-15.html" class="action-button success fade-in delay-4"><i class="fas fa-pencil-alt"></i> <span data-translate="nav_practice">Iniciar Prática</span></a>
+                    <a href="ctp-advanced-15.html" class="action-button secondary fade-in delay-5"><i class="fas fa-flask"></i> <span data-translate="nav_advanced">Prática Avançada</span></a>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer Removed -->
+
+    <script>
+    // --- Translations Object ---
+    const translations = {
+         // --- Portuguese (Base Language for this module) ---
+        pt: {
+            "page_title": "Módulo 15: Controlando Loops",
+            "nav_practice": "Iniciar Prática", "nav_advanced": "Prática Avançada", "nav_menu": "Menu do Curso",
+            "nav_intro": "Introdução", "nav_break": "Break", "nav_continue": "Continue", "nav_when_use": "Quando Usar", "nav_examples": "Exemplos", "nav_quiz": "Teste Rápido",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title": "Módulo 15: Controlando Loops", "header_subtitle": "Ajuste fino da sua iteração com 'break' e 'continue'.",
+            "intro_title": "⚙️ Controle Fino de Loops",
+            "intro_p1": "Loops são ótimos para repetição, mas às vezes você precisa de mais controle. E se você quiser parar <span class=\"highlight\">no meio</span> do caminho? Ou pular apenas <span class=\"highlight\">uma iteração</span> específica?",
+            "intro_p2": "É aí que entram <code class=\"highlight-break\">break</code> e <code class=\"highlight-continue\">continue</code>. Eles permitem que você altere o fluxo normal de um loop.",
+            "break_title": "<span class=\"highlight-break\">break</span>: A Saída de Emergência",
+            "break_h3": "Parada Imediata",
+            "break_p1": "A instrução <code class=\"code-break\">break</code> encerra <span class=\"highlight\">imediatamente</span> o loop <span class=\"highlight\">inteiro</span> em que está contida (o loop `for` ou `while` mais interno).",
+            "break_p2": "Pense nisso como apertar o botão de parada de emergência. Tudo para, e a execução do programa continua <span class=\"highlight\">após</span> o loop.",
+            "continue_title": "<span class=\"highlight-continue\">continue</span>: Pule Esta Etapa",
+            "continue_h3": "Pular a Iteração Atual",
+            "continue_p1": "A instrução <code class=\"code-continue\">continue</code> <span class=\"highlight\">interrompe</span> a iteração <span class=\"highlight\">atual</span> do loop e <span class=\"highlight\">pula imediatamente</span> para o início da <span class=\"highlight\">próxima</span> iteração.",
+            "continue_p2": "Qualquer código restante dentro do loop <span class=\"highlight\">após</span> o `continue` <span class=\"highlight\">não</span> é executado naquela iteração específica. O loop em si não termina.",
+            "when_use_title": "🤔 Quando Usar Qual?",
+            "when_use_subtitle": "Escolher entre `break` e `continue` depende do seu objetivo:",
+            "when_break_title": "Use <code class=\"code-break\">break</code> para...",
+            "when_break_text": "Sair completamente de um loop quando uma condição específica é atendida (ex: encontrar um item, detectar um erro, atingir um limite).",
+            "when_continue_title": "Use <code class=\"code-continue\">continue</code> para...",
+            "when_continue_text": "Ignorar certas iterações que não atendem aos critérios, mas continuar processando o restante dos itens no loop (ex: pular dados inválidos, processar apenas tipos específicos).",
+            "examples_title": "💻 Exemplos em Ação",
+            "examples_subtitle": "Veja como `break` e `continue` funcionam na prática.",
+            "break_example_title": "Exemplo: Encontrando o Primeiro Múltiplo de 7",
+            "continue_example_title": "Exemplo: Imprimindo Apenas Números Ímpares",
+            "quiz_title": "🧠 Teste Rápido!", "quiz_next_button": "Próxima Pergunta",
+            "quiz_q1": "O que a instrução `break` faz dentro de um loop?",
+            "quiz_q1_opt1": "Pula para a próxima iteração.", "quiz_q1_opt2": "Encerra o loop imediatamente.", "quiz_q1_opt3": "Causa um erro.", "quiz_q1_opt4": "Reinicia o loop do começo.",
+            "quiz_q2": "O que a instrução `continue` faz dentro de um loop?",
+            "quiz_q2_opt1": "Encerra o loop imediatamente.", "quiz_q2_opt2": "Ignora o restante da iteração atual e vai para a próxima.", "quiz_q2_opt3": "Executa a iteração atual duas vezes.", "quiz_q2_opt4": "Pausa o loop.",
+            "quiz_q3": "Em qual situação você usaria `break`?",
+            "quiz_q3_opt1": "Para pular números pares em uma lista.", "quiz_q3_opt2": "Para garantir que todas as iterações sejam executadas.", "quiz_q3_opt3": "Para parar de procurar em uma lista assim que encontrar o item desejado.", "quiz_q3_opt4": "Para imprimir cada item de uma lista.",
+            "quiz_q4": "Em qual situação você usaria `continue`?",
+            "quiz_q4_opt1": "Para sair do loop se encontrar um valor negativo.", "quiz_q4_opt2": "Para processar apenas os números ímpares de uma lista, ignorando os pares.", "quiz_q4_opt3": "Para parar o loop após 10 iterações.", "quiz_q4_opt4": "Para terminar o programa.",
+            "quiz_feedback_correct": "Correto! 🎉", "quiz_feedback_incorrect": "Ops! A resposta correta era: {correctAnswerText}",
+            "quiz_final_score_title": "Módulo 15 Completo!", "quiz_final_score_summary": "Você acertou {score} de {total} perguntas.",
+            "quiz_final_score_perfect": "Excelente! Você dominou o controle de loops.", "quiz_final_score_good": "Bom trabalho! Continue praticando para fixar.",
+            "completion_theory_title": "Teoria do Módulo 15 Completa!",
+            "completion_theory_desc": "Você dominou o controle fino de loops com `break` e `continue`! Agora é hora de aplicar esse conhecimento. <br> Vá para a <strong>Zona de Prática</strong> ou desafie-se com a <strong>Prática Avançada</strong>.",
+        },
+        // --- English Translations ---
+        en: {
+            "page_title": "Module 15: Controlling Loops",
+            "nav_practice": "Start Practice", "nav_advanced": "Advanced Practice", "nav_menu": "Course Menu",
+            "nav_intro": "Introduction", "nav_break": "Break", "nav_continue": "Continue", "nav_when_use": "When to Use", "nav_examples": "Examples", "nav_quiz": "Knowledge Check",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title": "Module 15: Controlling Loops", "header_subtitle": "Fine-tuning your iteration with 'break' and 'continue'.",
+            "intro_title": "⚙️ Fine Loop Control",
+            "intro_p1": "Loops are great for repetition, but sometimes you need more control. What if you want to stop <span class=\"highlight\">midway</span>? Or skip just <span class=\"highlight\">one specific</span> iteration?",
+            "intro_p2": "That's where <code class=\"highlight-break\">break</code> and <code class=\"highlight-continue\">continue</code> come in. They let you alter the normal flow of a loop.",
+            "break_title": "<span class=\"highlight-break\">break</span>: The Emergency Exit",
+            "break_h3": "Immediate Stop",
+            "break_p1": "The <code class=\"code-break\">break</code> statement <span class=\"highlight\">immediately</span> terminates the <span class=\"highlight\">entire</span> loop it's contained within (the innermost `for` or `while` loop).",
+            "break_p2": "Think of it like hitting an emergency stop button. Everything halts, and program execution continues <span class=\"highlight\">after</span> the loop.",
+            "continue_title": "<span class=\"highlight-continue\">continue</span>: Skip This Step",
+            "continue_h3": "Skip Current Iteration",
+            "continue_p1": "The <code class=\"code-continue\">continue</code> statement <span class=\"highlight\">interrupts</span> the <span class=\"highlight\">current</span> iteration of the loop and <span class=\"highlight\">immediately jumps</span> to the beginning of the <span class=\"highlight\">next</span> iteration.",
+            "continue_p2": "Any remaining code inside the loop <span class=\"highlight\">after</span> the `continue` is <span class=\"highlight\">not</span> executed for that specific iteration. The loop itself doesn't end.",
+            "when_use_title": "🤔 When to Use Which?",
+            "when_use_subtitle": "Choosing between `break` and `continue` depends on your goal:",
+            "when_break_title": "Use <code class=\"code-break\">break</code> to...",
+            "when_break_text": "Exit a loop completely when a specific condition is met (e.g., finding an item, detecting an error, reaching a limit).",
+            "when_continue_title": "Use <code class=\"code-continue\">continue</code> to...",
+            "when_continue_text": "Skip certain iterations that don't meet criteria, but keep processing the rest of the items in the loop (e.g., skipping invalid data, processing only specific types).",
+            "examples_title": "💻 Examples in Action",
+            "examples_subtitle": "See how `break` and `continue` work in practice.",
+            "break_example_title": "Example: Finding the First Multiple of 7",
+            "continue_example_title": "Example: Printing Only Odd Numbers",
+            "quiz_title": "🧠 Quick Check!", "quiz_next_button": "Next Question",
+            "quiz_q1": "What does the `break` statement do inside a loop?",
+            "quiz_q1_opt1": "Skips to the next iteration.", "quiz_q1_opt2": "Exits the loop immediately.", "quiz_q1_opt3": "Causes an error.", "quiz_q1_opt4": "Restarts the loop from the beginning.",
+            "quiz_q2": "What does the `continue` statement do inside a loop?",
+            "quiz_q2_opt1": "Exits the loop immediately.", "quiz_q2_opt2": "Skips the rest of the current iteration and goes to the next.", "quiz_q2_opt3": "Runs the current iteration twice.", "quiz_q2_opt4": "Pauses the loop.",
+            "quiz_q3": "In which situation would you use `break`?",
+            "quiz_q3_opt1": "To skip even numbers in a list.", "quiz_q3_opt2": "To ensure all iterations run.", "quiz_q3_opt3": "To stop searching a list once you've found the desired item.", "quiz_q3_opt4": "To print every item in a list.",
+            "quiz_q4": "In which situation would you use `continue`?",
+            "quiz_q4_opt1": "To exit the loop if a negative value is found.", "quiz_q4_opt2": "To process only the odd numbers in a list, ignoring the even ones.", "quiz_q4_opt3": "To stop the loop after 10 iterations.", "quiz_q4_opt4": "To end the program.",
+            "quiz_feedback_correct": "Correct! 🎉", "quiz_feedback_incorrect": "Oops! The correct answer was: {correctAnswerText}",
+            "quiz_final_score_title": "Module 15 Complete!", "quiz_final_score_summary": "You answered {score} out of {total} questions correctly.",
+            "quiz_final_score_perfect": "Excellent! You've mastered loop control.", "quiz_final_score_good": "Good job! Keep practicing to solidify.",
+            "completion_theory_title": "Module 15 Theory Complete!",
+            "completion_theory_desc": "You've mastered fine loop control with `break` and `continue`! Now it's time to apply this knowledge. <br> Head to the <strong>Practice Zone</strong> or challenge yourself with the <strong>Advanced Practice</strong>.",
+        },
+         // --- Chinese Translations ---
+        zh: {
+            "page_title": "模块 15：控制循环",
+            "nav_practice": "开始练习", "nav_advanced": "高级练习", "nav_menu": "课程菜单",
+            "nav_intro": "简介", "nav_break": "Break", "nav_continue": "Continue", "nav_when_use": "何时使用", "nav_examples": "示例", "nav_quiz": "知识测验",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title": "模块 15：控制循环", "header_subtitle": "使用 'break' 和 'continue' 微调你的迭代。",
+            "intro_title": "⚙️ 精细循环控制",
+            "intro_p1": "循环非常适合重复操作，但有时你需要更多控制。如果你想<span class=\"highlight\">中途</span>停止怎么办？或者只想跳过<span class=\"highlight\">某个特定</span>的迭代？",
+            "intro_p2": "这时 <code class=\"highlight-break\">break</code> 和 <code class=\"highlight-continue\">continue</code> 就派上用场了。它们允许你改变循环的正常流程。",
+            "break_title": "<span class=\"highlight-break\">break</span>：紧急出口",
+            "break_h3": "立即停止",
+            "break_p1": "<code class=\"code-break\">break</code> 语句会<span class=\"highlight\">立即</span>终止其所在的<span class=\"highlight\">整个</span>循环（最内层的 `for` 或 `while` 循环）。",
+            "break_p2": "可以把它想象成按下紧急停止按钮。一切都停止了，程序执行会<span class=\"highlight\">在循环之后</span>继续。",
+            "continue_title": "<span class=\"highlight-continue\">continue</span>：跳过此步",
+            "continue_h3": "跳过当前迭代",
+            "continue_p1": "<code class=\"code-continue\">continue</code> 语句会<span class=\"highlight\">中断</span>循环的<span class=\"highlight\">当前</span>迭代，并<span class=\"highlight\">立即跳转</span>到<span class=\"highlight\">下一次</span>迭代的开始。",
+            "continue_p2": "循环体内 `continue` <span class=\"highlight\">之后</span>的任何剩余代码在这次特定迭代中都<span class=\"highlight\">不会</span>执行。循环本身并不会结束。",
+            "when_use_title": "🤔 何时使用哪个？",
+            "when_use_subtitle": "选择 `break` 还是 `continue` 取决于你的目标：",
+            "when_break_title": "使用 <code class=\"code-break\">break</code> 的情况...",
+            "when_break_text": "当满足特定条件时完全退出循环（例如：找到某个项目、检测到错误、达到限制）。",
+            "when_continue_title": "使用 <code class=\"code-continue\">continue</code> 的情况...",
+            "when_continue_text": "跳过不符合标准的某些迭代，但继续处理循环中剩余的项目（例如：跳过无效数据、仅处理特定类型）。",
+            "examples_title": "💻 实例演示",
+            "examples_subtitle": "看看 `break` 和 `continue` 在实践中如何工作。",
+            "break_example_title": "示例：查找第一个 7 的倍数",
+            "continue_example_title": "示例：仅打印奇数",
+            "quiz_title": "🧠 快速测验！", "quiz_next_button": "下一题",
+            "quiz_q1": "`break` 语句在循环中做什么？",
+            "quiz_q1_opt1": "跳到下一次迭代。", "quiz_q1_opt2": "立即退出循环。", "quiz_q1_opt3": "导致错误。", "quiz_q1_opt4": "从头重新开始循环。",
+            "quiz_q2": "`continue` 语句在循环中做什么？",
+            "quiz_q2_opt1": "立即退出循环。", "quiz_q2_opt2": "跳过当前迭代的剩余部分，进入下一次迭代。", "quiz_q2_opt3": "将当前迭代运行两次。", "quiz_q2_opt4": "暂停循环。",
+            "quiz_q3": "在哪种情况下你会使用 `break`？",
+            "quiz_q3_opt1": "跳过列表中的偶数。", "quiz_q3_opt2": "确保所有迭代都运行。", "quiz_q3_opt3": "一旦找到所需项目就停止搜索列表。", "quiz_q3_opt4": "打印列表中的每个项目。",
+            "quiz_q4": "在哪种情况下你会使用 `continue`？",
+            "quiz_q4_opt1": "如果找到负值就退出循环。", "quiz_q4_opt2": "只处理列表中的奇数，忽略偶数。", "quiz_q4_opt3": "在 10 次迭代后停止循环。", "quiz_q4_opt4": "结束程序。",
+            "quiz_feedback_correct": "正确！🎉", "quiz_feedback_incorrect": "哎呀！正确答案是：{correctAnswerText}",
+            "quiz_final_score_title": "模块 15 完成！", "quiz_final_score_summary": "你答对了 {total} 题中的 {score} 题。",
+            "quiz_final_score_perfect": "太棒了！你掌握了循环控制。", "quiz_final_score_good": "做得不错！继续练习以巩固。",
+            "completion_theory_title": "模块 15 理论完成！",
+            "completion_theory_desc": "你已经掌握了使用 `break` 和 `continue` 进行精细循环控制！现在是时候应用这些知识了。<br> 前往<strong>练习区</strong>或通过<strong>高级练习</strong>挑战自己。",
+        }
+    };
+
+
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // --- Language Management (Identical to Module 0) ---
+        function getStoredLanguage() {
+            const storedLang = localStorage.getItem('userLanguage');
+            if (storedLang && translations[storedLang]) return storedLang;
+            const browserLang = navigator.language || navigator.userLanguage;
+            if (browserLang.startsWith('pt')) return 'pt'; // Default Portuguese for this module's focus
+            if (browserLang.startsWith('zh')) return 'zh';
+            return 'en';
+        }
+
+        function setLanguage(lang) {
+            if (!translations[lang]) lang = 'pt'; // Fallback to Portuguese
+            localStorage.setItem('userLanguage', lang);
+            document.documentElement.lang = lang;
+            translatePage(lang);
+            const langSelect = document.getElementById('languageSelect');
+            if (langSelect) langSelect.value = lang;
+            if (quizArea && currentQuestionIndex < quizData.length && !quizArea.querySelector('[data-translate="quiz_final_score_title"]')) {
+                loadQuestion();
+            }
+        }
+
+        function getTranslation(key, lang, replacements = {}) {
+            let text = translations[lang]?.[key] ?? translations['pt']?.[key] ?? translations['en']?.[key] ?? `[${key}]`;
+            for (const placeholder in replacements) {
+                const regex = new RegExp(`\\{${placeholder}\\}`, 'g');
+                text = text.replace(regex, replacements[placeholder]);
+            }
+            return text;
+        }
+
+        function translatePage(lang) {
+            if (!translations[lang]) lang = 'pt';
+             document.querySelectorAll('[data-translate]').forEach(el => {
+                const key = el.getAttribute('data-translate');
+                const translation = getTranslation(key, lang);
+                 if (el.tagName === 'TITLE') { document.title = translation; }
+                 else if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT') { /* Skip */ }
+                 else if (el.tagName === 'OPTION') { el.textContent = translation; }
+                 else {
+                     // Use innerHTML if translation contains specific classes likely needing preservation
+                     const containsHighlight = /highlight-break|highlight-continue|code-break|code-continue/g.test(translation);
+                     if ((translation.includes('<') && translation.includes('>')) || containsHighlight) {
+                         el.innerHTML = translation;
+                     } else {
+                         el.textContent = translation;
+                     }
+                 }
+             });
+            // No placeholders or tooltips specific to this module that need translation currently
+        }
+
+        const initialLang = getStoredLanguage();
+
+        // --- Minimal Nav Logic (Identical to Module 0) ---
+        const navToggleButton = document.getElementById('minimal-nav-toggle');
+        const navPanel = document.getElementById('minimal-nav-panel');
+        const body = document.body;
+        if (navToggleButton && navPanel) {
+            navToggleButton.addEventListener('click', (event) => { event.stopPropagation(); body.classList.toggle('nav-active'); navToggleButton.setAttribute('aria-expanded', body.classList.contains('nav-active')); });
+            document.addEventListener('click', (event) => { if (body.classList.contains('nav-active') && !navPanel.contains(event.target) && event.target !== navToggleButton && !navToggleButton.contains(event.target)) { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); } });
+            navPanel.querySelectorAll('a').forEach(link => { link.addEventListener('click', () => { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); }); });
+            document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && body.classList.contains('nav-active')) { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); } });
+            navToggleButton.setAttribute('aria-expanded', 'false');
+        }
+
+        // --- Language Switcher Setup (Identical to Module 0) ---
+        const langSelect = document.getElementById('languageSelect');
+        if (langSelect) { langSelect.addEventListener('change', (e) => { setLanguage(e.target.value); }); }
+
+        // --- Intersection Observer for General Fade-in Animations (Identical to Module 0) ---
+        const fadeInObserver = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    // No need to unobserve general fade-ins
+                }
+            });
+        }, { root: null, rootMargin: '0px', threshold: 0.1 });
+        document.querySelectorAll('.fade-in').forEach(el => { fadeInObserver.observe(el); });
+
+        // --- Code Example Simulation ---
+        function simulateCodeOutput(outputElementId, lines, delay = 200, finalDelay = 500) {
+            const outputElement = document.getElementById(outputElementId);
+            if (!outputElement) return;
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting && !outputElement.classList.contains('visible')) {
+                        outputElement.innerHTML = "> "; // Initial prompt
+                        let currentLine = 0;
+                        let characterIndex = 0;
+                        const initialPromptLength = outputElement.innerHTML.length; // Store length of "> "
+
+                        function typeLine() {
+                            if (currentLine < lines.length) {
+                                const line = lines[currentLine];
+                                if (characterIndex < line.length) {
+                                    // Append character by character
+                                    outputElement.innerHTML += line.charAt(characterIndex);
+                                    characterIndex++;
+                                    setTimeout(typeLine, delay / 5); // Faster typing speed per char
+                                } else {
+                                    // Line finished, add newline and move to next
+                                    outputElement.innerHTML += '\n> ';
+                                    currentLine++;
+                                    characterIndex = 0;
+                                    // Use the base delay between lines
+                                    setTimeout(typeLine, delay);
+                                }
+                            } else {
+                                // All lines finished typing
+                                outputElement.classList.add('visible'); // Fade in the full output smoothly
+                            }
+                        }
+
+                        // Start typing after a short pause
+                        setTimeout(typeLine, finalDelay);
+                        observer.unobserve(entry.target); // Stop observing once triggered
+                    }
+                });
+            }, { threshold: 0.5 }); // Trigger when 50% visible
+
+            observer.observe(outputElement);
+        }
+
+        // Simulate Break Example
+        const breakOutputLines = [
+            "Checando 2...",
+            "Checando 13...",
+            "Checando 5...",
+            "Checando 21...",
+            " Múltiplo de 7 encontrado!",
+            "\nO primeiro múltiplo de 7 é <strong>21</strong>" // Use strong for highlight
+        ];
+        simulateCodeOutput('break-output', breakOutputLines, 150, 600);
+
+        // Simulate Continue Example
+        const continueOutputLines = [
+            "Números ímpares:",
+            "1 ", // Note the space added from end=" "
+            "3 ",
+            "5 ",
+            "7 ",
+            "\nFim do loop."
+        ];
+         simulateCodeOutput('continue-output', continueOutputLines, 150, 600);
+
+
+        // --- Knowledge Check / Quiz ---
+        const quizData = [
+            // Questions based on pt translations keys
+            { questionKey: "quiz_q1", optionKeys: ["quiz_q1_opt1", "quiz_q1_opt2", "quiz_q1_opt3", "quiz_q1_opt4"], correctAnswer: 1 }, // break exits loop
+            { questionKey: "quiz_q2", optionKeys: ["quiz_q2_opt1", "quiz_q2_opt2", "quiz_q2_opt3", "quiz_q2_opt4"], correctAnswer: 1 }, // continue skips iteration
+            { questionKey: "quiz_q3", optionKeys: ["quiz_q3_opt1", "quiz_q3_opt2", "quiz_q3_opt3", "quiz_q3_opt4"], correctAnswer: 2 }, // break use case (find item)
+            { questionKey: "quiz_q4", optionKeys: ["quiz_q4_opt1", "quiz_q4_opt2", "quiz_q4_opt3", "quiz_q4_opt4"], correctAnswer: 1 }  // continue use case (skip items)
+        ];
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        const quizArea = document.getElementById('quiz-area');
+        const feedbackArea = document.getElementById('quiz-feedback');
+        const nextButton = document.getElementById('next-question-btn');
+
+        function loadQuestion() {
+             const currentLang = getStoredLanguage();
+             if (!quizArea || currentQuestionIndex >= quizData.length) {
+                 if (quizArea && !quizArea.querySelector('[data-translate="quiz_final_score_title"]')) {
+                     showFinalScore();
+                 }
+                 return;
+             }
+
+             const currentQuiz = quizData[currentQuestionIndex];
+             const questionText = getTranslation(currentQuiz.questionKey, currentLang);
+             quizArea.innerHTML = `
+                 <div class="quiz-question">${currentQuestionIndex + 1}. ${questionText.replace(/`(.*?)`/g, '<code>$1</code>')}</div>
+                 <div class="quiz-options">
+                     ${currentQuiz.optionKeys.map((optionKey, index) => `
+                         <button class="quiz-option-btn" data-index="${index}">${getTranslation(optionKey, currentLang)}</button>
+                     `).join('')}
+                 </div>
+             `;
+
+             feedbackArea.classList.remove('visible', 'correct', 'incorrect');
+             feedbackArea.textContent = '';
+             nextButton.classList.remove('visible');
+             nextButton.disabled = true; // Disable until an answer is selected
+
+             document.querySelectorAll('.quiz-option-btn').forEach(button => {
+                 button.addEventListener('click', handleAnswer);
+             });
+         }
+
+        function handleAnswer(event) {
+             const currentLang = getStoredLanguage();
+             const selectedButton = event.target;
+             const selectedIndex = parseInt(selectedButton.dataset.index);
+             const correctIndex = quizData[currentQuestionIndex].correctAnswer;
+             const correctOptionKey = quizData[currentQuestionIndex].optionKeys[correctIndex];
+             const correctAnswerText = getTranslation(correctOptionKey, currentLang);
+
+             document.querySelectorAll('.quiz-option-btn').forEach(btn => {
+                 btn.disabled = true;
+                 btn.classList.remove('shake');
+             });
+
+             feedbackArea.classList.add('visible');
+
+             if (selectedIndex === correctIndex) {
+                 selectedButton.classList.add('correct');
+                 feedbackArea.innerHTML = getTranslation('quiz_feedback_correct', currentLang);
+                 feedbackArea.classList.add('correct');
+                 feedbackArea.classList.remove('incorrect');
+                 score++;
+                 selectedButton.classList.add('tada-anim');
+             } else {
+                 selectedButton.classList.add('incorrect');
+                 // Ensure HTML in the replacement is rendered
+                 feedbackArea.innerHTML = getTranslation('quiz_feedback_incorrect', currentLang, { correctAnswerText: `<strong>${correctAnswerText}</strong>` });
+                 feedbackArea.classList.add('incorrect');
+                 feedbackArea.classList.remove('correct');
+                 const correctButton = document.querySelector(`.quiz-option-btn[data-index="${correctIndex}"]`);
+                 if (correctButton) correctButton.classList.add('correct');
+                 selectedButton.classList.add('shake');
+             }
+
+             // Remove animation classes after they finish
+             selectedButton.addEventListener('animationend', () => {
+                 selectedButton.classList.remove('tada-anim', 'shake');
+             }, { once: true });
+
+             nextButton.classList.add('visible');
+             nextButton.disabled = false; // Enable the next button
+         }
+
+        function showFinalScore() {
+             const currentLang = getStoredLanguage();
+             const totalQuestions = quizData.length;
+             let resultMessageKey = score === totalQuestions ? 'quiz_final_score_perfect' : 'quiz_final_score_good';
+             // Use different keys for perfect vs good score messages
+              let scoreMessage = getTranslation(resultMessageKey, currentLang);
+
+             quizArea.innerHTML = `
+                 <div class="quiz-question text-center" data-translate="quiz_final_score_title" style="font-size: 1.5rem;">${getTranslation('quiz_final_score_title', currentLang)}</div>
+                 <p class="text-center" style="font-size: 1.2rem; margin-bottom: 1rem;">${getTranslation('quiz_final_score_summary', currentLang, { score: score, total: totalQuestions })}</p>
+                 <p class="text-center" style="color: ${score === totalQuestions ? 'var(--success-color)' : 'var(--primary-color)'}; font-weight: bold;">${scoreMessage}</p>
+             `;
+             feedbackArea.classList.remove('visible');
+             nextButton.style.display = 'none'; // Hide next button
+              // Optional: Scroll to show score if needed
+              // quizArea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+         }
+
+        nextButton.addEventListener('click', () => {
+             currentQuestionIndex++;
+             loadQuestion();
+         });
+
+        // --- Initial Language Application and Load ---
+        setLanguage(initialLang); // Apply language FIRST
+        if (quizArea) { loadQuestion(); } // Initial quiz load
+
+    }); // End DOMContentLoaded
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<!-- Language set by JS -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Title set by JS -->
+    <title data-translate="page_title">Module 25: Exception Handling</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* --- Reset & Base Styles --- */
+        :root {
+            --primary-color: #007bff; /* Blue - primary action */
+            --secondary-color: #6c757d; /* Grey - supporting info */
+            --background-light: #f8f9fa; /* Light background */
+            --background-dark: #343a40;  /* Dark background (code blocks) */
+            --text-light: #f8f9fa;      /* Light text (on dark bg) */
+            --text-dark: #212529;       /* Dark text (on light bg) */
+            --accent-color: #ffc107;    /* Yellow - highlight, warning */
+            --success-color: #28a745;   /* Green - success, correct */
+            --error-color: #dc3545;     /* Red - error, danger */
+            --info-color: #17a2b8;      /* Teal - info, specific exceptions */
+            --border-radius: 8px;
+            --transition-speed: 0.3s;
+            --font-body: 'Roboto', sans-serif;
+            --font-title: 'Orbitron', sans-serif;
+             /* Nav Colors */
+            --nav-primary: #6e48aa;
+            --nav-success: #4cc9f0;
+            --nav-dark: #1a1a2e;
+             /* Specific element colors */
+             --code-bg: var(--background-dark);
+             --code-text: #d4d4d4; /* Lighter grey for code text */
+             --code-keyword: #569cd6; /* Blue */
+             --code-function: #dcdcaa; /* Yellow */
+             --code-string: #ce9178; /* Orange */
+             --code-number: #b5cea8; /* Green */
+             --code-comment: #6a9955; /* Dark Green */
+             --code-error-type: #4ec9b0; /* Teal */
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; font-size: 16px; }
+        body {
+            font-family: var(--font-body); line-height: 1.7;
+            background-color: var(--background-light); color: var(--text-dark);
+            overflow-x: hidden; display: flex; flex-direction: column; min-height: 100vh;
+        }
+        main { flex-grow: 1; }
+
+        /* --- Utility Classes --- */
+        .container { max-width: 960px; margin: 0 auto; padding: 0 15px; }
+        .text-center { text-align: center; }
+        .highlight { color: var(--primary-color); font-weight: bold; }
+        .fade-in { opacity: 0; transform: translateY(20px); animation: fadeInAnimation 0.8s ease-out forwards; }
+        .fade-in.delay-1 { animation-delay: 0.2s; } .fade-in.delay-2 { animation-delay: 0.4s; }
+        .fade-in.delay-3 { animation-delay: 0.6s; } .fade-in.delay-4 { animation-delay: 0.8s; }
+        .fade-in.delay-5 { animation-delay: 1.0s; }
+        .button-group { margin-top: 2rem; display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; }
+
+        /* Basic Button Styles */
+        .action-button {
+             display: inline-flex; align-items: center; justify-content: center; gap: 0.5em;
+             padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold;
+             color: var(--text-light); background-color: var(--primary-color); border: none;
+             border-radius: var(--border-radius); cursor: pointer;
+             transition: background-color var(--transition-speed), transform var(--transition-speed), filter var(--transition-speed), box-shadow var(--transition-speed);
+             margin-top: 1rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+             text-decoration: none; line-height: 1.2;
+        }
+        .action-button:hover:not(:disabled) { background-color: #0056b3; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+        .action-button:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none; box-shadow: none; opacity: 0.7; }
+        .action-button.success { background-color: var(--success-color); }
+        .action-button.success:hover:not(:disabled) { background-color: #218838; }
+        .action-button.secondary { background-color: var(--secondary-color); }
+        .action-button.secondary:hover:not(:disabled) { background-color: #5a6268; }
+        .action-button:active:not(:disabled) { transform: translateY(1px) scale(0.98); filter: brightness(0.95); }
+
+        /* --- Animations --- */
+        @keyframes fadeInAnimation { to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); } 50% { transform: scale(1.03); box-shadow: 0 0 15px rgba(0, 123, 255, 0.6); } 100% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); } }
+        @keyframes slideInLeft { from { transform: translateX(-50px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes slideInRight { from { transform: translateX(50px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes tada { from { transform: scale3d(1, 1, 1); } 10%, 20% { transform: scale3d(.9, .9, .9) rotate3d(0, 0, 1, -3deg); } 30%, 50%, 70%, 90% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, 3deg); } 40%, 60%, 80% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, -3deg); } to { transform: scale3d(1, 1, 1); } }
+        .tada-anim { animation: tada 1s ease; }
+        @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
+        @keyframes iconAppearCorrect { 0% { transform: scale(0.5) rotate(-15deg); opacity: 0; } 60% { transform: scale(1.2) rotate(5deg); opacity: 1; } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
+        @keyframes pathDraw { to { stroke-dashoffset: 0; } }
+
+
+        /* --- Minimal Retractable Nav --- */
+        /* Same as Module 0 */
+        .minimal-nav-button {
+            position: fixed; top: 15px; right: 15px; z-index: 1001;
+            background-color: rgba(52, 58, 64, 0.75); color: var(--text-light);
+            border: none; border-radius: var(--border-radius); padding: 8px 12px;
+            cursor: pointer; transition: background-color var(--transition-speed), opacity var(--transition-speed), transform var(--transition-speed);
+            font-size: 1.1rem; opacity: 0.6; box-shadow: 0 2px 5px rgba(0,0,0,0.2); line-height: 1;
+        }
+        .minimal-nav-button:hover { background-color: rgba(52, 58, 64, 0.95); opacity: 1; transform: scale(1.05); }
+        .minimal-nav {
+            position: fixed; top: 60px; right: 15px; z-index: 1000;
+            background-color: var(--background-dark); border-radius: var(--border-radius);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3); padding: 0.8rem;
+            opacity: 0; transform: translateY(-15px) scale(0.95); transform-origin: top right;
+            pointer-events: none; transition: opacity var(--transition-speed) ease, transform var(--transition-speed) ease;
+            min-width: 200px;
+        }
+        body.nav-active .minimal-nav { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+        .minimal-nav ul { list-style: none; margin: 0; padding: 0; }
+        .minimal-nav ul li { margin-bottom: 5px; }
+        .minimal-nav ul li:last-child { margin-bottom: 0; }
+        .minimal-nav ul li a {
+            display: flex; align-items: center; color: var(--text-light); text-decoration: none;
+            padding: 0.6rem 1rem; border-radius: 4px; transition: background-color var(--transition-speed), color var(--transition-speed);
+            white-space: nowrap; font-weight: 400; font-size: 0.95rem;
+        }
+        .minimal-nav ul li a i.fas { margin-right: 10px; width: 1.2em; text-align: center; opacity: 0.8; transition: opacity var(--transition-speed); }
+        .minimal-nav ul li a:hover { background-color: var(--nav-primary); color: var(--text-light); } /* Use nav primary */
+        .minimal-nav ul li a:hover i.fas { opacity: 1; }
+        .minimal-nav .language-switcher-item {
+            padding: 0.5rem 1rem; border-top: 1px solid var(--secondary-color); margin-top: 8px; padding-top: 13px;
+        }
+        #languageSelect {
+            width: 100%; background: rgba(255,255,255,0.1); color: white;
+            border: 1px solid var(--nav-success); border-radius: 5px; padding: 6px 30px 6px 12px; cursor: pointer; font-size: 0.9rem;
+            appearance: none; -webkit-appearance: none; -moz-appearance: none;
+            background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%234CC9F0%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E');
+            background-repeat: no-repeat; background-position: right 10px center; background-size: 10px auto;
+            transition: background-color 0.3s ease;
+        }
+        #languageSelect:hover { background-color: rgba(255,255,255,0.15); }
+        #languageSelect option { background: var(--nav-dark); color: var(--text-light); }
+        /* --- End Minimal Retractable Nav --- */
+
+
+        /* --- Header --- */
+        /* Same as Module 0, potentially adapt gradient/color if desired */
+        .main-header {
+            background: linear-gradient(135deg, var(--info-color), var(--primary-color)); /* Adjusted gradient */
+            color: var(--text-light); padding: 4rem 0 6rem; text-align: center;
+            position: relative; overflow: hidden;
+        }
+        .main-header h1 { font-family: var(--font-title); font-size: 3rem; margin-bottom: 0.5rem; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); animation: fadeInAnimation 1s ease-out; }
+        .main-header p { font-size: 1.2rem; font-weight: 300; opacity: 0.9; animation: fadeInAnimation 1s ease-out 0.3s forwards; opacity: 0; /* Start hidden */ }
+        .header-shape { position: absolute; border-radius: 50%; background-color: rgba(255, 255, 255, 0.1); animation: pulse 5s infinite ease-in-out alternate; }
+        .shape1 { width: 150px; height: 150px; bottom: -50px; left: 10%; animation-duration: 6s; }
+        .shape2 { width: 80px; height: 80px; top: 50px; right: 15%; animation-duration: 4s; }
+        .shape3 { width: 50px; height: 50px; bottom: 20px; right: 30%; animation-duration: 7s; }
+
+        /* --- Section Styling --- */
+        section { padding: 4rem 0; border-bottom: 1px solid #eee; }
+        main section:last-of-type { border-bottom: none; } /* No border before completion section */
+        section h2 {
+            font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color);
+            margin-bottom: 2rem; text-align: center; position: relative; padding-bottom: 10px;
+        }
+        section h2::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 60px; height: 4px; background-color: var(--accent-color); border-radius: 2px; }
+
+        /* --- Code Block Styling --- */
+        .code-block {
+            background-color: var(--code-bg); color: var(--code-text);
+            padding: 1.5rem 2rem; border-radius: var(--border-radius);
+            font-family: 'Courier New', Courier, monospace; font-size: 1rem; /* Slightly larger code */
+            line-height: 1.6; position: relative; box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            margin: 1.5rem 0; white-space: pre-wrap; /* Allow wrapping */
+            word-wrap: break-word; /* Break long lines */
+        }
+        .code-block .code-keyword { color: var(--code-keyword); font-weight: bold; }
+        .code-block .code-function { color: var(--code-function); }
+        .code-block .code-string { color: var(--code-string); }
+        .code-block .code-number { color: var(--code-number); }
+        .code-block .code-comment { color: var(--code-comment); font-style: italic; }
+        .code-block .code-error-type { color: var(--code-error-type); font-weight: bold;}
+        .code-block .highlight-line { background-color: rgba(255, 255, 0, 0.1); display: block; margin: 0 -2rem; padding: 0.1em 2rem; }
+        .code-block strong { color: var(--accent-color); } /* Highlight keywords like try/except */
+
+        /* --- Why Exceptions Section --- */
+         #why-exceptions .comparison {
+            display: flex; justify-content: space-around; align-items: flex-start;
+            gap: 2rem; margin-top: 2rem; flex-wrap: wrap;
+         }
+         .comparison-scenario {
+            background-color: #fff; padding: 1.5rem; border-radius: var(--border-radius);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.07); text-align: center;
+            flex: 1; min-width: 250px; border-top: 5px solid;
+            opacity: 0; transform: translateY(20px);
+            animation: fadeInAnimation 0.6s ease-out forwards;
+         }
+         .comparison-scenario.without { border-color: var(--error-color); animation-delay: 0.2s; }
+         .comparison-scenario.with { border-color: var(--success-color); animation-delay: 0.4s; }
+         .comparison-scenario h3 { font-size: 1.3rem; margin-bottom: 1rem; }
+         .comparison-scenario i.fas { font-size: 2.5rem; margin-bottom: 1rem; }
+         .comparison-scenario .icon-without { color: var(--error-color); }
+         .comparison-scenario .icon-with { color: var(--success-color); }
+
+        /* --- Try/Except Basics Section --- */
+        #try-except-basics .explanation { display: flex; gap: 2rem; align-items: flex-start; margin-top: 2rem; flex-wrap: wrap; }
+        .try-except-code { flex-basis: 55%; min-width: 300px; }
+        .try-except-flow { flex-basis: 40%; min-width: 280px; padding-top: 1rem;}
+        .flow-diagram {
+            border: 1px solid var(--secondary-color); border-radius: var(--border-radius); padding: 1rem;
+            background: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .flow-diagram svg { display: block; width: 100%; height: auto; }
+        .flow-diagram .flow-path {
+            stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; fill: none;
+            stroke-dasharray: 500; stroke-dashoffset: 500;
+            animation: pathDraw 1.5s ease-out 0.5s forwards;
+        }
+        .flow-diagram .normal-path { stroke: var(--success-color); }
+        .flow-diagram .error-path { stroke: var(--error-color); animation-delay: 0.8s; } /* Delay error path drawing */
+        .flow-diagram text { font-family: var(--font-body); font-size: 12px; fill: var(--text-dark); }
+        .flow-diagram .label-box { fill: var(--background-light); stroke: var(--secondary-color); rx: 3; }
+        .flow-diagram .label-try { fill: var(--primary-color); color: white;}
+        .flow-diagram .label-except { fill: var(--error-color); color: white;}
+        .flow-diagram .label-final { fill: var(--secondary-color); color: white; }
+        .flow-diagram .text-light { fill: var(--text-light); }
+
+        /* --- Specific Exceptions Section --- */
+        #specific-exceptions .examples {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem; margin-top: 2rem;
+        }
+        .exception-example {
+            opacity: 0; transform: translateY(20px);
+            animation: fadeInAnimation 0.6s ease-out forwards;
+        }
+        .exception-example:nth-child(1) { animation-delay: 0.2s; }
+        .exception-example:nth-child(2) { animation-delay: 0.4s; }
+        .exception-example h3 { font-size: 1.1rem; color: var(--info-color); margin-bottom: 0.5rem; text-align: center;}
+
+        /* --- Knowledge Check Section --- */
+        /* Reusing Module 0 styles, slight adjustments might be needed if question formats change */
+        #knowledge-check { background-color: #e9ecef; }
+        .quiz-container { background-color: #fff; padding: 2rem; border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.1); max-width: 700px; margin: 2rem auto 0; }
+        .quiz-question { font-size: 1.2rem; font-weight: bold; margin-bottom: 1.5rem; color: var(--text-dark); }
+        .quiz-options button { display: block; width: 100%; padding: 1rem; margin-bottom: 1rem; text-align: left; font-size: 1rem; background-color: #f8f9fa; border: 1px solid #ced4da; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), border-color var(--transition-speed), transform var(--transition-speed); }
+        .quiz-options button:not(:disabled):hover { background-color: #e2e6ea; border-color: #adb5bd; transform: translateX(5px); }
+        .quiz-options button:disabled { cursor: default; opacity: 0.7; }
+        .quiz-options button.correct { background-color: #d4edda; border-color: var(--success-color); color: #155724; font-weight: bold; }
+        .quiz-options button.incorrect { background-color: #f8d7da; border-color: var(--error-color); color: #721c24; font-weight: bold; }
+        .quiz-options button.incorrect.shake { animation: shake 0.5s ease; }
+        .quiz-feedback { margin-top: 1.5rem; padding: 1rem; border-radius: var(--border-radius); font-weight: bold; text-align: center; opacity: 0; transition: opacity 0.5s ease; height: 0; overflow: hidden; }
+        .quiz-feedback.visible { opacity: 1; height: auto; margin-bottom: 1rem; }
+        .quiz-feedback.correct { background-color: #d4edda; color: #155724; }
+        .quiz-feedback.incorrect { background-color: #f8d7da; color: #721c24; }
+        #next-question-btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5em; margin: 1.5rem auto 0; padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold; color: var(--text-light); background-color: var(--primary-color); border: none; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), transform var(--transition-speed), opacity 0.3s, visibility 0.3s; opacity: 0; visibility: hidden; }
+        #next-question-btn:hover { background-color: #0056b3; transform: scale(1.05); }
+        #next-question-btn.visible { opacity: 1; visibility: visible; }
+
+        /* --- Completion Section Styling --- */
+        /* Reusing Module 0 styles */
+        .completion-section { padding: 4rem 0; text-align: center; background-color: var(--background-light); }
+        .completion-section .icon { font-size: 4rem; color: var(--success-color); margin-bottom: 1rem; display: inline-block; opacity: 0; animation: iconAppearCorrect 1s ease-out 0.5s forwards; }
+        .completion-section .icon .fas + .fas { margin-left: 0.75rem; }
+        .completion-section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); margin-bottom: 1rem; }
+        .completion-section h2::after { display: none; } /* No underline needed */
+        .completion-section p { font-size: 1.1rem; margin-top: 1rem; color: var(--secondary-color); max-width: 700px; margin-left: auto; margin-right: auto; line-height: 1.8; }
+        .completion-section .button-group { margin-top: 2.5rem; }
+
+
+        /* --- Responsive Design --- */
+        /* Mostly reusing Module 0 responsive styles */
+        @media (max-width: 768px) {
+            html { font-size: 15px; }
+            .main-header h1 { font-size: 2.5rem; }
+            .main-header p { font-size: 1.1rem; }
+            section h2 { font-size: 1.8rem; }
+            #try-except-basics .explanation { flex-direction: column; }
+            .try-except-code, .try-except-flow { flex-basis: 100%; }
+            .comparison-scenario { min-width: 80%; }
+            .minimal-nav { min-width: 180px; }
+            .minimal-nav ul li a { padding: 0.6rem 0.8rem; }
+            #languageSelect { font-size: 0.85rem; padding: 5px 25px 5px 10px;}
+            .completion-section h2 { font-size: 2rem; }
+            .completion-section .button-group { flex-direction: column; align-items: center; gap: 0.8rem; }
+            .completion-section .action-button { width: 80%; max-width: 350px; margin-top: 0; }
+        }
+        @media (max-width: 480px) {
+            html { font-size: 14px; }
+            .main-header h1 { font-size: 2rem; }
+            .main-header p { font-size: 1rem; }
+            section h2 { font-size: 1.6rem; }
+            .code-block { padding: 1rem 1.5rem; font-size: 0.9rem; }
+            .quiz-options button { padding: 0.8rem; font-size: 0.95rem; }
+            .minimal-nav-button { top: 10px; right: 10px; padding: 6px 10px; font-size: 1rem; }
+            .minimal-nav { top: 48px; right: 10px; min-width: 160px; }
+            .minimal-nav ul li a { padding: 0.5rem 0.7rem; font-size: 0.9rem;}
+            .minimal-nav ul li a i.fas { margin-right: 8px; }
+            #languageSelect { font-size: 0.8rem; padding: 4px 20px 4px 8px;}
+            .completion-section .icon { font-size: 3.5rem; }
+            .completion-section h2 { font-size: 1.8rem; }
+            .completion-section p { font-size: 1rem; }
+            .completion-section .action-button { width: 90%; max-width: 300px; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- ========= Minimal Nav Handle ========= -->
+    <button id="minimal-nav-toggle" class="minimal-nav-button" aria-label="Toggle Navigation Menu">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- ========= Minimal Nav Panel (with Language Switcher) ========= -->
+    <nav id="minimal-nav-panel" class="minimal-nav">
+        <ul>
+            <!-- Links to OTHER main pages -->
+            <li><a href="ctp-practice-25.html"><i class="fas fa-pencil-alt fa-fw"></i> <span data-translate="nav_practice">Start Practice</span></a></li>
+            <li><a href="ctp-advanced-25.html"><i class="fas fa-flask fa-fw"></i> <span data-translate="nav_advanced">Advanced Practice</span></a></li>
+            <li><a href="ctp-dashboard.html"><i class="fas fa-list fa-fw"></i> <span data-translate="nav_menu">Course Menu</span></a></li>
+             <hr style="border: none; border-top: 1px solid var(--secondary-color); margin: 8px 0;">
+             <!-- Links to sections on THIS page -->
+             <li><a href="#why-exceptions"><i class="fas fa-shield-alt fa-fw"></i> <span data-translate="nav_why_exceptions">Why Handle?</span></a></li>
+             <li><a href="#try-except-basics"><i class="fas fa-code-branch fa-fw"></i> <span data-translate="nav_try_except">Try/Except</span></a></li>
+             <li><a href="#specific-exceptions"><i class="fas fa-filter fa-fw"></i> <span data-translate="nav_specific_exceptions">Specific Errors</span></a></li>
+             <li><a href="#knowledge-check"><i class="fas fa-check-double fa-fw"></i> <span data-translate="nav_quiz">Knowledge Check</span></a></li>
+            <!-- Language Switcher Item -->
+            <li class="language-switcher-item">
+                 <select id="languageSelect" aria-label="Select Language">
+                     <option value="en" data-translate="lang_en">🇬🇧 English</option>
+                     <option value="pt" data-translate="lang_pt">🇧🇷 Português</option>
+                     <option value="zh" data-translate="lang_zh">🇨🇳 中文</option>
+                 </select>
+            </li>
+        </ul>
+    </nav>
+
+    <header class="main-header">
+        <!-- Decorative shapes -->
+        <div class="header-shape shape1"></div>
+        <div class="header-shape shape2"></div>
+        <div class="header-shape shape3"></div>
+
+        <div class="container">
+            <h1 data-translate="header_title">Module 25: Handling the Unexpected</h1>
+            <p data-translate="header_subtitle">Building robust Python code that doesn't crash easily.</p>
+        </div>
+    </header>
+
+    <main>
+        <!-- ========= Why Exceptions Section ========= -->
+        <section id="why-exceptions">
+            <div class="container">
+                <h2 class="fade-in" data-translate="why_exceptions_title">🛡️ Why Bother With Errors?</h2>
+                <p class="text-center fade-in delay-1" data-translate="why_exceptions_subtitle">
+                    Real-world programs encounter unexpected situations: bad user input, network problems, missing files...
+                </p>
+                 <p class="text-center fade-in delay-2" data-translate="why_exceptions_subtitle2">
+                    Without error handling, your program might just <span class="highlight" style="color: var(--error-color);">crash!</span> Exception handling makes your code <span class="highlight" style="color: var(--success-color);">robust</span>.
+                </p>
+
+                <div class="comparison">
+                    <div class="comparison-scenario without">
+                        <i class="fas fa-skull-crossbones icon-without"></i>
+                        <h3 data-translate="why_scenario_without_title">Without Handling</h3>
+                        <p data-translate="why_scenario_without_text">An unexpected error occurs... Program stops abruptly. User sees a scary error message (or nothing). Data might be lost.</p>
+                    </div>
+                     <div class="comparison-scenario with">
+                         <i class="fas fa-shield-alt icon-with"></i>
+                         <h3 data-translate="why_scenario_with_title">With Handling (try...except)</h3>
+                        <p data-translate="why_scenario_with_text">An unexpected error occurs... The program catches it, handles it gracefully (e.g., shows a user-friendly message, retries), and continues running or exits cleanly.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========= Try/Except Basics Section ========= -->
+        <section id="try-except-basics">
+            <div class="container">
+                <h2 class="fade-in" data-translate="try_except_title">🧱 The `try...except` Block</h2>
+                <p class="text-center fade-in delay-1" data-translate="try_except_subtitle">
+                    Python uses `try` and `except` to manage potential errors.
+                </p>
+
+                 <div class="explanation fade-in delay-2">
+                     <div class="try-except-code">
+                         <p data-translate="try_except_explanation" style="margin-bottom: 1rem;">
+                             1. Code inside the <strong style="color: var(--primary-color)">`try`</strong> block is executed first. <br>
+                             2. If an error occurs in the `try` block, Python stops and jumps to the <strong style="color: var(--error-color)">`except`</strong> block. <br>
+                             3. If no error occurs, the `except` block is skipped.
+                         </p>
+                         <div class="code-block">
+                             <span class="code-keyword">try</span>: <span class="code-comment"># Attempt this code</span><br>
+                             &nbsp;&nbsp;age_str = <span class="code-function">input</span>(<span class="code-string">"Enter your age: "</span>)<br>
+                             &nbsp;&nbsp;age = <span class="code-function">int</span>(age_str) <span class="code-comment"># This might fail if input isn't a number!</span><br>
+                             &nbsp;&nbsp;<span class="code-function">print</span>(<span class="code-string">f"Next year you'll be {age + <span class="code-number">1</span>}"</span>)<br>
+                             <span class="code-keyword">except</span>: <span class="code-comment"># If ANY error happens in the try block...</span><br>
+                             &nbsp;&nbsp;<span class="code-function">print</span>(<span class="code-string">"Oops! Please enter a valid number for age."</span>)
+                         </div>
+                     </div>
+                     <div class="try-except-flow">
+                         <p data-translate="try_except_flow_title" style="text-align: center; font-weight: bold; margin-bottom: 0.5rem;">Execution Flow:</p>
+                         <div class="flow-diagram">
+                             <svg viewBox="0 0 200 150">
+                                 <!-- Nodes -->
+                                 <rect x="70" y="10" width="60" height="20" class="label-box label-try"/>
+                                 <text x="100" y="24" text-anchor="middle" class="text-light" data-translate="flow_try">Try Block</text>
+
+                                 <rect x="10" y="70" width="60" height="20" class="label-box label-except"/>
+                                 <text x="40" y="84" text-anchor="middle" class="text-light" data-translate="flow_except">Except Block</text>
+
+                                 <rect x="130" y="70" width="60" height="20" class="label-box label-final"/>
+                                 <text x="160" y="84" text-anchor="middle" class="text-light" data-translate="flow_continue">Continue</text>
+
+                                 <!-- Paths -->
+                                 <path class="flow-path normal-path" d="M100,30 Q100,50 160,70"/>
+                                 <text x="135" y="55" font-size="10" fill="var(--success-color)" data-translate="flow_no_error">No Error</text>
+
+                                 <path class="flow-path error-path" d="M100,30 Q70,50 40,70"/>
+                                  <text x="65" y="55" font-size="10" fill="var(--error-color)" data-translate="flow_error">Error!</text>
+
+                                 <!-- Arrows -->
+                                  <polyline points="155,65 160,70 155,75" fill="none" stroke="var(--success-color)" stroke-width="1.5"/>
+                                  <polyline points="45,65 40,70 45,75" fill="none" stroke="var(--error-color)" stroke-width="1.5"/>
+
+                             </svg>
+                         </div>
+                     </div>
+                 </div>
+            </div>
+        </section>
+
+        <!-- ========= Specific Exceptions Section ========= -->
+        <section id="specific-exceptions">
+            <div class="container">
+                <h2 class="fade-in" data-translate="specific_exceptions_title">🎯 Catching Specific Errors</h2>
+                <p class="text-center fade-in delay-1" data-translate="specific_exceptions_subtitle">
+                    It's better to catch <span class="highlight" style="color: var(--info-color);">specific types</span> of errors instead of using a generic `except`.
+                    This lets you handle different problems differently.
+                </p>
+
+                <div class="examples">
+                    <div class="exception-example">
+                        <h3 data-translate="specific_example1_title">Handling Bad Input (`ValueError`)</h3>
+                        <div class="code-block">
+                            <span class="code-keyword">try</span>:<br>
+                            &nbsp;&nbsp;num_str = <span class="code-function">input</span>(<span class="code-string">"Enter a number: "</span>)<br>
+                            &nbsp;&nbsp;number = <span class="code-function">int</span>(num_str)<br>
+                            &nbsp;&nbsp;<span class="code-function">print</span>(<span class="code-string">f"Number doubled: {number * <span class="code-number">2</span>}"</span>)<br>
+                            <span class="code-keyword">except</span> <span class="code-error-type">ValueError</span>: <span class="code-comment"># Catch ONLY this specific error</span><br>
+                            &nbsp;&nbsp;<span class="code-function">print</span>(<span class="code-string">"Invalid input. Please enter digits only."</span>)
+                         </div>
+                    </div>
+
+                     <div class="exception-example">
+                         <h3 data-translate="specific_example2_title">Handling Division by Zero (`ZeroDivisionError`)</h3>
+                         <div class="code-block">
+                            <span class="code-keyword">try</span>:<br>
+                            &nbsp;&nbsp;numerator = <span class="code-number">10</span><br>
+                            &nbsp;&nbsp;denominator = <span class="code-function">int</span>(<span class="code-function">input</span>(<span class="code-string">"Divide 10 by: "</span>))<br>
+                            &nbsp;&nbsp;result = numerator / denominator <br>
+                            &nbsp;&nbsp;<span class="code-function">print</span>(<span class="code-string">f"Result: {result}"</span>)<br>
+                            <span class="code-keyword">except</span> <span class="code-error-type">ValueError</span>:<br>
+                            &nbsp;&nbsp;<span class="code-function">print</span>(<span class="code-string">"Please enter a number."</span>)<br>
+                            <span class="code-keyword">except</span> <span class="code-error-type">ZeroDivisionError</span>: <span class="code-comment"># Catch a different error</span><br>
+                            &nbsp;&nbsp;<span class="code-function">print</span>(<span class="code-string">"Cannot divide by zero!"</span>)
+                         </div>
+                     </div>
+                 </div>
+                  <p class="text-center fade-in delay-4" style="margin-top: 2rem;" data-translate="specific_exceptions_note">
+                     You can have multiple `except` blocks to handle different potential errors from the `try` block. Common errors include `TypeError`, `FileNotFoundError`, `IndexError`, etc.
+                 </p>
+            </div>
+        </section>
+
+        <!-- ========= Knowledge Check Section ========= -->
+        <section id="knowledge-check">
+            <div class="container">
+                <h2 class="fade-in" data-translate="quiz_title">🧠 Quick Check!</h2>
+                <div class="quiz-container fade-in delay-1">
+                    <div id="quiz-area">
+                        <!-- Quiz questions will be loaded here by JavaScript -->
+                    </div>
+                    <div id="quiz-feedback" class="quiz-feedback">
+                        <!-- Feedback (Correct/Incorrect) shown here -->
+                    </div>
+                    <button id="next-question-btn" data-translate="quiz_next_button">Next Question</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========= Completion Section ========= -->
+        <section class="completion-section">
+            <div class="container">
+                 <div class="icon"> <!-- Animation applied via CSS -->
+                    <i class="fas fa-shield-alt"></i>
+                    <i class="fas fa-check-double"></i>
+                    <i class="fas fa-thumbs-up"></i>
+                 </div>
+                <h2 class="fade-in delay-1" data-translate="completion_theory_title">Module 25 Theory Complete!</h2>
+                <p class="fade-in delay-2" data-translate="completion_theory_desc">
+                    Excellent! You've learned how to make your Python code more robust using exception handling. <br>
+                    Ready to practice catching errors? Head to the <strong>Practice Zone</strong> or try the <strong>Advanced Practice</strong>.
+                </p>
+                <div class="button-group">
+                    <a href="ctp-dashboard.html" class="action-button secondary fade-in delay-3"><i class="fas fa-list"></i> <span data-translate="nav_menu">Course Menu</span></a>
+                    <a href="ctp-practice-25.html" class="action-button success fade-in delay-4"><i class="fas fa-pencil-alt"></i> <span data-translate="nav_practice">Start Practice</span></a>
+                    <a href="ctp-advanced-25.html" class="action-button secondary fade-in delay-5"><i class="fas fa-flask"></i> <span data-translate="nav_advanced">Advanced Practice</span></a>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer removed as requested -->
+
+    <script>
+    // --- Translations Object ---
+    const translations = {
+        en: {
+            "page_title": "Module 25: Exception Handling",
+            "nav_practice": "Start Practice", "nav_advanced": "Advanced Practice", "nav_menu": "Course Menu",
+            "nav_why_exceptions": "Why Handle?", "nav_try_except": "Try/Except", "nav_specific_exceptions": "Specific Errors", "nav_quiz": "Knowledge Check",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title": "Module 25: Handling the Unexpected", "header_subtitle": "Building robust Python code that doesn't crash easily.",
+            "why_exceptions_title": "🛡️ Why Bother With Errors?",
+            "why_exceptions_subtitle": "Real-world programs encounter unexpected situations: bad user input, network problems, missing files...",
+            "why_exceptions_subtitle2": "Without error handling, your program might just crash! Exception handling makes your code robust.",
+            "why_scenario_without_title": "Without Handling", "why_scenario_without_text": "An unexpected error occurs... Program stops abruptly. User sees a scary error message (or nothing). Data might be lost.",
+            "why_scenario_with_title": "With Handling (try...except)", "why_scenario_with_text": "An unexpected error occurs... The program catches it, handles it gracefully (e.g., shows a user-friendly message, retries), and continues running or exits cleanly.",
+            "try_except_title": "🧱 The `try...except` Block", "try_except_subtitle": "Python uses `try` and `except` to manage potential errors.",
+            "try_except_explanation": "1. Code inside the <strong>`try`</strong> block is executed first. <br> 2. If an error occurs in the `try` block, Python stops and jumps to the <strong>`except`</strong> block. <br> 3. If no error occurs, the `except` block is skipped.",
+            "try_except_flow_title": "Execution Flow:",
+            "flow_try": "Try Block", "flow_except": "Except Block", "flow_continue": "Continue", "flow_no_error": "No Error", "flow_error": "Error!",
+            "specific_exceptions_title": "🎯 Catching Specific Errors", "specific_exceptions_subtitle": "It's better to catch specific types of errors instead of using a generic `except`. This lets you handle different problems differently.",
+            "specific_example1_title": "Handling Bad Input (`ValueError`)",
+            "specific_example2_title": "Handling Division by Zero (`ZeroDivisionError`)",
+            "specific_exceptions_note": "You can have multiple `except` blocks to handle different potential errors from the `try` block. Common errors include `TypeError`, `FileNotFoundError`, `IndexError`, etc.",
+            "quiz_title": "🧠 Quick Check!", "quiz_next_button": "Next Question",
+            "quiz_q1": "What is the main purpose of using `try...except` blocks in Python?",
+            "quiz_q1_opt1": "To make the code run faster.", "quiz_q1_opt2": "To handle potential errors gracefully and prevent crashes.", "quiz_q1_opt3": "To write comments in the code.", "quiz_q1_opt4": "To define new functions.",
+            "quiz_q2": "If code inside a `try` block runs without any errors, what happens to the `except` block?",
+            "quiz_q2_opt1": "It runs immediately after the `try` block.", "quiz_q2_opt2": "It is skipped.", "quiz_q2_opt3": "It causes an error.", "quiz_q2_opt4": "It runs before the `try` block.",
+            "quiz_q3": "What is the benefit of catching a specific exception (e.g., `except ValueError:`) compared to a generic `except:`?",
+            "quiz_q3_opt1": "There is no benefit; generic `except:` is always better.", "quiz_q3_opt2": "Specific exceptions run faster.", "quiz_q3_opt3": "It allows you to handle different types of errors in different ways.", "quiz_q3_opt4": "Generic `except:` can't catch `ValueError`.",
+            "quiz_q4": "Which block contains the code that might potentially cause an error you want to handle?",
+            "quiz_q4_opt1": "The `except` block", "quiz_q4_opt2": "The `if` block", "quiz_q4_opt3": "The `try` block", "quiz_q4_opt4": "The `else` block",
+            "quiz_feedback_correct": "Correct! 🎉", "quiz_feedback_incorrect": "Not quite! The correct answer was: {correctAnswerText}",
+            "quiz_final_score_title": "Module 25 Complete!", "quiz_final_score_summary": "You answered {score} out of {total} questions correctly.",
+            "quiz_final_score_perfect": "Excellent! You're handling errors like a pro.", "quiz_final_score_good": "Great job! Keep practicing catching those exceptions.",
+            "completion_theory_title": "Module 25 Theory Complete!",
+            "completion_theory_desc": "Excellent! You've learned how to make your Python code more robust using exception handling. <br> Ready to practice catching errors? Head to the <strong>Practice Zone</strong> or try the <strong>Advanced Practice</strong>."
+        },
+        pt: {
+            "page_title": "Módulo 25: Tratamento de Exceções",
+            "nav_practice": "Iniciar Prática", "nav_advanced": "Prática Avançada", "nav_menu": "Menu do Curso",
+            "nav_why_exceptions": "Por que Tratar?", "nav_try_except": "Try/Except", "nav_specific_exceptions": "Erros Específicos", "nav_quiz": "Teste Rápido",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title": "Módulo 25: Lidando com o Inesperado", "header_subtitle": "Construindo código Python robusto que não quebra facilmente.",
+            "why_exceptions_title": "🛡️ Por que se Preocupar com Erros?",
+            "why_exceptions_subtitle": "Programas do mundo real encontram situações inesperadas: entrada inválida do usuário, problemas de rede, arquivos ausentes...",
+            "why_exceptions_subtitle2": "Sem tratamento de erros, seu programa pode simplesmente quebrar! O tratamento de exceções torna seu código robusto.",
+            "why_scenario_without_title": "Sem Tratamento", "why_scenario_without_text": "Um erro inesperado ocorre... O programa para abruptamente. O usuário vê uma mensagem de erro assustadora (ou nada). Dados podem ser perdidos.",
+            "why_scenario_with_title": "Com Tratamento (try...except)", "why_scenario_with_text": "Um erro inesperado ocorre... O programa o captura, lida com ele elegantemente (ex: mostra mensagem amigável, tenta novamente) e continua executando ou sai de forma limpa.",
+            "try_except_title": "🧱 O Bloco `try...except`", "try_except_subtitle": "Python usa `try` e `except` para gerenciar erros potenciais.",
+            "try_except_explanation": "1. O código dentro do bloco <strong>`try`</strong> é executado primeiro. <br> 2. Se ocorrer um erro no bloco `try`, o Python para e salta para o bloco <strong>`except`</strong>. <br> 3. Se nenhum erro ocorrer, o bloco `except` é pulado.",
+            "try_except_flow_title": "Fluxo de Execução:",
+            "flow_try": "Bloco Try", "flow_except": "Bloco Except", "flow_continue": "Continuar", "flow_no_error": "Sem Erro", "flow_error": "Erro!",
+            "specific_exceptions_title": "🎯 Capturando Erros Específicos", "specific_exceptions_subtitle": "É melhor capturar tipos específicos de erros em vez de usar um `except` genérico. Isso permite lidar com problemas diferentes de maneiras diferentes.",
+            "specific_example1_title": "Lidando com Entrada Inválida (`ValueError`)",
+            "specific_example2_title": "Lidando com Divisão por Zero (`ZeroDivisionError`)",
+            "specific_exceptions_note": "Você pode ter múltiplos blocos `except` para lidar com diferentes erros potenciais do bloco `try`. Erros comuns incluem `TypeError`, `FileNotFoundError`, `IndexError`, etc.",
+            "quiz_title": "🧠 Teste Rápido!", "quiz_next_button": "Próxima Pergunta",
+            "quiz_q1": "Qual o principal propósito de usar blocos `try...except` em Python?",
+            "quiz_q1_opt1": "Para fazer o código rodar mais rápido.", "quiz_q1_opt2": "Para tratar erros potenciais elegantemente e prevenir quebras.", "quiz_q1_opt3": "Para escrever comentários no código.", "quiz_q1_opt4": "Para definir novas funções.",
+            "quiz_q2": "Se o código dentro de um bloco `try` executa sem erros, o que acontece com o bloco `except`?",
+            "quiz_q2_opt1": "Ele executa imediatamente após o bloco `try`.", "quiz_q2_opt2": "Ele é pulado.", "quiz_q2_opt3": "Ele causa um erro.", "quiz_q2_opt4": "Ele executa antes do bloco `try`.",
+            "quiz_q3": "Qual o benefício de capturar uma exceção específica (ex: `except ValueError:`) comparado a um `except:` genérico?",
+            "quiz_q3_opt1": "Não há benefício; `except:` genérico é sempre melhor.", "quiz_q3_opt2": "Exceções específicas rodam mais rápido.", "quiz_q3_opt3": "Permite que você lide com diferentes tipos de erro de maneiras diferentes.", "quiz_q3_opt4": "`except:` genérico não pode capturar `ValueError`.",
+            "quiz_q4": "Qual bloco contém o código que pode potencialmente causar um erro que você quer tratar?",
+            "quiz_q4_opt1": "O bloco `except`", "quiz_q4_opt2": "O bloco `if`", "quiz_q4_opt3": "O bloco `try`", "quiz_q4_opt4": "O bloco `else`",
+            "quiz_feedback_correct": "Correto! 🎉", "quiz_feedback_incorrect": "Não foi bem assim! A resposta correta era: {correctAnswerText}",
+            "quiz_final_score_title": "Módulo 25 Completo!", "quiz_final_score_summary": "Você respondeu {score} de {total} perguntas corretamente.",
+            "quiz_final_score_perfect": "Excelente! Você está tratando erros como um profissional.", "quiz_final_score_good": "Ótimo trabalho! Continue praticando capturar essas exceções.",
+            "completion_theory_title": "Teoria do Módulo 25 Completa!",
+            "completion_theory_desc": "Excelente! Você aprendeu como tornar seu código Python mais robusto usando tratamento de exceções. <br> Pronto para praticar a captura de erros? Vá para a <strong>Zona de Prática</strong> ou tente a <strong>Prática Avançada</strong>."
+        },
+        zh: {
+            "page_title": "模块 25：异常处理",
+            "nav_practice": "开始练习", "nav_advanced": "高级练习", "nav_menu": "课程菜单",
+            "nav_why_exceptions": "为何处理？", "nav_try_except": "Try/Except", "nav_specific_exceptions": "特定错误", "nav_quiz": "知识测验",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title": "模块 25：处理意料之外的情况", "header_subtitle": "构建不易崩溃的健壮 Python 代码。",
+            "why_exceptions_title": "🛡️ 为何要处理错误？",
+            "why_exceptions_subtitle": "现实世界的程序会遇到意外情况：错误的用户输入、网络问题、文件丢失……",
+            "why_exceptions_subtitle2": "没有错误处理，你的程序可能就崩溃了！异常处理使你的代码变得健壮。",
+            "why_scenario_without_title": "不处理", "why_scenario_without_text": "发生意外错误……程序突然停止。用户看到可怕的错误消息（或什么都没有）。数据可能丢失。",
+            "why_scenario_with_title": "进行处理 (try...except)", "why_scenario_with_text": "发生意外错误……程序捕获它，优雅地处理（例如，显示友好的消息，重试），然后继续运行或干净地退出。",
+            "try_except_title": "🧱 `try...except` 块", "try_except_subtitle": "Python 使用 `try` 和 `except` 来管理潜在的错误。",
+            "try_except_explanation": "1. 首先执行 <strong>`try`</strong> 块内的代码。<br> 2. 如果 `try` 块中发生错误，Python 停止并跳转到 <strong>`except`</strong> 块。<br> 3. 如果没有发生错误，则跳过 `except` 块。",
+            "try_except_flow_title": "执行流程:",
+            "flow_try": "Try 块", "flow_except": "Except 块", "flow_continue": "继续", "flow_no_error": "无错误", "flow_error": "错误!",
+            "specific_exceptions_title": "🎯 捕获特定错误", "specific_exceptions_subtitle": "捕获特定类型的错误比使用通用的 `except` 更好。这使您可以以不同的方式处理不同的问题。",
+            "specific_example1_title": "处理错误输入 (`ValueError`)",
+            "specific_example2_title": "处理除零错误 (`ZeroDivisionError`)",
+            "specific_exceptions_note": "你可以有多个 `except` 块来处理 `try` 块中不同的潜在错误。常见的错误包括 `TypeError`、`FileNotFoundError`、`IndexError` 等。",
+            "quiz_title": "🧠 快速测验！", "quiz_next_button": "下一题",
+            "quiz_q1": "在 Python 中使用 `try...except` 块的主要目的是什么？",
+            "quiz_q1_opt1": "让代码运行更快。", "quiz_q1_opt2": "优雅地处理潜在错误并防止崩溃。", "quiz_q1_opt3": "在代码中编写注释。", "quiz_q1_opt4": "定义新函数。",
+            "quiz_q2": "如果 `try` 块中的代码没有任何错误地运行，`except` 块会怎么样？",
+            "quiz_q2_opt1": "它在 `try` 块之后立即运行。", "quiz_q2_opt2": "它被跳过。", "quiz_q2_opt3": "它导致一个错误。", "quiz_q2_opt4": "它在 `try` 块之前运行。",
+            "quiz_q3": "与通用的 `except:` 相比，捕获特定异常（例如 `except ValueError:`）有什么好处？",
+            "quiz_q3_opt1": "没有好处；通用的 `except:` 总是更好。", "quiz_q3_opt2": "特定异常运行更快。", "quiz_q3_opt3": "它允许您以不同的方式处理不同类型的错误。", "quiz_q3_opt4": "通用的 `except:` 无法捕获 `ValueError`。",
+            "quiz_q4": "哪个块包含可能导致您想要处理的错误的潜在代码？",
+            "quiz_q4_opt1": "`except` 块", "quiz_q4_opt2": "`if` 块", "quiz_q4_opt3": "`try` 块", "quiz_q4_opt4": "`else` 块",
+            "quiz_feedback_correct": "正确！🎉", "quiz_feedback_incorrect": "不太对！正确答案是：{correctAnswerText}",
+            "quiz_final_score_title": "模块 25 完成！", "quiz_final_score_summary": "你答对了 {score} / {total} 题。",
+            "quiz_final_score_perfect": "太棒了！你像专业人士一样处理错误。", "quiz_final_score_good": "做得好！继续练习捕获那些异常。",
+            "completion_theory_title": "模块 25 理论完成！",
+            "completion_theory_desc": "太棒了！您已经学会了如何使用异常处理使您的 Python 代码更加健壮。<br>准备好练习捕获错误了吗？前往<strong>练习区</strong>或尝试<strong>高级练习</strong>。"
+        }
+    };
+
+
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // --- Language Management Functions ---
+        function getStoredLanguage() {
+            const storedLang = localStorage.getItem('userLanguage');
+            if (storedLang && translations[storedLang]) return storedLang;
+            const browserLang = navigator.language || navigator.userLanguage;
+            if (browserLang.startsWith('pt')) return 'pt';
+            if (browserLang.startsWith('zh')) return 'zh';
+            return 'en'; // Default to English
+        }
+
+        function setLanguage(lang) {
+            if (!translations[lang]) lang = 'en'; // Fallback
+            localStorage.setItem('userLanguage', lang);
+            document.documentElement.lang = lang;
+            translatePage(lang);
+            const langSelect = document.getElementById('languageSelect');
+            if (langSelect) langSelect.value = lang;
+             if(quizArea && currentQuestionIndex < quizData.length) {
+                 if (!quizArea.querySelector('[data-translate="quiz_final_score_title"]')) {
+                    loadQuestion();
+                 }
+             }
+        }
+
+        function getTranslation(key, lang, replacements = {}) {
+            let text = translations[lang]?.[key] ?? translations['en']?.[key] ?? `[${key}]`;
+            for (const placeholder in replacements) {
+                const regex = new RegExp(`\\{${placeholder}\\}`, 'g');
+                text = text.replace(regex, replacements[placeholder]);
+            }
+            return text;
+        }
+
+        function translatePage(lang) {
+            if (!translations[lang]) lang = 'en';
+
+            document.querySelectorAll('[data-translate]').forEach(el => {
+                const key = el.getAttribute('data-translate');
+                const translation = getTranslation(key, lang);
+                 if (el.tagName === 'TITLE') { document.title = translation; }
+                 else if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') { /* Skip */ }
+                 else if (el.tagName === 'OPTION') { el.textContent = translation; }
+                 else {
+                     if (translation.includes('<') && translation.includes('>')) {
+                         el.innerHTML = translation; // Use innerHTML if tags are present
+                     } else {
+                         el.textContent = translation; // Otherwise, use textContent
+                     }
+                 }
+            });
+
+             // Specific translation for SVG text elements
+             document.querySelectorAll('svg [data-translate]').forEach(el => {
+                 const key = el.getAttribute('data-translate');
+                 el.textContent = getTranslation(key, lang);
+             });
+        }
+
+        // --- Initialize Language ---
+        const initialLang = getStoredLanguage();
+
+
+        // --- Minimal Nav Logic ---
+        // Same as Module 0
+        const navToggleButton = document.getElementById('minimal-nav-toggle');
+        const navPanel = document.getElementById('minimal-nav-panel');
+        const body = document.body;
+        if (navToggleButton && navPanel) {
+            navToggleButton.addEventListener('click', (event) => { event.stopPropagation(); body.classList.toggle('nav-active'); navToggleButton.setAttribute('aria-expanded', body.classList.contains('nav-active')); });
+            document.addEventListener('click', (event) => { if (body.classList.contains('nav-active') && !navPanel.contains(event.target) && event.target !== navToggleButton && !navToggleButton.contains(event.target)) { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); } });
+            navPanel.querySelectorAll('a').forEach(link => { link.addEventListener('click', () => { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); }); });
+            document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && body.classList.contains('nav-active')) { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); } });
+            navToggleButton.setAttribute('aria-expanded', 'false');
+        }
+
+        // --- Language Switcher Setup ---
+        const langSelect = document.getElementById('languageSelect');
+        if (langSelect) { langSelect.addEventListener('change', (e) => setLanguage(e.target.value)); }
+
+
+        // --- Intersection Observer for Animations ---
+        // Same as Module 0, observing different elements if needed
+        const observerOptions = { root: null, rootMargin: '0px', threshold: 0.1 };
+        const observerCallback = (entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible'); // For general fade-ins
+                    // Trigger SVG animation if it's the flow diagram
+                    if (entry.target.classList.contains('flow-diagram')) {
+                        entry.target.querySelectorAll('.flow-path').forEach(path => {
+                            // Restart animation by resetting style - simple approach
+                            path.style.animation = 'none';
+                            //offsetHeight; // Trigger reflow
+                            path.style.animation = ''; // Reapply animation from CSS
+                        });
+                    }
+                    // Can unobserve if animation only needs to run once
+                     // observer.unobserve(entry.target);
+                }
+            });
+        };
+        const observer = new IntersectionObserver(observerCallback, observerOptions);
+        document.querySelectorAll('.fade-in, .comparison-scenario, .exception-example, .flow-diagram').forEach(el => {
+             observer.observe(el);
+        });
+
+        // --- Knowledge Check / Quiz ---
+        const quizData = [
+            { questionKey: "quiz_q1", optionKeys: ["quiz_q1_opt1", "quiz_q1_opt2", "quiz_q1_opt3", "quiz_q1_opt4"], correctAnswer: 1 },
+            { questionKey: "quiz_q2", optionKeys: ["quiz_q2_opt1", "quiz_q2_opt2", "quiz_q2_opt3", "quiz_q2_opt4"], correctAnswer: 1 },
+            { questionKey: "quiz_q3", optionKeys: ["quiz_q3_opt1", "quiz_q3_opt2", "quiz_q3_opt3", "quiz_q3_opt4"], correctAnswer: 2 },
+            { questionKey: "quiz_q4", optionKeys: ["quiz_q4_opt1", "quiz_q4_opt2", "quiz_q4_opt3", "quiz_q4_opt4"], correctAnswer: 2 }
+        ];
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        const quizArea = document.getElementById('quiz-area');
+        const feedbackArea = document.getElementById('quiz-feedback');
+        const nextButton = document.getElementById('next-question-btn');
+
+        function loadQuestion() {
+             const currentLang = getStoredLanguage();
+             if (!quizArea || currentQuestionIndex >= quizData.length) {
+                 if (quizArea && !quizArea.querySelector('[data-translate="quiz_final_score_title"]')) { showFinalScore(); }
+                 return;
+             }
+
+             const currentQuiz = quizData[currentQuestionIndex];
+             const questionText = getTranslation(currentQuiz.questionKey, currentLang);
+             quizArea.innerHTML = `
+                 <div class="quiz-question">${currentQuestionIndex + 1}. ${questionText.replace(/`([^`]+)`/g, '<code>$1</code>')}</div>
+                 <div class="quiz-options">
+                     ${currentQuiz.optionKeys.map((optionKey, index) => `
+                         <button class="quiz-option-btn" data-index="${index}">${getTranslation(optionKey, currentLang)}</button>
+                     `).join('')}
+                 </div>
+             `;
+
+             feedbackArea.classList.remove('visible', 'correct', 'incorrect');
+             feedbackArea.textContent = '';
+             nextButton.classList.remove('visible');
+             nextButton.disabled = true; // Disable until answer selected
+
+             document.querySelectorAll('.quiz-option-btn').forEach(button => { button.addEventListener('click', handleAnswer); });
+         }
+
+        function handleAnswer(event) {
+             const currentLang = getStoredLanguage();
+             const selectedButton = event.target;
+             const selectedIndex = parseInt(selectedButton.dataset.index);
+             const correctIndex = quizData[currentQuestionIndex].correctAnswer;
+             const correctOptionKey = quizData[currentQuestionIndex].optionKeys[correctIndex];
+             const correctAnswerText = getTranslation(correctOptionKey, currentLang);
+
+             document.querySelectorAll('.quiz-option-btn').forEach(btn => { btn.disabled = true; btn.classList.remove('shake'); });
+
+             feedbackArea.classList.add('visible');
+
+             if (selectedIndex === correctIndex) {
+                 selectedButton.classList.add('correct');
+                 feedbackArea.innerHTML = getTranslation('quiz_feedback_correct', currentLang);
+                 feedbackArea.classList.add('correct');
+                 feedbackArea.classList.remove('incorrect');
+                 score++;
+                 selectedButton.classList.add('tada-anim');
+             } else {
+                 selectedButton.classList.add('incorrect');
+                 feedbackArea.innerHTML = getTranslation('quiz_feedback_incorrect', currentLang, { correctAnswerText: `<strong>${correctAnswerText}</strong>` });
+                 feedbackArea.classList.add('incorrect');
+                 feedbackArea.classList.remove('correct');
+                 const correctButton = document.querySelector(`.quiz-option-btn[data-index="${correctIndex}"]`);
+                 if(correctButton) correctButton.classList.add('correct');
+                 selectedButton.classList.add('shake');
+             }
+
+              selectedButton.addEventListener('animationend', () => { selectedButton.classList.remove('tada-anim', 'shake'); }, { once: true });
+
+             nextButton.classList.add('visible');
+             nextButton.disabled = false; // Enable next button
+         }
+
+         function showFinalScore() {
+              const currentLang = getStoredLanguage();
+              const totalQuestions = quizData.length;
+              let resultMessageKey = score === totalQuestions ? 'quiz_final_score_perfect' : 'quiz_final_score_good';
+
+              quizArea.innerHTML = `
+                  <div class="quiz-question text-center" data-translate="quiz_final_score_title" style="font-size: 1.5rem;">${getTranslation('quiz_final_score_title', currentLang)}</div>
+                  <p class="text-center" style="font-size: 1.2rem; margin-bottom: 1rem;">${getTranslation('quiz_final_score_summary', currentLang, { score: score, total: totalQuestions })}</p>
+                  <p class="text-center" style="color: ${score === totalQuestions ? 'var(--success-color)' : 'var(--primary-color)'}; font-weight: bold;">${getTranslation(resultMessageKey, currentLang)}</p>
+              `;
+              feedbackArea.classList.remove('visible');
+              nextButton.style.display = 'none'; // Hide next button
+              quizArea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+
+
+        if(nextButton) {
+            nextButton.addEventListener('click', () => {
+                 currentQuestionIndex++;
+                 loadQuestion();
+            });
+        }
+
+        // --- Initial Load ---
+        setLanguage(initialLang); // Apply language FIRST
+        if (quizArea) { loadQuestion(); } // Load initial quiz question
+
+        // Trigger animations for elements initially in view
+        document.querySelectorAll('.fade-in').forEach(el => {
+             const rect = el.getBoundingClientRect();
+             if(rect.top < window.innerHeight && rect.bottom >= 0) {
+                 // Element is initially visible, CSS handles animation
+             }
+         });
+
+    }); // End DOMContentLoaded
+    </script>
+
+</body>
+</html>

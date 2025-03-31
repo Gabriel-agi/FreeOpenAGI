@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<!-- Language set by JS -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Title set by JS -->
+    <title data-translate="page_title">Module 21: Working with Dictionaries</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* --- Reset & Base Styles --- */
+        :root {
+            --primary-color: #007bff; /* Keep consistent */
+            --secondary-color: #6c757d;
+            --background-light: #f8f9fa;
+            --background-dark: #343a40;
+            --text-light: #f8f9fa;
+            --text-dark: #212529;
+            --accent-color: #ffc107;
+            --success-color: #28a745;
+            --error-color: #dc3545;
+            --border-radius: 8px;
+            --transition-speed: 0.3s;
+            --font-body: 'Roboto', sans-serif;
+            --font-title: 'Orbitron', sans-serif;
+             /* Nav Colors */
+            --nav-primary: #6e48aa;
+            --nav-success: #4cc9f0;
+            --nav-dark: #1a1a2e;
+            /* Code Colors */
+            --code-keyword: #569cd6; /* blue */
+            --code-string: #ce9178; /* orange */
+            --code-comment: #6a9955; /* green */
+            --code-function: #dcdcaa; /* yellow */
+            --code-number: #b5cea8; /* light green */
+            --code-operator: #d4d4d4; /* light grey */
+            --code-punctuation: #d4d4d4; /* light grey */
+            --code-variable: #9cdcfe; /* light blue */
+            --code-method: #dcdcaa; /* yellow */
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; font-size: 16px; }
+        body {
+            font-family: var(--font-body); line-height: 1.7;
+            background-color: var(--background-light); color: var(--text-dark);
+            overflow-x: hidden; display: flex; flex-direction: column; min-height: 100vh;
+        }
+        main { flex-grow: 1; } /* Allow main content to grow */
+
+        /* --- Utility Classes --- */
+        .container { max-width: 960px; margin: 0 auto; padding: 0 15px; }
+        .text-center { text-align: center; }
+        .highlight { color: var(--primary-color); font-weight: bold; }
+        .fade-in { opacity: 0; transform: translateY(20px); animation: fadeInAnimation 0.8s ease-out forwards; }
+        .fade-in.delay-1 { animation-delay: 0.2s; } .fade-in.delay-2 { animation-delay: 0.4s; }
+        .fade-in.delay-3 { animation-delay: 0.6s; } .fade-in.delay-4 { animation-delay: 0.8s; }
+        .fade-in.delay-5 { animation-delay: 1.0s; }
+        .button-group { margin-top: 2rem; display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; }
+
+        /* --- Buttons --- */
+        .action-button {
+             display: inline-flex; align-items: center; justify-content: center; gap: 0.5em;
+             padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold; color: var(--text-light);
+             background-color: var(--primary-color); border: none; border-radius: var(--border-radius);
+             cursor: pointer; transition: background-color var(--transition-speed), transform var(--transition-speed), filter var(--transition-speed), box-shadow var(--transition-speed);
+             margin-top: 1rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1); text-decoration: none; line-height: 1.2;
+        }
+        .action-button:hover:not(:disabled) { background-color: #0056b3; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+        .action-button:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none; box-shadow: none; opacity: 0.7; }
+        .action-button.success { background-color: var(--success-color); }
+        .action-button.success:hover:not(:disabled) { background-color: #218838; }
+        .action-button.secondary { background-color: var(--secondary-color); }
+        .action-button.secondary:hover:not(:disabled) { background-color: #5a6268; }
+        .action-button:active:not(:disabled) { transform: translateY(1px) scale(0.98); filter: brightness(0.95); }
+
+        /* --- Animations --- */
+        @keyframes fadeInAnimation { to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); } 50% { transform: scale(1.03); box-shadow: 0 0 15px rgba(0, 123, 255, 0.6); } 100% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); } }
+        @keyframes tada { from { transform: scale3d(1, 1, 1); } 10%, 20% { transform: scale3d(.9, .9, .9) rotate3d(0, 0, 1, -3deg); } 30%, 50%, 70%, 90% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, 3deg); } 40%, 60%, 80% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, -3deg); } to { transform: scale3d(1, 1, 1); } }
+        .tada-anim { animation: tada 1s ease; }
+        @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
+        @keyframes iconAppearCorrect { 0% { transform: scale(0.5) rotate(-15deg); opacity: 0; } 60% { transform: scale(1.2) rotate(5deg); opacity: 1; } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
+        /* --- Code Line Animation --- */
+        .code-line { overflow: hidden; white-space: nowrap; opacity: 0; animation: code-line-anim 0.8s forwards ease-out; }
+        .code-line.delay-1 { animation-delay: 0.3s; } .code-line.delay-2 { animation-delay: 0.6s; }
+        .code-line.delay-3 { animation-delay: 0.9s; } .code-line.delay-4 { animation-delay: 1.2s; }
+        @keyframes code-line-anim { from { width: 0; opacity: 0; } to { width: 100%; opacity: 1; } }
+
+
+        /* --- Minimal Retractable Nav --- */
+        .minimal-nav-button { position: fixed; top: 15px; right: 15px; z-index: 1001; background-color: rgba(52, 58, 64, 0.75); color: var(--text-light); border: none; border-radius: var(--border-radius); padding: 8px 12px; cursor: pointer; transition: background-color var(--transition-speed), opacity var(--transition-speed), transform var(--transition-speed); font-size: 1.1rem; opacity: 0.6; box-shadow: 0 2px 5px rgba(0,0,0,0.2); line-height: 1; }
+        .minimal-nav-button:hover { background-color: rgba(52, 58, 64, 0.95); opacity: 1; transform: scale(1.05); }
+        .minimal-nav { position: fixed; top: 60px; right: 15px; z-index: 1000; background-color: var(--background-dark); border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.3); padding: 0.8rem; opacity: 0; transform: translateY(-15px) scale(0.95); transform-origin: top right; pointer-events: none; transition: opacity var(--transition-speed) ease, transform var(--transition-speed) ease; min-width: 200px; }
+        body.nav-active .minimal-nav { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+        .minimal-nav ul { list-style: none; margin: 0; padding: 0; }
+        .minimal-nav ul li { margin-bottom: 5px; } .minimal-nav ul li:last-child { margin-bottom: 0; }
+        .minimal-nav ul li a { display: flex; align-items: center; color: var(--text-light); text-decoration: none; padding: 0.6rem 1rem; border-radius: 4px; transition: background-color var(--transition-speed), color var(--transition-speed); white-space: nowrap; font-weight: 400; font-size: 0.95rem; }
+        .minimal-nav ul li a i.fas { margin-right: 10px; width: 1.2em; text-align: center; opacity: 0.8; transition: opacity var(--transition-speed); }
+        .minimal-nav ul li a:hover { background-color: var(--primary-color); color: var(--text-light); }
+        .minimal-nav ul li a:hover i.fas { opacity: 1; }
+        /* Language Switcher Styles */
+        .minimal-nav .language-switcher-item { padding: 0.5rem 1rem; border-top: 1px solid var(--secondary-color); margin-top: 8px; padding-top: 13px; }
+        #languageSelect { width: 100%; background: rgba(255,255,255,0.1); color: white; border: 1px solid var(--nav-success); border-radius: 5px; padding: 6px 30px 6px 12px; cursor: pointer; font-size: 0.9rem; appearance: none; -webkit-appearance: none; -moz-appearance: none; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%234CC9F0%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right 10px center; background-size: 10px auto; transition: background-color 0.3s ease; }
+        #languageSelect:hover { background-color: rgba(255,255,255,0.15); }
+        #languageSelect option { background: var(--nav-dark); color: var(--text-light); }
+
+        /* --- Header --- */
+        .main-header { background: linear-gradient(135deg, var(--primary-color), #0056b3); color: var(--text-light); padding: 4rem 0 6rem; text-align: center; position: relative; overflow: hidden; }
+        .main-header h1 { font-family: var(--font-title); font-size: 3rem; margin-bottom: 0.5rem; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); animation: fadeInAnimation 1s ease-out; }
+        .main-header p { font-size: 1.2rem; font-weight: 300; opacity: 0.9; animation: fadeInAnimation 1s ease-out 0.3s forwards; opacity: 0; }
+        .header-shape { position: absolute; border-radius: 50%; background-color: rgba(255, 255, 255, 0.1); animation: pulse 5s infinite ease-in-out alternate; }
+        .shape1 { width: 150px; height: 150px; bottom: -50px; left: 10%; animation-duration: 6s; }
+        .shape2 { width: 80px; height: 80px; top: 50px; right: 15%; animation-duration: 4s; }
+        .shape3 { width: 50px; height: 50px; bottom: 20px; right: 30%; animation-duration: 7s; }
+
+        /* --- Section Styling --- */
+        section { padding: 4rem 0; border-bottom: 1px solid #eee; }
+        main section:last-of-type { border-bottom: none; } /* No border before completion */
+        section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); margin-bottom: 2rem; text-align: center; position: relative; padding-bottom: 10px; }
+        section h2::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 60px; height: 4px; background-color: var(--accent-color); border-radius: 2px; }
+
+        /* --- Code Block Styling --- */
+        .code-block {
+            background-color: var(--background-dark); color: var(--text-light);
+            padding: 1.5rem; border-radius: var(--border-radius); font-family: 'Courier New', Courier, monospace;
+            margin: 1.5rem 0; box-shadow: 0 5px 15px rgba(0,0,0,0.2); font-size: 0.95rem;
+            position: relative; overflow-x: auto; /* Add scroll for long lines */
+        }
+        .code-block pre { margin: 0; }
+        .code-block .code-line-output { color: var(--accent-color); font-weight: bold; border-top: 1px dashed var(--secondary-color); padding-top: 1rem; margin-top: 1rem; opacity: 0; transition: opacity 0.8s ease; }
+        .code-block .code-line-output.visible { opacity: 1; }
+        /* Syntax Highlighting */
+        .code-keyword { color: var(--code-keyword); } .code-string { color: var(--code-string); }
+        .code-comment { color: var(--code-comment); font-style: italic; } .code-function { color: var(--code-function); }
+        .code-number { color: var(--code-number); } .code-operator { color: var(--code-operator); }
+        .code-punctuation { color: var(--code-punctuation); } .code-variable { color: var(--code-variable); }
+        .code-method { color: var(--code-method); }
+
+        /* --- Intro Section --- */
+        #intro-dicts p { font-size: 1.1rem; max-width: 750px; margin: 0 auto 1rem; text-align: center; }
+
+        /* --- Exploring Dictionaries Section --- */
+        #exploring-dicts .dict-analogy {
+            display: flex; align-items: center; justify-content: space-around; flex-wrap: wrap;
+            background-color: #fff; padding: 2rem; border-radius: var(--border-radius);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08); margin-top: 2rem; gap: 1.5rem;
+        }
+        .analogy-item { text-align: center; max-width: 250px; }
+        .analogy-icon { font-size: 3rem; margin-bottom: 1rem; color: var(--primary-color); display: inline-block; transition: transform var(--transition-speed) ease; }
+        .analogy-item:hover .analogy-icon { transform: scale(1.15) rotate(3deg); }
+        .analogy-text p { font-size: 0.95rem; color: var(--secondary-color); }
+
+        /* --- Dictionary Operations Section --- */
+        #dict-operations .operations-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem; margin-top: 2rem;
+        }
+        .operation-card {
+            background-color: #fff; padding: 1.5rem; border-radius: var(--border-radius);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.07);
+            transition: transform var(--transition-speed) ease, box-shadow var(--transition-speed) ease;
+             opacity: 0; transform: translateY(20px);
+            animation: fadeInAnimation 0.6s ease-out forwards;
+        }
+        .operation-card:nth-child(1) { animation-delay: 0.1s; }
+        .operation-card:nth-child(2) { animation-delay: 0.2s; }
+        .operation-card:nth-child(3) { animation-delay: 0.3s; }
+        .operation-card:nth-child(4) { animation-delay: 0.4s; }
+        .operation-card:nth-child(5) { animation-delay: 0.5s; }
+
+        .operation-card:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(0,0,0,0.12); }
+        .op-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
+        .op-icon { font-size: 1.8rem; color: var(--primary-color); width: 30px; text-align: center; }
+        .op-title { font-family: var(--font-body); font-weight: 700; font-size: 1.2rem; color: var(--text-dark); }
+        .op-desc { font-size: 0.95rem; color: var(--secondary-color); margin-bottom: 1rem; }
+        .op-code { font-family: 'Courier New', Courier, monospace; background-color: #e9ecef; padding: 0.5rem 0.8rem; border-radius: 4px; font-size: 0.9rem; color: var(--code-keyword); white-space: nowrap; overflow-x: auto;}
+        .op-code .code-variable { color: var(--code-variable); }
+        .op-code .code-method { color: var(--code-method); }
+        .op-code .code-string { color: var(--code-string); }
+        .op-code .code-punctuation { color: var(--code-punctuation); }
+        .op-code .code-operator { color: var(--code-operator); }
+
+
+        /* --- Dictionaries in AI Section --- */
+        #dicts-in-ai .ai-context { display: flex; gap: 2rem; align-items: flex-start; margin-top: 2rem; flex-wrap: wrap; }
+        .ai-explanation { flex-basis: 45%; font-size: 1.05rem; }
+        .ai-explanation p { margin-bottom: 1rem; }
+        .ai-code-demo { flex-basis: 50%; } /* Code block takes remaining space */
+        .code-highlight { /* Tooltip Trigger */
+            background-color: rgba(0, 123, 255, 0.1); color: #0056b3; padding: 0.2em 0.4em;
+            border-radius: 4px; font-family: 'Courier New', Courier, monospace; font-weight: bold;
+            cursor: pointer; transition: background-color var(--transition-speed);
+            display: inline-block; position: relative;
+        }
+        .code-highlight:hover { background-color: rgba(0, 123, 255, 0.2); }
+        /* Tooltip */
+        .tooltip { visibility: hidden; width: 180px; background-color: var(--background-dark); color: var(--text-light); text-align: center; border-radius: 6px; padding: 8px 5px; position: absolute; z-index: 1; bottom: 125%; left: 50%; margin-left: -90px; opacity: 0; transition: opacity 0.3s; font-family: var(--font-body); font-size: 0.9rem; font-weight: normal; pointer-events: none; }
+        .tooltip::after { content: ""; position: absolute; top: 100%; left: 50%; margin-left: -5px; border-width: 5px; border-style: solid; border-color: var(--background-dark) transparent transparent transparent; }
+        .code-highlight:hover .tooltip { visibility: visible; opacity: 1; }
+
+
+        /* --- Knowledge Check Section --- */
+        #knowledge-check { background-color: #e9ecef; }
+        .quiz-container { background-color: #fff; padding: 2rem; border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.1); max-width: 700px; margin: 2rem auto 0; }
+        .quiz-question { font-size: 1.2rem; font-weight: bold; margin-bottom: 1.5rem; color: var(--text-dark); }
+        .quiz-options button { display: block; width: 100%; padding: 1rem; margin-bottom: 1rem; text-align: left; font-size: 1rem; background-color: #f8f9fa; border: 1px solid #ced4da; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), border-color var(--transition-speed), transform var(--transition-speed); }
+        .quiz-options button:not(:disabled):hover { background-color: #e2e6ea; border-color: #adb5bd; transform: translateX(5px); }
+        .quiz-options button:disabled { cursor: default; opacity: 0.7; }
+        .quiz-options button.correct { background-color: #d4edda; border-color: var(--success-color); color: #155724; font-weight: bold; }
+        .quiz-options button.incorrect { background-color: #f8d7da; border-color: var(--error-color); color: #721c24; font-weight: bold; }
+        .quiz-options button.incorrect.shake { animation: shake 0.5s ease; }
+        .quiz-feedback { margin-top: 1.5rem; padding: 1rem; border-radius: var(--border-radius); font-weight: bold; text-align: center; opacity: 0; transition: opacity 0.5s ease; height: 0; overflow: hidden; }
+        .quiz-feedback.visible { opacity: 1; height: auto; margin-bottom: 1rem; }
+        .quiz-feedback.correct { background-color: #d4edda; color: #155724; }
+        .quiz-feedback.incorrect { background-color: #f8d7da; color: #721c24; }
+        #next-question-btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5em; margin: 1.5rem auto 0; padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold; color: var(--text-light); background-color: var(--primary-color); border: none; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), transform var(--transition-speed), opacity 0.3s, visibility 0.3s; opacity: 0; visibility: hidden; }
+        #next-question-btn:hover { background-color: #0056b3; transform: scale(1.05); }
+        #next-question-btn.visible { opacity: 1; visibility: visible; }
+        /* Make code within quiz buttons look right */
+        .quiz-options button code {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: rgba(0,0,0,0.05);
+            padding: 0.1em 0.3em;
+            border-radius: 3px;
+            font-size: 0.9em;
+        }
+        .quiz-options button.correct code { background-color: rgba(21, 87, 36, 0.1); }
+        .quiz-options button.incorrect code { background-color: rgba(114, 28, 36, 0.1); }
+
+        /* --- Completion Section Styling --- */
+        .completion-section { padding: 4rem 0; text-align: center; background-color: var(--background-light); }
+        .completion-section .icon { font-size: 4rem; color: var(--success-color); margin-bottom: 1rem; display: inline-block; opacity: 0; animation: iconAppearCorrect 1s ease-out 0.5s forwards; }
+        .completion-section .icon .fas + .fas { margin-left: 0.75rem; }
+        .completion-section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); margin-bottom: 1rem; }
+        .completion-section h2::after { display: none; } /* Remove underline */
+        .completion-section p { font-size: 1.1rem; margin-top: 1rem; color: var(--secondary-color); max-width: 700px; margin-left: auto; margin-right: auto; line-height: 1.8; }
+        .completion-section .button-group { margin-top: 2.5rem; }
+
+        /* --- NO Footer --- */
+        /* .main-footer CSS rules removed */
+
+        /* --- Responsive Design --- */
+        @media (max-width: 768px) {
+            html { font-size: 15px; }
+            .main-header h1 { font-size: 2.5rem; } .main-header p { font-size: 1.1rem; }
+            section h2 { font-size: 1.8rem; }
+            #exploring-dicts .dict-analogy { flex-direction: column; gap: 2rem; }
+            #dict-operations .operations-grid { grid-template-columns: 1fr; }
+            #dicts-in-ai .ai-context { flex-direction: column; }
+            .ai-explanation, .ai-code-demo { flex-basis: 100%; }
+            .minimal-nav { min-width: 180px; } .minimal-nav ul li a { padding: 0.6rem 0.8rem; }
+            #languageSelect { font-size: 0.85rem; padding: 5px 25px 5px 10px;}
+            .completion-section h2 { font-size: 2rem; }
+             .completion-section .button-group { flex-direction: column; align-items: center; gap: 0.8rem; }
+             .completion-section .action-button { width: 80%; max-width: 350px; margin-top: 0; }
+        }
+        @media (max-width: 480px) {
+            html { font-size: 14px; }
+            .main-header h1 { font-size: 2rem; } .main-header p { font-size: 1rem; }
+            section h2 { font-size: 1.6rem; }
+            .quiz-options button { padding: 0.8rem; font-size: 0.95rem; }
+            .tooltip { width: 140px; margin-left: -70px; font-size: 0.8rem;}
+             .minimal-nav-button { top: 10px; right: 10px; padding: 6px 10px; font-size: 1rem; }
+             .minimal-nav { top: 48px; right: 10px; min-width: 160px; }
+             .minimal-nav ul li a { padding: 0.5rem 0.7rem; font-size: 0.9rem;}
+             .minimal-nav ul li a i.fas { margin-right: 8px; }
+             #languageSelect { font-size: 0.8rem; padding: 4px 20px 4px 8px;}
+             .completion-section .icon { font-size: 3.5rem; }
+             .completion-section h2 { font-size: 1.8rem; }
+             .completion-section p { font-size: 1rem; }
+             .completion-section .action-button { width: 90%; max-width: 300px; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- ========= Minimal Nav Handle ========= -->
+    <button id="minimal-nav-toggle" class="minimal-nav-button" aria-label="Toggle Navigation Menu">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- ========= Minimal Nav Panel (with Language Switcher) ========= -->
+    <nav id="minimal-nav-panel" class="minimal-nav">
+        <ul>
+            <!-- Links to OTHER main pages (Updated for Module 21) -->
+            <li><a href="ctp-practice-21.html"><i class="fas fa-pencil-alt fa-fw"></i> <span data-translate="nav_practice">Practice</span></a></li>
+            <li><a href="ctp-advanced-21.html"><i class="fas fa-flask fa-fw"></i> <span data-translate="nav_advanced">Advanced Practice</span></a></li>
+            <li><a href="ctp-dashboard.html"><i class="fas fa-list fa-fw"></i> <span data-translate="nav_menu">Course Menu</span></a></li>
+             <hr style="border: none; border-top: 1px solid var(--secondary-color); margin: 8px 0;">
+             <!-- Links to sections on THIS page -->
+             <li><a href="#intro-dicts"><i class="fas fa-book-open fa-fw"></i> <span data-translate="nav_intro">Introduction</span></a></li>
+             <li><a href="#exploring-dicts"><i class="fas fa-binoculars fa-fw"></i> <span data-translate="nav_explore">Exploring</span></a></li>
+             <li><a href="#dict-operations"><i class="fas fa-cogs fa-fw"></i> <span data-translate="nav_ops">Operations</span></a></li>
+             <li><a href="#dicts-in-ai"><i class="fas fa-brain fa-fw"></i> <span data-translate="nav_ai">Dictionaries in AI</span></a></li>
+             <li><a href="#knowledge-check"><i class="fas fa-check-double fa-fw"></i> <span data-translate="nav_quiz">Knowledge Check</span></a></li>
+            <!-- Language Switcher Item -->
+            <li class="language-switcher-item">
+                 <select id="languageSelect" aria-label="Select Language">
+                     <option value="en" data-translate="lang_en">🇬🇧 English</option>
+                     <option value="pt" data-translate="lang_pt">🇧🇷 Português</option>
+                     <option value="zh" data-translate="lang_zh">🇨🇳 中文</option>
+                 </select>
+            </li>
+        </ul>
+    </nav>
+
+    <header class="main-header">
+        <!-- Decorative shapes -->
+        <div class="header-shape shape1"></div>
+        <div class="header-shape shape2"></div>
+        <div class="header-shape shape3"></div>
+
+        <div class="container">
+            <h1 data-translate="m21_header_title">Module 21: Mastering Dictionaries</h1>
+            <p data-translate="m21_header_subtitle">Unlock the power of key-value pairs for efficient data handling in Python.</p>
+        </div>
+    </header>
+
+    <main>
+        <!-- ========= Introduction Section ========= -->
+        <section id="intro-dicts">
+            <div class="container">
+                <h2 class="fade-in" data-translate="m21_intro_title">🔑 What are Dictionaries?</h2>
+                <p class="fade-in delay-1" data-translate="m21_intro_p1">
+                    Imagine a real dictionary: you look up a <span class="highlight">word (key)</span> to find its <span class="highlight">definition (value)</span>.
+                    Python dictionaries work similarly! They store data as <span class="highlight">key-value pairs</span>, allowing fast lookups.
+                </p>
+                <p class="fade-in delay-2" data-translate="m21_intro_p2">
+                    They are incredibly useful in AI for storing configurations, feature sets, results, or any data where you need to access values using a unique identifier (the key).
+                </p>
+            </div>
+        </section>
+
+        <!-- ========= Exploring Dictionaries Section ========= -->
+        <section id="exploring-dicts">
+            <div class="container">
+                <h2 class="fade-in" data-translate="m21_explore_title">🔭 Exploring Structure</h2>
+                <p class="text-center fade-in delay-1" data-translate="m21_explore_subtitle">Keys are unique identifiers pointing to their associated values.</p>
+
+                <div class="dict-analogy fade-in delay-2">
+                    <div class="analogy-item">
+                        <span class="analogy-icon">📖</span>
+                        <h3 data-translate="m21_analogy_dict_title">Real Dictionary</h3>
+                        <div class="analogy-text">
+                           <p data-translate="m21_analogy_dict_text">Word (Key) ➔ Definition (Value)</p>
+                        </div>
+                    </div>
+                     <div class="analogy-item">
+                        <span class="analogy-icon"> <i class="fas fa-address-book"></i> </span>
+                         <h3 data-translate="m21_analogy_contacts_title">Contact List</h3>
+                         <div class="analogy-text">
+                            <p data-translate="m21_analogy_contacts_text">Name (Key) ➔ Phone Number (Value)</p>
+                         </div>
+                     </div>
+                     <div class="analogy-item">
+                         <span class="analogy-icon"> <i class="fab fa-python"></i> </span>
+                         <h3 data-translate="m21_analogy_python_title">Python Dictionary</h3>
+                         <div class="analogy-text">
+                             <p data-translate="m21_analogy_python_text"><code>'name'</code> (Key) ➔ <code>'Alice'</code> (Value)</p>
+                         </div>
+                    </div>
+                </div>
+
+                <div class="code-block fade-in delay-3">
+                    <pre><code class="code-line"><span class="code-comment"># Creating a simple dictionary</span></code>
+<code class="code-line delay-1"><span class="code-variable">student_info</span> <span class="code-operator">=</span> <span class="code-punctuation">{</span></code>
+<code class="code-line delay-2">    <span class="code-string">'name'</span><span class="code-punctuation">:</span> <span class="code-string">'Bob'</span><span class="code-punctuation">,</span></code>
+<code class="code-line delay-3">    <span class="code-string">'major'</span><span class="code-punctuation">:</span> <span class="code-string">'AI Engineering'</span><span class="code-punctuation">,</span></code>
+<code class="code-line delay-4">    <span class="code-string">'id'</span><span class="code-punctuation">:</span> <span class="code-number">12345</span></code>
+<code class="code-line delay-4"><span class="code-punctuation">}</span></code></pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========= Dictionary Operations Section ========= -->
+        <section id="dict-operations">
+            <div class="container">
+                <h2 class="fade-in" data-translate="m21_ops_title">⚙️ Common Operations</h2>
+                <p class="text-center fade-in delay-1" data-translate="m21_ops_subtitle">Let's see how to interact with dictionaries.</p>
+
+                <div class="operations-grid">
+                    <!-- Card 1: Get Keys -->
+                    <div class="operation-card">
+                        <div class="op-header">
+                            <span class="op-icon"><i class="fas fa-key"></i></span>
+                            <h3 class="op-title" data-translate="m21_op_keys_title">Get All Keys</h3>
+                        </div>
+                        <p class="op-desc" data-translate="m21_op_keys_desc">Retrieve just the keys from the dictionary.</p>
+                        <div class="op-code"><span class="code-variable">my_dict</span><span class="code-punctuation">.</span><span class="code-method">keys</span><span class="code-punctuation">()</span></div>
+                    </div>
+
+                    <!-- Card 2: Get Values -->
+                     <div class="operation-card">
+                         <div class="op-header">
+                             <span class="op-icon"><i class="fas fa-file-alt"></i></span>
+                             <h3 class="op-title" data-translate="m21_op_values_title">Get All Values</h3>
+                         </div>
+                         <p class="op-desc" data-translate="m21_op_values_desc">Retrieve just the values from the dictionary.</p>
+                         <div class="op-code"><span class="code-variable">my_dict</span><span class="code-punctuation">.</span><span class="code-method">values</span><span class="code-punctuation">()</span></div>
+                     </div>
+
+                     <!-- Card 3: Get Items (Key-Value Pairs) -->
+                     <div class="operation-card">
+                         <div class="op-header">
+                            <span class="op-icon"><i class="fas fa-list-ul"></i></span>
+                             <h3 class="op-title" data-translate="m21_op_items_title">Get Key-Value Pairs</h3>
+                         </div>
+                         <p class="op-desc" data-translate="m21_op_items_desc">Retrieve both keys and values together as pairs (tuples).</p>
+                         <div class="op-code"><span class="code-variable">my_dict</span><span class="code-punctuation">.</span><span class="code-method">items</span><span class="code-punctuation">()</span></div>
+                     </div>
+
+                     <!-- Card 4: Check for Key -->
+                    <div class="operation-card">
+                        <div class="op-header">
+                            <span class="op-icon"><i class="fas fa-search"></i></span>
+                             <h3 class="op-title" data-translate="m21_op_check_title">Check if Key Exists</h3>
+                        </div>
+                        <p class="op-desc" data-translate="m21_op_check_desc">Use the `in` keyword to see if a key is present before trying to access it.</p>
+                        <div class="op-code"><span class="code-string">'my_key'</span> <span class="code-keyword">in</span> <span class="code-variable">my_dict</span></div>
+                    </div>
+
+                    <!-- Card 5: Delete Item -->
+                    <div class="operation-card">
+                        <div class="op-header">
+                            <span class="op-icon"><i class="fas fa-trash-alt"></i></span>
+                            <h3 class="op-title" data-translate="m21_op_del_title">Delete an Item</h3>
+                        </div>
+                        <p class="op-desc" data-translate="m21_op_del_desc">Remove a key-value pair using the `del` statement and the key.</p>
+                        <div class="op-code"><span class="code-keyword">del</span> <span class="code-variable">my_dict</span><span class="code-punctuation">[</span><span class="code-string">'key_to_delete'</span><span class="code-punctuation">]</span></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========= Dictionaries in AI Section ========= -->
+        <section id="dicts-in-ai">
+             <div class="container">
+                 <h2 class="fade-in" data-translate="m21_ai_title">🧠 Dictionaries in AI</h2>
+                 <p class="text-center fade-in delay-1" data-translate="m21_ai_subtitle">How these operations help in AI tasks.</p>
+
+                 <div class="ai-context fade-in delay-2">
+                     <div class="ai-explanation">
+                         <h3 data-translate="m21_ai_context_title" style="margin-bottom: 1rem; color: var(--primary-color);">Practical Connections:</h3>
+                         <p data-translate="m21_ai_context_p1">
+                             <strong data-translate="m21_ai_data_manip_label">Data Manipulation:</strong> Dictionaries are perfect for storing structured data like model parameters (<code class="code-string">'learning_rate'</code>: <code class="code-number">0.01</code>), feature counts, or configuration settings. Iterating (<code class="code-method">.items()</code>) lets you process these easily.
+                         </p>
+                         <p data-translate="m21_ai_context_p2">
+                             <strong data-translate="m21_ai_algo_label">Algorithms:</strong> Checking for keys (<code class="code-keyword">in</code>) is vital for tasks like caching results (memoization) or checking visited nodes in graph algorithms. Deleting items (<code class="code-keyword">del</code>) helps manage memory or remove processed data.
+                         </p>
+                         <p data-translate="m21_ai_context_p3">
+                             Let's simulate updating model parameters stored in a dictionary.
+                         </p>
+                     </div>
+                     <div class="ai-code-demo">
+                        <div class="code-block">
+                        <pre><code class="code-line"><span class="code-variable">model_params</span> <span class="code-operator">=</span> <span class="code-punctuation">{</span></code>
+<code class="code-line delay-1">  <span class="code-string">'layer1_neurons'</span><span class="code-punctuation">:</span> <span class="code-number">128</span><span class="code-punctuation">,</span></code>
+<code class="code-line delay-1">  <span class="code-string">'activation'</span><span class="code-punctuation">:</span> <span class="code-string">'ReLU'</span><span class="code-punctuation">,</span></code>
+<code class="code-line delay-2">  <span class="code-string">'dropout_rate'</span><span class="code-punctuation">:</span> <span class="code-number">0.2</span><span class="code-punctuation">,</span></code>
+<code class="code-line delay-2">  <span class="code-string">'optimizer'</span><span class="code-punctuation">:</span> <span class="code-string">'Adam'</span> <span class="code-comment" data-translate-tooltip="m21_tooltip_config"># Configuration for training</span></code>
+<code class="code-line delay-2"><span class="code-punctuation">}</span></code>
+<code class="code-line delay-3"></code>
+<code class="code-line delay-3"><span class="code-comment" data-translate="m21_code_comment_update"># Update a parameter</span></code>
+<code class="code-line delay-3"><span class="code-variable">model_params</span><span class="code-punctuation">[</span><span class="code-string">'dropout_rate'</span><span class="code-punctuation">]</span> <span class="code-operator">=</span> <span class="code-number">0.3</span> <span class="code-comment" data-translate-tooltip="m21_tooltip_update"># Modify existing value</span></code>
+<code class="code-line delay-4"></code>
+<code class="code-line delay-4"><span class="code-comment" data-translate="m21_code_comment_delete"># Maybe remove an unused parameter</span></code>
+<code class="code-line delay-4"><span class="code-keyword">if</span> <span class="code-string">'optimizer'</span> <span class="code-keyword">in</span> <span class="code-variable">model_params</span><span class="code-punctuation">:</span> <span class="code-comment" data-translate-tooltip="m21_tooltip_check"># Check before deleting</span></code>
+<code class="code-line delay-4">    <span class="code-keyword">del</span> <span class="code-variable">model_params</span><span class="code-punctuation">[</span><span class="code-string">'optimizer'</span><span class="code-punctuation">]</span> <span class="code-comment" data-translate-tooltip="m21_tooltip_delete"># Remove the key-value pair</span></code>
+<code class="code-line delay-4"></code>
+<code class="code-line delay-4"><span class="code-function">print</span><span class="code-punctuation">(</span><span class="code-variable">model_params</span><span class="code-punctuation">)</span></code></pre>
+                            <div class="code-line-output">
+                                <!-- Output will appear here via JS -->
+                            </div>
+                        </div>
+                     </div>
+                 </div>
+             </div>
+        </section>
+
+        <!-- ========= Knowledge Check Section ========= -->
+        <section id="knowledge-check">
+            <div class="container">
+                <h2 class="fade-in" data-translate="m21_quiz_title">🧠 Quick Check!</h2>
+                <div class="quiz-container fade-in delay-1">
+                    <div id="quiz-area">
+                        <!-- Quiz questions will be loaded here by JavaScript -->
+                    </div>
+                    <div id="quiz-feedback" class="quiz-feedback">
+                        <!-- Feedback (Correct/Incorrect) shown here -->
+                    </div>
+                    <button id="next-question-btn" data-translate="quiz_next_button">Next Question</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========= Completion Section ========= -->
+        <section class="completion-section">
+            <div class="container">
+                 <div class="icon"> <!-- Animation applied via CSS -->
+                    <i class="fas fa-check-double"></i>
+                    <i class="fas fa-cogs"></i> <!-- Changed icon -->
+                    <i class="fas fa-star"></i>
+                </div>
+                <h2 class="fade-in delay-1" data-translate="m21_completion_theory_title">Module 21 Theory Complete!</h2>
+                <p class="fade-in delay-2" data-translate="m21_completion_theory_desc">
+                    Excellent work navigating dictionary operations! You're building essential skills for data handling in AI. <br>
+                    Ready to practice? Head to the <strong>Practice Zone</strong> or take on the <strong>Advanced Practice</strong> challenge.
+                </p>
+                <div class="button-group">
+                    <!-- Updated links for Module 21 -->
+                    <a href="ctp-dashboard.html" class="action-button secondary fade-in delay-3"><i class="fas fa-list"></i> <span data-translate="nav_menu">Course Menu</span></a>
+                    <a href="ctp-practice-21.html" class="action-button success fade-in delay-4"><i class="fas fa-pencil-alt"></i> <span data-translate="nav_practice">Start Practice</span></a>
+                    <a href="ctp-advanced-21.html" class="action-button secondary fade-in delay-5"><i class="fas fa-flask"></i> <span data-translate="nav_advanced">Advanced Practice</span></a>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer Removed -->
+
+    <script>
+    // --- Translations Object ---
+    const translations = {
+        en: {
+            "page_title": "Module 21: Working with Dictionaries",
+            // Nav
+            "nav_practice": "Start Practice", "nav_advanced": "Advanced Practice", "nav_menu": "Course Menu",
+            "nav_intro": "Introduction", "nav_explore": "Exploring", "nav_ops": "Operations", "nav_ai": "Dictionaries in AI", "nav_quiz": "Knowledge Check",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            // Header
+            "m21_header_title": "Module 21: Mastering Dictionaries", "m21_header_subtitle": "Unlock the power of key-value pairs for efficient data handling in Python.",
+            // Intro
+            "m21_intro_title": "🔑 What are Dictionaries?",
+            "m21_intro_p1": "Imagine a real dictionary: you look up a <span class=\"highlight\">word (key)</span> to find its <span class=\"highlight\">definition (value)</span>. Python dictionaries work similarly! They store data as <span class=\"highlight\">key-value pairs</span>, allowing fast lookups.",
+            "m21_intro_p2": "They are incredibly useful in AI for storing configurations, feature sets, results, or any data where you need to access values using a unique identifier (the key).",
+            // Exploring
+            "m21_explore_title": "🔭 Exploring Structure", "m21_explore_subtitle": "Keys are unique identifiers pointing to their associated values.",
+            "m21_analogy_dict_title": "Real Dictionary", "m21_analogy_dict_text": "Word (Key) ➔ Definition (Value)",
+            "m21_analogy_contacts_title": "Contact List", "m21_analogy_contacts_text": "Name (Key) ➔ Phone Number (Value)",
+            "m21_analogy_python_title": "Python Dictionary", "m21_analogy_python_text": "<code>'name'</code> (Key) ➔ <code>'Alice'</code> (Value)",
+            // Operations
+            "m21_ops_title": "⚙️ Common Operations", "m21_ops_subtitle": "Let's see how to interact with dictionaries.",
+            "m21_op_keys_title": "Get All Keys", "m21_op_keys_desc": "Retrieve just the keys from the dictionary.",
+            "m21_op_values_title": "Get All Values", "m21_op_values_desc": "Retrieve just the values from the dictionary.",
+            "m21_op_items_title": "Get Key-Value Pairs", "m21_op_items_desc": "Retrieve both keys and values together as pairs (tuples).",
+            "m21_op_check_title": "Check if Key Exists", "m21_op_check_desc": "Use the `in` keyword to see if a key is present before trying to access it.",
+            "m21_op_del_title": "Delete an Item", "m21_op_del_desc": "Remove a key-value pair using the `del` statement and the key.",
+            // AI Section
+            "m21_ai_title": "🧠 Dictionaries in AI", "m21_ai_subtitle": "How these operations help in AI tasks.",
+            "m21_ai_context_title": "Practical Connections:",
+            "m21_ai_data_manip_label": "Data Manipulation:", "m21_ai_algo_label": "Algorithms:",
+            "m21_ai_context_p1": "<strong data-translate=\"m21_ai_data_manip_label\">Data Manipulation:</strong> Dictionaries are perfect for storing structured data like model parameters (<code>'learning_rate'</code>: <code>0.01</code>), feature counts, or configuration settings. Iterating (<code>.items()</code>) lets you process these easily.",
+            "m21_ai_context_p2": "<strong data-translate=\"m21_ai_algo_label\">Algorithms:</strong> Checking for keys (<code>in</code>) is vital for tasks like caching results (memoization) or checking visited nodes in graph algorithms. Deleting items (<code>del</code>) helps manage memory or remove processed data.",
+            "m21_ai_context_p3": "Let's simulate updating model parameters stored in a dictionary.",
+            "m21_code_comment_update": "# Update a parameter", "m21_code_comment_delete": "# Maybe remove an unused parameter",
+            "m21_tooltip_config": "# Configuration for training", "m21_tooltip_update": "# Modify existing value", "m21_tooltip_check": "# Check before deleting", "m21_tooltip_delete": "# Remove the key-value pair",
+             // Quiz
+            "m21_quiz_title": "🧠 Quick Check!", "quiz_next_button": "Next Question",
+            "m21_quiz_q1": "Which method returns only the keys of a dictionary `d`?",
+            "m21_quiz_q1_opt1": "<code>d.values()</code>", "m21_quiz_q1_opt2": "<code>d.keys()</code>", "m21_quiz_q1_opt3": "<code>d.items()</code>", "m21_quiz_q1_opt4": "<code>d.get_keys()</code>",
+            "m21_quiz_q2": "How do you check if a key named `'status'` exists in a dictionary `info`?",
+            "m21_quiz_q2_opt1": "<code>info.has_key('status')</code>", "m21_quiz_q2_opt2": "<code>'status' exists in info</code>", "m21_quiz_q2_opt3": "<code>'status' in info</code>", "m21_quiz_q2_opt4": "<code>info['status'] != None</code>",
+            "m21_quiz_q3": "What statement is used to remove the item with key `'temp'` from dictionary `config`?",
+            "m21_quiz_q3_opt1": "<code>config.remove('temp')</code>", "m21_quiz_q3_opt2": "<code>delete config['temp']</code>", "m21_quiz_q3_opt3": "<code>config.pop('temp')</code>", "m21_quiz_q3_opt4": "<code>del config['temp']</code>",
+            "m21_quiz_q4": "What does the `my_dict.items()` method return?",
+            "m21_quiz_q4_opt1": "A list of keys.", "m21_quiz_q4_opt2": "A list of values.", "m21_quiz_q4_opt3": "A view object containing key-value tuple pairs.", "m21_quiz_q4_opt4": "The dictionary itself.",
+            "quiz_feedback_correct": "Correct! 🎉", "quiz_feedback_incorrect": "Not quite! The correct answer was: {correctAnswerText}",
+            "quiz_final_score_title": "Module 21 Complete!", "quiz_final_score_summary": "You answered {score} out of {total} questions correctly.",
+            "quiz_final_score_perfect": "Excellent work! You've mastered dictionary operations.", "quiz_final_score_good": "Great job! Keep practicing these useful operations.",
+            // Completion
+            "m21_completion_theory_title": "Module 21 Theory Complete!",
+            "m21_completion_theory_desc": "Excellent work navigating dictionary operations! You're building essential skills for data handling in AI. <br> Ready to practice? Head to the <strong>Practice Zone</strong> or take on the <strong>Advanced Practice</strong> challenge."
+        },
+        pt: {
+            "page_title": "Módulo 21: Trabalhando com Dicionários",
+            // Nav
+            "nav_practice": "Iniciar Prática", "nav_advanced": "Prática Avançada", "nav_menu": "Menu do Curso",
+            "nav_intro": "Introdução", "nav_explore": "Explorando", "nav_ops": "Operações", "nav_ai": "Dicionários em IA", "nav_quiz": "Teste Rápido",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            // Header
+            "m21_header_title": "Módulo 21: Dominando Dicionários", "m21_header_subtitle": "Desbloqueie o poder dos pares chave-valor para manipulação eficiente de dados em Python.",
+            // Intro
+            "m21_intro_title": "🔑 O que são Dicionários?",
+            "m21_intro_p1": "Imagine um dicionário real: você procura uma <span class=\"highlight\">palavra (chave)</span> para encontrar sua <span class=\"highlight\">definição (valor)</span>. Dicionários Python funcionam de forma semelhante! Eles armazenam dados como <span class=\"highlight\">pares chave-valor</span>, permitindo buscas rápidas.",
+            "m21_intro_p2": "Eles são incrivelmente úteis em IA para armazenar configurações, conjuntos de características (features), resultados ou quaisquer dados onde você precise acessar valores usando um identificador único (a chave).",
+            // Exploring
+            "m21_explore_title": "🔭 Explorando a Estrutura", "m21_explore_subtitle": "Chaves são identificadores únicos que apontam para seus valores associados.",
+            "m21_analogy_dict_title": "Dicionário Real", "m21_analogy_dict_text": "Palavra (Chave) ➔ Definição (Valor)",
+            "m21_analogy_contacts_title": "Lista de Contatos", "m21_analogy_contacts_text": "Nome (Chave) ➔ Número de Telefone (Valor)",
+            "m21_analogy_python_title": "Dicionário Python", "m21_analogy_python_text": "<code>'nome'</code> (Chave) ➔ <code>'Alice'</code> (Valor)",
+            // Operations
+            "m21_ops_title": "⚙️ Operações Comuns", "m21_ops_subtitle": "Vamos ver como interagir com dicionários.",
+            "m21_op_keys_title": "Obter Todas as Chaves", "m21_op_keys_desc": "Recupera apenas as chaves do dicionário.",
+            "m21_op_values_title": "Obter Todos os Valores", "m21_op_values_desc": "Recupera apenas os valores do dicionário.",
+            "m21_op_items_title": "Obter Pares Chave-Valor", "m21_op_items_desc": "Recupera chaves e valores juntos como pares (tuplas).",
+            "m21_op_check_title": "Verificar se Chave Existe", "m21_op_check_desc": "Use a palavra-chave `in` para ver se uma chave está presente antes de tentar acessá-la.",
+            "m21_op_del_title": "Deletar um Item", "m21_op_del_desc": "Remove um par chave-valor usando a instrução `del` e a chave.",
+            // AI Section
+            "m21_ai_title": "🧠 Dicionários em IA", "m21_ai_subtitle": "Como essas operações ajudam em tarefas de IA.",
+            "m21_ai_context_title": "Conexões Práticas:",
+            "m21_ai_data_manip_label": "Manipulação de Dados:", "m21_ai_algo_label": "Algoritmos:",
+            "m21_ai_context_p1": "<strong data-translate=\"m21_ai_data_manip_label\">Manipulação de Dados:</strong> Dicionários são perfeitos para armazenar dados estruturados como parâmetros de modelo (<code>'learning_rate'</code>: <code>0.01</code>), contagens de features ou configurações. Iterar (<code>.items()</code>) permite processá-los facilmente.",
+            "m21_ai_context_p2": "<strong data-translate=\"m21_ai_algo_label\">Algoritmos:</strong> Verificar chaves (<code>in</code>) é vital para tarefas como cache de resultados (memoization) ou verificar nós visitados em algoritmos de grafos. Deletar itens (<code>del</code>) ajuda a gerenciar memória ou remover dados processados.",
+            "m21_ai_context_p3": "Vamos simular a atualização de parâmetros de modelo armazenados em um dicionário.",
+            "m21_code_comment_update": "# Atualiza um parâmetro", "m21_code_comment_delete": "# Talvez remover um parâmetro não usado",
+            "m21_tooltip_config": "# Configuração para treinamento", "m21_tooltip_update": "# Modifica valor existente", "m21_tooltip_check": "# Verifica antes de deletar", "m21_tooltip_delete": "# Remove o par chave-valor",
+             // Quiz
+            "m21_quiz_title": "🧠 Teste Rápido!", "quiz_next_button": "Próxima Pergunta",
+            "m21_quiz_q1": "Qual método retorna apenas as chaves de um dicionário `d`?",
+            "m21_quiz_q1_opt1": "<code>d.values()</code>", "m21_quiz_q1_opt2": "<code>d.keys()</code>", "m21_quiz_q1_opt3": "<code>d.items()</code>", "m21_quiz_q1_opt4": "<code>d.get_keys()</code>",
+            "m21_quiz_q2": "Como você verifica se uma chave chamada `'status'` existe em um dicionário `info`?",
+            "m21_quiz_q2_opt1": "<code>info.has_key('status')</code>", "m21_quiz_q2_opt2": "<code>'status' exists in info</code>", "m21_quiz_q2_opt3": "<code>'status' in info</code>", "m21_quiz_q2_opt4": "<code>info['status'] != None</code>",
+            "m21_quiz_q3": "Qual instrução é usada para remover o item com chave `'temp'` do dicionário `config`?",
+            "m21_quiz_q3_opt1": "<code>config.remove('temp')</code>", "m21_quiz_q3_opt2": "<code>delete config['temp']</code>", "m21_quiz_q3_opt3": "<code>config.pop('temp')</code>", "m21_quiz_q3_opt4": "<code>del config['temp']</code>",
+            "m21_quiz_q4": "O que o método `my_dict.items()` retorna?",
+            "m21_quiz_q4_opt1": "Uma lista de chaves.", "m21_quiz_q4_opt2": "Uma lista de valores.", "m21_quiz_q4_opt3": "Um objeto de visualização contendo pares chave-valor em tuplas.", "m21_quiz_q4_opt4": "O próprio dicionário.",
+            "quiz_feedback_correct": "Correto! 🎉", "quiz_feedback_incorrect": "Não foi bem assim! A resposta correta era: {correctAnswerText}",
+            "quiz_final_score_title": "Módulo 21 Completo!", "quiz_final_score_summary": "Você respondeu {score} de {total} perguntas corretamente.",
+            "quiz_final_score_perfect": "Excelente trabalho! Você dominou as operações com dicionários.", "quiz_final_score_good": "Ótimo trabalho! Continue praticando essas operações úteis.",
+            // Completion
+            "m21_completion_theory_title": "Teoria do Módulo 21 Completa!",
+            "m21_completion_theory_desc": "Excelente trabalho navegando pelas operações de dicionário! Você está construindo habilidades essenciais para manipulação de dados em IA. <br> Pronto para praticar? Vá para a <strong>Zona de Prática</strong> ou enfrente o desafio da <strong>Prática Avançada</strong>."
+        },
+        zh: {
+            "page_title": "模块 21：使用字典",
+            // Nav
+            "nav_practice": "开始练习", "nav_advanced": "高级练习", "nav_menu": "课程菜单",
+            "nav_intro": "介绍", "nav_explore": "探索", "nav_ops": "操作", "nav_ai": "AI 中的字典", "nav_quiz": "知识测验",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+             // Header
+            "m21_header_title": "模块 21：精通字典", "m21_header_subtitle": "解锁键值对的力量，实现 Python 中高效的数据处理。",
+            // Intro
+            "m21_intro_title": "🔑 什么是字典？",
+            "m21_intro_p1": "想象一本真正的词典：你查找一个<span class=\"highlight\">词（键）</span>来找到它的<span class=\"highlight\">定义（值）</span>。Python 字典的工作方式类似！它们以<span class=\"highlight\">键值对</span>的形式存储数据，允许快速查找。",
+            "m21_intro_p2": "它们在人工智能中非常有用，用于存储配置、特征集、结果或任何需要使用唯一标识符（键）访问值的数据。",
+            // Exploring
+            "m21_explore_title": "🔭 探索结构", "m21_explore_subtitle": "键是唯一的标识符，指向其关联的值。",
+            "m21_analogy_dict_title": "真实词典", "m21_analogy_dict_text": "词 (键) ➔ 定义 (值)",
+            "m21_analogy_contacts_title": "联系人列表", "m21_analogy_contacts_text": "姓名 (键) ➔ 电话号码 (值)",
+            "m21_analogy_python_title": "Python 字典", "m21_analogy_python_text": "<code>'name'</code> (键) ➔ <code>'Alice'</code> (值)",
+            // Operations
+            "m21_ops_title": "⚙️ 常用操作", "m21_ops_subtitle": "让我们看看如何与字典交互。",
+            "m21_op_keys_title": "获取所有键", "m21_op_keys_desc": "仅检索字典中的键。",
+            "m21_op_values_title": "获取所有值", "m21_op_values_desc": "仅检索字典中的值。",
+            "m21_op_items_title": "获取键值对", "m21_op_items_desc": "将键和值作为对（元组）一起检索。",
+            "m21_op_check_title": "检查键是否存在", "m21_op_check_desc": "使用 `in` 关键字查看键是否存在，然后再尝试访问它。",
+            "m21_op_del_title": "删除项", "m21_op_del_desc": "使用 `del` 语句和键删除一个键值对。",
+            // AI Section
+            "m21_ai_title": "🧠 AI 中的字典", "m21_ai_subtitle": "这些操作如何帮助完成 AI 任务。",
+            "m21_ai_context_title": "实际联系：",
+            "m21_ai_data_manip_label": "数据操作：", "m21_ai_algo_label": "算法：",
+            "m21_ai_context_p1": "<strong data-translate=\"m21_ai_data_manip_label\">数据操作：</strong> 字典非常适合存储结构化数据，如模型参数（<code>'learning_rate'</code>: <code>0.01</code>）、特征计数或配置设置。迭代（<code>.items()</code>）可以让你轻松处理这些数据。",
+            "m21_ai_context_p2": "<strong data-translate=\"m21_ai_algo_label\">算法：</strong> 检查键（<code>in</code>）对于缓存结果（记忆化）或在图算法中检查已访问节点等任务至关重要。删除项（<code>del</code>）有助于管理内存或移除已处理的数据。",
+            "m21_ai_context_p3": "让我们模拟更新存储在字典中的模型参数。",
+            "m21_code_comment_update": "# 更新一个参数", "m21_code_comment_delete": "# 也许移除一个未使用的参数",
+            "m21_tooltip_config": "# 用于训练的配置", "m21_tooltip_update": "# 修改现有值", "m21_tooltip_check": "# 删除前检查", "m21_tooltip_delete": "# 移除键值对",
+             // Quiz
+            "m21_quiz_title": "🧠 快速测验！", "quiz_next_button": "下一题",
+            "m21_quiz_q1": "哪个方法只返回字典 `d` 的键？",
+            "m21_quiz_q1_opt1": "<code>d.values()</code>", "m21_quiz_q1_opt2": "<code>d.keys()</code>", "m21_quiz_q1_opt3": "<code>d.items()</code>", "m21_quiz_q1_opt4": "<code>d.get_keys()</code>",
+            "m21_quiz_q2": "如何检查名为 `'status'` 的键是否存在于字典 `info` 中？",
+            "m21_quiz_q2_opt1": "<code>info.has_key('status')</code>", "m21_quiz_q2_opt2": "<code>'status' exists in info</code>", "m21_quiz_q2_opt3": "<code>'status' in info</code>", "m21_quiz_q2_opt4": "<code>info['status'] != None</code>",
+            "m21_quiz_q3": "使用什么语句从字典 `config` 中删除键为 `'temp'` 的项？",
+            "m21_quiz_q3_opt1": "<code>config.remove('temp')</code>", "m21_quiz_q3_opt2": "<code>delete config['temp']</code>", "m21_quiz_q3_opt3": "<code>config.pop('temp')</code>", "m21_quiz_q3_opt4": "<code>del config['temp']</code>",
+            "m21_quiz_q4": "`my_dict.items()` 方法返回什么？",
+            "m21_quiz_q4_opt1": "键的列表。", "m21_quiz_q4_opt2": "值的列表。", "m21_quiz_q4_opt3": "包含键值元组对的视图对象。", "m21_quiz_q4_opt4": "字典本身。",
+            "quiz_feedback_correct": "正确！🎉", "quiz_feedback_incorrect": "不太对！正确答案是：{correctAnswerText}",
+            "quiz_final_score_title": "模块 21 完成！", "quiz_final_score_summary": "你答对了 {score} / {total} 题。",
+            "quiz_final_score_perfect": "太棒了！你已经掌握了字典操作。", "quiz_final_score_good": "做得很好！继续练习这些有用的操作。",
+            // Completion
+            "m21_completion_theory_title": "模块 21 理论完成！",
+            "m21_completion_theory_desc": "出色地完成了字典操作的学习！你正在为 AI 数据处理构建基本技能。<br> 准备好练习了吗？前往<strong>练习区</strong>或接受<strong>高级练习</strong>的挑战。"
+        }
+    };
+
+
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // --- Language Management --- (Identical to Module 0)
+        function getStoredLanguage() { const storedLang = localStorage.getItem('userLanguage'); if (storedLang && translations[storedLang]) return storedLang; const browserLang = navigator.language || navigator.userLanguage; if (browserLang.startsWith('pt')) return 'pt'; if (browserLang.startsWith('zh')) return 'zh'; return 'en'; }
+        function setLanguage(lang) { if (!translations[lang]) lang = 'en'; localStorage.setItem('userLanguage', lang); document.documentElement.lang = lang; translatePage(lang); const langSelect = document.getElementById('languageSelect'); if (langSelect) { langSelect.value = lang; } if(quizArea && currentQuestionIndex < quizData.length) { if (!quizArea.querySelector('[data-translate="quiz_final_score_title"]')) { loadQuestion(); } } }
+        function getTranslation(key, lang, replacements = {}) { let text = translations[lang]?.[key] ?? translations['en']?.[key] ?? `[${key}]`; for (const placeholder in replacements) { const regex = new RegExp(`\\{${placeholder}\\}`, 'g'); text = text.replace(regex, replacements[placeholder]); } return text; }
+        function translatePage(lang) {
+            if (!translations[lang]) lang = 'en';
+             // Translate title
+             const titleEl = document.querySelector('title[data-translate]');
+             if (titleEl) { document.title = getTranslation(titleEl.getAttribute('data-translate'), lang); }
+
+            document.querySelectorAll('[data-translate]').forEach(el => {
+                const key = el.getAttribute('data-translate');
+                const translation = getTranslation(key, lang);
+                 if (el.tagName !== 'TITLE' && el.tagName !== 'OPTION') { // Already handled title, handle options separately if needed
+                    // Basic innerHTML usage for elements that might contain spans, codes, strongs etc.
+                    el.innerHTML = translation;
+                 } else if (el.tagName === 'OPTION') {
+                     el.textContent = translation; // Only text for options
+                 }
+            });
+            document.querySelectorAll('[data-translate-placeholder]').forEach(el => { const key = el.getAttribute('data-translate-placeholder'); el.setAttribute('placeholder', getTranslation(key, lang)); });
+            // Translate tooltips
+             document.querySelectorAll('[data-translate-tooltip]').forEach(el => {
+                 const tooltipKey = el.getAttribute('data-translate-tooltip');
+                 const commentText = getTranslation(tooltipKey, lang);
+                 // Tooltips on code highlights
+                 const tooltipSpan = el.querySelector('.tooltip');
+                 if (tooltipSpan) {
+                     tooltipSpan.textContent = commentText;
+                 }
+                 // Tooltips on code comments
+                 else if (el.classList.contains('code-comment')) {
+                     // Keep the '#' symbol and space
+                     const commentContent = commentText.substring(commentText.indexOf('#') + 1).trim();
+                     el.textContent = '# ' + commentContent;
+                 }
+             });
+        }
+
+        const initialLang = getStoredLanguage();
+
+        // --- Minimal Nav Logic --- (Identical to Module 0)
+        const navToggleButton = document.getElementById('minimal-nav-toggle'); const navPanel = document.getElementById('minimal-nav-panel'); const body = document.body;
+        if (navToggleButton && navPanel) { navToggleButton.addEventListener('click', (event) => { event.stopPropagation(); body.classList.toggle('nav-active'); navToggleButton.setAttribute('aria-expanded', body.classList.contains('nav-active')); }); document.addEventListener('click', (event) => { if (body.classList.contains('nav-active') && !navPanel.contains(event.target) && event.target !== navToggleButton && !navToggleButton.contains(event.target)) { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); } }); navPanel.querySelectorAll('a').forEach(link => { link.addEventListener('click', () => { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); }); }); document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && body.classList.contains('nav-active')) { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); } }); navToggleButton.setAttribute('aria-expanded', 'false'); }
+
+        // --- Language Switcher Setup --- (Identical to Module 0)
+        const langSelect = document.getElementById('languageSelect'); if (langSelect) { langSelect.addEventListener('change', (e) => { setLanguage(e.target.value); }); }
+
+        // --- Intersection Observer for Fade-in Animations --- (Identical to Module 0)
+        const observerOptions = { root: null, rootMargin: '0px', threshold: 0.1 }; const observerCallback = (entries, observer) => { entries.forEach(entry => { if (entry.isIntersecting) { entry.target.classList.add('visible'); /* observer.unobserve(entry.target); Optionally unobserve after first time */ } }); }; const observer = new IntersectionObserver(observerCallback, observerOptions); document.querySelectorAll('.fade-in').forEach(el => { observer.observe(el); });
+         // Observe operation cards specifically if needed for staggered animation, handled by CSS delay here.
+
+        // --- AI Code Demo Simulation ---
+        const aiOutput = document.querySelector('#dicts-in-ai .code-line-output');
+        if (aiOutput) {
+             const aiObserver = new IntersectionObserver((entries) => {
+                 entries.forEach(entry => {
+                     if (entry.isIntersecting && !aiOutput.classList.contains('visible')) {
+                        setTimeout(() => {
+                            // Simulate the output after deletion
+                            aiOutput.innerHTML = `> <span class="code-punctuation">{</span><span class="code-string">'layer1_neurons'</span><span class="code-punctuation">:</span> <span class="code-number">128</span><span class="code-punctuation">,</span> <span class="code-string">'activation'</span><span class="code-punctuation">:</span> <span class="code-string">'ReLU'</span><span class="code-punctuation">,</span> <span class="code-string">'dropout_rate'</span><span class="code-punctuation">:</span> <span class="code-number">0.3</span><span class="code-punctuation">}</span>`;
+                            aiOutput.classList.add('visible');
+                        }, 1500); // Delay matches last code line animation + buffer
+                        aiObserver.unobserve(entry.target);
+                     }
+                 });
+             }, { threshold: 0.5 }); // Trigger when 50% visible
+             aiObserver.observe(document.querySelector('.ai-code-demo .code-block')); // Observe the code block
+        }
+
+
+        // --- Knowledge Check / Quiz ---
+         const quizData = [ // Updated for Module 21
+            { questionKey: "m21_quiz_q1", optionKeys: ["m21_quiz_q1_opt1", "m21_quiz_q1_opt2", "m21_quiz_q1_opt3", "m21_quiz_q1_opt4"], correctAnswer: 1 },
+            { questionKey: "m21_quiz_q2", optionKeys: ["m21_quiz_q2_opt1", "m21_quiz_q2_opt2", "m21_quiz_q2_opt3", "m21_quiz_q2_opt4"], correctAnswer: 2 },
+            { questionKey: "m21_quiz_q3", optionKeys: ["m21_quiz_q3_opt1", "m21_quiz_q3_opt2", "m21_quiz_q3_opt3", "m21_quiz_q3_opt4"], correctAnswer: 3 },
+            { questionKey: "m21_quiz_q4", optionKeys: ["m21_quiz_q4_opt1", "m21_quiz_q4_opt2", "m21_quiz_q4_opt3", "m21_quiz_q4_opt4"], correctAnswer: 2 }
+        ];
+
+        let currentQuestionIndex = 0; let score = 0; const quizArea = document.getElementById('quiz-area'); const feedbackArea = document.getElementById('quiz-feedback'); const nextButton = document.getElementById('next-question-btn');
+
+        function loadQuestion() {
+             const currentLang = getStoredLanguage();
+             if (!quizArea || currentQuestionIndex >= quizData.length) { if (quizArea && !quizArea.querySelector('[data-translate="quiz_final_score_title"]')) { showFinalScore(); } return; }
+             const currentQuiz = quizData[currentQuestionIndex];
+             const questionText = getTranslation(currentQuiz.questionKey, currentLang);
+             quizArea.innerHTML = `
+                 <div class="quiz-question">${currentQuestionIndex + 1}. ${questionText}</div>
+                 <div class="quiz-options">
+                     ${currentQuiz.optionKeys.map((optionKey, index) => `
+                         <button class="quiz-option-btn" data-index="${index}">${getTranslation(optionKey, currentLang)}</button>
+                     `).join('')}
+                 </div>`;
+             feedbackArea.classList.remove('visible', 'correct', 'incorrect'); feedbackArea.textContent = ''; nextButton.classList.remove('visible'); nextButton.disabled = true;
+             document.querySelectorAll('.quiz-option-btn').forEach(button => { button.addEventListener('click', handleAnswer); });
+         }
+
+        function handleAnswer(event) {
+             const currentLang = getStoredLanguage(); const selectedButton = event.target; const selectedIndex = parseInt(selectedButton.dataset.index); const correctIndex = quizData[currentQuestionIndex].correctAnswer; const correctOptionKey = quizData[currentQuestionIndex].optionKeys[correctIndex]; const correctAnswerText = getTranslation(correctOptionKey, currentLang);
+             document.querySelectorAll('.quiz-option-btn').forEach(btn => { btn.disabled = true; btn.classList.remove('shake'); });
+             feedbackArea.classList.add('visible');
+             if (selectedIndex === correctIndex) { selectedButton.classList.add('correct'); feedbackArea.innerHTML = getTranslation('quiz_feedback_correct', currentLang); feedbackArea.classList.add('correct'); feedbackArea.classList.remove('incorrect'); score++; selectedButton.classList.add('tada-anim'); }
+             else { selectedButton.classList.add('incorrect'); feedbackArea.innerHTML = getTranslation('quiz_feedback_incorrect', currentLang, { correctAnswerText: `<strong>${correctAnswerText}</strong>` }); feedbackArea.classList.add('incorrect'); feedbackArea.classList.remove('correct'); const correctButton = document.querySelector(`.quiz-option-btn[data-index="${correctIndex}"]`); if(correctButton) correctButton.classList.add('correct'); selectedButton.classList.add('shake'); }
+              selectedButton.addEventListener('animationend', () => { selectedButton.classList.remove('tada-anim', 'shake'); }, { once: true });
+             nextButton.classList.add('visible'); nextButton.disabled = false;
+         }
+
+         function showFinalScore() {
+              const currentLang = getStoredLanguage(); const totalQuestions = quizData.length; let resultMessageKey = score === totalQuestions ? 'quiz_final_score_perfect' : 'quiz_final_score_good';
+              quizArea.innerHTML = `
+                  <div class="quiz-question text-center" data-translate="quiz_final_score_title" style="font-size: 1.5rem;">${getTranslation('quiz_final_score_title', currentLang)}</div>
+                  <p class="text-center" style="font-size: 1.2rem; margin-bottom: 1rem;">${getTranslation('quiz_final_score_summary', currentLang, { score: score, total: totalQuestions })}</p>
+                  <p class="text-center" style="color: ${score === totalQuestions ? 'var(--success-color)' : 'var(--primary-color)'}; font-weight: bold;">${getTranslation(resultMessageKey, currentLang)}</p>`;
+              feedbackArea.classList.remove('visible'); nextButton.style.display = 'none'; quizArea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+
+        nextButton.addEventListener('click', () => { currentQuestionIndex++; loadQuestion(); });
+
+        // --- Initial Load ---
+        setLanguage(initialLang); // Apply language FIRST
+        if (quizArea) { loadQuestion(); } // Initial quiz load
+
+        // Trigger initial animations for elements already in view (handled by Intersection Observer now)
+
+    }); // End DOMContentLoaded
+    </script>
+
+</body>
+</html>

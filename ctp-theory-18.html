@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<!-- Language set by JS -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Title set by JS -->
+    <title data-translate="page_title">Module 18: Function Return Values</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* --- Reset & Base Styles --- */
+        :root {
+            --primary-color: #007bff;
+            --secondary-color: #6c757d;
+            --background-light: #f8f9fa;
+            --background-dark: #343a40;
+            --text-light: #f8f9fa;
+            --text-dark: #212529;
+            --accent-color: #ffc107;
+            --success-color: #28a745;
+            --error-color: #dc3545;
+            --border-radius: 8px;
+            --transition-speed: 0.3s;
+            --font-body: 'Roboto', sans-serif;
+            --font-title: 'Orbitron', sans-serif;
+             /* Nav Colors */
+            --nav-primary: #6e48aa;
+            --nav-success: #4cc9f0;
+            --nav-dark: #1a1a2e;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; font-size: 16px; }
+        body {
+            font-family: var(--font-body); line-height: 1.7;
+            background-color: var(--background-light); color: var(--text-dark);
+            overflow-x: hidden; display: flex; flex-direction: column;
+            min-height: 100vh;
+        }
+        main { flex-grow: 1; }
+
+        /* --- Utility Classes --- */
+        .container { max-width: 960px; margin: 0 auto; padding: 0 15px; }
+        .text-center { text-align: center; }
+        .highlight { color: var(--primary-color); font-weight: bold; }
+        .fade-in { opacity: 0; transform: translateY(20px); animation: fadeInAnimation 0.8s ease-out forwards; }
+        .fade-in.delay-1 { animation-delay: 0.2s; } .fade-in.delay-2 { animation-delay: 0.4s; }
+        .fade-in.delay-3 { animation-delay: 0.6s; } .fade-in.delay-4 { animation-delay: 0.8s; }
+        .fade-in.delay-5 { animation-delay: 1.0s; }
+        .button-group { margin-top: 2rem; display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; }
+
+        /* Basic Button Styles */
+        .action-button {
+             display: inline-flex; align-items: center; justify-content: center; gap: 0.5em;
+             padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold; color: var(--text-light);
+             background-color: var(--primary-color); border: none; border-radius: var(--border-radius);
+             cursor: pointer; transition: background-color var(--transition-speed), transform var(--transition-speed), filter var(--transition-speed), box-shadow var(--transition-speed);
+             margin-top: 1rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1); text-decoration: none; line-height: 1.2;
+        }
+        .action-button i.fas { /* Aligned by flex */ }
+        .action-button:hover:not(:disabled) { background-color: #0056b3; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+        .action-button:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none; box-shadow: none; opacity: 0.7; }
+        .action-button.success { background-color: var(--success-color); }
+        .action-button.success:hover:not(:disabled) { background-color: #218838; }
+        .action-button.secondary { background-color: var(--secondary-color); }
+        .action-button.secondary:hover:not(:disabled) { background-color: #5a6268; }
+        .action-button:active:not(:disabled) { transform: translateY(1px) scale(0.98); filter: brightness(0.95); }
+
+        /* --- Animations --- */
+        @keyframes fadeInAnimation { to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); } 50% { transform: scale(1.03); box-shadow: 0 0 15px rgba(0, 123, 255, 0.6); } 100% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); } }
+        @keyframes code-line-anim { from { width: 0; opacity: 0; } to { width: 100%; opacity: 1; } }
+        @keyframes tada { from { transform: scale3d(1, 1, 1); } 10%, 20% { transform: scale3d(.9, .9, .9) rotate3d(0, 0, 1, -3deg); } 30%, 50%, 70%, 90% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, 3deg); } 40%, 60%, 80% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, -3deg); } to { transform: scale3d(1, 1, 1); } }
+        .tada-anim { animation: tada 1s ease; }
+        @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
+        @keyframes iconAppearCorrect { 0% { transform: scale(0.5) rotate(-15deg); opacity: 0; } 60% { transform: scale(1.2) rotate(5deg); opacity: 1; } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
+
+        /* --- Minimal Retractable Nav --- */
+        .minimal-nav-button { position: fixed; top: 15px; right: 15px; z-index: 1001; background-color: rgba(52, 58, 64, 0.75); color: var(--text-light); border: none; border-radius: var(--border-radius); padding: 8px 12px; cursor: pointer; transition: background-color var(--transition-speed), opacity var(--transition-speed), transform var(--transition-speed); font-size: 1.1rem; opacity: 0.6; box-shadow: 0 2px 5px rgba(0,0,0,0.2); line-height: 1; }
+        .minimal-nav-button:hover { background-color: rgba(52, 58, 64, 0.95); opacity: 1; transform: scale(1.05); }
+        .minimal-nav { position: fixed; top: 60px; right: 15px; z-index: 1000; background-color: var(--background-dark); border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.3); padding: 0.8rem; opacity: 0; transform: translateY(-15px) scale(0.95); transform-origin: top right; pointer-events: none; transition: opacity var(--transition-speed) ease, transform var(--transition-speed) ease; min-width: 200px; }
+        body.nav-active .minimal-nav { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+        .minimal-nav ul { list-style: none; margin: 0; padding: 0; }
+        .minimal-nav ul li { margin-bottom: 5px; } .minimal-nav ul li:last-child { margin-bottom: 0; }
+        .minimal-nav ul li a { display: flex; align-items: center; color: var(--text-light); text-decoration: none; padding: 0.6rem 1rem; border-radius: 4px; transition: background-color var(--transition-speed), color var(--transition-speed); white-space: nowrap; font-weight: 400; font-size: 0.95rem; }
+        .minimal-nav ul li a i.fas { margin-right: 10px; width: 1.2em; text-align: center; opacity: 0.8; transition: opacity var(--transition-speed); }
+        .minimal-nav ul li a:hover { background-color: var(--primary-color); color: var(--text-light); }
+        .minimal-nav ul li a:hover i.fas { opacity: 1; }
+        .minimal-nav .language-switcher-item { padding: 0.5rem 1rem; border-top: 1px solid var(--secondary-color); margin-top: 8px; padding-top: 13px; }
+        #languageSelect { width: 100%; background: rgba(255,255,255,0.1); color: white; border: 1px solid var(--nav-success); border-radius: 5px; padding: 6px 30px 6px 12px; cursor: pointer; font-size: 0.9rem; appearance: none; -webkit-appearance: none; -moz-appearance: none; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%234CC9F0%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right 10px center; background-size: 10px auto; transition: background-color 0.3s ease; }
+        #languageSelect:hover { background-color: rgba(255,255,255,0.15); }
+        #languageSelect option { background: var(--nav-dark); color: var(--text-light); }
+
+        /* --- Header --- */
+        .main-header { background: linear-gradient(135deg, var(--primary-color), #0056b3); color: var(--text-light); padding: 4rem 0 6rem; text-align: center; position: relative; overflow: hidden; }
+        .main-header h1 { font-family: var(--font-title); font-size: 3rem; margin-bottom: 0.5rem; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); animation: fadeInAnimation 1s ease-out; }
+        .main-header p { font-size: 1.2rem; font-weight: 300; opacity: 0.9; animation: fadeInAnimation 1s ease-out 0.3s forwards; opacity: 0; }
+        .header-shape { position: absolute; border-radius: 50%; background-color: rgba(255, 255, 255, 0.1); animation: pulse 5s infinite ease-in-out alternate; }
+        .shape1 { width: 150px; height: 150px; bottom: -50px; left: 10%; animation-duration: 6s; }
+        .shape2 { width: 80px; height: 80px; top: 50px; right: 15%; animation-duration: 4s; }
+        .shape3 { width: 50px; height: 50px; bottom: 20px; right: 30%; animation-duration: 7s; }
+
+        /* --- Section Styling --- */
+        section { padding: 4rem 0; border-bottom: 1px solid #eee; }
+        main section:last-of-type { border-bottom: none; }
+        section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); margin-bottom: 2rem; text-align: center; position: relative; padding-bottom: 10px; }
+        section h2::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 60px; height: 4px; background-color: var(--accent-color); border-radius: 2px; }
+
+        /* --- Welcome Section (#introduction) --- */
+        #introduction p { font-size: 1.1rem; max-width: 750px; margin: 0 auto 1rem; text-align: center; }
+
+        /* --- What is Return Section --- */
+        #what-is-return .return-analogy {
+            display: flex; align-items: center; justify-content: space-around;
+            background-color: #fff; padding: 2rem; border-radius: var(--border-radius);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08); margin-top: 2rem; flex-wrap: wrap; gap: 1rem;
+        }
+        .analogy-part { text-align: center; max-width: 220px; opacity: 0; transform: scale(0.9); transition: opacity 0.5s ease, transform 0.5s ease; }
+        .analogy-part.visible { opacity: 1; transform: scale(1); }
+        .analogy-icon { font-size: 3rem; margin-bottom: 1rem; color: var(--primary-color); display: inline-block; transition: transform var(--transition-speed) ease; }
+        .analogy-part:hover .analogy-icon { transform: scale(1.2) rotate(5deg); }
+        .analogy-arrow { font-size: 2.5rem; color: var(--secondary-color); opacity: 0; transition: opacity 0.5s ease 0.3s; }
+        .analogy-arrow.visible { opacity: 0.7; }
+
+        /* --- Why Return Important Section --- */
+        #why-return-important .features {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem; margin-top: 2rem;
+        }
+        .feature-card { background-color: #fff; padding: 1.5rem; border-radius: var(--border-radius); box-shadow: 0 4px 10px rgba(0,0,0,0.07); text-align: center; transition: transform var(--transition-speed) ease, box-shadow var(--transition-speed) ease; cursor: pointer; opacity: 0; transform: translateY(20px); animation: fadeInAnimation 0.6s ease-out forwards; }
+        .feature-card:nth-child(1) { animation-delay: 0.2s; } .feature-card:nth-child(2) { animation-delay: 0.4s; } .feature-card:nth-child(3) { animation-delay: 0.6s; }
+        .feature-card:hover { transform: translateY(-5px) scale(1.02); box-shadow: 0 8px 20px rgba(0,0,0,0.12); }
+        .feature-icon { font-size: 2.5rem; margin-bottom: 1rem; color: var(--primary-color); }
+        .feature-card h3 { font-family: var(--font-body); font-weight: 700; font-size: 1.3rem; margin-bottom: 0.8rem; color: var(--text-dark); }
+        .feature-details { max-height: 0; overflow: hidden; transition: max-height 0.5s ease-out, margin-top 0.5s ease-out; font-size: 0.95rem; color: var(--secondary-color); margin-top: 0; }
+        .feature-card.active .feature-details { max-height: 200px; margin-top: 1rem; }
+
+        /* --- Return in Action Section --- */
+        #return-in-action .explanation { display: flex; gap: 2rem; align-items: flex-start; margin-top: 2rem; flex-wrap: wrap; }
+        .return-demo { flex-basis: 55%; background-color: var(--background-dark); color: #eee; padding: 2rem; border-radius: var(--border-radius); font-family: 'Courier New', Courier, monospace; position: relative; min-height: 220px; /* Increased height */ box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+        .return-demo .code-line { margin-bottom: 0.5rem; white-space: pre-wrap; /* Allow wrapping */ }
+        .return-demo .code-line.input { opacity: 0; animation: code-line-anim 0.8s ease forwards; }
+        .return-demo .code-line.input.delay-1 { animation-delay: 0.5s; }
+        .return-demo .code-line.input.delay-2 { animation-delay: 1.0s; }
+        .return-demo .code-line.input.delay-3 { animation-delay: 1.5s; }
+        .return-demo .code-line.input.delay-4 { animation-delay: 2.0s; }
+        .return-demo .code-line-output { color: var(--accent-color); font-weight: bold; font-size: 1.1rem; border-top: 1px dashed var(--secondary-color); padding-top: 1rem; margin-top: 1.5rem; opacity: 0; transition: opacity 0.8s ease 2.8s; /* Delay appearance */ }
+        .return-demo .code-line-output.visible { opacity: 1; }
+        .return-action-text { flex-basis: 40%; font-size: 1.05rem; }
+        .return-action-text p { margin-bottom: 1rem; }
+        .code-highlight { background-color: rgba(0, 123, 255, 0.1); color: #0056b3; padding: 0.2em 0.4em; border-radius: 4px; font-family: 'Courier New', Courier, monospace; font-weight: bold; cursor: pointer; transition: background-color var(--transition-speed); display: inline-block; position: relative; }
+        .code-highlight:hover { background-color: rgba(0, 123, 255, 0.2); }
+        .tooltip { visibility: hidden; width: 160px; background-color: var(--background-dark); color: var(--text-light); text-align: center; border-radius: 6px; padding: 8px 5px; position: absolute; z-index: 1; bottom: 125%; left: 50%; margin-left: -80px; opacity: 0; transition: opacity 0.3s; font-family: var(--font-body); font-size: 0.9rem; font-weight: normal; pointer-events: none; }
+        .tooltip::after { content: ""; position: absolute; top: 100%; left: 50%; margin-left: -5px; border-width: 5px; border-style: solid; border-color: var(--background-dark) transparent transparent transparent; }
+        .code-highlight:hover .tooltip { visibility: visible; opacity: 1; }
+        .code-keyword { color: #569cd6; font-weight: bold; } .code-string { color: #ce9178; } .code-comment { color: #6a9955; font-style: italic; } .code-function { color: #dcdcaa; } .code-number { color: #b5cea8; } .code-variable { color: #9cdcfe; } .code-operator { color: #d4d4d4; }
+
+        /* --- Knowledge Check Section --- */
+        #knowledge-check { background-color: #e9ecef; }
+        .quiz-container { background-color: #fff; padding: 2rem; border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.1); max-width: 700px; margin: 2rem auto 0; }
+        .quiz-question { font-size: 1.2rem; font-weight: bold; margin-bottom: 1.5rem; color: var(--text-dark); }
+        .quiz-options button { display: block; width: 100%; padding: 1rem; margin-bottom: 1rem; text-align: left; font-size: 1rem; background-color: #f8f9fa; border: 1px solid #ced4da; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), border-color var(--transition-speed), transform var(--transition-speed); }
+        .quiz-options button:not(:disabled):hover { background-color: #e2e6ea; border-color: #adb5bd; transform: translateX(5px); }
+        .quiz-options button:disabled { cursor: default; opacity: 0.7; }
+        .quiz-options button.correct { background-color: #d4edda; border-color: var(--success-color); color: #155724; font-weight: bold; }
+        .quiz-options button.incorrect { background-color: #f8d7da; border-color: var(--error-color); color: #721c24; font-weight: bold; }
+        .quiz-options button.incorrect.shake { animation: shake 0.5s ease; }
+        .quiz-feedback { margin-top: 1.5rem; padding: 1rem; border-radius: var(--border-radius); font-weight: bold; text-align: center; opacity: 0; transition: opacity 0.5s ease; height: 0; overflow: hidden; }
+        .quiz-feedback.visible { opacity: 1; height: auto; margin-bottom: 1rem; }
+        .quiz-feedback.correct { background-color: #d4edda; color: #155724; }
+        .quiz-feedback.incorrect { background-color: #f8d7da; color: #721c24; }
+        #next-question-btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5em; margin: 1.5rem auto 0; padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold; color: var(--text-light); background-color: var(--primary-color); border: none; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), transform var(--transition-speed), opacity 0.3s, visibility 0.3s; opacity: 0; visibility: hidden; }
+        #next-question-btn:hover { background-color: #0056b3; transform: scale(1.05); }
+        #next-question-btn.visible { opacity: 1; visibility: visible; }
+
+        /* --- Completion Section Styling --- */
+        .completion-section { padding: 4rem 0; text-align: center; background-color: var(--background-light); }
+        .completion-section .icon { font-size: 4rem; color: var(--success-color); margin-bottom: 1rem; display: inline-block; opacity: 0; animation: iconAppearCorrect 1s ease-out 0.5s forwards; }
+        .completion-section .icon .fas + .fas { margin-left: 0.75rem; }
+        .completion-section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); margin-bottom: 1rem; }
+        .completion-section h2::after { display: none; }
+        .completion-section p { font-size: 1.1rem; margin-top: 1rem; color: var(--secondary-color); max-width: 700px; margin-left: auto; margin-right: auto; line-height: 1.8; }
+        .completion-section .button-group { margin-top: 2.5rem; }
+
+        /* --- Footer --- */
+        .main-footer { background-color: var(--background-dark); /* No color needed if empty */ padding: 0; /* Remove padding */ margin-top: auto; /* Keep for layout */ height: 0; /* Explicitly set height to 0 */ overflow: hidden; /* Ensure nothing spills out */ }
+
+        /* --- Responsive Design --- */
+        @media (max-width: 768px) {
+            html { font-size: 15px; }
+            .main-header h1 { font-size: 2.5rem; } .main-header p { font-size: 1.1rem; }
+            section h2 { font-size: 1.8rem; }
+            .return-analogy { flex-direction: column; gap: 1.5rem; }
+            .analogy-arrow { transform: rotate(90deg); margin: 1rem 0; }
+            #why-return-important .features { grid-template-columns: 1fr; }
+            #return-in-action .explanation { flex-direction: column; }
+            .return-demo, .return-action-text { flex-basis: 100%; }
+            .minimal-nav { min-width: 180px; } .minimal-nav ul li a { padding: 0.6rem 0.8rem; }
+            #languageSelect { font-size: 0.85rem; padding: 5px 25px 5px 10px;}
+            .completion-section h2 { font-size: 2rem; }
+            .completion-section .button-group { flex-direction: column; align-items: center; gap: 0.8rem; }
+            .completion-section .action-button { width: 80%; max-width: 350px; margin-top: 0; }
+        }
+        @media (max-width: 480px) {
+            html { font-size: 14px; }
+            .main-header h1 { font-size: 2rem; } .main-header p { font-size: 1rem; }
+            section h2 { font-size: 1.6rem; }
+            .quiz-options button { padding: 0.8rem; font-size: 0.95rem; }
+            .tooltip { width: 120px; margin-left: -60px; font-size: 0.8rem;}
+            .minimal-nav-button { top: 10px; right: 10px; padding: 6px 10px; font-size: 1rem; }
+            .minimal-nav { top: 48px; right: 10px; min-width: 160px; }
+            .minimal-nav ul li a { padding: 0.5rem 0.7rem; font-size: 0.9rem;}
+            .minimal-nav ul li a i.fas { margin-right: 8px; }
+            #languageSelect { font-size: 0.8rem; padding: 4px 20px 4px 8px;}
+            .completion-section .icon { font-size: 3.5rem; }
+            .completion-section h2 { font-size: 1.8rem; } .completion-section p { font-size: 1rem; }
+            .completion-section .action-button { width: 90%; max-width: 300px; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- ========= Minimal Nav Handle ========= -->
+    <button id="minimal-nav-toggle" class="minimal-nav-button" aria-label="Toggle Navigation Menu">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- ========= Minimal Nav Panel (with Language Switcher) ========= -->
+    <nav id="minimal-nav-panel" class="minimal-nav">
+        <ul>
+            <!-- Links to OTHER main pages for MODULE 18 -->
+            <li><a href="ctp-practice-18.html"><i class="fas fa-pencil-alt fa-fw"></i> <span data-translate="nav_practice">Practice</span></a></li>
+            <li><a href="ctp-advanced-18.html"><i class="fas fa-flask fa-fw"></i> <span data-translate="nav_advanced">Advanced Practice</span></a></li>
+            <li><a href="ctp-dashboard.html"><i class="fas fa-list fa-fw"></i> <span data-translate="nav_menu">Course Menu</span></a></li>
+             <hr style="border: none; border-top: 1px solid var(--secondary-color); margin: 8px 0;">
+             <!-- Links to sections on THIS page -->
+             <li><a href="#introduction"><i class="fas fa-door-open fa-fw"></i> <span data-translate="nav_introduction">Introduction</span></a></li>
+             <li><a href="#what-is-return"><i class="fas fa-gift fa-fw"></i> <span data-translate="nav_what_is_return">What is Return?</span></a></li>
+             <li><a href="#why-return-important"><i class="fas fa-cogs fa-fw"></i> <span data-translate="nav_why_important">Why Important?</span></a></li>
+             <li><a href="#return-in-action"><i class="fas fa-code fa-fw"></i> <span data-translate="nav_in_action">In Action</span></a></li>
+             <li><a href="#knowledge-check"><i class="fas fa-check-double fa-fw"></i> <span data-translate="nav_quiz">Knowledge Check</span></a></li>
+            <!-- Language Switcher Item -->
+            <li class="language-switcher-item">
+                 <select id="languageSelect" aria-label="Select Language">
+                     <option value="en" data-translate="lang_en">🇬🇧 English</option>
+                     <option value="pt" data-translate="lang_pt">🇧🇷 Português</option>
+                     <option value="zh" data-translate="lang_zh">🇨🇳 中文</option>
+                 </select>
+            </li>
+        </ul>
+    </nav>
+
+    <header class="main-header">
+        <!-- Decorative shapes -->
+        <div class="header-shape shape1"></div> <div class="header-shape shape2"></div> <div class="header-shape shape3"></div>
+        <div class="container">
+            <h1 data-translate="header_title">Module 18: Giving Back Results</h1>
+            <p data-translate="header_subtitle">Learn how functions return values using the `return` statement.</p>
+        </div>
+    </header>
+
+    <main>
+        <!-- ========= Introduction Section ========= -->
+        <section id="introduction">
+            <div class="container">
+                <h2 class="fade-in" data-translate="introduction_title">📦 Functions That Give Back</h2>
+                <p class="fade-in delay-1" data-translate="introduction_p1">
+                    So far, our functions have performed actions, like printing. But often, we need a function to calculate something and give the <span class="highlight">result back</span> to the part of the code that called it.
+                </p>
+                <p class="fade-in delay-2" data-translate="introduction_p2">
+                    This is where the <code class="code-keyword">return</code> statement comes in. It's fundamental for building useful, reusable code blocks, connecting to <span class="highlight">Abstraction</span> (hiding details) and <span class="highlight">Decomposition</span> (breaking down problems).
+                </p>
+            </div>
+        </section>
+
+        <!-- ========= What is Return Section ========= -->
+        <section id="what-is-return">
+            <div class="container">
+                <h2 class="fade-in" data-translate="what_is_return_title">🎁 What Does `return` Do?</h2>
+                <p class="text-center fade-in delay-1" data-translate="what_is_return_subtitle">Think of it like a vending machine giving you an item.</p>
+
+                <div class="return-analogy fade-in delay-2">
+                    <div class="analogy-part">
+                        <span class="analogy-icon">📞</span>
+                        <h3 data-translate="analogy_call_title">You Call the Function</h3>
+                        <p data-translate="analogy_call_text">You ask the function to do its job (like selecting an item).</p>
+                    </div>
+                    <div class="analogy-arrow">➡️</div>
+                    <div class="analogy-part">
+                        <span class="analogy-icon">⚙️</span>
+                        <h3 data-translate="analogy_process_title">Function Works</h3>
+                        <p data-translate="analogy_process_text">It performs calculations or tasks (machine gets the item).</p>
+                    </div>
+                     <div class="analogy-arrow">➡️</div>
+                    <div class="analogy-part">
+                        <span class="analogy-icon">🎁</span>
+                        <h3 data-translate="analogy_return_title">`return` Sends Back</h3>
+                        <p data-translate="analogy_return_text">The <code class="code-keyword">return</code> keyword sends the calculated value back (you receive the item).</p>
+                    </div>
+                </div>
+
+                 <p class="text-center fade-in delay-3" style="margin-top: 2rem;" data-translate="what_is_return_conclusion">The <code class="code-keyword">return</code> statement specifies the value a function call will produce.</p>
+
+            </div>
+        </section>
+
+        <!-- ========= Why Return Important Section ========= -->
+        <section id="why-return-important">
+            <div class="container">
+                <h2 class="fade-in" data-translate="why_return_important_title">⚙️ Why Are Return Values Crucial?</h2>
+                <p class="text-center fade-in delay-1" data-translate="why_return_important_subtitle">Returning values makes functions much more powerful and flexible.</p>
+
+                <div class="features">
+                    <!-- Card 1: Reusability/Decomposition -->
+                    <div class="feature-card" id="card-reusability">
+                        <span class="feature-icon">🧩</span>
+                        <h3 data-translate="feature_reusable_title">Build Complex Logic</h3>
+                         <div class="feature-details">
+                            <p data-translate="feature_reusable_text">The output of one function can become the input for another. This allows <span class="highlight">decomposition</span> – breaking big problems into smaller, manageable function calls.</p>
+                        </div>
+                    </div>
+
+                    <!-- Card 2: Usability/Abstraction -->
+                    <div class="feature-card" id="card-abstraction">
+                        <span class="feature-icon">🧱</span>
+                        <h3 data-translate="feature_abstraction_title">Use Results Elsewhere</h3>
+                         <div class="feature-details">
+                            <p data-translate="feature_abstraction_text">You can store the returned value in a variable and use it later in your program, promoting <span class="highlight">abstraction</span> by using the result without needing to know *how* it was calculated.</p>
+                        </div>
+                    </div>
+
+                    <!-- Card 3: Flexibility -->
+                    <div class="feature-card" id="card-flexibility">
+                        <span class="feature-icon">🔧</span>
+                        <h3 data-translate="feature_flexibility_title">Flexible Outputs</h3>
+                        <div class="feature-details">
+                            <p data-translate="feature_flexibility_text">Functions can return various data types (numbers, strings, lists, booleans, etc.), making them adaptable to different needs.</p>
+                        </div>
+                    </div>
+                </div>
+                 <p class="text-center fade-in delay-4" style="margin-top: 2rem;" data-translate="feature_cta">Click cards to see why `return` is essential!</p>
+            </div>
+        </section>
+
+
+        <!-- ========= Return in Action Section ========= -->
+        <section id="return-in-action">
+             <div class="container">
+                 <h2 class="fade-in" data-translate="return_in_action_title">🎬 `return` in Action!</h2>
+                 <p class="text-center fade-in delay-1" data-translate="return_in_action_subtitle">Let's see a simple function that adds two numbers and returns the sum.</p>
+
+                 <div class="explanation fade-in delay-2">
+                     <div class="return-demo">
+                        <div class="code-line input"><span class="code-keyword">def</span> <span class="code-function">add_numbers</span>(<span class="code-variable">a</span>, <span class="code-variable">b</span>):</div>
+                        <div class="code-line input delay-1" style="padding-left: 2em;"><span class="code-comment" data-translate="code_add_comment"># This function takes two numbers and returns their sum</span></div>
+                        <div class="code-line input delay-2" style="padding-left: 2em;"><span class="code-keyword">return</span> <span class="code-variable">a</span> <span class="code-operator">+</span> <span class="code-variable">b</span></div>
+                        <div class="code-line input delay-3" style="height: 1em;"></div> <!-- Spacer -->
+                        <div class="code-line input delay-4"><span class="code-variable">result</span> <span class="code-operator">=</span> <span class="code-function">add_numbers</span>(<span class="code-number">5</span>, <span class="code-number">3</span>)</div>
+                        <div class="code-line-output">
+                            <!-- Output will appear here via JS -->
+                        </div>
+                     </div>
+                     <div class="return-action-text fade-in delay-3">
+                         <p data-translate="return_action_text_p1">We define a function <code class="code-function">add_numbers</code> that takes two parameters, <code class="code-variable">a</code> and <code class="code-variable">b</code>.</p>
+                         <p data-translate="return_action_text_p2">
+                             The keyword
+                             <span class="code-highlight code-keyword" data-translate-tooltip="tooltip_return">return<span class="tooltip">Sends a value back from the function</span></span>
+                             tells Python what value to send back when the function finishes. Here, it sends back the sum of <code class="code-variable">a</code> and <code class="code-variable">b</code>.
+                         </p>
+                         <p data-translate="return_action_text_p3">
+                             We call the function with <code class="code-number">5</code> and <code class="code-number">3</code>. The function calculates <code class="code-number">8</code>.
+                         </p>
+                         <p data-translate="return_action_text_p4">
+                            The returned value (<code class="code-number">8</code>) is then stored in the variable
+                            <span class="code-highlight code-variable" data-translate-tooltip="tooltip_result">result<span class="tooltip">Stores the value returned by the function</span></span>. We could now print or use this `result` variable.
+                         </p>
+                     </div>
+                 </div>
+             </div>
+        </section>
+
+        <!-- ========= Knowledge Check Section ========= -->
+        <section id="knowledge-check">
+            <div class="container">
+                <h2 class="fade-in" data-translate="quiz_title">🧠 Quick Check!</h2>
+                <div class="quiz-container fade-in delay-1">
+                    <div id="quiz-area">
+                        <!-- Quiz questions loaded by JS -->
+                    </div>
+                    <div id="quiz-feedback" class="quiz-feedback">
+                        <!-- Feedback shown here -->
+                    </div>
+                    <button id="next-question-btn" data-translate="quiz_next_button">Next Question</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========= Completion Section ========= -->
+        <section class="completion-section">
+            <div class="container">
+                 <div class="icon"> <!-- Animation via CSS -->
+                    <i class="fas fa-check-double"></i>
+                    <i class="fas fa-box-open"></i>
+                    <i class="fas fa-star"></i>
+                </div>
+                <h2 class="fade-in delay-1" data-translate="completion_theory_title">Module 18 Theory Complete!</h2>
+                <p class="fade-in delay-2" data-translate="completion_theory_desc">
+                    You've learned how functions give back results using `return`! This is key for building modular AI components. <br>
+                    Time to practice! Head to the <strong>Practice Zone</strong> or try the <strong>Advanced Practice</strong>.
+                </p>
+                <div class="button-group">
+                    <!-- Updated Links for Module 18 -->
+                    <a href="ctp-dashboard.html" class="action-button secondary fade-in delay-3"><i class="fas fa-list"></i> <span data-translate="nav_menu">Course Menu</span></a>
+                    <a href="ctp-practice-18.html" class="action-button success fade-in delay-4"><i class="fas fa-pencil-alt"></i> <span data-translate="nav_practice">Start Practice</span></a>
+                    <a href="ctp-advanced-18.html" class="action-button secondary fade-in delay-5"><i class="fas fa-flask"></i> <span data-translate="nav_advanced">Advanced Practice</span></a>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="main-footer">
+        <!-- Content removed as requested -->
+    </footer>
+
+    <script>
+    // --- Translations Object ---
+    const translations = {
+        en: {
+            "page_title": "Module 18: Function Return Values",
+            "nav_practice": "Start Practice", "nav_advanced": "Advanced Practice", "nav_menu": "Course Menu",
+            "nav_introduction": "Introduction", "nav_what_is_return": "What is Return?", "nav_why_important": "Why Important?", "nav_in_action": "In Action", "nav_quiz": "Knowledge Check",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title": "Module 18: Giving Back Results", "header_subtitle": "Learn how functions return values using the `return` statement.",
+            "introduction_title": "📦 Functions That Give Back",
+            "introduction_p1": "So far, our functions have performed actions, like printing. But often, we need a function to calculate something and give the <span class=\"highlight\">result back</span> to the part of the code that called it.",
+            "introduction_p2": "This is where the <code class=\"code-keyword\">return</code> statement comes in. It's fundamental for building useful, reusable code blocks, connecting to <span class=\"highlight\">Abstraction</span> (hiding details) and <span class=\"highlight\">Decomposition</span> (breaking down problems).",
+            "what_is_return_title": "🎁 What Does `return` Do?", "what_is_return_subtitle": "Think of it like a vending machine giving you an item.",
+            "analogy_call_title": "You Call the Function", "analogy_call_text": "You ask the function to do its job (like selecting an item).",
+            "analogy_process_title": "Function Works", "analogy_process_text": "It performs calculations or tasks (machine gets the item).",
+            "analogy_return_title": "`return` Sends Back", "analogy_return_text": "The <code class=\"code-keyword\">return</code> keyword sends the calculated value back (you receive the item).",
+            "what_is_return_conclusion": "The <code class=\"code-keyword\">return</code> statement specifies the value a function call will produce.",
+            "why_return_important_title": "⚙️ Why Are Return Values Crucial?", "why_return_important_subtitle": "Returning values makes functions much more powerful and flexible.",
+            "feature_reusable_title": "Build Complex Logic", "feature_reusable_text": "The output of one function can become the input for another. This allows <span class=\"highlight\">decomposition</span> – breaking big problems into smaller, manageable function calls.",
+            "feature_abstraction_title": "Use Results Elsewhere", "feature_abstraction_text": "You can store the returned value in a variable and use it later in your program, promoting <span class=\"highlight\">abstraction</span> by using the result without needing to know *how* it was calculated.",
+            "feature_flexibility_title": "Flexible Outputs", "feature_flexibility_text": "Functions can return various data types (numbers, strings, lists, booleans, etc.), making them adaptable to different needs.",
+            "feature_cta": "Click cards to see why `return` is essential!",
+            "return_in_action_title": "🎬 `return` in Action!", "return_in_action_subtitle": "Let's see a simple function that adds two numbers and returns the sum.",
+            "code_add_comment": "# This function takes two numbers and returns their sum",
+            "return_action_text_p1": "We define a function <code class=\"code-function\">add_numbers</code> that takes two parameters, <code class=\"code-variable\">a</code> and <code class=\"code-variable\">b</code>.",
+            "return_action_text_p2": "The keyword <code class=\"code-keyword\">return</code> tells Python what value to send back when the function finishes. Here, it sends back the sum of <code class=\"code-variable\">a</code> and <code class=\"code-variable\">b</code>.",
+            "return_action_text_p3": "We call the function with <code class=\"code-number\">5</code> and <code class=\"code-number\">3</code>. The function calculates <code class=\"code-number\">8</code>.",
+            "return_action_text_p4": "The returned value (<code class=\"code-number\">8</code>) is then stored in the variable <code class=\"code-variable\">result</code>. We could now print or use this `result` variable.",
+            "tooltip_return": "Sends a value back from the function", "tooltip_result": "Stores the value returned by the function",
+            "quiz_title": "🧠 Quick Check!", "quiz_next_button": "Next Question",
+            "quiz_q1": "What is the main purpose of the `return` statement in a Python function?",
+            "quiz_q1_opt1": "To print output to the console.", "quiz_q1_opt2": "To stop the function's execution immediately.", "quiz_q1_opt3": "To send a calculated value back to where the function was called.", "quiz_q1_opt4": "To define a new variable inside the function.",
+            "quiz_q2": "What happens if a function reaches its end without an explicit `return` statement?",
+            "quiz_q2_opt1": "It causes a syntax error.", "quiz_q2_opt2": "It automatically returns the value `0`.", "quiz_q2_opt3": "It implicitly returns the special value `None`.", "quiz_q2_opt4": "It returns the last variable assigned within the function.",
+            "quiz_q3": "Consider `result = add_numbers(10, 20)`. What does `result` hold after this line executes (using the `add_numbers` function from the example)?",
+            "quiz_q3_opt1": "The string \"30\"", "quiz_q3_opt2": "The number `30`", "quiz_q3_opt3": "The value `None`", "quiz_q3_opt4": "The function `add_numbers` itself",
+            "quiz_q4": "Can a Python function return multiple values?",
+            "quiz_q4_opt1": "No, a function can only return a single value.", "quiz_q4_opt2": "Yes, by separating them with commas (which creates a tuple).", "quiz_q4_opt3": "Yes, but only if they are all the same data type.", "quiz_q4_opt4": "Only if you use the keyword `returnAll`.",
+            "quiz_feedback_correct": "Correct! 🎉", "quiz_feedback_incorrect": "Not quite! The correct answer was: {correctAnswerText}",
+            "quiz_final_score_title": "Module 18 Complete!", "quiz_final_score_summary": "You answered {score} out of {total} questions correctly.",
+            "quiz_final_score_perfect": "Excellent work! You understand function returns.", "quiz_final_score_good": "Good job! Reviewing the concepts will solidify your understanding.",
+            "completion_theory_title": "Module 18 Theory Complete!",
+            "completion_theory_desc": "You've learned how functions give back results using `return`! This is key for building modular AI components. <br> Time to practice! Head to the <strong>Practice Zone</strong> or try the <strong>Advanced Practice</strong>.",
+        },
+        pt: {
+            "page_title": "Módulo 18: Valores de Retorno de Função",
+            "nav_practice": "Iniciar Prática", "nav_advanced": "Prática Avançada", "nav_menu": "Menu do Curso",
+            "nav_introduction": "Introdução", "nav_what_is_return": "O que é Retorno?", "nav_why_important": "Por que Importante?", "nav_in_action": "Em Ação", "nav_quiz": "Teste Rápido",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title": "Módulo 18: Devolvendo Resultados", "header_subtitle": "Aprenda como funções retornam valores usando a instrução `return`.",
+            "introduction_title": "📦 Funções Que Devolvem Algo",
+            "introduction_p1": "Até agora, nossas funções realizaram ações, como imprimir. Mas frequentemente, precisamos que uma função calcule algo e devolva o <span class=\"highlight\">resultado</span> para a parte do código que a chamou.",
+            "introduction_p2": "É aqui que a instrução <code class=\"code-keyword\">return</code> entra. Ela é fundamental para construir blocos de código úteis e reutilizáveis, conectando-se à <span class=\"highlight\">Abstração</span> (ocultar detalhes) e <span class=\"highlight\">Decomposição</span> (dividir problemas).",
+            "what_is_return_title": "🎁 O Que `return` Faz?", "what_is_return_subtitle": "Pense nisso como uma máquina de vendas entregando seu item.",
+            "analogy_call_title": "Você Chama a Função", "analogy_call_text": "Você pede à função para fazer seu trabalho (como selecionar um item).",
+            "analogy_process_title": "Função Trabalha", "analogy_process_text": "Ela realiza cálculos ou tarefas (máquina pega o item).",
+            "analogy_return_title": "`return` Envia de Volta", "analogy_return_text": "A palavra-chave <code class=\"code-keyword\">return</code> envia o valor calculado de volta (você recebe o item).",
+            "what_is_return_conclusion": "A instrução <code class=\"code-keyword\">return</code> especifica o valor que uma chamada de função produzirá.",
+            "why_return_important_title": "⚙️ Por Que Valores de Retorno São Cruciais?", "why_return_important_subtitle": "Retornar valores torna as funções muito mais poderosas e flexíveis.",
+            "feature_reusable_title": "Construir Lógica Complexa", "feature_reusable_text": "A saída de uma função pode se tornar a entrada para outra. Isso permite a <span class=\"highlight\">decomposição</span> – dividir grandes problemas em chamadas de função menores e gerenciáveis.",
+            "feature_abstraction_title": "Usar Resultados em Outro Lugar", "feature_abstraction_text": "Você pode armazenar o valor retornado em uma variável e usá-lo posteriormente em seu programa, promovendo a <span class=\"highlight\">abstração</span> ao usar o resultado sem precisar saber *como* ele foi calculado.",
+            "feature_flexibility_title": "Saídas Flexíveis", "feature_flexibility_text": "Funções podem retornar vários tipos de dados (números, strings, listas, booleanos, etc.), tornando-as adaptáveis a diferentes necessidades.",
+            "feature_cta": "Clique nos cards para ver por que `return` é essencial!",
+            "return_in_action_title": "🎬 `return` em Ação!", "return_in_action_subtitle": "Vamos ver uma função simple que soma dois números e retorna o resultado.",
+            "code_add_comment": "# Esta função recebe dois números e retorna sua soma",
+            "return_action_text_p1": "Definimos uma função <code class=\"code-function\">add_numbers</code> que recebe dois parâmetros, <code class=\"code-variable\">a</code> e <code class=\"code-variable\">b</code>.",
+            "return_action_text_p2": "A palavra-chave <code class=\"code-keyword\">return</code> diz ao Python qual valor enviar de volta quando a função terminar. Aqui, ela envia de volta a soma de <code class=\"code-variable\">a</code> e <code class=\"code-variable\">b</code>.",
+            "return_action_text_p3": "Chamamos a função com <code class=\"code-number\">5</code> e <code class=\"code-number\">3</code>. A função calcula <code class=\"code-number\">8</code>.",
+            "return_action_text_p4": "O valor retornado (<code class=\"code-number\">8</code>) é então armazenado na variável <code class=\"code-variable\">result</code>. Poderíamos agora imprimir ou usar essa variável `result`.",
+            "tooltip_return": "Envia um valor de volta da função", "tooltip_result": "Armazena o valor retornado pela função",
+            "quiz_title": "🧠 Teste Rápido!", "quiz_next_button": "Próxima Pergunta",
+            "quiz_q1": "Qual é o propósito principal da instrução `return` em uma função Python?",
+            "quiz_q1_opt1": "Imprimir saída no console.", "quiz_q1_opt2": "Parar a execução da função imediatamente.", "quiz_q1_opt3": "Enviar um valor calculado de volta para onde a função foi chamada.", "quiz_q1_opt4": "Definir uma nova variável dentro da função.",
+            "quiz_q2": "O que acontece se uma função chega ao fim sem uma instrução `return` explícita?",
+            "quiz_q2_opt1": "Causa um erro de sintaxe.", "quiz_q2_opt2": "Retorna automaticamente o valor `0`.", "quiz_q2_opt3": "Retorna implicitamente o valor especial `None`.", "quiz_q2_opt4": "Retorna a última variável atribuída dentro da função.",
+            "quiz_q3": "Considere `resultado = add_numbers(10, 20)`. O que `resultado` contém após esta linha executar (usando a função `add_numbers` do exemplo)?",
+            "quiz_q3_opt1": "A string \"30\"", "quiz_q3_opt2": "O número `30`", "quiz_q3_opt3": "O valor `None`", "quiz_q3_opt4": "A própria função `add_numbers`",
+            "quiz_q4": "Uma função Python pode retornar múltiplos valores?",
+            "quiz_q4_opt1": "Não, uma função só pode retornar um único valor.", "quiz_q4_opt2": "Sim, separando-os por vírgulas (o que cria uma tupla).", "quiz_q4_opt3": "Sim, mas apenas se todos forem do mesmo tipo de dados.", "quiz_q4_opt4": "Apenas se você usar a palavra-chave `returnAll`.",
+            "quiz_feedback_correct": "Correto! 🎉", "quiz_feedback_incorrect": "Não exatamente! A resposta correta era: {correctAnswerText}",
+            "quiz_final_score_title": "Módulo 18 Completo!", "quiz_final_score_summary": "Você respondeu {score} de {total} perguntas corretamente.",
+            "quiz_final_score_perfect": "Excelente trabalho! Você entendeu os retornos de função.", "quiz_final_score_good": "Bom trabalho! Revisar os conceitos solidificará seu entendimento.",
+            "completion_theory_title": "Teoria do Módulo 18 Completa!",
+            "completion_theory_desc": "Você aprendeu como funções devolvem resultados usando `return`! Isso é chave para construir componentes modulares de IA. <br> Hora de praticar! Vá para a <strong>Zona de Prática</strong> ou tente a <strong>Prática Avançada</strong>.",
+        },
+        zh: {
+            "page_title": "模块 18：函数返回值",
+            "nav_practice": "开始练习", "nav_advanced": "高级练习", "nav_menu": "课程菜单",
+            "nav_introduction": "简介", "nav_what_is_return": "什么是返回?", "nav_why_important": "为何重要?", "nav_in_action": "实际应用", "nav_quiz": "知识测验",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title": "模块 18：返回结果", "header_subtitle": "学习函数如何使用 `return` 语句返回值。",
+            "introduction_title": "📦 会返回结果的函数",
+            "introduction_p1": "到目前为止，我们的函数执行了诸如打印之类的操作。但通常，我们需要函数计算某些内容并将<span class=\"highlight\">结果返回</span>给调用它的代码部分。",
+            "introduction_p2": "这就是 <code class=\"code-keyword\">return</code> 语句的作用所在。它是构建有用、可重用代码块的基础，与<span class=\"highlight\">抽象</span>（隐藏细节）和<span class=\"highlight\">分解</span>（分解问题）相关联。",
+            "what_is_return_title": "🎁 `return` 是做什么的？", "what_is_return_subtitle": "可以把它想象成自动售货机给你商品。",
+            "analogy_call_title": "你调用函数", "analogy_call_text": "你要求函数完成其工作（例如选择商品）。",
+            "analogy_process_title": "函数工作", "analogy_process_text": "它执行计算或任务（机器获取商品）。",
+            "analogy_return_title": "`return` 发回", "analogy_return_text": "<code class=\"code-keyword\">return</code> 关键字将计算出的值发回（你收到商品）。",
+            "what_is_return_conclusion": "<code class=\"code-keyword\">return</code> 语句指定函数调用将产生的值。",
+            "why_return_important_title": "⚙️ 为什么返回值至关重要？", "why_return_important_subtitle": "返回值使函数更加强大和灵活。",
+            "feature_reusable_title": "构建复杂逻辑", "feature_reusable_text": "一个函数的输出可以成为另一个函数的输入。这允许<span class=\"highlight\">分解</span>——将大问题分解为更小、可管理的函数调用。",
+            "feature_abstraction_title": "在别处使用结果", "feature_abstraction_text": "你可以将返回的值存储在变量中，并在程序的其他地方使用它，通过使用结果而无需知道它是*如何*计算出来的，从而促进<span class=\"highlight\">抽象</span>。",
+            "feature_flexibility_title": "灵活的输出", "feature_flexibility_text": "函数可以返回各种数据类型（数字、字符串、列表、布尔值等），使其能够适应不同的需求。",
+            "feature_cta": "点击卡片，了解为何 `return` 如此重要！",
+            "return_in_action_title": "🎬 `return` 的实际应用！", "return_in_action_subtitle": "让我们看一个简单的函数，它将两个数字相加并返回它们的和。",
+            "code_add_comment": "# 这个函数接收两个数字并返回它们的和",
+            "return_action_text_p1": "我们定义了一个函数 <code class=\"code-function\">add_numbers</code>，它接收两个参数 <code class=\"code-variable\">a</code> 和 <code class=\"code-variable\">b</code>。",
+            "return_action_text_p2": "关键字 <code class=\"code-keyword\">return</code> 告诉 Python 函数结束时要返回什么值。在这里，它返回 <code class=\"code-variable\">a</code> 和 <code class=\"code-variable\">b</code> 的和。",
+            "return_action_text_p3": "我们用 <code class=\"code-number\">5</code> 和 <code class=\"code-number\">3</code> 调用该函数。函数计算出 <code class=\"code-number\">8</code>。",
+            "return_action_text_p4": "返回值 (<code class=\"code-number\">8</code>) 随后被存储在变量 <code class=\"code-variable\">result</code> 中。我们现在可以打印或使用这个 `result` 变量。",
+            "tooltip_return": "从函数返回一个值", "tooltip_result": "存储函数返回的值",
+            "quiz_title": "🧠 快速测验！", "quiz_next_button": "下一题",
+            "quiz_q1": "Python 函数中 `return` 语句的主要目的是什么？",
+            "quiz_q1_opt1": "将输出打印到控制台。", "quiz_q1_opt2": "立即停止函数的执行。", "quiz_q1_opt3": "将计算出的值发送回调用函数的地方。", "quiz_q1_opt4": "在函数内部定义一个新变量。",
+            "quiz_q2": "如果函数执行到末尾而没有显式的 `return` 语句，会发生什么？",
+            "quiz_q2_opt1": "会导致语法错误。", "quiz_q2_opt2": "它会自动返回 `0`。", "quiz_q2_opt3": "它隐式地返回特殊值 `None`。", "quiz_q2_opt4": "它返回函数内最后赋值的变量。",
+            "quiz_q3": "考虑 `result = add_numbers(10, 20)`。执行此行后 `result` 保存了什么（使用示例中的 `add_numbers` 函数）？",
+            "quiz_q3_opt1": "字符串 \"30\"", "quiz_q3_opt2": "数字 `30`", "quiz_q3_opt3": "值 `None`", "quiz_q3_opt4": "函数 `add_numbers` 本身",
+            "quiz_q4": "Python 函数可以返回多个值吗？",
+            "quiz_q4_opt1": "不，一个函数只能返回单个值。", "quiz_q4_opt2": "是的，通过用逗号分隔它们（这将创建一个元组）。", "quiz_q4_opt3": "是的，但前提是它们都是相同的数据类型。", "quiz_q4_opt4": "只有使用关键字 `returnAll` 才可以。",
+            "quiz_feedback_correct": "正确！🎉", "quiz_feedback_incorrect": "不太对！正确答案是：{correctAnswerText}",
+            "quiz_final_score_title": "模块 18 完成！", "quiz_final_score_summary": "你答对了 {score} / {total} 题。",
+            "quiz_final_score_perfect": "非常棒！你理解了函数返回。", "quiz_final_score_good": "做得不错！复习概念将巩固你的理解。",
+            "completion_theory_title": "模块 18 理论完成！",
+            "completion_theory_desc": "你已经学会了函数如何使用 `return` 返回结果！这对于构建模块化的 AI 组件至关重要。<br> 是时候练习了！前往<strong>练习区</strong>或尝试<strong>高级练习</strong>。",
+        }
+    };
+
+
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // --- Language Management Functions ---
+        function getStoredLanguage() { /* ... Same as Module 0 ... */
+            const storedLang = localStorage.getItem('userLanguage');
+            if (storedLang && translations[storedLang]) return storedLang;
+            const browserLang = navigator.language || navigator.userLanguage;
+            if (browserLang.startsWith('pt')) return 'pt';
+            if (browserLang.startsWith('zh')) return 'zh';
+            return 'en';
+        }
+
+        function setLanguage(lang) { /* ... Same as Module 0, ensures quiz updates ... */
+            if (!translations[lang]) lang = 'en';
+            localStorage.setItem('userLanguage', lang);
+            document.documentElement.lang = lang;
+            translatePage(lang);
+            const langSelect = document.getElementById('languageSelect');
+            if (langSelect) langSelect.value = lang;
+             if(quizArea && currentQuestionIndex < quizData.length) {
+                 if (!quizArea.querySelector('[data-translate="quiz_final_score_title"]')) {
+                    loadQuestion(); // Reload current question
+                 }
+             }
+        }
+
+        function getTranslation(key, lang, replacements = {}) { /* ... Same as Module 0 ... */
+            let text = translations[lang]?.[key] ?? translations['en']?.[key] ?? `[${key}]`;
+            for (const placeholder in replacements) {
+                const regex = new RegExp(`\\{${placeholder}\\}`, 'g');
+                text = text.replace(regex, replacements[placeholder]);
+            }
+            return text;
+        }
+
+        function translatePage(lang) { /* ... Same as Module 0, handles code comments/tooltips ... */
+            if (!translations[lang]) lang = 'en';
+            document.querySelectorAll('[data-translate]').forEach(el => {
+                const key = el.getAttribute('data-translate');
+                const translation = getTranslation(key, lang);
+                 if (el.tagName === 'TITLE') { document.title = translation; }
+                 else if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') { /* Skip */ }
+                 else if (el.tagName === 'OPTION') { el.textContent = translation; }
+                 else {
+                     if (translation.includes('<') && translation.includes('>')) { el.innerHTML = translation; }
+                     else { el.textContent = translation; }
+                 }
+            });
+            document.querySelectorAll('[data-translate-placeholder]').forEach(el => { /* ... */ });
+             document.querySelectorAll('.code-highlight').forEach(el => {
+                 const tooltipKey = el.getAttribute('data-translate-tooltip');
+                 const tooltipSpan = el.querySelector('.tooltip');
+                 if(tooltipSpan && tooltipKey) { tooltipSpan.textContent = getTranslation(tooltipKey, lang); }
+             });
+             // Translate code comments specifically
+             const addComment = document.querySelector('.code-comment[data-translate="code_add_comment"]');
+             if (addComment) {
+                  const translatedText = getTranslation("code_add_comment", lang);
+                  const commentContent = translatedText.substring(translatedText.indexOf('#') + 1).trim();
+                  addComment.textContent = '# ' + commentContent;
+             }
+        }
+
+        const initialLang = getStoredLanguage();
+
+        // --- Minimal Nav Logic ---
+        const navToggleButton = document.getElementById('minimal-nav-toggle'); /* ... Same as Module 0 ... */
+        const navPanel = document.getElementById('minimal-nav-panel');
+        const body = document.body;
+        if (navToggleButton && navPanel) { /* ... Same event listeners as Module 0 ... */
+            navToggleButton.addEventListener('click', (event) => { event.stopPropagation(); body.classList.toggle('nav-active'); navToggleButton.setAttribute('aria-expanded', body.classList.contains('nav-active')); });
+            document.addEventListener('click', (event) => { if (body.classList.contains('nav-active') && !navPanel.contains(event.target) && event.target !== navToggleButton && !navToggleButton.contains(event.target)) { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); } });
+            navPanel.querySelectorAll('a').forEach(link => { link.addEventListener('click', () => { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); }); });
+             document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && body.classList.contains('nav-active')) { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); } });
+            navToggleButton.setAttribute('aria-expanded', 'false');
+        }
+
+        // --- Language Switcher Setup ---
+        const langSelect = document.getElementById('languageSelect'); /* ... Same as Module 0 ... */
+        if (langSelect) { langSelect.addEventListener('change', (e) => { setLanguage(e.target.value); }); }
+
+        // --- Intersection Observer for Animations ---
+        const observerOptions = { root: null, rootMargin: '0px', threshold: 0.1 }; /* ... Same as Module 0 ... */
+        const observerCallback = (entries, observer) => { entries.forEach(entry => { if (entry.isIntersecting) { entry.target.classList.add('visible'); } }); };
+        const observer = new IntersectionObserver(observerCallback, observerOptions);
+        document.querySelectorAll('.analogy-part, .analogy-arrow').forEach(el => { observer.observe(el); });
+
+        // --- Feature Card Interactivity ---
+        const featureCards = document.querySelectorAll('.feature-card'); /* ... Same as Module 0 ... */
+        featureCards.forEach(card => { card.addEventListener('click', () => { featureCards.forEach(otherCard => { if (otherCard !== card && otherCard.classList.contains('active')) { otherCard.classList.remove('active'); } }); card.classList.toggle('active'); }); });
+
+        // --- Return Demo Output Simulation ---
+        const returnOutput = document.querySelector('#return-in-action .code-line-output');
+        const returnDemoBlock = document.querySelector('.return-demo');
+        if (returnOutput && returnDemoBlock) {
+             const returnObserver = new IntersectionObserver((entries) => {
+                 entries.forEach(entry => {
+                     if (entry.isIntersecting && !returnOutput.classList.contains('visible')) {
+                        // The appearance is triggered by CSS delay based on the last input line's animation
+                        // We just need to set the text content once it's supposed to be visible
+                        setTimeout(() => {
+                            // Simulate the result being available
+                            returnOutput.textContent = '> Result variable now holds: 8';
+                            returnOutput.classList.add('visible');
+                        }, 2800 + 300); // Corresponds to last input delay + transition delay + buffer
+                        returnObserver.unobserve(entry.target); // Stop observing once triggered
+                     }
+                 });
+             }, { threshold: 0.5 }); // Trigger when 50% visible
+             returnObserver.observe(returnDemoBlock);
+        }
+
+        // --- Knowledge Check / Quiz ---
+        const quizData = [ // Module 18 specific questions
+            { questionKey: "quiz_q1", optionKeys: ["quiz_q1_opt1", "quiz_q1_opt2", "quiz_q1_opt3", "quiz_q1_opt4"], correctAnswer: 2 },
+            { questionKey: "quiz_q2", optionKeys: ["quiz_q2_opt1", "quiz_q2_opt2", "quiz_q2_opt3", "quiz_q2_opt4"], correctAnswer: 2 },
+            { questionKey: "quiz_q3", optionKeys: ["quiz_q3_opt1", "quiz_q3_opt2", "quiz_q3_opt3", "quiz_q3_opt4"], correctAnswer: 1 },
+            { questionKey: "quiz_q4", optionKeys: ["quiz_q4_opt1", "quiz_q4_opt2", "quiz_q4_opt3", "quiz_q4_opt4"], correctAnswer: 1 } // By default, comma separation creates a tuple
+        ];
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        const quizArea = document.getElementById('quiz-area');
+        const feedbackArea = document.getElementById('quiz-feedback');
+        const nextButton = document.getElementById('next-question-btn');
+
+        function loadQuestion() { /* ... Same as Module 0, uses getTranslation ... */
+             const currentLang = getStoredLanguage();
+             if (!quizArea || currentQuestionIndex >= quizData.length) {
+                 if (quizArea && !quizArea.querySelector('[data-translate="quiz_final_score_title"]')) { showFinalScore(); }
+                 return;
+             }
+             const currentQuiz = quizData[currentQuestionIndex];
+             const questionText = getTranslation(currentQuiz.questionKey, currentLang);
+             quizArea.innerHTML = `<div class="quiz-question">${currentQuestionIndex + 1}. ${questionText.replace(/`(.*?)`/g, '<code>$1</code>')}</div><div class="quiz-options">${currentQuiz.optionKeys.map((optionKey, index) => `<button class="quiz-option-btn" data-index="${index}">${getTranslation(optionKey, currentLang).replace(/`(.*?)`/g, '<code>$1</code>')}</button>`).join('')}</div>`;
+             feedbackArea.classList.remove('visible', 'correct', 'incorrect'); feedbackArea.textContent = '';
+             nextButton.classList.remove('visible'); nextButton.disabled = true;
+             document.querySelectorAll('.quiz-option-btn').forEach(button => { button.addEventListener('click', handleAnswer); });
+         }
+
+        function handleAnswer(event) { /* ... Same as Module 0, uses getTranslation ... */
+             const currentLang = getStoredLanguage();
+             const selectedButton = event.target; const selectedIndex = parseInt(selectedButton.dataset.index);
+             const correctIndex = quizData[currentQuestionIndex].correctAnswer;
+             const correctOptionKey = quizData[currentQuestionIndex].optionKeys[correctIndex];
+             const correctAnswerText = getTranslation(correctOptionKey, currentLang).replace(/`(.*?)`/g, '<code>$1</code>');
+             document.querySelectorAll('.quiz-option-btn').forEach(btn => { btn.disabled = true; btn.classList.remove('shake'); });
+             feedbackArea.classList.add('visible');
+             if (selectedIndex === correctIndex) {
+                 selectedButton.classList.add('correct'); feedbackArea.innerHTML = getTranslation('quiz_feedback_correct', currentLang);
+                 feedbackArea.classList.add('correct'); feedbackArea.classList.remove('incorrect'); score++;
+                 selectedButton.classList.add('tada-anim');
+             } else {
+                 selectedButton.classList.add('incorrect');
+                 feedbackArea.innerHTML = getTranslation('quiz_feedback_incorrect', currentLang, { correctAnswerText: `<strong>${correctAnswerText}</strong>` });
+                 feedbackArea.classList.add('incorrect'); feedbackArea.classList.remove('correct');
+                 const correctButton = document.querySelector(`.quiz-option-btn[data-index="${correctIndex}"]`);
+                 if(correctButton) correctButton.classList.add('correct');
+                 selectedButton.classList.add('shake');
+             }
+              selectedButton.addEventListener('animationend', () => { selectedButton.classList.remove('tada-anim', 'shake'); }, { once: true });
+             nextButton.classList.add('visible'); nextButton.disabled = false;
+         }
+
+         function showFinalScore() { /* ... Same as Module 0, uses getTranslation ... */
+              const currentLang = getStoredLanguage(); const totalQuestions = quizData.length;
+              let resultMessageKey = score === totalQuestions ? 'quiz_final_score_perfect' : 'quiz_final_score_good';
+              quizArea.innerHTML = `<div class="quiz-question text-center" data-translate="quiz_final_score_title" style="font-size: 1.5rem;">${getTranslation('quiz_final_score_title', currentLang)}</div><p class="text-center" style="font-size: 1.2rem; margin-bottom: 1rem;">${getTranslation('quiz_final_score_summary', currentLang, { score: score, total: totalQuestions })}</p><p class="text-center" style="color: ${score === totalQuestions ? 'var(--success-color)' : 'var(--primary-color)'}; font-weight: bold;">${getTranslation(resultMessageKey, currentLang)}</p>`;
+              feedbackArea.classList.remove('visible'); nextButton.style.display = 'none';
+              quizArea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+
+        nextButton.addEventListener('click', () => { /* ... Same as Module 0 ... */
+             currentQuestionIndex++; loadQuestion();
+         });
+
+        // --- Initial Language Application and Load ---
+        setLanguage(initialLang); // Apply language FIRST
+        if (quizArea) { loadQuestion(); } // Initial quiz load
+
+        // Trigger fade-in animations for elements initially in view
+         document.querySelectorAll('.fade-in').forEach(el => { /* ... Same as Module 0 ... */
+             const rect = el.getBoundingClientRect();
+             if(rect.top < window.innerHeight && rect.bottom >= 0) { /* Element is initially visible */ }
+         });
+
+    }); // End DOMContentLoaded
+    </script>
+
+</body>
+</html>

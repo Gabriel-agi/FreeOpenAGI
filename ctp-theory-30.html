@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<!-- Language set by JS -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Title set by JS -->
+    <title data-translate="page_title">Module 30: Intro to Recursion (Optional)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* --- Reset & Base Styles --- */
+        :root {
+            --primary-color: #007bff; /* Using blue from original */
+            --secondary-color: #6c757d;
+            --background-light: #f8f9fa;
+            --background-dark: #343a40;
+            --text-light: #f8f9fa;
+            --text-dark: #212529;
+            --accent-color: #ffc107; /* Amber accent */
+            --success-color: #28a745;
+            --error-color: #dc3545;
+            --border-radius: 8px;
+            --transition-speed: 0.3s;
+            --font-body: 'Roboto', sans-serif;
+            --font-title: 'Orbitron', sans-serif;
+             /* Nav Colors from other page */
+            --nav-primary: #6e48aa; /* Keeping original nav colors */
+            --nav-success: #4cc9f0;
+            --nav-dark: #1a1a2e;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; font-size: 16px; }
+        body {
+            font-family: var(--font-body); line-height: 1.7;
+            background-color: var(--background-light); color: var(--text-dark);
+            overflow-x: hidden; display: flex; flex-direction: column; min-height: 100vh;
+        }
+        main { flex-grow: 1; }
+
+        /* --- Utility Classes --- */
+        .container { max-width: 960px; margin: 0 auto; padding: 0 15px; }
+        .text-center { text-align: center; }
+        .highlight { color: var(--primary-color); font-weight: bold; }
+        .fade-in { opacity: 0; transform: translateY(20px); animation: fadeInAnimation 0.8s ease-out forwards; }
+        .fade-in.delay-1 { animation-delay: 0.2s; } .fade-in.delay-2 { animation-delay: 0.4s; }
+        .fade-in.delay-3 { animation-delay: 0.6s; } .fade-in.delay-4 { animation-delay: 0.8s; }
+        .fade-in.delay-5 { animation-delay: 1.0s; }
+        .button-group { margin-top: 2rem; display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; }
+
+        /* Basic Button Styles */
+        .action-button {
+             display: inline-flex; align-items: center; justify-content: center; gap: 0.5em;
+             padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold;
+             color: var(--text-light); background-color: var(--primary-color); border: none;
+             border-radius: var(--border-radius); cursor: pointer;
+             transition: background-color var(--transition-speed), transform var(--transition-speed), filter var(--transition-speed), box-shadow var(--transition-speed);
+             margin-top: 1rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+             text-decoration: none; line-height: 1.2;
+        }
+        .action-button:hover:not(:disabled) { background-color: #0056b3; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+        .action-button:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none; box-shadow: none; opacity: 0.7; }
+        .action-button.success { background-color: var(--success-color); }
+        .action-button.success:hover:not(:disabled) { background-color: #218838; }
+        .action-button.secondary { background-color: var(--secondary-color); }
+        .action-button.secondary:hover:not(:disabled) { background-color: #5a6268; }
+        .action-button:active:not(:disabled) { transform: translateY(1px) scale(0.98); filter: brightness(0.95); }
+
+        /* --- Animations --- */
+        @keyframes fadeInAnimation { to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); }
+            50% { transform: scale(1.03); box-shadow: 0 0 15px rgba(0, 123, 255, 0.6); }
+            100% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); }
+        }
+        @keyframes code-line-anim { from { width: 0; opacity: 0; } to { width: 100%; opacity: 1; } }
+        @keyframes tada { from { transform: scale3d(1, 1, 1); } 10%, 20% { transform: scale3d(.9, .9, .9) rotate3d(0, 0, 1, -3deg); } 30%, 50%, 70%, 90% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, 3deg); } 40%, 60%, 80% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, -3deg); } to { transform: scale3d(1, 1, 1); } }
+        .tada-anim { animation: tada 1s ease; }
+        @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
+        @keyframes iconAppearCorrect { 0% { transform: scale(0.5) rotate(-15deg); opacity: 0; } 60% { transform: scale(1.2) rotate(5deg); opacity: 1; } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
+
+        /* --- Minimal Retractable Nav --- */
+        .minimal-nav-button {
+            position: fixed; top: 15px; right: 15px; z-index: 1001;
+            background-color: rgba(52, 58, 64, 0.75); color: var(--text-light);
+            border: none; border-radius: var(--border-radius); padding: 8px 12px;
+            cursor: pointer; transition: background-color var(--transition-speed), opacity var(--transition-speed), transform var(--transition-speed);
+            font-size: 1.1rem; opacity: 0.6; box-shadow: 0 2px 5px rgba(0,0,0,0.2); line-height: 1;
+        }
+        .minimal-nav-button:hover { background-color: rgba(52, 58, 64, 0.95); opacity: 1; transform: scale(1.05); }
+        .minimal-nav {
+            position: fixed; top: 60px; right: 15px; z-index: 1000;
+            background-color: var(--background-dark); border-radius: var(--border-radius);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3); padding: 0.8rem;
+            opacity: 0; transform: translateY(-15px) scale(0.95); transform-origin: top right;
+            pointer-events: none; transition: opacity var(--transition-speed) ease, transform var(--transition-speed) ease;
+            min-width: 200px;
+        }
+        body.nav-active .minimal-nav { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+        .minimal-nav ul { list-style: none; margin: 0; padding: 0; }
+        .minimal-nav ul li { margin-bottom: 5px; }
+        .minimal-nav ul li:last-child { margin-bottom: 0; }
+        .minimal-nav ul li a {
+            display: flex; align-items: center; color: var(--text-light); text-decoration: none;
+            padding: 0.6rem 1rem; border-radius: 4px;
+            transition: background-color var(--transition-speed), color var(--transition-speed);
+            white-space: nowrap; font-weight: 400; font-size: 0.95rem;
+        }
+        .minimal-nav ul li a i.fas { margin-right: 10px; width: 1.2em; text-align: center; opacity: 0.8; transition: opacity var(--transition-speed); }
+        .minimal-nav ul li a:hover { background-color: var(--nav-primary); color: var(--text-light); } /* Changed hover to nav-primary */
+        .minimal-nav ul li a:hover i.fas { opacity: 1; }
+        .minimal-nav .language-switcher-item { padding: 0.5rem 1rem; border-top: 1px solid var(--secondary-color); margin-top: 8px; padding-top: 13px; }
+        #languageSelect {
+            width: 100%; background: rgba(255,255,255,0.1); color: white;
+            border: 1px solid var(--nav-success); border-radius: 5px;
+            padding: 6px 30px 6px 12px; cursor: pointer; font-size: 0.9rem;
+            appearance: none; -webkit-appearance: none; -moz-appearance: none;
+            background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%234CC9F0%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E');
+            background-repeat: no-repeat; background-position: right 10px center; background-size: 10px auto;
+            transition: background-color 0.3s ease;
+        }
+        #languageSelect:hover { background-color: rgba(255,255,255,0.15); }
+        #languageSelect option { background: var(--nav-dark); color: var(--text-light); }
+        /* --- End Minimal Retractable Nav --- */
+
+        /* --- Header --- */
+        .main-header {
+            background: linear-gradient(135deg, var(--primary-color), #004a9f); /* Slightly adjusted gradient */
+            color: var(--text-light); padding: 4rem 0 6rem; text-align: center;
+            position: relative; overflow: hidden;
+        }
+        .main-header h1 {
+            font-family: var(--font-title); font-size: 3rem; margin-bottom: 0.5rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); animation: fadeInAnimation 1s ease-out;
+        }
+        .main-header p {
+            font-size: 1.2rem; font-weight: 300; opacity: 0.9;
+            animation: fadeInAnimation 1s ease-out 0.3s forwards; opacity: 0; /* Start hidden */
+            max-width: 800px; margin-left: auto; margin-right: auto;
+        }
+        .header-shape { position: absolute; border-radius: 50%; background-color: rgba(255, 255, 255, 0.1); animation: pulse 5s infinite ease-in-out alternate; }
+        .shape1 { width: 150px; height: 150px; bottom: -50px; left: 10%; animation-duration: 6s; }
+        .shape2 { width: 80px; height: 80px; top: 50px; right: 15%; animation-duration: 4s; }
+        .shape3 { width: 50px; height: 50px; bottom: 20px; right: 30%; animation-duration: 7s; }
+
+        /* --- Section Styling --- */
+        section { padding: 4rem 0; border-bottom: 1px solid #eee; }
+        main section:last-of-type { border-bottom: none; } /* No border before completion section */
+        section h2 {
+            font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color);
+            margin-bottom: 2rem; text-align: center; position: relative; padding-bottom: 10px;
+        }
+        section h2::after {
+            content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+            width: 60px; height: 4px; background-color: var(--accent-color); border-radius: 2px;
+        }
+
+        /* --- Intro Recursion Section --- */
+        #intro-recursion p { font-size: 1.1rem; max-width: 700px; margin: 0 auto 1rem; text-align: center; }
+        .recursion-analogy { /* Similar to code-analogy */
+            display: flex; align-items: center; justify-content: center; /* Centered */
+            background-color: #fff; padding: 2rem; border-radius: var(--border-radius);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08); margin-top: 2rem; flex-wrap: wrap; gap: 1.5rem;
+             max-width: 600px; /* Constrained width */
+             margin-left: auto; margin-right: auto;
+        }
+        .recursion-analogy .analogy-part { /* Reusing class name */
+            text-align: center; max-width: 250px; /* Wider max-width */
+            opacity: 0; transform: scale(0.9); transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+        .recursion-analogy .analogy-part.visible { opacity: 1; transform: scale(1); }
+        .recursion-analogy .analogy-icon {
+            font-size: 3rem; margin-bottom: 1rem; color: var(--primary-color);
+            display: inline-block; transition: transform var(--transition-speed) ease;
+        }
+        .recursion-analogy .analogy-part:hover .analogy-icon { transform: scale(1.2) rotate(5deg); }
+
+
+        /* --- Core Concepts Section (Base Case / Recursive Step) --- */
+        #core-concepts .concepts-container {
+            display: flex; align-items: stretch; /* Align items vertically */ justify-content: space-around;
+            background-color: #fff; padding: 2rem; border-radius: var(--border-radius);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08); margin-top: 2rem; flex-wrap: wrap; gap: 2rem;
+        }
+        .concept-box {
+            text-align: center; flex: 1; min-width: 220px; padding: 1.5rem;
+            border: 1px solid #eee; border-radius: var(--border-radius);
+            opacity: 0; transform: scale(0.9); transition: opacity 0.5s ease, transform 0.5s ease, box-shadow 0.3s ease;
+        }
+        .concept-box:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .concept-box.visible { opacity: 1; transform: scale(1); }
+        .concept-icon { font-size: 3rem; margin-bottom: 1rem; color: var(--primary-color); }
+        .concept-box h3 { font-size: 1.3rem; margin-bottom: 0.8rem; color: var(--text-dark); }
+        .concept-box p { font-size: 1rem; color: var(--secondary-color); }
+
+
+        /* --- Recursion vs Iteration Section --- */
+        #recursion-vs-iteration .comparison-grid { /* Replacing 'features' */
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem; margin-top: 2rem;
+        }
+        .comparison-card { /* Replacing 'feature-card' */
+            background-color: #fff; padding: 1.5rem; border-radius: var(--border-radius);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.07); text-align: center;
+            transition: transform var(--transition-speed) ease, box-shadow var(--transition-speed) ease;
+            cursor: default; /* Not clickable like feature cards */
+             opacity: 0; transform: translateY(20px);
+             animation: fadeInAnimation 0.6s ease-out forwards;
+        }
+         /* Stagger animation */
+        .comparison-card:nth-child(1) { animation-delay: 0.2s; }
+        .comparison-card:nth-child(2) { animation-delay: 0.4s; }
+        .comparison-card:nth-child(3) { animation-delay: 0.6s; } /* Optional: for Decomposition */
+
+        .comparison-card:hover { transform: translateY(-5px) scale(1.02); box-shadow: 0 8px 20px rgba(0,0,0,0.12); }
+        .comparison-icon { font-size: 2.5rem; margin-bottom: 1rem; color: var(--primary-color); }
+        .comparison-card h3 {
+            font-family: var(--font-body); font-weight: 700; font-size: 1.3rem;
+            margin-bottom: 0.8rem; color: var(--text-dark);
+        }
+        .comparison-card p { font-size: 0.95rem; color: var(--secondary-color); }
+
+
+        /* --- Recursion Example Section --- */
+        #recursion-example .explanation { display: flex; gap: 2rem; align-items: flex-start; margin-top: 2rem; flex-wrap: wrap; }
+        .code-demo { /* Renamed from hello-world-demo */
+            flex-basis: 55%; background-color: var(--background-dark); color: #eee;
+            padding: 2rem; border-radius: var(--border-radius); font-family: 'Courier New', Courier, monospace;
+            position: relative; min-height: 250px; /* Increased height */ box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+             font-size: 0.95rem; /* Slightly smaller font */
+             line-height: 1.6;
+        }
+        .code-demo .code-line { /* For structure */
+             display: block; margin-bottom: 0.3em;
+         }
+        .code-demo .code-output-area { /* Area for simulated output */
+            color: var(--accent-color); font-weight: bold; font-size: 1rem;
+            border-top: 1px dashed var(--secondary-color); padding-top: 1rem; margin-top: 1rem;
+            opacity: 0; transition: opacity 0.8s ease 1.2s; /* Delay appearance */
+            white-space: pre-wrap; /* Preserve line breaks */
+        }
+        .code-demo .code-output-area.visible { opacity: 1; }
+        .example-text { flex-basis: 40%; font-size: 1.05rem; } /* Renamed */
+        .example-text p { margin-bottom: 1rem; }
+        .code-highlight {
+            background-color: rgba(0, 123, 255, 0.1); color: #0056b3; padding: 0.2em 0.4em;
+            border-radius: 4px; font-family: 'Courier New', Courier, monospace; font-weight: bold;
+            cursor: pointer; transition: background-color var(--transition-speed);
+            display: inline-block; position: relative;
+        }
+        .code-highlight:hover { background-color: rgba(0, 123, 255, 0.2); }
+        /* Tooltip */
+        .tooltip {
+            visibility: hidden; width: 170px; background-color: var(--background-dark); /* Wider */
+            color: var(--text-light); text-align: center; border-radius: 6px; padding: 8px 5px;
+            position: absolute; z-index: 1; bottom: 125%; left: 50%; margin-left: -85px; /* Adjusted margin */
+            opacity: 0; transition: opacity 0.3s; font-family: var(--font-body);
+            font-size: 0.9rem; font-weight: normal; pointer-events: none;
+        }
+        .tooltip::after { content: ""; position: absolute; top: 100%; left: 50%; margin-left: -5px; border-width: 5px; border-style: solid; border-color: var(--background-dark) transparent transparent transparent; }
+        .code-highlight:hover .tooltip { visibility: visible; opacity: 1; }
+        /* Code syntax colors */
+        .code-keyword { color: #569cd6; } .code-string { color: #ce9178; }
+        .code-comment { color: #6a9955; } .code-function { color: #dcdcaa; }
+        .code-number { color: #b5cea8; } .code-operator { color: #d4d4d4; }
+        .code-parameter { color: #9cdcfe; } .code-call { color: #c586c0; }
+
+
+        /* --- Knowledge Check Section --- */
+        #knowledge-check { background-color: #e9ecef; }
+        .quiz-container {
+            background-color: #fff; padding: 2rem; border-radius: var(--border-radius);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1); max-width: 700px; margin: 2rem auto 0;
+        }
+        .quiz-question { font-size: 1.2rem; font-weight: bold; margin-bottom: 1.5rem; color: var(--text-dark); }
+        .quiz-options button {
+            display: block; width: 100%; padding: 1rem; margin-bottom: 1rem; text-align: left;
+            font-size: 1rem; background-color: #f8f9fa; border: 1px solid #ced4da;
+            border-radius: var(--border-radius); cursor: pointer;
+            transition: background-color var(--transition-speed), border-color var(--transition-speed), transform var(--transition-speed);
+        }
+        .quiz-options button:not(:disabled):hover { background-color: #e2e6ea; border-color: #adb5bd; transform: translateX(5px); }
+        .quiz-options button:disabled { cursor: default; opacity: 0.7; }
+        .quiz-options button.correct { background-color: #d4edda; border-color: var(--success-color); color: #155724; font-weight: bold; }
+        .quiz-options button.incorrect { background-color: #f8d7da; border-color: var(--error-color); color: #721c24; font-weight: bold; }
+        .quiz-options button.incorrect.shake { animation: shake 0.5s ease; }
+        .quiz-feedback {
+            margin-top: 1.5rem; padding: 1rem; border-radius: var(--border-radius);
+            font-weight: bold; text-align: center; opacity: 0; transition: opacity 0.5s ease;
+            height: 0; overflow: hidden;
+        }
+        .quiz-feedback.visible { opacity: 1; height: auto; margin-bottom: 1rem; }
+        .quiz-feedback.correct { background-color: #d4edda; color: #155724; }
+        .quiz-feedback.incorrect { background-color: #f8d7da; color: #721c24; }
+        #next-question-btn {
+            display: inline-flex; align-items: center; justify-content: center; gap: 0.5em;
+            margin: 1.5rem auto 0; padding: 0.8rem 1.5rem; font-size: 1rem;
+            font-weight: bold; color: var(--text-light); background-color: var(--primary-color);
+            border: none; border-radius: var(--border-radius); cursor: pointer;
+            transition: background-color var(--transition-speed), transform var(--transition-speed), opacity 0.3s, visibility 0.3s;
+            opacity: 0; visibility: hidden;
+        }
+        #next-question-btn:hover { background-color: #0056b3; transform: scale(1.05); }
+        #next-question-btn.visible { opacity: 1; visibility: visible; }
+
+        /* --- Completion Section Styling --- */
+        .completion-section {
+            padding: 4rem 0; text-align: center;
+            background-color: var(--background-light);
+        }
+        .completion-section .icon {
+            font-size: 4rem; color: var(--success-color); margin-bottom: 1rem;
+            display: inline-block; opacity: 0; animation: iconAppearCorrect 1s ease-out 0.5s forwards;
+        }
+        .completion-section .icon .fas + .fas { margin-left: 0.75rem; }
+        .completion-section h2 {
+            font-family: var(--font-title); font-size: 2.2rem;
+            color: var(--primary-color); margin-bottom: 1rem;
+        }
+        .completion-section h2::after { display: none; } /* No underline */
+        .completion-section p {
+            font-size: 1.1rem; margin-top: 1rem; color: var(--secondary-color);
+            max-width: 700px; margin-left: auto; margin-right: auto; line-height: 1.8;
+        }
+        .completion-section .button-group { margin-top: 2.5rem; }
+
+        /* --- NO Footer --- */
+
+        /* --- Responsive Design --- */
+        @media (max-width: 768px) {
+            html { font-size: 15px; }
+            .main-header h1 { font-size: 2.5rem; }
+            .main-header p { font-size: 1.1rem; }
+            section h2 { font-size: 1.8rem; }
+            #intro-recursion .recursion-analogy { flex-direction: column; gap: 1.5rem; } /* Stack analogy */
+            #core-concepts .concepts-container { flex-direction: column; gap: 1.5rem; } /* Stack concepts */
+            #recursion-vs-iteration .comparison-grid { grid-template-columns: 1fr; }
+            #recursion-example .explanation { flex-direction: column; }
+            .code-demo, .example-text { flex-basis: 100%; }
+            .minimal-nav { min-width: 180px; }
+            .minimal-nav ul li a { padding: 0.6rem 0.8rem; }
+            #languageSelect { font-size: 0.85rem; padding: 5px 25px 5px 10px;}
+            .completion-section h2 { font-size: 2rem; }
+            .completion-section .button-group { flex-direction: column; align-items: center; gap: 0.8rem; }
+            .completion-section .action-button { width: 80%; max-width: 350px; margin-top: 0; }
+        }
+        @media (max-width: 480px) {
+            html { font-size: 14px; }
+            .main-header h1 { font-size: 2rem; }
+            .main-header p { font-size: 1rem; }
+            section h2 { font-size: 1.6rem; }
+            .quiz-options button { padding: 0.8rem; font-size: 0.95rem; }
+            .tooltip { width: 140px; margin-left: -70px; font-size: 0.8rem;} /* Adjusted tooltip */
+            .minimal-nav-button { top: 10px; right: 10px; padding: 6px 10px; font-size: 1rem; }
+            .minimal-nav { top: 48px; right: 10px; min-width: 160px; }
+            .minimal-nav ul li a { padding: 0.5rem 0.7rem; font-size: 0.9rem;}
+            .minimal-nav ul li a i.fas { margin-right: 8px; }
+            #languageSelect { font-size: 0.8rem; padding: 4px 20px 4px 8px;}
+            .completion-section .icon { font-size: 3.5rem; }
+            .completion-section h2 { font-size: 1.8rem; }
+            .completion-section p { font-size: 1rem; }
+            .completion-section .action-button { width: 90%; max-width: 300px; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- ========= Minimal Nav Handle ========= -->
+    <button id="minimal-nav-toggle" class="minimal-nav-button" aria-label="Toggle Navigation Menu">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- ========= Minimal Nav Panel (with Language Switcher) ========= -->
+    <nav id="minimal-nav-panel" class="minimal-nav">
+        <ul>
+            <!-- Links to OTHER main pages (ADAPTED FOR MODULE 30) -->
+            <li><a href="ctp-practice-30.html"><i class="fas fa-pencil-alt fa-fw"></i> <span data-translate="nav_practice">Practice</span></a></li>
+            <li><a href="ctp-advanced-30.html"><i class="fas fa-flask fa-fw"></i> <span data-translate="nav_advanced">Advanced Practice</span></a></li>
+            <li><a href="ctp-dashboard.html"><i class="fas fa-list fa-fw"></i> <span data-translate="nav_menu">Course Menu</span></a></li>
+             <hr style="border: none; border-top: 1px solid var(--secondary-color); margin: 8px 0;">
+             <!-- Links to sections on THIS page -->
+             <li><a href="#intro-recursion"><i class="fas fa-project-diagram fa-fw"></i> <span data-translate="nav_intro">Intro</span></a></li>
+             <li><a href="#core-concepts"><i class="fas fa-puzzle-piece fa-fw"></i> <span data-translate="nav_concepts">Concepts</span></a></li>
+             <li><a href="#recursion-vs-iteration"><i class="fas fa-exchange-alt fa-fw"></i> <span data-translate="nav_vs">Recursion vs Iteration</span></a></li>
+             <li><a href="#recursion-example"><i class="fas fa-code fa-fw"></i> <span data-translate="nav_example">Example</span></a></li>
+             <li><a href="#knowledge-check"><i class="fas fa-check-double fa-fw"></i> <span data-translate="nav_quiz">Knowledge Check</span></a></li>
+            <!-- Language Switcher Item -->
+            <li class="language-switcher-item">
+                 <select id="languageSelect" aria-label="Select Language">
+                     <option value="en" data-translate="lang_en">🇬🇧 English</option>
+                     <option value="pt" data-translate="lang_pt">🇧🇷 Português</option>
+                     <option value="zh" data-translate="lang_zh">🇨🇳 中文</option>
+                 </select>
+            </li>
+        </ul>
+    </nav>
+
+    <header class="main-header">
+        <!-- Decorative shapes -->
+        <div class="header-shape shape1"></div>
+        <div class="header-shape shape2"></div>
+        <div class="header-shape shape3"></div>
+
+        <div class="container">
+            <h1 data-translate="header_title">Module 30: Diving into Recursion! (Optional)</h1>
+            <p data-translate="header_subtitle">Explore the elegant, sometimes mind-bending, concept of functions calling themselves to solve problems.</p>
+        </div>
+    </header>
+
+    <main>
+        <!-- ========= Intro Recursion Section ========= -->
+        <section id="intro-recursion">
+            <div class="container">
+                <h2 class="fade-in" data-translate="intro_title">🔄 What is Recursion?</h2>
+                <p class="fade-in delay-1" data-translate="intro_p1">
+                    Recursion is a powerful programming technique where a function <span class="highlight">calls itself</span> to solve a smaller version of the same problem. Think of it like Russian nesting dolls!
+                </p>
+                 <div class="recursion-analogy fade-in delay-2">
+                     <div class="analogy-part">
+                         <span class="analogy-icon">🪆</span> <!-- Russian Doll Emoji -->
+                         <h3 data-translate="analogy_problem_title">Big Problem</h3>
+                         <p data-translate="analogy_problem_text">You have a large doll (the initial problem).</p>
+                     </div>
+                    <div class="analogy-arrow">➡️</div>
+                    <div class="analogy-part">
+                        <span class="analogy-icon" style="transform: scaleX(-1);">🪆</span> <!-- Flipped Doll -->
+                        <h3 data-translate="analogy_smaller_title">Smaller Problem</h3>
+                        <p data-translate="analogy_smaller_text">Opening it reveals a slightly smaller doll (calling the function again with simpler input).</p>
+                    </div>
+                     <div class="analogy-arrow">➡️</div>
+                     <div class="analogy-part">
+                         <span class="analogy-icon">🤏</span> <!-- Pinching Hand / Smallest -->
+                         <h3 data-translate="analogy_base_title">Smallest Doll</h3>
+                         <p data-translate="analogy_base_text">Eventually, you reach the smallest doll you can't open (the base case).</p>
+                     </div>
+                 </div>
+                 <p class="fade-in delay-3" style="margin-top: 2rem; text-align: center;" data-translate="intro_p2">
+                    This technique allows for elegant solutions to problems that can be broken down into self-similar subproblems.
+                 </p>
+            </div>
+        </section>
+
+        <!-- ========= Core Concepts Section ========= -->
+        <section id="core-concepts">
+            <div class="container">
+                <h2 class="fade-in" data-translate="concepts_title">🧩 The Two Pillars of Recursion</h2>
+                <p class="text-center fade-in delay-1" data-translate="concepts_subtitle">Every recursive function needs these two essential parts:</p>
+
+                <div class="concepts-container fade-in delay-2">
+                     <!-- We'll use JS to add 'visible' class on scroll -->
+                    <div class="concept-box">
+                        <span class="concept-icon"><i class="fas fa-stop-circle"></i></span>
+                        <h3 data-translate="concept_base_title">1. Base Case</h3>
+                        <p data-translate="concept_base_text">The condition that <span class="highlight">stops</span> the recursion. It's the simplest version of the problem that can be solved directly, preventing infinite calls.</p>
+                    </div>
+                    <div class="concept-box">
+                        <span class="concept-icon"><i class="fas fa-redo"></i></span>
+                        <h3 data-translate="concept_recursive_title">2. Recursive Step</h3>
+                        <p data-translate="concept_recursive_text">Where the function <span class="highlight">calls itself</span>, but with modified input that moves it closer to the base case. It breaks the problem down.</p>
+                    </div>
+                </div>
+                 <p class="text-center fade-in delay-3" style="margin-top: 2rem;" data-translate="concepts_conclusion">Missing a base case leads to infinite recursion (and usually a crash!).</p>
+            </div>
+        </section>
+
+        <!-- ========= Recursion vs Iteration Section ========= -->
+        <section id="recursion-vs-iteration">
+            <div class="container">
+                <h2 class="fade-in" data-translate="vs_title">🤔 Recursion vs. Iteration</h2>
+                <p class="text-center fade-in delay-1" data-translate="vs_subtitle">Both achieve repetition, but in different ways. Iteration uses loops (`for`, `while`).</p>
+
+                <div class="comparison-grid">
+                    <!-- Card 1: Recursion -->
+                    <div class="comparison-card">
+                        <span class="comparison-icon"><i class="fas fa-project-diagram"></i></span>
+                        <h3 data-translate="vs_recursion_title">Recursion (Self-Call)</h3>
+                        <p data-translate="vs_recursion_text">Often more <span class="highlight">elegant</span> and closer to the mathematical definition of a problem. Can be less efficient (memory overhead from function calls).</p>
+                    </div>
+
+                    <!-- Card 2: Iteration -->
+                    <div class="comparison-card">
+                        <span class="comparison-icon"><i class="fas fa-sync-alt"></i></span>
+                        <h3 data-translate="vs_iteration_title">Iteration (Loops)</h3>
+                        <p data-translate="vs_iteration_text">Generally more <span class="highlight">efficient</span> (less memory usage, sometimes faster). Can sometimes be harder to map complex logic compared to recursion.</p>
+                    </div>
+
+                    <!-- Card 3: Decomposition -->
+                     <div class="comparison-card">
+                         <span class="comparison-icon"><i class="fas fa-puzzle-piece"></i></span>
+                         <h3 data-translate="vs_decomposition_title">Problem Decomposition</h3>
+                         <p data-translate="vs_decomposition_text">Recursion excels when a problem can be naturally broken down into <span class="highlight">smaller, self-similar</span> instances of itself (e.g., tree traversal, factorial).</p>
+                     </div>
+                </div>
+                 <p class="text-center fade-in delay-4" style="margin-top: 2rem;" data-translate="vs_conclusion">Choosing between them depends on the problem, readability, and performance needs.</p>
+            </div>
+        </section>
+
+
+        <!-- ========= Recursion Example Section ========= -->
+        <section id="recursion-example">
+             <div class="container">
+                 <h2 class="fade-in" data-translate="example_title">🎬 Recursion in Action: Countdown</h2>
+                 <p class="text-center fade-in delay-1" data-translate="example_subtitle">Let's see a simple Python function that uses recursion to count down.</p>
+
+                 <div class="explanation fade-in delay-2">
+                     <div class="code-demo">
+                        <span class="code-line"><span class="code-keyword">def</span> <span class="code-function">countdown</span>(<span class="code-parameter">n</span>):</span>
+                        <span class="code-line">    <span class="code-comment" data-translate="example_comment_base"># Base Case: Stop when n is zero or less</span></span>
+                        <span class="code-line">    <span class="code-keyword">if</span> <span class="code-parameter">n</span> <span class="code-operator">&lt;=</span> <span class="code-number">0</span>:</span>
+                        <span class="code-line">        <span class="code-function">print</span>(<span class="code-string">"Blast off!"</span>)</span>
+                        <span class="code-line">    <span class="code-keyword">else</span>:</span>
+                        <span class="code-line">        <span class="code-comment" data-translate="example_comment_recursive"># Recursive Step: Print n and call countdown with n-1</span></span>
+                        <span class="code-line">        <span class="code-function">print</span>(<span class="code-parameter">n</span>)</span>
+                        <span class="code-line">        <span class="code-call">countdown</span>(<span class="code-parameter">n</span> <span class="code-operator">-</span> <span class="code-number">1</span>)</span>
+                        <span class="code-line"></span>
+                        <span class="code-line"><span class="code-comment" data-translate="example_comment_call"># Let's start the countdown from 3</span></span>
+                        <span class="code-line"><span class="code-call">countdown</span>(<span class="code-number">3</span>)</span>
+
+                        <div class="code-output-area">
+                            <!-- Output will appear here via JS -->
+                        </div>
+                     </div>
+                     <div class="example-text fade-in delay-3">
+                         <p data-translate="example_text_p1">This function `countdown` takes a number `n`.</p>
+                         <p data-translate="example_text_p2">
+                             If `n` is 0 or less, it hits the
+                             <span class="code-highlight" data-translate-tooltip="tooltip_base_case">Base Case<span class="tooltip">The condition (n <= 0) that stops the recursion.</span></span>
+                             and prints "Blast off!".
+                         </p>
+                         <p data-translate="example_text_p3">
+                             Otherwise, it enters the
+                             <span class="code-highlight" data-translate-tooltip="tooltip_recursive_step">Recursive Step<span class="tooltip">The 'else' block where the function calls itself.</span></span>:
+                             it prints the current `n`, then calls
+                              <span class="code-highlight" data-translate-tooltip="tooltip_recursive_call">countdown(n-1)<span class="tooltip">The function calls itself with a smaller value (n-1), moving towards the base case.</span></span>.
+                         </p>
+                         <p data-translate="example_text_p4">Calling `countdown(3)` starts the process: 3 -> 2 -> 1 -> Blast off!</p>
+                     </div>
+                 </div>
+             </div>
+        </section>
+
+        <!-- ========= Knowledge Check Section ========= -->
+        <section id="knowledge-check">
+            <div class="container">
+                <h2 class="fade-in" data-translate="quiz_title">🧠 Quick Check!</h2>
+                <div class="quiz-container fade-in delay-1">
+                    <div id="quiz-area">
+                        <!-- Quiz questions will be loaded here by JavaScript -->
+                    </div>
+                    <div id="quiz-feedback" class="quiz-feedback">
+                        <!-- Feedback (Correct/Incorrect) shown here -->
+                    </div>
+                    <button id="next-question-btn" data-translate="quiz_next_button">Next Question</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========= Completion Section ========= -->
+        <section class="completion-section">
+            <div class="container">
+                 <div class="icon"> <!-- Animation applied via CSS -->
+                    <i class="fas fa-check-double"></i>
+                    <i class="fas fa-brain"></i>
+                    <i class="fas fa-star"></i>
+                </div>
+                <h2 class="fade-in delay-1" data-translate="completion_theory_title">Module 30 Theory Complete!</h2>
+                <p class="fade-in delay-2" data-translate="completion_theory_desc">
+                    You've explored the core ideas of recursion! It's a concept that becomes clearer with practice.<br>
+                    Ready to try it out? Head to the <strong>Practice Zone</strong> or tackle the <strong>Advanced Practice</strong>.
+                </p>
+                <div class="button-group">
+                    <!-- Button Order: Menu (Left, Grey), Practice (Center, Green), Advanced (Right, Grey) -->
+                    <a href="ctp-dashboard.html" class="action-button secondary fade-in delay-3"><i class="fas fa-list"></i> <span data-translate="nav_menu">Course Menu</span></a>
+                    <a href="ctp-practice-30.html" class="action-button success fade-in delay-4"><i class="fas fa-pencil-alt"></i> <span data-translate="nav_practice">Start Practice</span></a>
+                    <a href="ctp-advanced-30.html" class="action-button secondary fade-in delay-5"><i class="fas fa-flask"></i> <span data-translate="nav_advanced">Advanced Practice</span></a>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer Removed -->
+
+    <script>
+    // --- Translations Object ---
+    const translations = {
+        en: {
+            "page_title": "Module 30: Intro to Recursion (Optional)",
+            "nav_practice": "Start Practice", "nav_advanced": "Advanced Practice", "nav_menu": "Course Menu",
+            "nav_intro": "Intro", "nav_concepts": "Concepts", "nav_vs": "Recursion vs Iteration", "nav_example": "Example", "nav_quiz": "Knowledge Check",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title": "Module 30: Diving into Recursion! (Optional)",
+            "header_subtitle": "Explore the elegant, sometimes mind-bending, concept of functions calling themselves to solve problems.",
+            "intro_title": "🔄 What is Recursion?",
+            "intro_p1": "Recursion is a powerful programming technique where a function calls itself to solve a smaller version of the same problem. Think of it like Russian nesting dolls!",
+            "analogy_problem_title": "Big Problem", "analogy_problem_text": "You have a large doll (the initial problem).",
+            "analogy_smaller_title": "Smaller Problem", "analogy_smaller_text": "Opening it reveals a slightly smaller doll (calling the function again with simpler input).",
+            "analogy_base_title": "Smallest Doll", "analogy_base_text": "Eventually, you reach the smallest doll you can't open (the base case).",
+            "intro_p2": "This technique allows for elegant solutions to problems that can be broken down into self-similar subproblems.",
+            "concepts_title": "🧩 The Two Pillars of Recursion",
+            "concepts_subtitle": "Every recursive function needs these two essential parts:",
+            "concept_base_title": "1. Base Case", "concept_base_text": "The condition that stops the recursion. It's the simplest version of the problem that can be solved directly, preventing infinite calls.",
+            "concept_recursive_title": "2. Recursive Step", "concept_recursive_text": "Where the function calls itself, but with modified input that moves it closer to the base case. It breaks the problem down.",
+            "concepts_conclusion": "Missing a base case leads to infinite recursion (and usually a crash!).",
+            "vs_title": "🤔 Recursion vs. Iteration",
+            "vs_subtitle": "Both achieve repetition, but in different ways. Iteration uses loops (`for`, `while`).",
+            "vs_recursion_title": "Recursion (Self-Call)", "vs_recursion_text": "Often more elegant and closer to the mathematical definition of a problem. Can be less efficient (memory overhead from function calls).",
+            "vs_iteration_title": "Iteration (Loops)", "vs_iteration_text": "Generally more efficient (less memory usage, sometimes faster). Can sometimes be harder to map complex logic compared to recursion.",
+            "vs_decomposition_title": "Problem Decomposition", "vs_decomposition_text": "Recursion excels when a problem can be naturally broken down into smaller, self-similar instances of itself (e.g., tree traversal, factorial).",
+            "vs_conclusion": "Choosing between them depends on the problem, readability, and performance needs.",
+            "example_title": "🎬 Recursion in Action: Countdown",
+            "example_subtitle": "Let's see a simple Python function that uses recursion to count down.",
+            "example_comment_base": "# Base Case: Stop when n is zero or less",
+            "example_comment_recursive": "# Recursive Step: Print n and call countdown with n-1",
+            "example_comment_call": "# Let's start the countdown from 3",
+            "example_text_p1": "This function `countdown` takes a number `n`.",
+            "example_text_p2": "If `n` is 0 or less, it hits the Base Case and prints \"Blast off!\".",
+            "example_text_p3": "Otherwise, it enters the Recursive Step: it prints the current `n`, then calls `countdown(n-1)`.",
+            "example_text_p4": "Calling `countdown(3)` starts the process: 3 -> 2 -> 1 -> Blast off!",
+            "tooltip_base_case": "The condition (n <= 0) that stops the recursion.",
+            "tooltip_recursive_step": "The 'else' block where the function calls itself.",
+            "tooltip_recursive_call": "The function calls itself with a smaller value (n-1), moving towards the base case.",
+            "quiz_title": "🧠 Quick Check!", "quiz_next_button": "Next Question",
+            "quiz_q1": "What is the defining characteristic of a recursive function?",
+            "quiz_q1_opt1": "It uses a `for` loop.", "quiz_q1_opt2": "It calls itself.", "quiz_q1_opt3": "It always returns a number.", "quiz_q1_opt4": "It takes only one argument.",
+            "quiz_q2": "What is the essential component that prevents infinite recursion?",
+            "quiz_q2_opt1": "The recursive step.", "quiz_q2_opt2": "A `while` loop.", "quiz_q2_opt3": "The base case.", "quiz_q2_opt4": "A comment.",
+            "quiz_q3": "Which technique is generally considered more memory-efficient for simple repetition tasks?",
+            "quiz_q3_opt1": "Recursion", "quiz_q3_opt2": "Iteration (loops)", "quiz_q3_opt3": "Both are equal", "quiz_q3_opt4": "Depends on the function name",
+            "quiz_q4": "In the `countdown(n)` example, what is `countdown(n - 1)`?",
+            "quiz_q4_opt1": "The base case", "quiz_q4_opt2": "An error", "quiz_q4_opt3": "The initial call", "quiz_q4_opt4": "The recursive call/step",
+            "quiz_feedback_correct": "Correct! 🎉", "quiz_feedback_incorrect": "Not quite! The correct answer was: {correctAnswerText}",
+            "quiz_final_score_title": "Recursion Quiz Complete!", "quiz_final_score_summary": "You answered {score} out of {total} questions correctly.",
+            "quiz_final_score_perfect": "Excellent! You're thinking recursively.", "quiz_final_score_good": "Good job! Recursion takes practice.",
+            "completion_theory_title": "Module 30 Theory Complete!",
+            "completion_theory_desc": "You've explored the core ideas of recursion! It's a concept that becomes clearer with practice.<br> Ready to try it out? Head to the <strong>Practice Zone</strong> or tackle the <strong>Advanced Practice</strong>."
+        },
+        pt: {
+            "page_title": "Módulo 30: Intro à Recursão (Opcional)",
+            "nav_practice": "Iniciar Prática", "nav_advanced": "Prática Avançada", "nav_menu": "Menu do Curso",
+            "nav_intro": "Intro", "nav_concepts": "Conceitos", "nav_vs": "Recursão vs Iteração", "nav_example": "Exemplo", "nav_quiz": "Teste Rápido",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title": "Módulo 30: Mergulhando na Recursão! (Opcional)",
+            "header_subtitle": "Explore o conceito elegante, e às vezes complexo, de funções chamando a si mesmas para resolver problemas.",
+            "intro_title": "🔄 O que é Recursão?",
+            "intro_p1": "Recursão é uma técnica de programação poderosa onde uma função chama a si mesma para resolver uma versão menor do mesmo problema. Pense nisso como bonecas russas (Matrioskas)!",
+            "analogy_problem_title": "Problema Grande", "analogy_problem_text": "Você tem uma boneca grande (o problema inicial).",
+            "analogy_smaller_title": "Problema Menor", "analogy_smaller_text": "Abri-la revela uma boneca um pouco menor (chamar a função novamente com entrada mais simples).",
+            "analogy_base_title": "Menor Boneca", "analogy_base_text": "Eventualmente, você alcança a menor boneca que não pode abrir (o caso base).",
+            "intro_p2": "Esta técnica permite soluções elegantes para problemas que podem ser divididos em subproblemas auto-similares.",
+            "concepts_title": "🧩 Os Dois Pilares da Recursão",
+            "concepts_subtitle": "Toda função recursiva precisa destas duas partes essenciais:",
+            "concept_base_title": "1. Caso Base", "concept_base_text": "A condição que para a recursão. É a versão mais simples do problema que pode ser resolvida diretamente, prevenindo chamadas infinitas.",
+            "concept_recursive_title": "2. Passo Recursivo", "concept_recursive_text": "Onde a função chama a si mesma, mas com entrada modificada que a aproxima do caso base. Ele decompõe o problema.",
+            "concepts_conclusion": "A falta de um caso base leva à recursão infinita (e geralmente a um erro!).",
+            "vs_title": "🤔 Recursão vs. Iteração",
+            "vs_subtitle": "Ambos realizam repetição, mas de maneiras diferentes. Iteração usa laços (`for`, `while`).",
+            "vs_recursion_title": "Recursão (Auto-chamada)", "vs_recursion_text": "Frequentemente mais elegante e próxima da definição matemática de um problema. Pode ser menos eficiente (custo de memória das chamadas de função).",
+            "vs_iteration_title": "Iteração (Laços)", "vs_iteration_text": "Geralmente mais eficiente (menor uso de memória, às vezes mais rápido). Pode, às vezes, ser mais difícil mapear lógica complexa em comparação com a recursão.",
+            "vs_decomposition_title": "Decomposição do Problema", "vs_decomposition_text": "A recursão se destaca quando um problema pode ser naturalmente dividido em instâncias menores e auto-similares de si mesmo (ex: travessia de árvores, fatorial).",
+            "vs_conclusion": "A escolha entre eles depende do problema, legibilidade e necessidades de desempenho.",
+            "example_title": "🎬 Recursão em Ação: Contagem Regressiva",
+            "example_subtitle": "Vamos ver uma função Python simples que usa recursão para fazer uma contagem regressiva.",
+            "example_comment_base": "# Caso Base: Parar quando n é zero ou menor",
+            "example_comment_recursive": "# Passo Recursivo: Imprimir n e chamar countdown com n-1",
+            "example_comment_call": "# Vamos iniciar a contagem regressiva a partir de 3",
+            "example_text_p1": "Esta função `countdown` recebe um número `n`.",
+            "example_text_p2": "Se `n` for 0 ou menor, ela atinge o Caso Base e imprime \"Blast off!\".",
+            "example_text_p3": "Caso contrário, entra no Passo Recursivo: imprime o `n` atual e chama `countdown(n-1)`.",
+            "example_text_p4": "Chamar `countdown(3)` inicia o processo: 3 -> 2 -> 1 -> Blast off!",
+            "tooltip_base_case": "A condição (n <= 0) que para a recursão.",
+            "tooltip_recursive_step": "O bloco 'else' onde a função chama a si mesma.",
+            "tooltip_recursive_call": "A função chama a si mesma com um valor menor (n-1), aproximando-se do caso base.",
+            "quiz_title": "🧠 Teste Rápido!", "quiz_next_button": "Próxima Pergunta",
+            "quiz_q1": "Qual é a característica definidora de uma função recursiva?",
+            "quiz_q1_opt1": "Ela usa um laço `for`.", "quiz_q1_opt2": "Ela chama a si mesma.", "quiz_q1_opt3": "Ela sempre retorna um número.", "quiz_q1_opt4": "Ela aceita apenas um argumento.",
+            "quiz_q2": "Qual componente essencial previne a recursão infinita?",
+            "quiz_q2_opt1": "O passo recursivo.", "quiz_q2_opt2": "Um laço `while`.", "quiz_q2_opt3": "O caso base.", "quiz_q2_opt4": "Um comentário.",
+            "quiz_q3": "Qual técnica é geralmente considerada mais eficiente em termos de memória para tarefas de repetição simples?",
+            "quiz_q3_opt1": "Recursão", "quiz_q3_opt2": "Iteração (laços)", "quiz_q3_opt3": "Ambas são iguais", "quiz_q3_opt4": "Depende do nome da função",
+            "quiz_q4": "No exemplo `countdown(n)`, o que é `countdown(n - 1)`?",
+            "quiz_q4_opt1": "O caso base", "quiz_q4_opt2": "Um erro", "quiz_q4_opt3": "A chamada inicial", "quiz_q4_opt4": "A chamada/passo recursivo",
+            "quiz_feedback_correct": "Correto! 🎉", "quiz_feedback_incorrect": "Não foi bem assim! A resposta correta era: {correctAnswerText}",
+            "quiz_final_score_title": "Quiz de Recursão Completo!", "quiz_final_score_summary": "Você respondeu {score} de {total} perguntas corretamente.",
+            "quiz_final_score_perfect": "Excelente! Você está pensando recursivamente.", "quiz_final_score_good": "Bom trabalho! Recursão exige prática.",
+            "completion_theory_title": "Teoria do Módulo 30 Completa!",
+            "completion_theory_desc": "Você explorou as ideias centrais da recursão! É um conceito que fica mais claro com a prática.<br> Pronto para experimentar? Vá para a <strong>Zona de Prática</strong> ou encare a <strong>Prática Avançada</strong>."
+        },
+        zh: {
+            "page_title": "模块 30：递归入门（可选）",
+            "nav_practice": "开始练习", "nav_advanced": "高级练习", "nav_menu": "课程菜单",
+            "nav_intro": "介绍", "nav_concepts": "概念", "nav_vs": "递归 vs 迭代", "nav_example": "示例", "nav_quiz": "知识测验",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title": "模块 30：深入递归！ （可选）",
+            "header_subtitle": "探索函数调用自身来解决问题的优雅、有时甚至令人费解的概念。",
+            "intro_title": "🔄 什么是递归？",
+            "intro_p1": "递归是一种强大的编程技术，函数通过调用自身来解决同一问题的较小版本。可以把它想象成俄罗斯套娃！",
+            "analogy_problem_title": "大问题", "analogy_problem_text": "你有一个大套娃（初始问题）。",
+            "analogy_smaller_title": "小问题", "analogy_smaller_text": "打开它会发现一个稍小的套娃（用更简单的输入再次调用函数）。",
+            "analogy_base_title": "最小的套娃", "analogy_base_text": "最终，你到达无法再打开的最小套娃（基本情况）。",
+            "intro_p2": "这种技术能够为那些可以分解为自相似子问题的难题提供优雅的解决方案。",
+            "concepts_title": "🧩 递归的两大支柱",
+            "concepts_subtitle": "每个递归函数都需要这两个基本部分：",
+            "concept_base_title": "1. 基本情况（Base Case）", "concept_base_text": "停止递归的条件。它是问题的最简单版本，可以直接解决，防止无限调用。",
+            "concept_recursive_title": "2. 递归步骤（Recursive Step）", "concept_recursive_text": "函数调用自身的地方，但输入经过修改，使其更接近基本情况。它将问题分解。",
+            "concepts_conclusion": "缺少基本情况会导致无限递归（通常导致程序崩溃！）。",
+            "vs_title": "🤔 递归 vs. 迭代",
+            "vs_subtitle": "两者都实现重复，但方式不同。迭代使用循环（`for`、`while`）。",
+            "vs_recursion_title": "递归（自调用）", "vs_recursion_text": "通常更优雅，更接近问题的数学定义。效率可能较低（函数调用带来的内存开销）。",
+            "vs_iteration_title": "迭代（循环）", "vs_iteration_text": "通常效率更高（内存使用较少，有时更快）。与递归相比，有时可能更难映射复杂逻辑。",
+            "vs_decomposition_title": "问题分解", "vs_decomposition_text": "当一个问题可以自然地分解成更小的、自相似的实例时（例如，树遍历、阶乘），递归表现出色。",
+            "vs_conclusion": "在两者之间进行选择取决于问题本身、可读性和性能需求。",
+            "example_title": "🎬 递归实战：倒计时",
+            "example_subtitle": "让我们看一个使用递归进行倒计时的简单 Python 函数。",
+            "example_comment_base": "# 基本情况：当 n 小于等于 0 时停止",
+            "example_comment_recursive": "# 递归步骤：打印 n 并用 n-1 调用 countdown",
+            "example_comment_call": "# 让我们从 3 开始倒计时",
+            "example_text_p1": "这个 `countdown` 函数接受一个数字 `n`。",
+            "example_text_p2": "如果 `n` 小于或等于 0，它就达到了基本情况，并打印 “Blast off!”。",
+            "example_text_p3": "否则，它进入递归步骤：打印当前的 `n`，然后调用 `countdown(n-1)`。",
+            "example_text_p4": "调用 `countdown(3)` 启动过程：3 -> 2 -> 1 -> Blast off!",
+            "tooltip_base_case": "停止递归的条件 (n <= 0)。",
+            "tooltip_recursive_step": "函数调用自身的 'else' 代码块。",
+            "tooltip_recursive_call": "函数使用一个更小的值 (n-1) 调用自身，向基本情况靠近。",
+            "quiz_title": "🧠 快速测验！", "quiz_next_button": "下一题",
+            "quiz_q1": "递归函数的定义性特征是什么？",
+            "quiz_q1_opt1": "它使用 `for` 循环。", "quiz_q1_opt2": "它调用自身。", "quiz_q1_opt3": "它总是返回一个数字。", "quiz_q1_opt4": "它只接受一个参数。",
+            "quiz_q2": "防止无限递归的基本要素是什么？",
+            "quiz_q2_opt1": "递归步骤。", "quiz_q2_opt2": "`while` 循环。", "quiz_q2_opt3": "基本情况。", "quiz_q2_opt4": "注释。",
+            "quiz_q3": "对于简单的重复任务，哪种技术通常被认为内存效率更高？",
+            "quiz_q3_opt1": "递归", "quiz_q3_opt2": "迭代（循环）", "quiz_q3_opt3": "两者相同", "quiz_q3_opt4": "取决于函数名称",
+            "quiz_q4": "在 `countdown(n)` 示例中，`countdown(n - 1)` 是什么？",
+            "quiz_q4_opt1": "基本情况", "quiz_q4_opt2": "一个错误", "quiz_q4_opt3": "初始调用", "quiz_q4_opt4": "递归调用/步骤",
+            "quiz_feedback_correct": "正确！ 🎉", "quiz_feedback_incorrect": "不太对哦！正确答案是：{correctAnswerText}",
+            "quiz_final_score_title": "递归测验完成！", "quiz_final_score_summary": "你答对了 {score} / {total} 题。",
+            "quiz_final_score_perfect": "太棒了！你正在递归地思考。", "quiz_final_score_good": "做得不错！递归需要练习。",
+            "completion_theory_title": "模块 30 理论完成！",
+            "completion_theory_desc": "你已经探索了递归的核心思想！这是一个通过实践会变得更清晰的概念。<br> 准备好试试了吗？前往<strong>练习区</strong>或挑战<strong>高级练习</strong>。"
+        }
+    };
+
+
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // --- Language Management Functions ---
+        function getStoredLanguage() { /* ... (same as Module 0) ... */
+            const storedLang = localStorage.getItem('userLanguage');
+            if (storedLang && translations[storedLang]) return storedLang;
+            const browserLang = navigator.language || navigator.userLanguage;
+            if (browserLang.startsWith('pt')) return 'pt';
+            if (browserLang.startsWith('zh')) return 'zh';
+            return 'en';
+        }
+
+        function setLanguage(lang) { /* ... (same as Module 0, including quiz reload logic) ... */
+            if (!translations[lang]) lang = 'en';
+            localStorage.setItem('userLanguage', lang);
+            document.documentElement.lang = lang;
+            translatePage(lang);
+            const langSelect = document.getElementById('languageSelect');
+            if (langSelect) langSelect.value = lang;
+            if(quizArea && currentQuestionIndex < quizData.length) {
+                if (!quizArea.querySelector('[data-translate="quiz_final_score_title"]')) {
+                   loadQuestion();
+                }
+            }
+            // Also update code example comments/output if needed immediately
+            translateCodeElements(lang);
+            simulateCodeOutput(lang); // Re-simulate output with correct language if visible
+        }
+
+        function getTranslation(key, lang, replacements = {}) { /* ... (same as Module 0) ... */
+            let text = translations[lang]?.[key] ?? translations['en']?.[key] ?? `[${key}]`;
+            for (const placeholder in replacements) {
+                const regex = new RegExp(`\\{${placeholder}\\}`, 'g');
+                text = text.replace(regex, replacements[placeholder]);
+            }
+            return text;
+         }
+
+        function translatePage(lang) { /* ... (same as Module 0, including tooltip translation) ... */
+             if (!translations[lang]) lang = 'en';
+             document.querySelectorAll('[data-translate]').forEach(el => {
+                 const key = el.getAttribute('data-translate');
+                 const translation = getTranslation(key, lang);
+                 if (el.tagName === 'TITLE') { document.title = translation; }
+                 else if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') { /* Skip */ }
+                 else if (el.tagName === 'OPTION') { el.textContent = translation; }
+                 else {
+                     if (translation.includes('<') && translation.includes('>')) {
+                         el.innerHTML = translation;
+                     } else {
+                         el.textContent = translation;
+                     }
+                 }
+             });
+             document.querySelectorAll('[data-translate-placeholder]').forEach(el => {
+                 const key = el.getAttribute('data-translate-placeholder');
+                 el.setAttribute('placeholder', getTranslation(key, lang));
+             });
+             document.querySelectorAll('.code-highlight').forEach(el => {
+                 const tooltipKey = el.getAttribute('data-translate-tooltip');
+                 const tooltipSpan = el.querySelector('.tooltip');
+                 if(tooltipSpan && tooltipKey) {
+                    tooltipSpan.textContent = getTranslation(tooltipKey, lang);
+                 }
+             });
+             // Translate code comments handled by translateCodeElements
+        }
+
+        // Specific function to translate code elements like comments
+        function translateCodeElements(lang) {
+             document.querySelectorAll('.code-comment[data-translate]').forEach(el => {
+                const key = el.getAttribute('data-translate');
+                const translatedText = getTranslation(key, lang);
+                // Keep the '#' symbol and space
+                const commentContent = translatedText.startsWith('# ') ? translatedText.substring(2) : translatedText;
+                el.textContent = '# ' + commentContent;
+             });
+        }
+
+
+        // --- Initialize Language ---
+        const initialLang = getStoredLanguage();
+
+        // --- Minimal Nav Logic ---
+        // ... (same as Module 0) ...
+        const navToggleButton = document.getElementById('minimal-nav-toggle');
+        const navPanel = document.getElementById('minimal-nav-panel');
+        const body = document.body;
+        if (navToggleButton && navPanel) {
+             navToggleButton.addEventListener('click', (event) => { event.stopPropagation(); body.classList.toggle('nav-active'); navToggleButton.setAttribute('aria-expanded', body.classList.contains('nav-active')); });
+             document.addEventListener('click', (event) => { if (body.classList.contains('nav-active') && !navPanel.contains(event.target) && event.target !== navToggleButton && !navToggleButton.contains(event.target)) { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); } });
+             navPanel.querySelectorAll('a').forEach(link => { link.addEventListener('click', () => { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); }); });
+             document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && body.classList.contains('nav-active')) { body.classList.remove('nav-active'); navToggleButton.setAttribute('aria-expanded', 'false'); } });
+             navToggleButton.setAttribute('aria-expanded', 'false');
+        }
+
+        // --- Language Switcher Setup ---
+        // ... (same as Module 0) ...
+        const langSelect = document.getElementById('languageSelect');
+        if (langSelect) { langSelect.addEventListener('change', (e) => { setLanguage(e.target.value); }); }
+
+        // --- Intersection Observer for Animations ---
+        // ... (same as Module 0, applied to new classes: .analogy-part, .concept-box) ...
+         const observerOptions = { root: null, rootMargin: '0px', threshold: 0.1 };
+         const observerCallback = (entries, observer) => { entries.forEach(entry => { if (entry.isIntersecting) { entry.target.classList.add('visible'); } }); };
+         const observer = new IntersectionObserver(observerCallback, observerOptions);
+         document.querySelectorAll('.analogy-part, .analogy-arrow, .concept-box').forEach(el => { observer.observe(el); });
+
+
+        // --- Feature Card Interactivity (REMOVED as comparison cards are not interactive) ---
+
+        // --- Recursion Code Example Output Simulation ---
+        const codeOutputArea = document.querySelector('#recursion-example .code-output-area');
+        let outputSimulated = false; // Flag to prevent re-simulation on language change unless needed
+
+        function simulateCodeOutput(lang) {
+            if (codeOutputArea && codeOutputArea.classList.contains('visible')) { // Only update if already visible
+                const blastOffText = getTranslation("example_text_p4", lang).split(': ')[1] || "3\n2\n1\nBlast off!";
+                 // Simple update based on translated p4 text as a backup
+                 const outputLines = blastOffText.split(' -> ').join('\n');
+                 codeOutputArea.textContent = "> " + outputLines;
+            }
+        }
+
+        if (codeOutputArea) {
+             const codeObserver = new IntersectionObserver((entries) => {
+                 entries.forEach(entry => {
+                     if (entry.isIntersecting && !codeOutputArea.classList.contains('visible')) {
+                         const currentLang = getStoredLanguage();
+                         // Get the expected output dynamically based on current language's example_text_p4
+                         const blastOffText = getTranslation("example_text_p4", currentLang).split(': ')[1] || "3\n2\n1\nBlast off!";
+                         const outputLines = blastOffText.split(' -> ').join('\n');
+
+                        // No timeout needed if animation handles delay
+                        codeOutputArea.textContent = "> " + outputLines; // Set text immediately
+                        codeOutputArea.classList.add('visible'); // Trigger fade-in via CSS
+                        outputSimulated = true;
+                        codeObserver.unobserve(entry.target); // Stop observing once visible
+                     }
+                 });
+             }, { threshold: 0.5 }); // Trigger when 50% visible
+             codeObserver.observe(document.querySelector('.code-demo'));
+        }
+
+
+        // --- Tooltip Setup (CSS Hover handles this) ---
+
+        // --- Knowledge Check / Quiz ---
+        const quizData = [ // Updated for Recursion
+            { questionKey: "quiz_q1", optionKeys: ["quiz_q1_opt1", "quiz_q1_opt2", "quiz_q1_opt3", "quiz_q1_opt4"], correctAnswer: 1 },
+            { questionKey: "quiz_q2", optionKeys: ["quiz_q2_opt1", "quiz_q2_opt2", "quiz_q2_opt3", "quiz_q2_opt4"], correctAnswer: 2 },
+            { questionKey: "quiz_q3", optionKeys: ["quiz_q3_opt1", "quiz_q3_opt2", "quiz_q3_opt3", "quiz_q3_opt4"], correctAnswer: 1 },
+            { questionKey: "quiz_q4", optionKeys: ["quiz_q4_opt1", "quiz_q4_opt2", "quiz_q4_opt3", "quiz_q4_opt4"], correctAnswer: 3 }
+        ];
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        const quizArea = document.getElementById('quiz-area');
+        const feedbackArea = document.getElementById('quiz-feedback');
+        const nextButton = document.getElementById('next-question-btn');
+
+        function loadQuestion() { /* ... (same as Module 0, using getTranslation) ... */
+              const currentLang = getStoredLanguage();
+              if (!quizArea || currentQuestionIndex >= quizData.length) {
+                  if (quizArea && !quizArea.querySelector('[data-translate="quiz_final_score_title"]')) {
+                     showFinalScore();
+                  }
+                  return;
+              }
+              const currentQuiz = quizData[currentQuestionIndex];
+              const questionText = getTranslation(currentQuiz.questionKey, currentLang);
+              quizArea.innerHTML = `
+                  <div class="quiz-question">${currentQuestionIndex + 1}. ${questionText.replace(/`(.*?)`/g, '<code>$1</code>')}</div>
+                  <div class="quiz-options">
+                      ${currentQuiz.optionKeys.map((optionKey, index) => `
+                          <button class="quiz-option-btn" data-index="${index}">${getTranslation(optionKey, currentLang)}</button>
+                      `).join('')}
+                  </div>
+              `;
+              feedbackArea.classList.remove('visible', 'correct', 'incorrect');
+              feedbackArea.textContent = '';
+              nextButton.classList.remove('visible');
+              nextButton.disabled = true;
+              document.querySelectorAll('.quiz-option-btn').forEach(button => {
+                  button.addEventListener('click', handleAnswer);
+              });
+        }
+
+        function handleAnswer(event) { /* ... (same as Module 0, using getTranslation) ... */
+             const currentLang = getStoredLanguage();
+             const selectedButton = event.target;
+             const selectedIndex = parseInt(selectedButton.dataset.index);
+             const correctIndex = quizData[currentQuestionIndex].correctAnswer;
+             const correctOptionKey = quizData[currentQuestionIndex].optionKeys[correctIndex];
+             const correctAnswerText = getTranslation(correctOptionKey, currentLang);
+
+             document.querySelectorAll('.quiz-option-btn').forEach(btn => { btn.disabled = true; btn.classList.remove('shake'); });
+             feedbackArea.classList.add('visible');
+
+             if (selectedIndex === correctIndex) {
+                 selectedButton.classList.add('correct');
+                 feedbackArea.innerHTML = getTranslation('quiz_feedback_correct', currentLang);
+                 feedbackArea.classList.add('correct'); feedbackArea.classList.remove('incorrect');
+                 score++;
+                 selectedButton.classList.add('tada-anim');
+             } else {
+                 selectedButton.classList.add('incorrect');
+                 feedbackArea.innerHTML = getTranslation('quiz_feedback_incorrect', currentLang, { correctAnswerText: `<strong>${correctAnswerText}</strong>` });
+                 feedbackArea.classList.add('incorrect'); feedbackArea.classList.remove('correct');
+                 const correctButton = document.querySelector(`.quiz-option-btn[data-index="${correctIndex}"]`);
+                 if(correctButton) correctButton.classList.add('correct');
+                 selectedButton.classList.add('shake');
+             }
+             selectedButton.addEventListener('animationend', () => { selectedButton.classList.remove('tada-anim', 'shake'); }, { once: true });
+             nextButton.classList.add('visible'); nextButton.disabled = false;
+         }
+
+         function showFinalScore() { /* ... (same as Module 0, using getTranslation and new keys) ... */
+              const currentLang = getStoredLanguage();
+              const totalQuestions = quizData.length;
+              let resultMessageKey;
+              if (score === totalQuestions) {
+                  resultMessageKey = 'quiz_final_score_perfect';
+              } else {
+                  resultMessageKey = 'quiz_final_score_good';
+              }
+              // Use the specific final score title key for recursion
+              const finalTitle = getTranslation('quiz_final_score_title', currentLang) || "Quiz Complete!";
+
+              quizArea.innerHTML = `
+                  <div class="quiz-question text-center" style="font-size: 1.5rem;">${finalTitle}</div>
+                  <p class="text-center" style="font-size: 1.2rem; margin-bottom: 1rem;">${getTranslation('quiz_final_score_summary', currentLang, { score: score, total: totalQuestions })}</p>
+                  <p class="text-center" style="color: ${score === totalQuestions ? 'var(--success-color)' : 'var(--primary-color)'}; font-weight: bold;">${getTranslation(resultMessageKey, currentLang)}</p>
+              `;
+              feedbackArea.classList.remove('visible');
+              nextButton.style.display = 'none';
+              // quizArea.scrollIntoView({ behavior: 'smooth', block: 'center' }); // Optional smooth scroll
+          }
+
+        nextButton.addEventListener('click', () => { /* ... (same as Module 0) ... */
+             currentQuestionIndex++;
+             loadQuestion();
+        });
+
+        // --- Initial Language Application and Load ---
+        setLanguage(initialLang); // Apply language FIRST
+        if (quizArea) { loadQuestion(); } // Initial quiz load
+
+        // Trigger fade-in animations for elements initially in view
+        document.querySelectorAll('.fade-in').forEach(el => {
+            const rect = el.getBoundingClientRect();
+            if(rect.top < window.innerHeight && rect.bottom >= 0) {
+                // Element is initially visible, CSS animation runs automatically
+            }
+        });
+
+         // Ensure initial code comments are translated
+         translateCodeElements(initialLang);
+
+    }); // End DOMContentLoaded
+    </script>
+
+</body>
+</html>

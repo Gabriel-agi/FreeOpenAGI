@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<!-- Language set by JS -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Title set by JS -->
+    <title data-translate="page_title_m11">Module 11: Modifying Lists</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* --- Reset & Base Styles --- */
+        :root {
+            --primary-color: #007bff;
+            --secondary-color: #6c757d;
+            --background-light: #f8f9fa;
+            --background-dark: #343a40;
+            --text-light: #f8f9fa;
+            --text-dark: #212529;
+            --accent-color: #ffc107; /* Yellow */
+            --success-color: #28a745;
+            --error-color: #dc3545;
+            --info-color: #17a2b8; /* Teal for info/mutation */
+            --border-radius: 8px;
+            --transition-speed: 0.3s;
+            --font-body: 'Roboto', sans-serif;
+            --font-title: 'Orbitron', sans-serif;
+             /* Nav Colors from other page */
+            --nav-primary: #6e48aa;
+            --nav-success: #4cc9f0;
+            --nav-dark: #1a1a2e;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; font-size: 16px; }
+        body {
+            font-family: var(--font-body); line-height: 1.7; background-color: var(--background-light);
+            color: var(--text-dark); overflow-x: hidden; display: flex; flex-direction: column; min-height: 100vh;
+        }
+        main { flex-grow: 1; } /* Ensures main content pushes potential footer down */
+
+        /* --- Utility Classes --- */
+        .container { max-width: 960px; margin: 0 auto; padding: 0 15px; }
+        .text-center { text-align: center; }
+        .highlight { color: var(--primary-color); font-weight: bold; }
+        .highlight-mutation { color: var(--info-color); font-weight: bold; }
+        .fade-in { opacity: 0; transform: translateY(20px); animation: fadeInAnimation 0.8s ease-out forwards; }
+        .fade-in.delay-1 { animation-delay: 0.2s; } .fade-in.delay-2 { animation-delay: 0.4s; }
+        .fade-in.delay-3 { animation-delay: 0.6s; } .fade-in.delay-4 { animation-delay: 0.8s; }
+        .fade-in.delay-5 { animation-delay: 1.0s; }
+        .button-group { margin-top: 2rem; display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; }
+        .action-button {
+             display: inline-flex; align-items: center; justify-content: center; gap: 0.5em;
+             padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold; color: var(--text-light);
+             background-color: var(--primary-color); border: none; border-radius: var(--border-radius);
+             cursor: pointer; transition: background-color var(--transition-speed), transform var(--transition-speed), filter var(--transition-speed), box-shadow var(--transition-speed);
+             margin-top: 1rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1); text-decoration: none; line-height: 1.2;
+        }
+        .action-button:hover:not(:disabled) { background-color: #0056b3; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+        .action-button:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none; box-shadow: none; opacity: 0.7; }
+        .action-button.success { background-color: var(--success-color); }
+        .action-button.success:hover:not(:disabled) { background-color: #218838; }
+        .action-button.secondary { background-color: var(--secondary-color); }
+        .action-button.secondary:hover:not(:disabled) { background-color: #5a6268; }
+        .action-button:active:not(:disabled) { transform: translateY(1px) scale(0.98); filter: brightness(0.95); }
+
+
+        /* --- Animations --- */
+        @keyframes fadeInAnimation { to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); } 50% { transform: scale(1.03); box-shadow: 0 0 15px rgba(0, 123, 255, 0.6); } 100% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); } }
+        @keyframes highlightChange { 0% { background-color: rgba(255, 193, 7, 0.4); } 100% { background-color: transparent; } }
+        @keyframes tada { from { transform: scale3d(1, 1, 1); } 10%, 20% { transform: scale3d(.9, .9, .9) rotate3d(0, 0, 1, -3deg); } 30%, 50%, 70%, 90% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, 3deg); } 40%, 60%, 80% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, -3deg); } to { transform: scale3d(1, 1, 1); } }
+        .tada-anim { animation: tada 1s ease; }
+        @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
+        @keyframes iconAppearCorrect { 0% { transform: scale(0.5) rotate(-15deg); opacity: 0; } 60% { transform: scale(1.2) rotate(5deg); opacity: 1; } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
+
+        /* --- Minimal Retractable Nav --- */
+        .minimal-nav-button { position: fixed; top: 15px; right: 15px; z-index: 1001; background-color: rgba(52, 58, 64, 0.75); color: var(--text-light); border: none; border-radius: var(--border-radius); padding: 8px 12px; cursor: pointer; transition: background-color var(--transition-speed), opacity var(--transition-speed), transform var(--transition-speed); font-size: 1.1rem; opacity: 0.6; box-shadow: 0 2px 5px rgba(0,0,0,0.2); line-height: 1; }
+        .minimal-nav-button:hover { background-color: rgba(52, 58, 64, 0.95); opacity: 1; transform: scale(1.05); }
+        .minimal-nav { position: fixed; top: 60px; right: 15px; z-index: 1000; background-color: var(--background-dark); border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.3); padding: 0.8rem; opacity: 0; transform: translateY(-15px) scale(0.95); transform-origin: top right; pointer-events: none; transition: opacity var(--transition-speed) ease, transform var(--transition-speed) ease; min-width: 200px; }
+        body.nav-active .minimal-nav { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+        .minimal-nav ul { list-style: none; margin: 0; padding: 0; }
+        .minimal-nav ul li { margin-bottom: 5px; } .minimal-nav ul li:last-child { margin-bottom: 0; }
+        .minimal-nav ul li a { display: flex; align-items: center; color: var(--text-light); text-decoration: none; padding: 0.6rem 1rem; border-radius: 4px; transition: background-color var(--transition-speed), color var(--transition-speed); white-space: nowrap; font-weight: 400; font-size: 0.95rem; }
+        .minimal-nav ul li a i.fas { margin-right: 10px; width: 1.2em; text-align: center; opacity: 0.8; transition: opacity var(--transition-speed); }
+        .minimal-nav ul li a:hover { background-color: var(--primary-color); color: var(--text-light); }
+        .minimal-nav ul li a:hover i.fas { opacity: 1; }
+        .minimal-nav .language-switcher-item { padding: 0.5rem 1rem; border-top: 1px solid var(--secondary-color); margin-top: 8px; padding-top: 13px; }
+        #languageSelect { width: 100%; background: rgba(255,255,255,0.1); color: white; border: 1px solid var(--nav-success); border-radius: 5px; padding: 6px 30px 6px 12px; cursor: pointer; font-size: 0.9rem; appearance: none; -webkit-appearance: none; -moz-appearance: none; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%234CC9F0%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right 10px center; background-size: 10px auto; transition: background-color 0.3s ease; }
+        #languageSelect:hover { background-color: rgba(255,255,255,0.15); }
+        #languageSelect option { background: var(--nav-dark); color: var(--text-light); }
+
+        /* --- Header --- */
+        .main-header { background: linear-gradient(135deg, var(--primary-color), #0056b3); color: var(--text-light); padding: 4rem 0 6rem; text-align: center; position: relative; overflow: hidden; }
+        .main-header h1 { font-family: var(--font-title); font-size: 3rem; margin-bottom: 0.5rem; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); animation: fadeInAnimation 1s ease-out; }
+        .main-header p { font-size: 1.2rem; font-weight: 300; opacity: 0.9; animation: fadeInAnimation 1s ease-out 0.3s forwards; opacity: 0; /* Start hidden */ }
+        .header-shape { position: absolute; border-radius: 50%; background-color: rgba(255, 255, 255, 0.1); animation: pulse 5s infinite ease-in-out alternate; }
+        .shape1 { width: 150px; height: 150px; bottom: -50px; left: 10%; animation-duration: 6s; }
+        .shape2 { width: 80px; height: 80px; top: 50px; right: 15%; animation-duration: 4s; }
+        .shape3 { width: 50px; height: 50px; bottom: 20px; right: 30%; animation-duration: 7s; }
+
+        /* --- Section Styling --- */
+        section { padding: 4rem 0; border-bottom: 1px solid #eee; }
+        main section:last-of-type { border-bottom: none; } /* Last section before potential footer has no border */
+        section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); margin-bottom: 2rem; text-align: center; position: relative; padding-bottom: 10px; }
+        section h2::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 60px; height: 4px; background-color: var(--accent-color); border-radius: 2px; }
+
+        /* --- Introduction / Mutability Section --- */
+        #introduction p { font-size: 1.1rem; max-width: 700px; margin: 0 auto 1rem; text-align: center; }
+        .concept-box {
+            background-color: #e9f5ff; border-left: 5px solid var(--info-color); padding: 1rem 1.5rem;
+            margin: 2rem auto; border-radius: var(--border-radius); max-width: 700px;
+            box-shadow: 0 3px 8px rgba(0, 123, 255, 0.1);
+        }
+        .concept-box strong { color: var(--info-color); font-family: var(--font-title); font-size: 1.1rem;}
+        .concept-box p { margin: 0.5rem 0 0 0; font-size: 1rem; color: var(--text-dark); text-align: left;}
+
+        /* --- Code Demo Styling (Common for Methods) --- */
+        .code-demonstration {
+            display: flex; flex-wrap: wrap; gap: 2rem; align-items: flex-start;
+            margin-top: 2rem; background-color: #fff; padding: 2rem;
+            border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        }
+        .code-block {
+            flex: 1; min-width: 280px; font-family: 'Courier New', Courier, monospace;
+            background-color: var(--background-dark); color: #eee; padding: 1.5rem;
+            border-radius: var(--border-radius); box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+        }
+        .code-block .code-line { margin-bottom: 0.8rem; white-space: pre-wrap; line-height: 1.5; }
+        .code-block .comment { color: #6a9955; font-style: italic; }
+        .code-block .method-name { color: #dcdcaa; font-weight: bold;} /* Yellowish */
+        .code-block .string-literal { color: #ce9178; } /* Orangey */
+        .code-block .number-literal { color: #b5cea8; } /* Greenish number */
+        .code-block .keyword { color: #569cd6; } /* Blueish keyword */
+        .code-block .list-state {
+            margin-top: 1rem; padding-top: 1rem; border-top: 1px dashed var(--secondary-color);
+            color: var(--accent-color); font-weight: bold; font-size: 1.1rem;
+        }
+        .list-highlight-change { animation: highlightChange 0.8s ease-out; } /* Visual feedback */
+        .demo-explanation { flex: 1; min-width: 280px; font-size: 1.05rem; }
+        .demo-explanation p { margin-bottom: 1rem; }
+        .code-highlight { /* Same as module 0 */
+            background-color: rgba(0, 123, 255, 0.1); color: #0056b3; padding: 0.2em 0.4em;
+            border-radius: 4px; font-family: 'Courier New', Courier, monospace; font-weight: bold;
+            cursor: default; /* No hover effect needed unless tooltip added */ display: inline-block;
+        }
+         /* Optional: Simple Button to trigger demo steps if needed */
+        .demo-trigger-btn {
+            background-color: var(--accent-color); color: var(--text-dark); border: none; padding: 0.5rem 1rem;
+            border-radius: 5px; cursor: pointer; transition: background-color var(--transition-speed); margin-top: 0.5rem; font-weight: bold;
+        }
+        .demo-trigger-btn:hover { background-color: #e0a800; }
+
+        /* --- Specific Method Sections (Structure) --- */
+        /* Re-use .code-demonstration, .code-block, .demo-explanation */
+
+        /* --- Knowledge Check Section --- */
+        /* Identical CSS to Module 0, reusing selectors */
+        #knowledge-check { background-color: #e9ecef; }
+        .quiz-container { background-color: #fff; padding: 2rem; border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.1); max-width: 700px; margin: 2rem auto 0; }
+        .quiz-question { font-size: 1.2rem; font-weight: bold; margin-bottom: 1.5rem; color: var(--text-dark); }
+        .quiz-options button { display: block; width: 100%; padding: 1rem; margin-bottom: 1rem; text-align: left; font-size: 1rem; background-color: #f8f9fa; border: 1px solid #ced4da; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), border-color var(--transition-speed), transform var(--transition-speed); }
+        .quiz-options button:not(:disabled):hover { background-color: #e2e6ea; border-color: #adb5bd; transform: translateX(5px); }
+        .quiz-options button:disabled { cursor: default; opacity: 0.7; }
+        .quiz-options button.correct { background-color: #d4edda; border-color: var(--success-color); color: #155724; font-weight: bold; }
+        .quiz-options button.incorrect { background-color: #f8d7da; border-color: var(--error-color); color: #721c24; font-weight: bold; }
+        .quiz-options button.incorrect.shake { animation: shake 0.5s ease; }
+        .quiz-feedback { margin-top: 1.5rem; padding: 1rem; border-radius: var(--border-radius); font-weight: bold; text-align: center; opacity: 0; transition: opacity 0.5s ease; height: 0; overflow: hidden; }
+        .quiz-feedback.visible { opacity: 1; height: auto; margin-bottom: 1rem; }
+        .quiz-feedback.correct { background-color: #d4edda; color: #155724; }
+        .quiz-feedback.incorrect { background-color: #f8d7da; color: #721c24; }
+        #next-question-btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5em; margin: 1.5rem auto 0; padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold; color: var(--text-light); background-color: var(--primary-color); border: none; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), transform var(--transition-speed), opacity 0.3s, visibility 0.3s; opacity: 0; visibility: hidden; }
+        #next-question-btn:hover { background-color: #0056b3; transform: scale(1.05); }
+        #next-question-btn.visible { opacity: 1; visibility: visible; }
+
+
+        /* --- Completion Section Styling --- */
+        /* Identical CSS to Module 0, reusing selectors */
+        .completion-section { padding: 4rem 0; text-align: center; background-color: var(--background-light); }
+        .completion-section .icon { font-size: 4rem; color: var(--success-color); margin-bottom: 1rem; display: inline-block; opacity: 0; animation: iconAppearCorrect 1s ease-out 0.5s forwards; }
+        .completion-section .icon .fas + .fas { margin-left: 0.75rem; }
+        .completion-section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); margin-bottom: 1rem; }
+        .completion-section h2::after { display: none; }
+        .completion-section p { font-size: 1.1rem; margin-top: 1rem; color: var(--secondary-color); max-width: 700px; margin-left: auto; margin-right: auto; line-height: 1.8; }
+        .completion-section .button-group { margin-top: 2.5rem; }
+
+        /* --- Responsive Design --- */
+        @media (max-width: 768px) {
+            html { font-size: 15px; }
+            .main-header h1 { font-size: 2.5rem; }
+            .main-header p { font-size: 1.1rem; }
+            section h2 { font-size: 1.8rem; }
+            .code-demonstration { flex-direction: column; }
+            .minimal-nav { min-width: 180px; }
+            .minimal-nav ul li a { padding: 0.6rem 0.8rem; }
+            #languageSelect { font-size: 0.85rem; padding: 5px 25px 5px 10px;}
+            .completion-section h2 { font-size: 2rem; }
+            .completion-section .button-group { flex-direction: column; align-items: center; gap: 0.8rem; }
+            .completion-section .action-button { width: 80%; max-width: 350px; margin-top: 0; }
+        }
+        @media (max-width: 480px) {
+            html { font-size: 14px; }
+            .main-header h1 { font-size: 2rem; }
+            .main-header p { font-size: 1rem; }
+            section h2 { font-size: 1.6rem; }
+            .quiz-options button { padding: 0.8rem; font-size: 0.95rem; }
+            .minimal-nav-button { top: 10px; right: 10px; padding: 6px 10px; font-size: 1rem; }
+            .minimal-nav { top: 48px; right: 10px; min-width: 160px; }
+            .minimal-nav ul li a { padding: 0.5rem 0.7rem; font-size: 0.9rem;}
+            .minimal-nav ul li a i.fas { margin-right: 8px; }
+            #languageSelect { font-size: 0.8rem; padding: 4px 20px 4px 8px;}
+            .completion-section .icon { font-size: 3.5rem; }
+            .completion-section h2 { font-size: 1.8rem; }
+            .completion-section p { font-size: 1rem; }
+            .completion-section .action-button { width: 90%; max-width: 300px; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- ========= Minimal Nav Handle ========= -->
+    <button id="minimal-nav-toggle" class="minimal-nav-button" aria-label="Toggle Navigation Menu">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- ========= Minimal Nav Panel (with Language Switcher) ========= -->
+    <nav id="minimal-nav-panel" class="minimal-nav">
+        <ul>
+            <!-- Links to OTHER main pages -->
+            <li><a href="ctp-practice-11.html"><i class="fas fa-pencil-alt fa-fw"></i> <span data-translate="nav_practice_m11">Practice</span></a></li>
+            <li><a href="ctp-advanced-11.html"><i class="fas fa-flask fa-fw"></i> <span data-translate="nav_advanced_m11">Advanced Practice</span></a></li>
+            <li><a href="ctp-dashboard.html"><i class="fas fa-list fa-fw"></i> <span data-translate="nav_menu_m11">Course Menu</span></a></li>
+            <hr style="border: none; border-top: 1px solid var(--secondary-color); margin: 8px 0;">
+            <!-- Links to sections on THIS page -->
+            <li><a href="#introduction"><i class="fas fa-info-circle fa-fw"></i> <span data-translate="nav_intro_m11">Intro & Mutability</span></a></li>
+            <li><a href="#adding-elements"><i class="fas fa-plus-circle fa-fw"></i> <span data-translate="nav_adding_m11">Adding</span></a></li>
+            <li><a href="#removing-elements"><i class="fas fa-minus-circle fa-fw"></i> <span data-translate="nav_removing_m11">Removing</span></a></li>
+            <li><a href="#slicing-modification"><i class="fas fa-cut fa-fw"></i> <span data-translate="nav_slicing_m11">Slicing Mod</span></a></li>
+            <li><a href="#knowledge-check"><i class="fas fa-check-double fa-fw"></i> <span data-translate="nav_quiz_m11">Knowledge Check</span></a></li>
+            <!-- Language Switcher Item -->
+            <li class="language-switcher-item">
+                 <select id="languageSelect" aria-label="Select Language">
+                     <option value="en" data-translate="lang_en">🇬🇧 English</option>
+                     <option value="pt" data-translate="lang_pt">🇧🇷 Português</option>
+                     <option value="zh" data-translate="lang_zh">🇨🇳 中文</option>
+                 </select>
+            </li>
+        </ul>
+    </nav>
+
+    <header class="main-header">
+        <!-- Decorative shapes -->
+        <div class="header-shape shape1"></div>
+        <div class="header-shape shape2"></div>
+        <div class="header-shape shape3"></div>
+
+        <div class="container">
+            <h1 data-translate="header_title_m11">Module 11: Modifying Lists</h1>
+            <p data-translate="header_subtitle_m11">Learn how to change lists: adding, removing, and replacing elements.</p>
+        </div>
+    </header>
+
+    <main>
+        <!-- ========= Introduction & Mutability Section ========= -->
+        <section id="introduction">
+            <div class="container">
+                <h2 class="fade-in" data-translate="intro_title_m11">🔄 Lists Can Change!</h2>
+                <p class="fade-in delay-1" data-translate="intro_p1_m11">
+                    Unlike strings or numbers, lists are <span class="highlight-mutation">mutable</span>. This means you can change their contents after they are created.
+                </p>
+                <p class="fade-in delay-2" data-translate="intro_p2_m11">
+                    This module explores how to add items, remove items, and modify parts of a list directly. This is crucial for <span class="highlight">Data Manipulation</span>.
+                </p>
+                <div class="concept-box fade-in delay-3">
+                    <strong data-translate="pc_concept_title_m11">Computational Thinking: Mutability</strong>
+                    <p data-translate="pc_concept_desc_m11">
+                        Mutability refers to an object's ability to be changed after creation. Understanding which data types (like lists) are mutable is key to predicting how your code will behave, especially when data is shared or modified in different parts of a program.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========= Adding Elements Section ========= -->
+        <section id="adding-elements">
+            <div class="container">
+                <h2 class="fade-in" data-translate="adding_title_m11">➕ Adding Elements</h2>
+                <p class="text-center fade-in delay-1" data-translate="adding_subtitle_m11">Two common ways: add to the end or at a specific position.</p>
+
+                <div class="code-demonstration fade-in delay-2">
+                    <!-- .append() Demo -->
+                    <div class="code-block">
+                        <div class="code-line"><span class="keyword">my_list</span> = [<span class="number-literal">10</span>, <span class="number-literal">20</span>, <span class="number-literal">30</span>]</div>
+                        <div class="code-line"><span class="keyword">my_list</span>.<span class="method-name">append</span>(<span class="number-literal">40</span>) <span class="comment"># Adds 40 to the end</span></div>
+                        <div class="list-state" id="append-output">[10, 20, 30, 40]</div>
+                    </div>
+                    <div class="demo-explanation">
+                        <h3 data-translate="append_heading_m11"><code class="code-highlight">.append(item)</code></h3>
+                        <p data-translate="append_desc_m11">Adds a single <code class="code-highlight">item</code> to the very <span class="highlight">end</span> of the list. Simple and common.</p>
+                    </div>
+                </div>
+
+                <div class="code-demonstration fade-in delay-3" style="margin-top: 2.5rem;">
+                    <!-- .insert() Demo -->
+                    <div class="code-block">
+                         <div class="code-line"><span class="keyword">my_list</span> = [<span class="string-literal">'a'</span>, <span class="string-literal">'b'</span>, <span class="string-literal">'d'</span>]</div>
+                         <div class="code-line"><span class="keyword">my_list</span>.<span class="method-name">insert</span>(<span class="number-literal">2</span>, <span class="string-literal">'c'</span>) <span class="comment"># Insert 'c' at index 2</span></div>
+                         <div class="list-state" id="insert-output">['a', 'b', 'c', 'd']</div>
+                    </div>
+                    <div class="demo-explanation">
+                         <h3 data-translate="insert_heading_m11"><code class="code-highlight">.insert(index, item)</code></h3>
+                         <p data-translate="insert_desc_m11">Adds a single <code class="code-highlight">item</code> at the specified <code class="code-highlight">index</code>. Existing items from that index onwards are shifted to the right.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========= Removing Elements Section ========= -->
+        <section id="removing-elements">
+            <div class="container">
+                <h2 class="fade-in" data-translate="removing_title_m11">➖ Removing Elements</h2>
+                <p class="text-center fade-in delay-1" data-translate="removing_subtitle_m11">Several ways depending on whether you know the index or the value.</p>
+
+                <div class="code-demonstration fade-in delay-2">
+                    <!-- del Demo -->
+                    <div class="code-block">
+                         <div class="code-line"><span class="keyword">my_list</span> = [<span class="number-literal">5</span>, <span class="number-literal">10</span>, <span class="number-literal">15</span>, <span class="number-literal">20</span>]</div>
+                         <div class="code-line"><span class="keyword">del</span> <span class="keyword">my_list</span>[<span class="number-literal">1</span>] <span class="comment"># Delete item at index 1</span></div>
+                         <div class="list-state" id="del-output">[5, 15, 20]</div>
+                    </div>
+                    <div class="demo-explanation">
+                         <h3 data-translate="del_heading_m11"><code class="code-highlight">del list[index]</code></h3>
+                         <p data-translate="del_desc_m11">Removes the item at the specified <code class="code-highlight">index</code> using the <code class="code-highlight">del</code> keyword. Can also remove slices (more later).</p>
+                    </div>
+                </div>
+
+                <div class="code-demonstration fade-in delay-3" style="margin-top: 2.5rem;">
+                    <!-- .pop() Demo -->
+                     <div class="code-block">
+                         <div class="code-line"><span class="keyword">my_list</span> = [<span class="string-literal">'x'</span>, <span class="string-literal">'y'</span>, <span class="string-literal">'z'</span>]</div>
+                         <div class="code-line"><span class="keyword">removed_item</span> = <span class="keyword">my_list</span>.<span class="method-name">pop</span>(<span class="number-literal">0</span>) <span class="comment"># Remove index 0, store it</span></div>
+                         <div class="list-state" id="pop-output">List: ['y', 'z']<br>Removed: 'x'</div>
+                     </div>
+                     <div class="demo-explanation">
+                         <h3 data-translate="pop_heading_m11"><code class="code-highlight">.pop([index])</code></h3>
+                         <p data-translate="pop_desc_m11">Removes the item at the specified <code class="code-highlight">index</code> (defaults to the last item if no index is given) <span class="highlight">AND returns</span> the removed item. Useful if you need the value.</p>
+                     </div>
+                 </div>
+
+                 <div class="code-demonstration fade-in delay-4" style="margin-top: 2.5rem;">
+                    <!-- .remove() Demo -->
+                     <div class="code-block">
+                         <div class="code-line"><span class="keyword">my_list</span> = [<span class="number-literal">1</span>, <span class="number-literal">2</span>, <span class="number-literal">3</span>, <span class="number-literal">2</span>, <span class="number-literal">4</span>]</div>
+                         <div class="code-line"><span class="keyword">my_list</span>.<span class="method-name">remove</span>(<span class="number-literal">2</span>) <span class="comment"># Remove the FIRST occurrence of 2</span></div>
+                         <div class="list-state" id="remove-output">[1, 3, 2, 4]</div>
+                     </div>
+                     <div class="demo-explanation">
+                         <h3 data-translate="remove_heading_m11"><code class="code-highlight">.remove(value)</code></h3>
+                         <p data-translate="remove_desc_m11">Searches for the specified <code class="code-highlight">value</code> and removes the <span class="highlight">first</span> matching item it finds. Causes an error if the value isn't in the list.</p>
+                     </div>
+                 </div>
+            </div>
+        </section>
+
+        <!-- ========= Modifying with Slicing Section ========= -->
+        <section id="slicing-modification">
+            <div class="container">
+                <h2 class="fade-in" data-translate="slicing_title_m11">🔪 Modifying with Slicing</h2>
+                <p class="text-center fade-in delay-1" data-translate="slicing_subtitle_m11">Slicing isn't just for reading; you can assign to slices to replace, delete, or insert items.</p>
+
+                <div class="code-demonstration fade-in delay-2">
+                    <!-- Slicing Demo -->
+                    <div class="code-block">
+                         <div class="code-line"><span class="keyword">letters</span> = [<span class="string-literal">'a'</span>, <span class="string-literal">'b'</span>, <span class="string-literal">'c'</span>, <span class="string-literal">'d'</span>, <span class="string-literal">'e'</span>]</div>
+                         <div class="code-line"><span class="comment"># Replace index 1 and 2 ('b', 'c')</span></div>
+                         <div class="code-line"><span class="keyword">letters</span>[<span class="number-literal">1</span>:<span class="number-literal">3</span>] = [<span class="string-literal">'X'</span>, <span class="string-literal">'Y'</span>]</div>
+                         <div class="list-state" id="slice-replace-output">['a', 'X', 'Y', 'd', 'e']</div>
+                         <div class="code-line" style="margin-top:1.5rem;"><span class="comment"># Delete index 3 and 4 ('d', 'e')</span></div>
+                         <div class="code-line"><span class="keyword">letters</span>[<span class="number-literal">3</span>:<span class="number-literal">5</span>] = []</div>
+                          <div class="list-state" id="slice-delete-output">['a', 'X', 'Y']</div>
+                    </div>
+                    <div class="demo-explanation">
+                         <h3 data-translate="slice_mod_heading_m11">Assigning to Slices</h3>
+                         <p data-translate="slice_mod_p1_m11">When you assign a new list (even an empty one) to a slice like <code class="code-highlight">my_list[start:end] = new_items</code>, the elements within that slice range are replaced by the items in <code class="code-highlight">new_items</code>.</p>
+                         <p data-translate="slice_mod_p2_m11">The length of <code class="code-highlight">new_items</code> doesn't have to match the length of the slice being replaced. This allows you to effectively insert or delete multiple items at once.</p>
+                         <p data-translate="slice_mod_p3_m11">Assigning an empty list <code class="code-highlight">[]</code> to a slice deletes the elements in that slice.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ========= Knowledge Check Section ========= -->
+        <section id="knowledge-check">
+            <div class="container">
+                <h2 class="fade-in" data-translate="quiz_title_m11">🧠 Quick Check!</h2>
+                <div class="quiz-container fade-in delay-1">
+                    <div id="quiz-area">
+                        <!-- Quiz questions will be loaded here by JavaScript -->
+                    </div>
+                    <div id="quiz-feedback" class="quiz-feedback">
+                        <!-- Feedback (Correct/Incorrect) shown here -->
+                    </div>
+                    <button id="next-question-btn" data-translate="quiz_next_button_m11">Next Question</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========= Completion Section ========= -->
+        <section class="completion-section">
+            <div class="container">
+                 <div class="icon"> <!-- Animation applied via CSS -->
+                    <i class="fas fa-list-alt"></i> <!-- Changed icon -->
+                    <i class="fas fa-cogs"></i>   <!-- Changed icon -->
+                    <i class="fas fa-check-double"></i>
+                </div>
+                <h2 class="fade-in delay-1" data-translate="completion_theory_title_m11">Module 11 Theory Complete!</h2>
+                <p class="fade-in delay-2" data-translate="completion_theory_desc_m11">
+                    You've learned how to manipulate lists using various methods and slicing! This mutability is a powerful feature.<br>
+                    Ready to practice these skills? Head to the <strong>Practice Zone</strong> or tackle the <strong>Advanced Practice</strong>.
+                </p>
+                <div class="button-group">
+                    <!-- Button Order: Menu (Left, Grey), Practice (Center, Green), Advanced (Right, Grey) -->
+                    <a href="ctp-dashboard.html" class="action-button secondary fade-in delay-3"><i class="fas fa-list"></i> <span data-translate="nav_menu_m11">Course Menu</span></a>
+                    <a href="ctp-practice-11.html" class="action-button success fade-in delay-4"><i class="fas fa-pencil-alt"></i> <span data-translate="nav_practice_m11">Start Practice</span></a>
+                    <a href="ctp-advanced-11.html" class="action-button secondary fade-in delay-5"><i class="fas fa-flask"></i> <span data-translate="nav_advanced_m11">Advanced Practice</span></a>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer section has been removed -->
+
+    <script>
+    // --- Translations Object ---
+    const translations = {
+        en: {
+            "page_title_m11": "Module 11: Modifying Lists",
+            "nav_practice_m11": "Start Practice", "nav_advanced_m11": "Advanced Practice", "nav_menu_m11": "Course Menu",
+            "nav_intro_m11": "Intro & Mutability", "nav_adding_m11": "Adding", "nav_removing_m11": "Removing", "nav_slicing_m11": "Slicing Mod", "nav_quiz_m11": "Knowledge Check",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title_m11": "Module 11: Modifying Lists", "header_subtitle_m11": "Learn how to change lists: adding, removing, and replacing elements.",
+            "intro_title_m11": "🔄 Lists Can Change!",
+            "intro_p1_m11": "Unlike strings or numbers, lists are mutable. This means you can change their contents after they are created.",
+            "intro_p2_m11": "This module explores how to add items, remove items, and modify parts of a list directly. This is crucial for Data Manipulation.",
+            "pc_concept_title_m11": "Computational Thinking: Mutability",
+            "pc_concept_desc_m11": "Mutability refers to an object's ability to be changed after creation. Understanding which data types (like lists) are mutable is key to predicting how your code will behave, especially when data is shared or modified in different parts of a program.",
+            "adding_title_m11": "➕ Adding Elements", "adding_subtitle_m11": "Two common ways: add to the end or at a specific position.",
+            "append_heading_m11": ".append(item)", "append_desc_m11": "Adds a single <code>item</code> to the very end of the list. Simple and common.",
+            "insert_heading_m11": ".insert(index, item)", "insert_desc_m11": "Adds a single <code>item</code> at the specified <code>index</code>. Existing items from that index onwards are shifted to the right.",
+            "removing_title_m11": "➖ Removing Elements", "removing_subtitle_m11": "Several ways depending on whether you know the index or the value.",
+            "del_heading_m11": "del list[index]", "del_desc_m11": "Removes the item at the specified <code>index</code> using the <code>del</code> keyword. Can also remove slices (more later).",
+            "pop_heading_m11": ".pop([index])", "pop_desc_m11": "Removes the item at the specified <code>index</code> (defaults to the last item if no index is given) AND returns the removed item. Useful if you need the value.",
+            "remove_heading_m11": ".remove(value)", "remove_desc_m11": "Searches for the specified <code>value</code> and removes the first matching item it finds. Causes an error if the value isn't in the list.",
+            "slicing_title_m11": "🔪 Modifying with Slicing", "slicing_subtitle_m11": "Slicing isn't just for reading; you can assign to slices to replace, delete, or insert items.",
+            "slice_mod_heading_m11": "Assigning to Slices",
+            "slice_mod_p1_m11": "When you assign a new list (even an empty one) to a slice like <code>my_list[start:end] = new_items</code>, the elements within that slice range are replaced by the items in <code>new_items</code>.",
+            "slice_mod_p2_m11": "The length of <code>new_items</code> doesn't have to match the length of the slice being replaced. This allows you to effectively insert or delete multiple items at once.",
+            "slice_mod_p3_m11": "Assigning an empty list <code>[]</code> to a slice deletes the elements in that slice.",
+            "quiz_title_m11": "🧠 Quick Check!", "quiz_next_button_m11": "Next Question",
+            "quiz_q1_m11": "Which method adds an item ONLY to the end of a list?",
+            "quiz_q1_opt1_m11": ".insert()", "quiz_q1_opt2_m11": ".append()", "quiz_q1_opt3_m11": ".add()", "quiz_q1_opt4_m11": ".extend()",
+            "quiz_q2_m11": "If `my_list = [10, 20, 30]` and you run `my_list.insert(1, 15)`, what is `my_list` now?",
+            "quiz_q2_opt1_m11": "[10, 20, 15, 30]", "quiz_q2_opt2_m11": "[15, 10, 20, 30]", "quiz_q2_opt3_m11": "[10, 15, 20, 30]", "quiz_q2_opt4_m11": "[10, 20, 30, 15]",
+            "quiz_q3_m11": "Which command removes an item by its position (index) and lets you store the removed item?",
+            "quiz_q3_opt1_m11": "del my_list[i]", "quiz_q3_opt2_m11": "my_list.remove(value)", "quiz_q3_opt3_m11": "my_list.pop(i)", "quiz_q3_opt4_m11": "my_list.delete(i)",
+            "quiz_q4_m11": "If `items = ['a', 'b', 'c', 'b']` and you run `items.remove('b')`, what is `items`?",
+            "quiz_q4_opt1_m11": "['a', 'c', 'b']", "quiz_q4_opt2_m11": "['a', 'b', 'c']", "quiz_q4_opt3_m11": "['a', 'c']", "quiz_q4_opt4_m11": "Causes an error",
+             // Re-use generic feedback keys
+            "quiz_feedback_correct": "Correct! 🎉", "quiz_feedback_incorrect": "Not quite! The correct answer was: {correctAnswerText}",
+            "quiz_final_score_title": "Module 11 Complete!", "quiz_final_score_summary": "You answered {score} out of {total} questions correctly.",
+            "quiz_final_score_perfect": "Excellent! You've mastered list modification.", "quiz_final_score_good": "Good job! Review the methods you missed.",
+            "completion_theory_title_m11": "Module 11 Theory Complete!",
+            "completion_theory_desc_m11": "You've learned how to manipulate lists using various methods and slicing! This mutability is a powerful feature.<br>Ready to practice these skills? Head to the <strong>Practice Zone</strong> or tackle the <strong>Advanced Practice</strong>."
+        },
+        pt: {
+            "page_title_m11": "Módulo 11: Modificando Listas",
+            "nav_practice_m11": "Iniciar Prática", "nav_advanced_m11": "Prática Avançada", "nav_menu_m11": "Menu do Curso",
+            "nav_intro_m11": "Intro & Mutabilidade", "nav_adding_m11": "Adicionar", "nav_removing_m11": "Remover", "nav_slicing_m11": "Mod. por Fatia", "nav_quiz_m11": "Teste Rápido",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title_m11": "Módulo 11: Modificando Listas", "header_subtitle_m11": "Aprenda a alterar listas: adicionar, remover e substituir elementos.",
+            "intro_title_m11": "🔄 Listas Podem Mudar!",
+            "intro_p1_m11": "Diferente de strings ou números, listas são <span class=\"highlight-mutation\">mutáveis</span>. Isso significa que você pode alterar seu conteúdo após serem criadas.",
+            "intro_p2_m11": "Este módulo explora como adicionar itens, remover itens e modificar partes de uma lista diretamente. Isso é crucial para <span class=\"highlight\">Manipulação de Dados</span>.",
+            "pc_concept_title_m11": "Pensamento Computacional: Mutabilidade",
+            "pc_concept_desc_m11": "Mutabilidade refere-se à capacidade de um objeto ser alterado após a criação. Entender quais tipos de dados (como listas) são mutáveis é fundamental para prever como seu código se comportará, especialmente quando dados são compartilhados ou modificados em diferentes partes de um programa.",
+            "adding_title_m11": "➕ Adicionando Elementos", "adding_subtitle_m11": "Duas formas comuns: adicionar no final ou em uma posição específica.",
+            "append_heading_m11": ".append(item)", "append_desc_m11": "Adiciona um único <code>item</code> ao <code>final</code> da lista. Simples e comum.",
+            "insert_heading_m11": ".insert(indice, item)", "insert_desc_m11": "Adiciona um único <code>item</code> no <code>indice</code> especificado. Itens existentes a partir desse índice são deslocados para a direita.",
+            "removing_title_m11": "➖ Removendo Elementos", "removing_subtitle_m11": "Várias formas, dependendo se você conhece o índice ou o valor.",
+            "del_heading_m11": "del lista[indice]", "del_desc_m11": "Remove o item no <code>indice</code> especificado usando a palavra-chave <code>del</code>. Também pode remover fatias (mais adiante).",
+            "pop_heading_m11": ".pop([indice])", "pop_desc_m11": "Remove o item no <code>indice</code> especificado (padrão é o último item se nenhum índice for fornecido) E retorna o item removido. Útil se você precisar do valor.",
+            "remove_heading_m11": ".remove(valor)", "remove_desc_m11": "Procura pelo <code>valor</code> especificado e remove o <code>primeiro</code> item correspondente que encontrar. Causa um erro se o valor não estiver na lista.",
+            "slicing_title_m11": "🔪 Modificando com Fatiamento", "slicing_subtitle_m11": "Fatiar não serve apenas para ler; você pode atribuir a fatias para substituir, deletar ou inserir itens.",
+            "slice_mod_heading_m11": "Atribuindo a Fatias",
+            "slice_mod_p1_m11": "Quando você atribui uma nova lista (mesmo vazia) a uma fatia como <code>minha_lista[inicio:fim] = novos_itens</code>, os elementos nesse intervalo da fatia são substituídos pelos itens em <code>novos_itens</code>.",
+            "slice_mod_p2_m11": "O comprimento de <code>novos_itens</code> não precisa corresponder ao comprimento da fatia sendo substituída. Isso permite inserir ou deletar múltiplos itens de uma vez.",
+            "slice_mod_p3_m11": "Atribuir uma lista vazia <code>[]</code> a uma fatia deleta os elementos nessa fatia.",
+            "quiz_title_m11": "🧠 Teste Rápido!", "quiz_next_button_m11": "Próxima Pergunta",
+            "quiz_q1_m11": "Qual método adiciona um item APENAS ao final de uma lista?",
+            "quiz_q1_opt1_m11": ".insert()", "quiz_q1_opt2_m11": ".append()", "quiz_q1_opt3_m11": ".add()", "quiz_q1_opt4_m11": ".extend()",
+            "quiz_q2_m11": "Se `lista = [10, 20, 30]` e você executa `lista.insert(1, 15)`, qual é a `lista` agora?",
+            "quiz_q2_opt1_m11": "[10, 20, 15, 30]", "quiz_q2_opt2_m11": "[15, 10, 20, 30]", "quiz_q2_opt3_m11": "[10, 15, 20, 30]", "quiz_q2_opt4_m11": "[10, 20, 30, 15]",
+            "quiz_q3_m11": "Qual comando remove um item pela sua posição (índice) e permite armazenar o item removido?",
+            "quiz_q3_opt1_m11": "del minha_lista[i]", "quiz_q3_opt2_m11": "minha_lista.remove(valor)", "quiz_q3_opt3_m11": "minha_lista.pop(i)", "quiz_q3_opt4_m11": "minha_lista.delete(i)",
+            "quiz_q4_m11": "Se `itens = ['a', 'b', 'c', 'b']` e você executa `itens.remove('b')`, quais são os `itens`?",
+            "quiz_q4_opt1_m11": "['a', 'c', 'b']", "quiz_q4_opt2_m11": "['a', 'b', 'c']", "quiz_q4_opt3_m11": "['a', 'c']", "quiz_q4_opt4_m11": "Causa um erro",
+            "quiz_feedback_correct": "Correto! 🎉", "quiz_feedback_incorrect": "Não foi bem assim! A resposta correta era: {correctAnswerText}",
+            "quiz_final_score_title": "Módulo 11 Completo!", "quiz_final_score_summary": "Você respondeu {score} de {total} perguntas corretamente.",
+            "quiz_final_score_perfect": "Excelente! Você dominou a modificação de listas.", "quiz_final_score_good": "Bom trabalho! Revise os métodos que errou.",
+            "completion_theory_title_m11": "Teoria do Módulo 11 Completa!",
+            "completion_theory_desc_m11": "Você aprendeu a manipular listas usando vários métodos e fatiamento! Essa mutabilidade é um recurso poderoso.<br>Pronto para praticar essas habilidades? Vá para a <strong>Zona de Prática</strong> ou encare a <strong>Prática Avançada</strong>."
+        },
+        zh: {
+            "page_title_m11": "模块 11：修改列表",
+            "nav_practice_m11": "开始练习", "nav_advanced_m11": "高级练习", "nav_menu_m11": "课程菜单",
+            "nav_intro_m11": "简介与可变性", "nav_adding_m11": "添加", "nav_removing_m11": "移除", "nav_slicing_m11": "切片修改", "nav_quiz_m11": "知识测验",
+            "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文",
+            "header_title_m11": "模块 11：修改列表", "header_subtitle_m11": "学习如何更改列表：添加、删除和替换元素。",
+            "intro_title_m11": "🔄 列表可以改变！",
+            "intro_p1_m11": "与字符串或数字不同，列表是<span class=\"highlight-mutation\">可变的</span>。这意味着您可以在创建列表后更改其内容。",
+            "intro_p2_m11": "本模块探讨如何直接添加项、删除项以及修改列表的一部分。这对于<span class=\"highlight\">数据操作</span>至关重要。",
+            "pc_concept_title_m11": "计算思维：可变性",
+            "pc_concept_desc_m11": "可变性是指对象在创建后被更改的能力。了解哪些数据类型（如列表）是可变的，对于预测代码行为至关重要，尤其是在程序的不同部分共享或修改数据时。",
+            "adding_title_m11": "➕ 添加元素", "adding_subtitle_m11": "两种常见方式：添加到末尾或特定位置。",
+            "append_heading_m11": ".append(项)", "append_desc_m11": "将单个<code>项</code>添加到列表的<code>末尾</code>。简单且常用。",
+            "insert_heading_m11": ".insert(索引, 项)", "insert_desc_m11": "在指定的<code>索引</code>处添加单个<code>项</code>。从该索引开始的现有项向右移动。",
+            "removing_title_m11": "➖ 移除元素", "removing_subtitle_m11": "有几种方法，取决于您是知道索引还是值。",
+            "del_heading_m11": "del 列表[索引]", "del_desc_m11": "使用<code>del</code>关键字移除指定<code>索引</code>处的项。也可以移除切片（稍后介绍）。",
+            "pop_heading_m11": ".pop([索引])", "pop_desc_m11": "移除指定<code>索引</code>处的项（如果未提供索引，则默认为最后一项）并<code>返回</code>被移除的项。如果您需要该值，这很有用。",
+            "remove_heading_m11": ".remove(值)", "remove_desc_m11": "搜索指定的<code>值</code>并移除它找到的<code>第一个</code>匹配项。如果列表中没有该值，则会引发错误。",
+            "slicing_title_m11": "🔪 使用切片修改", "slicing_subtitle_m11": "切片不仅用于读取；您可以对切片赋值以替换、删除或插入项。",
+            "slice_mod_heading_m11": "对切片赋值",
+            "slice_mod_p1_m11": "当您将新列表（甚至是空列表）赋给像<code>my_list[start:end] = new_items</code>这样的切片时，该切片范围内的元素将被<code>new_items</code>中的项替换。",
+            "slice_mod_p2_m11": "<code>new_items</code>的长度不必与被替换切片的长度匹配。这使您可以有效地一次性插入或删除多个项。",
+            "slice_mod_p3_m11": "将空列表<code>[]</code>赋给切片会删除该切片中的元素。",
+            "quiz_title_m11": "🧠 快速测验！", "quiz_next_button_m11": "下一题",
+            "quiz_q1_m11": "哪种方法只将项添加到列表的末尾？",
+            "quiz_q1_opt1_m11": ".insert()", "quiz_q1_opt2_m11": ".append()", "quiz_q1_opt3_m11": ".add()", "quiz_q1_opt4_m11": ".extend()",
+            "quiz_q2_m11": "如果 `my_list = [10, 20, 30]` 并且您运行 `my_list.insert(1, 15)`，那么 `my_list` 现在是什么？",
+            "quiz_q2_opt1_m11": "[10, 20, 15, 30]", "quiz_q2_opt2_m11": "[15, 10, 20, 30]", "quiz_q2_opt3_m11": "[10, 15, 20, 30]", "quiz_q2_opt4_m11": "[10, 20, 30, 15]",
+            "quiz_q3_m11": "哪个命令通过其位置（索引）移除项并允许您存储移除的项？",
+            "quiz_q3_opt1_m11": "del my_list[i]", "quiz_q3_opt2_m11": "my_list.remove(value)", "quiz_q3_opt3_m11": "my_list.pop(i)", "quiz_q3_opt4_m11": "my_list.delete(i)",
+            "quiz_q4_m11": "如果 `items = ['a', 'b', 'c', 'b']` 并且您运行 `items.remove('b')`，那么 `items` 是什么？",
+            "quiz_q4_opt1_m11": "['a', 'c', 'b']", "quiz_q4_opt2_m11": "['a', 'b', 'c']", "quiz_q4_opt3_m11": "['a', 'c']", "quiz_q4_opt4_m11": "导致错误",
+            "quiz_feedback_correct": "正确！🎉", "quiz_feedback_incorrect": "不太对哦！正确答案是：{correctAnswerText}",
+            "quiz_final_score_title": "模块 11 完成！", "quiz_final_score_summary": "您答对了 {score} / {total} 题。",
+            "quiz_final_score_perfect": "太棒了！您已掌握列表修改。", "quiz_final_score_good": "做得不错！复习一下您遗漏的方法。",
+            "completion_theory_title_m11": "模块 11 理论完成！",
+            "completion_theory_desc_m11": "您已经学会了如何使用各种方法和切片来操作列表！这种可变性是一个强大的特性。<br>准备好练习这些技能了吗？前往<strong>练习区</strong>或挑战<strong>高级练习</strong>。"
+        }
+    };
+
+
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // --- Language Management Functions ---
+        function getStoredLanguage() {
+            const storedLang = localStorage.getItem('userLanguage');
+            if (storedLang && translations[storedLang]) return storedLang;
+            const browserLang = navigator.language || navigator.userLanguage;
+            if (browserLang.startsWith('pt')) return 'pt';
+            if (browserLang.startsWith('zh')) return 'zh';
+            return 'en'; // Default to English
+        }
+
+        function setLanguage(lang) {
+            if (!translations[lang]) lang = 'en'; // Fallback
+            localStorage.setItem('userLanguage', lang);
+            document.documentElement.lang = lang;
+            translatePage(lang);
+
+            const langSelect = document.getElementById('languageSelect');
+            if (langSelect) { langSelect.value = lang; }
+
+             // Update quiz if language changes mid-quiz
+             if(quizArea && currentQuestionIndex < quizData.length) {
+                 if (!quizArea.querySelector('[data-translate^="quiz_final_score_title"]')) { // Check key prefix
+                    loadQuestion(); // Reload current question with new language
+                 }
+             }
+              // Update dynamic code outputs if needed (simple examples here don't require it)
+              // updateCodeOutputs(lang);
+        }
+
+        // Helper to get translation, potentially with replacements
+        function getTranslation(key, lang, replacements = {}) {
+            let text = translations[lang]?.[key] ?? translations['en']?.[key] ?? `[${key}]`; // Fallback shows key
+            for (const placeholder in replacements) {
+                const regex = new RegExp(`\\{${placeholder}\\}`, 'g');
+                text = text.replace(regex, replacements[placeholder]);
+            }
+            return text;
+        }
+
+
+        function translatePage(lang) {
+            if (!translations[lang]) lang = 'en';
+
+            document.querySelectorAll('[data-translate]').forEach(el => {
+                const key = el.getAttribute('data-translate');
+                const translation = getTranslation(key, lang);
+                 if (el.tagName === 'TITLE') { document.title = translation; }
+                 else if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') { /* Skip */ }
+                 else if (el.tagName === 'OPTION') { el.textContent = translation; }
+                 else {
+                     // Use innerHTML only if the translation likely contains HTML (like <code>)
+                     if (translation.includes('<') && translation.includes('>')) {
+                         el.innerHTML = translation;
+                     } else {
+                         el.textContent = translation;
+                     }
+                 }
+            });
+
+            document.querySelectorAll('[data-translate-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-translate-placeholder');
+                el.setAttribute('placeholder', getTranslation(key, lang));
+            });
+
+            // No tooltips used in this module's static examples yet
+        }
+
+        // --- Initialize Language ---
+        const initialLang = getStoredLanguage();
+
+
+        // --- Minimal Nav Logic (Identical to Module 0) ---
+        const navToggleButton = document.getElementById('minimal-nav-toggle');
+        const navPanel = document.getElementById('minimal-nav-panel');
+        const body = document.body;
+
+        if (navToggleButton && navPanel) {
+            navToggleButton.addEventListener('click', (event) => {
+                event.stopPropagation(); body.classList.toggle('nav-active');
+                navToggleButton.setAttribute('aria-expanded', body.classList.contains('nav-active'));
+             });
+            document.addEventListener('click', (event) => {
+                if (body.classList.contains('nav-active') && !navPanel.contains(event.target) &&
+                    event.target !== navToggleButton && !navToggleButton.contains(event.target)) {
+                    body.classList.remove('nav-active');
+                    navToggleButton.setAttribute('aria-expanded', 'false');
+                }
+             });
+            navPanel.querySelectorAll('a').forEach(link => {
+                link.addEventListener('click', () => {
+                    body.classList.remove('nav-active');
+                    navToggleButton.setAttribute('aria-expanded', 'false');
+                });
+             });
+             document.addEventListener('keydown', (event) => {
+                 if (event.key === 'Escape' && body.classList.contains('nav-active')) {
+                    body.classList.remove('nav-active');
+                    navToggleButton.setAttribute('aria-expanded', 'false');
+                 }
+             });
+            navToggleButton.setAttribute('aria-expanded', 'false');
+        }
+
+        // --- Language Switcher Setup ---
+        const langSelect = document.getElementById('languageSelect');
+        if (langSelect) {
+            langSelect.addEventListener('change', (e) => {
+                setLanguage(e.target.value);
+            });
+        }
+
+
+        // --- Intersection Observer for Fade-in Animations (Identical to Module 0) ---
+        const observerOptions = { root: null, rootMargin: '0px', threshold: 0.1 };
+        const observerCallback = (entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                     // Optional: Unobserve after first intersection if animation only runs once
+                    // observer.unobserve(entry.target);
+                }
+            });
+        };
+        const observer = new IntersectionObserver(observerCallback, observerOptions);
+        // Observe all fade-in elements
+        document.querySelectorAll('.fade-in').forEach(el => {
+             observer.observe(el);
+        });
+
+        // --- Simple Code Output Update (No complex simulation needed here) ---
+        // The HTML already contains the final state for the simple examples.
+
+        // --- Knowledge Check / Quiz (Adapted for Module 11) ---
+        const quizData = [
+            { questionKey: "quiz_q1_m11", optionKeys: ["quiz_q1_opt1_m11", "quiz_q1_opt2_m11", "quiz_q1_opt3_m11", "quiz_q1_opt4_m11"], correctAnswer: 1 }, // .append()
+            { questionKey: "quiz_q2_m11", optionKeys: ["quiz_q2_opt1_m11", "quiz_q2_opt2_m11", "quiz_q2_opt3_m11", "quiz_q2_opt4_m11"], correctAnswer: 2 }, // .insert() result
+            { questionKey: "quiz_q3_m11", optionKeys: ["quiz_q3_opt1_m11", "quiz_q3_opt2_m11", "quiz_q3_opt3_m11", "quiz_q3_opt4_m11"], correctAnswer: 2 }, // .pop() returns value
+            { questionKey: "quiz_q4_m11", optionKeys: ["quiz_q4_opt1_m11", "quiz_q4_opt2_m11", "quiz_q4_opt3_m11", "quiz_q4_opt4_m11"], correctAnswer: 0 }  // .remove() first occurrence
+        ];
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        const quizArea = document.getElementById('quiz-area');
+        const feedbackArea = document.getElementById('quiz-feedback');
+        const nextButton = document.getElementById('next-question-btn');
+
+        function loadQuestion() {
+             const currentLang = getStoredLanguage();
+             // Check if quizArea exists and if we haven't finished the quiz
+            if (!quizArea || currentQuestionIndex >= quizData.length) {
+                 // If quizArea exists but doesn't contain the final score yet, show it.
+                if (quizArea && !quizArea.querySelector('[data-translate^="quiz_final_score_title"]')) { // Check key prefix
+                    showFinalScore();
+                 }
+                 return; // Exit if quiz is done or area doesn't exist
+            }
+
+
+             const currentQuiz = quizData[currentQuestionIndex];
+             const questionText = getTranslation(currentQuiz.questionKey, currentLang);
+             quizArea.innerHTML = `
+                 <div class="quiz-question">${currentQuestionIndex + 1}. ${questionText.replace(/`(.*?)`/g, '<code>$1</code>')}</div>
+                 <div class="quiz-options">
+                     ${currentQuiz.optionKeys.map((optionKey, index) => `
+                         <button class="quiz-option-btn" data-index="${index}">${getTranslation(optionKey, currentLang).replace(/`(.*?)`/g, '<code>$1</code>')}</button>
+                     `).join('')}
+                 </div>
+             `;
+
+             feedbackArea.classList.remove('visible', 'correct', 'incorrect');
+             feedbackArea.textContent = '';
+             nextButton.classList.remove('visible');
+             nextButton.disabled = true; // Disable until an answer is chosen
+
+             document.querySelectorAll('.quiz-option-btn').forEach(button => {
+                 button.addEventListener('click', handleAnswer);
+             });
+         }
+
+        function handleAnswer(event) {
+             const currentLang = getStoredLanguage();
+             const selectedButton = event.target;
+             const selectedIndex = parseInt(selectedButton.dataset.index);
+             const correctIndex = quizData[currentQuestionIndex].correctAnswer;
+             const correctOptionKey = quizData[currentQuestionIndex].optionKeys[correctIndex];
+             // Get translated correct answer text, replacing backticks if any
+             const correctAnswerText = getTranslation(correctOptionKey, currentLang).replace(/`(.*?)`/g, '<code>$1</code>');
+
+             document.querySelectorAll('.quiz-option-btn').forEach(btn => {
+                btn.disabled = true; // Disable all options
+                btn.classList.remove('shake'); // Remove shake if previously applied
+            });
+
+             feedbackArea.classList.add('visible'); // Show feedback area
+
+             if (selectedIndex === correctIndex) {
+                 selectedButton.classList.add('correct');
+                 feedbackArea.innerHTML = getTranslation('quiz_feedback_correct', currentLang); // Use generic key
+                 feedbackArea.classList.add('correct');
+                 feedbackArea.classList.remove('incorrect');
+                 score++;
+                 selectedButton.classList.add('tada-anim'); // Correct animation
+             } else {
+                 selectedButton.classList.add('incorrect');
+                 // Use generic key, provide translated correct answer text for interpolation
+                 feedbackArea.innerHTML = getTranslation('quiz_feedback_incorrect', currentLang, { correctAnswerText: `<strong>${correctAnswerText}</strong>` });
+                 feedbackArea.classList.add('incorrect');
+                 feedbackArea.classList.remove('correct');
+                 // Highlight the correct answer as well
+                 const correctButton = document.querySelector(`.quiz-option-btn[data-index="${correctIndex}"]`);
+                 if(correctButton) correctButton.classList.add('correct');
+                 selectedButton.classList.add('shake'); // Incorrect animation
+             }
+
+              // Clean up animation classes after they run
+              selectedButton.addEventListener('animationend', () => {
+                   selectedButton.classList.remove('tada-anim', 'shake');
+              }, { once: true });
+
+             // Show and enable the next button
+             nextButton.classList.add('visible');
+             nextButton.disabled = false;
+         }
+
+         function showFinalScore() {
+              const currentLang = getStoredLanguage();
+              const totalQuestions = quizData.length;
+              let resultMessageKey = 'quiz_final_score_good'; // Default message key
+                if (score === totalQuestions) {
+                    resultMessageKey = 'quiz_final_score_perfect'; // Perfect score message key
+                } else if (score === 0) {
+                     // Optional: Add a specific message for zero score if desired
+                     // resultMessageKey = 'quiz_final_score_zero';
+                }
+
+              // Use the module-specific final score title key if defined, else fallback
+                const finalTitleKey = `quiz_final_score_title_m11`; // Try module specific first
+                const finalTitle = getTranslation(finalTitleKey in translations[currentLang] ? finalTitleKey : 'quiz_final_score_title', currentLang); // Fallback to generic
+
+              quizArea.innerHTML = `
+                  <div class="quiz-question text-center" data-translate="${finalTitleKey}" style="font-size: 1.5rem;">${finalTitle}</div>
+                  <p class="text-center" style="font-size: 1.2rem; margin-bottom: 1rem;">${getTranslation('quiz_final_score_summary', currentLang, { score: score, total: totalQuestions })}</p>
+                  <p class="text-center" style="color: ${score === totalQuestions ? 'var(--success-color)' : 'var(--primary-color)'}; font-weight: bold;">${getTranslation(resultMessageKey, currentLang)}</p>
+              `;
+              feedbackArea.classList.remove('visible'); // Hide feedback area
+              nextButton.style.display = 'none'; // Hide next button
+              quizArea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+
+
+        nextButton.addEventListener('click', () => {
+             currentQuestionIndex++;
+             loadQuestion(); // Load the next question or show final score
+         });
+
+        // --- Initial Language Application and Load ---
+        setLanguage(initialLang); // Apply language FIRST
+        if (quizArea) { loadQuestion(); } // Initial quiz load
+
+        // Trigger fade-in animations for elements initially in view
+         document.querySelectorAll('.fade-in').forEach(el => {
+             const rect = el.getBoundingClientRect();
+             if(rect.top < window.innerHeight && rect.bottom >= 0) {
+                 // Element is initially visible, CSS animation runs automatically
+             }
+         });
+
+    }); // End DOMContentLoaded
+    </script>
+
+</body>
+</html>
