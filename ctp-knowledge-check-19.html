@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<!-- Language set by JS -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Title set by JS -->
+    <title data-translate="page_title">Module 19 Knowledge Check - Understanding Scope</title>
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Orbitron:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* --- Base Styles & Variables (Adapted from Dashboard) --- */
+        :root {
+            --primary-color: #007bff;
+            --secondary-color: #6c757d;
+            --background-page: #f0f2f5;
+            --background-card: #ffffff;
+            --text-light: #f8f9fa;
+            --text-dark: #343a40;
+            --text-muted: #6c757d;
+            --accent-color: #ffc107;
+            --success-color: #198754;
+            --error-color: #dc3545;
+            --check-color: #6f42c1; /* KC Color */
+            --certificate-color: #d63384; /* For lang switcher */
+            --progress-bg: #e9ecef;
+            --progress-fill: var(--check-color);
+            --border-color: #dee2e6;
+            --border-radius: 8px;
+            --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+            --transition-speed: 0.3s;
+            --font-body: 'Roboto', sans-serif;
+            --font-title: 'Orbitron', sans-serif;
+             /* Colors for lang switcher */
+             --lang-select-border: var(--certificate-color);
+             --lang-select-bg: rgba(255, 255, 255, 0.1);
+             --lang-select-bg-hover: rgba(255, 255, 255, 0.15);
+             --lang-option-bg: var(--background-card);
+             --lang-option-text: var(--text-dark);
+             --lang-arrow-color: var(--certificate-color);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; font-size: 16px; }
+        body {
+            font-family: var(--font-body); line-height: 1.6;
+            background-color: var(--background-page); color: var(--text-dark);
+            display: flex; flex-direction: column; min-height: 100vh;
+        }
+
+        /* --- Header --- */
+        .kc-header {
+            background: linear-gradient(135deg, #6f42c1, #5a359a); /* KC color gradient */
+            color: var(--text-light);
+            padding: 1rem 1.5rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .kc-header h1 {
+            font-family: var(--font-title); font-size: 1.6rem; margin: 0;
+            display: flex; align-items: center;
+        }
+        .kc-header h1 i { margin-right: 10px; opacity: 0.8; }
+        .return-button {
+            color: var(--text-light); text-decoration: none;
+            font-size: 0.9rem; font-weight: 500;
+            padding: 0.5rem 1rem; border-radius: 5px;
+            background-color: rgba(255,255,255,0.15);
+            transition: background-color var(--transition-speed) ease;
+        }
+        .return-button i { margin-right: 5px; }
+        .return-button:hover { background-color: rgba(255,255,255,0.25); }
+
+        /* --- Main Content --- */
+        .knowledge-check-container {
+            max-width: 800px; width: 90%;
+            margin: 2rem auto; padding: 2rem;
+            background-color: var(--background-card);
+            border-radius: var(--border-radius);
+            box-shadow: var(--card-shadow);
+            flex-grow: 1;
+        }
+
+        /* --- Instructions & Results --- */
+        .kc-instructions, .kc-result {
+            margin-bottom: 1.5rem;
+            padding: 1rem 1.5rem;
+            border-radius: 5px;
+            font-size: 0.95rem;
+        }
+        .kc-instructions { background-color: #e7f1ff; border-left: 4px solid var(--primary-color); }
+        .kc-result { font-weight: 500; text-align: center; display: none; /* Hidden initially */ }
+        .kc-result.pass { background-color: #d1e7dd; border-left: 4px solid var(--success-color); color: var(--success-color); }
+        .kc-result.fail { background-color: #f8d7da; border-left: 4px solid var(--error-color); color: var(--error-color); }
+        .kc-result strong { display: block; font-size: 1.1em; margin-bottom: 0.3rem;}
+
+        /* --- Quiz Form --- */
+        #kc-form { }
+        .kc-question {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            background-color: #fdfdff;
+            transition: background-color 0.3s;
+        }
+        .kc-question.answered.correct { background-color: #f0fff4; border-left: 3px solid var(--success-color);}
+        .kc-question.answered.incorrect { background-color: #fff5f5; border-left: 3px solid var(--error-color);}
+
+        .question-number {
+            font-weight: 700; color: var(--check-color);
+            margin-right: 8px; font-size: 1.1em;
+        }
+        .question-text { font-weight: 500; margin-bottom: 1rem; color: var(--text-dark); }
+        .question-text code { font-size: 0.9em; background: #eee; padding: 1px 4px; border-radius: 3px; color: #c7254e;}
+        .options-container { display: flex; flex-direction: column; gap: 0.7rem; }
+        .option-label {
+            display: block; padding: 0.8rem 1rem; border: 1px solid var(--border-color);
+            border-radius: 5px; cursor: pointer;
+            transition: all var(--transition-speed) ease;
+            position: relative; padding-left: 35px; /* Space for custom radio */
+        }
+        .option-label:hover { background-color: #f8f9fa; border-color: var(--secondary-color); }
+        .option-label input[type="radio"] {
+            position: absolute; opacity: 0; cursor: pointer; height: 0; width: 0;
+        }
+        .custom-radio {
+            position: absolute; top: 50%; left: 10px; transform: translateY(-50%);
+            height: 18px; width: 18px; background-color: #eee;
+            border-radius: 50%; border: 1px solid var(--secondary-color);
+            transition: all 0.2s ease;
+        }
+        .option-label input[type="radio"]:checked ~ .custom-radio {
+            background-color: var(--primary-color); border-color: var(--primary-color);
+        }
+        .custom-radio::after {
+            content: ""; position: absolute; display: none;
+            top: 5px; left: 5px; width: 8px; height: 8px;
+            border-radius: 50%; background: white;
+        }
+        .option-label input[type="radio"]:checked ~ .custom-radio::after { display: block; }
+
+        /* Feedback Styling (After Submit) */
+        .option-label.correct-answer {
+            background-color: #d1e7dd; border-color: var(--success-color);
+            font-weight: 500; color: #0f5132;
+        }
+        .option-label.incorrect-choice {
+            background-color: #f8d7da; border-color: var(--error-color);
+            color: #842029; opacity: 0.8;
+        }
+        .option-label.correct-answer .custom-radio { background-color: var(--success-color); border-color: var(--success-color); }
+        .option-label.incorrect-choice .custom-radio { background-color: var(--error-color); border-color: var(--error-color); }
+        .option-label input[type="radio"]:disabled ~ .custom-radio { cursor: not-allowed; opacity: 0.7; }
+        .option-label input[type="radio"]:disabled ~ span { cursor: not-allowed; }
+
+        /* --- Buttons --- */
+        .kc-buttons { text-align: center; margin-top: 2rem; }
+        .kc-submit-button, .kc-retry-button {
+            padding: 0.8rem 2rem; font-size: 1rem; font-weight: 500;
+            border: none; border-radius: 5px; cursor: pointer;
+            transition: background-color var(--transition-speed) ease, transform 0.1s ease;
+        }
+        .kc-submit-button { background-color: var(--check-color); color: var(--text-light); }
+        .kc-submit-button:hover { background-color: #5a359a; }
+        .kc-submit-button:active { transform: scale(0.98); }
+        .kc-retry-button { background-color: var(--secondary-color); color: var(--text-light); display: none; /* Hidden initially */ }
+        .kc-retry-button:hover { background-color: #5a6268; }
+        .kc-retry-button:active { transform: scale(0.98); }
+
+        /* --- Language Switcher --- */
+        .language-switcher-container {
+            margin-left: auto; /* Pushes it to the right in the header flex */
+            position: relative; /* Context for dropdown */
+         }
+        #languageSelect {
+            width: auto; /* Adjust width automatically */
+            min-width: 120px;
+            background: var(--lang-select-bg);
+            color: var(--text-light); /* Light text on dark header */
+            border: 1px solid var(--lang-select-border);
+            border-radius: 5px;
+            padding: 6px 30px 6px 12px; /* Adjust padding */
+            cursor: pointer;
+            font-size: 0.85rem; /* Slightly smaller */
+            font-weight: 500;
+            appearance: none; -webkit-appearance: none; -moz-appearance: none;
+            background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23${encodeURIComponent(getComputedStyle(document.documentElement).getPropertyValue('--text-light').trim().substring(1))}%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E'); /* Use light arrow */
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            background-size: 8px auto; /* Smaller arrow */
+            transition: border-color 0.3s ease, background-color 0.3s ease;
+         }
+        #languageSelect:hover { background-color: var(--lang-select-bg-hover); border-color: var(--text-light);}
+        #languageSelect:focus { outline: none; border-color: var(--accent-color); box-shadow: 0 0 0 2px rgba(255, 193, 7, 0.3); }
+        #languageSelect option {
+              background: var(--lang-option-bg); /* Use card background for options */
+              color: var(--lang-option-text); /* Use dark text for options */
+              padding: 5px;
+         }
+
+        /* --- Footer --- */
+        footer {
+            text-align: center; padding: 1rem; margin-top: 2rem;
+            background-color: #e9ecef; border-top: 1px solid var(--border-color);
+            color: var(--text-muted); font-size: 0.9rem;
+        }
+
+        /* --- Responsive --- */
+        @media (max-width: 768px) {
+            html { font-size: 15px; }
+            .kc-header h1 { font-size: 1.4rem; }
+            .knowledge-check-container { width: 95%; padding: 1.5rem; margin: 1.5rem auto; }
+            .kc-question { padding: 1rem; }
+        }
+        @media (max-width: 576px) {
+            html { font-size: 14px; }
+            .kc-header { padding: 0.8rem 1rem; flex-direction: column; align-items: flex-start; }
+            .kc-header h1 { margin-bottom: 0.5rem; font-size: 1.3rem; }
+             .language-switcher-container { margin-left: 0; margin-top: 0.5rem; align-self: flex-start;}
+            .return-button { order: -1; /* Moves button above title */ margin-bottom: 0.5rem; }
+            .knowledge-check-container { width: 100%; padding: 1rem; border-radius: 0; margin: 1rem 0; box-shadow: none; border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color);}
+            .option-label { padding: 0.7rem 0.8rem; padding-left: 30px; }
+            .custom-radio { left: 8px; }
+            .kc-buttons { margin-top: 1.5rem; }
+            .kc-submit-button, .kc-retry-button { width: 80%; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <header class="kc-header">
+         <a href="ctp-dashboard.html" class="return-button"><i class="fas fa-arrow-left"></i> <span data-translate="return_button">Return to Dashboard</span></a>
+         <h1><i class="fas fa-check-double"></i> <span data-translate="header_title">Module 19: Scope</span></h1>
+         <!-- Language Switcher -->
+         <div class="language-switcher-container">
+            <select id="languageSelect" data-translate-aria-label="lang_select_aria" aria-label="Select Language">
+                <option value="en" data-translate="lang_en">🇬🇧 English</option>
+                <option value="pt" data-translate="lang_pt">🇧🇷 Português</option>
+                <option value="zh" data-translate="lang_zh">🇨🇳 中文</option>
+            </select>
+        </div>
+    </header>
+
+    <main class="knowledge-check-container">
+
+        <div class="kc-instructions" data-translate="instructions">
+            Answer the following 10 questions about Scope. You need to score at least 6/10 to pass. You can retake this check as many times as you need.
+        </div>
+
+        <div id="kc-result" class="kc-result" aria-live="polite">
+            <!-- Result message will be inserted here by JS -->
+        </div>
+
+        <form id="kc-form">
+
+            <!-- Question 1 -->
+            <div class="kc-question" data-question-id="0" data-correct-answer="b">
+                <p class="question-text"><span class="question-number">1.</span> <span data-translate="q1_text">What is a 'local variable' in Python?</span></p>
+                <div class="options-container">
+                    <label class="option-label" for="q0a">
+                        <input type="radio" id="q0a" name="q0" value="a">
+                        <span class="custom-radio"></span>
+                        <span data-translate="q1_opt_a">A variable accessible from anywhere in the program.</span>
+                    </label>
+                    <label class="option-label" for="q0b">
+                        <input type="radio" id="q0b" name="q0" value="b">
+                        <span class="custom-radio"></span>
+                        <span data-translate="q1_opt_b">A variable defined inside a function and only usable within that function.</span>
+                    </label>
+                    <label class="option-label" for="q0c">
+                        <input type="radio" id="q0c" name="q0" value="c">
+                        <span class="custom-radio"></span>
+                        <span data-translate="q1_opt_c">A special type of variable used only for loops.</span>
+                    </label>
+                    <label class="option-label" for="q0d">
+                        <input type="radio" id="q0d" name="q0" value="d">
+                        <span class="custom-radio"></span>
+                        <span data-translate="q1_opt_d">A variable that stores text data.</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Question 2 -->
+            <div class="kc-question" data-question-id="1" data-correct-answer="a">
+                <p class="question-text"><span class="question-number">2.</span> <span data-translate="q2_text">What is a 'global variable' in Python?</span></p>
+                <div class="options-container">
+                    <label class="option-label" for="q1a">
+                        <input type="radio" id="q1a" name="q1" value="a">
+                        <span class="custom-radio"></span>
+                        <span data-translate="q2_opt_a">A variable defined outside of any function, typically at the top level of a script.</span>
+                    </label>
+                    <label class="option-label" for="q1b">
+                        <input type="radio" id="q1b" name="q1" value="b">
+                        <span class="custom-radio"></span>
+                        <span data-translate="q2_opt_b">A variable that can only be used inside one specific function.</span>
+                    </label>
+                    <label class="option-label" for="q1c">
+                        <input type="radio" id="q1c" name="q1" value="c">
+                        <span class="custom-radio"></span>
+                        <span data-translate="q2_opt_c">A variable that automatically stores the result of the last calculation.</span>
+                    </label>
+                    <label class="option-label" for="q1d">
+                        <input type="radio" id="q1d" name="q1" value="d">
+                        <span class="custom-radio"></span>
+                        <span data-translate="q2_opt_d">Another name for a function parameter.</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Question 3 -->
+            <div class="kc-question" data-question-id="2" data-correct-answer="d">
+                <p class="question-text"><span class="question-number">3.</span> <span data-translate="q3_text">Consider the following code:</span>
+                <pre><code>message = "Hello"
+
+def greet():
+    message = "Hi"
+    print(message)
+
+greet()
+print(message)</code></pre>
+                <span data-translate="q3_followup">What will be printed?</span></p>
+                <div class="options-container">
+                    <label class="option-label" for="q2a">
+                        <input type="radio" id="q2a" name="q2" value="a">
+                        <span class="custom-radio"></span>
+                        <span data-translate="q3_opt_a">Hello<br>Hello</span>
+                    </label>
+                    <label class="option-label" for="q2b">
+                        <input type="radio" id="q2b" name="q2" value="b">
+                        <span class="custom-radio"></span>
+                        <span data-translate="q3_opt_b">Hi<br>Hi</span>
+                    </label>
+                    <label class="option-label" for="q2c">
+                        <input type="radio" id="q2c" name="q2" value="c">
+                        <span class="custom-radio"></span>
+                        <span data-translate="q3_opt_c">Hello<br>Hi</span>
+                    </label>
+                    <label class="option-label" for="q2d">
+                        <input type="radio" id="q2d" name="q2" value="d">
+                        <span class="custom-radio"></span>
+                        <span data-translate="q3_opt_d">Hi<br>Hello</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Question 4 -->
+            <div class="kc-question" data-question-id="3" data-correct-answer="c">
+                <p class="question-text"><span class="question-number">4.</span> <span data-translate="q4_text">Where can a variable defined *inside* a function (without using `global`) be accessed?</span></p>
+                <div class="options-container">
+                    <label class="option-label" for="q3a">
+                        <input type="radio" id="q3a" name="q3" value="a">
+                        <span class="custom-radio"></span>
+                        <span data-translate="q4_opt_a">Only outside the function.</span>
+                    </label>
+                    <label class="option-label" for="q3b">
+                        <input type="radio" id="q3b" name="q3" value="b">
+                        <span class="custom-radio"></span>
+                        <span data-translate="q4_opt_b">Both inside and outside the function.</span>
+                    </label>
+                    <label class="option-label" for="q3c">
+                        <input type="radio" id="q3c" name="q3" value="c">
+                        <span class="custom-radio"></span>
+                        <span data-translate="q4_opt_c">Only inside that specific function.</span>
+                    </label>
+                    <label class="option-label" for="q3d">
+                        <input type="radio" id="q3d" name="q3" value="d">
+                        <span class="custom-radio"></span>
+                        <span data-translate="q4_opt_d">Only in other functions called by this function.</span>
+                    </label>
+                </div>
+            </div>
+
+             <!-- Question 5 -->
+            <div class="kc-question" data-question-id="4" data-correct-answer="a">
+                <p class="question-text"><span class="question-number">5.</span> <span data-translate="q5_text">Why is understanding scope important in programming?</span></p>
+                <div class="options-container">
+                    <label class="option-label" for="q4a">
+                        <input type="radio" id="q4a" name="q4" value="a">
+                        <span class="custom-radio"></span>
+                        <span data-translate="q5_opt_a">It helps avoid naming conflicts and makes code easier to understand and debug.</span>
+                    </label>
+                    <label class="option-label" for="q4b">
+                        <input type="radio" id="q4b" name="q4" value="b">
+                        <span class="custom-radio"></span>
+                        <span data-translate="q5_opt_b">It makes the program run faster.</span>
+                    </label>
+                    <label class="option-label" for="q4c">
+                        <input type="radio" id="q4c" name="q4" value="c">
+                        <span class="custom-radio"></span>
+                        <span data-translate="q5_opt_c">It's only important for very large and complex programs.</span>
+                    </label>
+                    <label class="option-label" for="q4d">
+                        <input type="radio" id="q4d" name="q4" value="d">
+                        <span class="custom-radio"></span>
+                        <span data-translate="q5_opt_d">It determines the data type of a variable.</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Question 6 -->
+            <div class="kc-question" data-question-id="5" data-correct-answer="b">
+                <p class="question-text"><span class="question-number">6.</span> <span data-translate="q6_text">If a function needs to modify a global variable, what keyword might it need to use *inside* the function before assigning a new value to that variable?</span></p>
+                <div class="options-container">
+                    <label class="option-label" for="q5a">
+                        <input type="radio" id="q5a" name="q5" value="a">
+                        <span class="custom-radio"></span>
+                        <span data-translate="q6_opt_a">`local`</span>
+                    </label>
+                    <label class="option-label" for="q5b">
+                        <input type="radio" id="q5b" name="q5" value="b">
+                        <span class="custom-radio"></span>
+                        <span data-translate="q6_opt_b">`global`</span>
+                    </label>
+                    <label class="option-label" for="q5c">
+                        <input type="radio" id="q5c" name="q5" value="c">
+                        <span class="custom-radio"></span>
+                        <span data-translate="q6_opt_c">`var`</span>
+                    </label>
+                    <label class="option-label" for="q5d">
+                        <input type="radio" id="q5d" name="q5" value="d">
+                        <span class="custom-radio"></span>
+                        <span data-translate="q6_opt_d">`def`</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Question 7 -->
+            <div class="kc-question" data-question-id="6" data-correct-answer="d">
+                <p class="question-text"><span class="question-number">7.</span> <span data-translate="q7_text">Consider this code:</span>
+                <pre><code>count = 0
+
+def increment():
+    count = count + 1 # Attempts to modify 'count'
+    print(count)
+
+increment()</code></pre>
+                <span data-translate="q7_followup">What is the most likely outcome when running this code?</span></p>
+                <div class="options-container">
+                    <label class="option-label" for="q6a">
+                        <input type="radio" id="q6a" name="q6" value="a">
+                        <span class="custom-radio"></span>
+                        <span data-translate="q7_opt_a">It prints 1.</span>
+                    </label>
+                    <label class="option-label" for="q6b">
+                        <input type="radio" id="q6b" name="q6" value="b">
+                        <span class="custom-radio"></span>
+                        <span data-translate="q7_opt_b">It prints 0.</span>
+                    </label>
+                    <label class="option-label" for="q6c">
+                        <input type="radio" id="q6c" name="q6" value="c">
+                        <span class="custom-radio"></span>
+                        <span data-translate="q7_opt_c">It prints nothing.</span>
+                    </label>
+                    <label class="option-label" for="q6d">
+                        <input type="radio" id="q6d" name="q6" value="d">
+                        <span class="custom-radio"></span>
+                        <span data-translate="q7_opt_d">It causes an `UnboundLocalError` because `count` is referenced before assignment within the local scope.</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Question 8 -->
+            <div class="kc-question" data-question-id="7" data-correct-answer="a">
+                 <p class="question-text"><span class="question-number">8.</span> <span data-translate="q8_text">Can a function access a global variable without using the `global` keyword?</span></p>
+                 <div class="options-container">
+                     <label class="option-label" for="q7a">
+                         <input type="radio" id="q7a" name="q7" value="a">
+                         <span class="custom-radio"></span>
+                         <span data-translate="q8_opt_a">Yes, if it's only reading the value (not trying to change it).</span>
+                     </label>
+                     <label class="option-label" for="q7b">
+                         <input type="radio" id="q7b" name="q7" value="b">
+                         <span class="custom-radio"></span>
+                         <span data-translate="q8_opt_b">No, the `global` keyword is always required to access global variables inside functions.</span>
+                     </label>
+                     <label class="option-label" for="q7c">
+                         <input type="radio" id="q7c" name="q7" value="c">
+                         <span class="custom-radio"></span>
+                         <span data-translate="q8_opt_c">Only if the global variable is a number.</span>
+                     </label>
+                     <label class="option-label" for="q7d">
+                         <input type="radio" id="q7d" name="q7" value="d">
+                         <span class="custom-radio"></span>
+                         <span data-translate="q8_opt_d">Only if the function has no parameters.</span>
+                     </label>
+                 </div>
+             </div>
+
+             <!-- Question 9 -->
+            <div class="kc-question" data-question-id="8" data-correct-answer="c">
+                 <p class="question-text"><span class="question-number">9.</span> <span data-translate="q9_text">What is the scope of a variable defined in a `for` loop statement (like `i` in `for i in range(5):`) within a function?</span></p>
+                 <div class="options-container">
+                     <label class="option-label" for="q8a">
+                         <input type="radio" id="q8a" name="q8" value="a">
+                         <span class="custom-radio"></span>
+                         <span data-translate="q9_opt_a">Global scope.</span>
+                     </label>
+                     <label class="option-label" for="q8b">
+                         <input type="radio" id="q8b" name="q8" value="b">
+                         <span class="custom-radio"></span>
+                         <span data-translate="q9_opt_b">A special "loop scope", only accessible inside the loop block.</span>
+                     </label>
+                     <label class="option-label" for="q8c">
+                         <input type="radio" id="q8c" name="q8" value="c">
+                         <span class="custom-radio"></span>
+                         <span data-translate="q9_opt_c">Local scope (belonging to the function the loop is in).</span>
+                     </label>
+                     <label class="option-label" for="q8d">
+                         <input type="radio" id="q8d" name="q8" value="d">
+                         <span class="custom-radio"></span>
+                         <span data-translate="q9_opt_d">It doesn't have a scope.</span>
+                     </label>
+                 </div>
+             </div>
+
+            <!-- Question 10 -->
+            <div class="kc-question" data-question-id="9" data-correct-answer="b">
+                <p class="question-text"><span class="question-number">10.</span> <span data-translate="q10_text">If you define a variable inside a function, and then the function finishes executing, what happens to that local variable?</span></p>
+                <div class="options-container">
+                    <label class="option-label" for="q9a">
+                        <input type="radio" id="q9a" name="q9" value="a">
+                        <span class="custom-radio"></span>
+                        <span data-translate="q10_opt_a">It becomes a global variable automatically.</span>
+                    </label>
+                    <label class="option-label" for="q9b">
+                        <input type="radio" id="q9b" name="q9" value="b">
+                        <span class="custom-radio"></span>
+                        <span data-translate="q10_opt_b">It typically disappears and its memory is reclaimed (garbage collected).</span>
+                    </label>
+                    <label class="option-label" for="q9c">
+                        <input type="radio" id="q9c" name="q9" value="c">
+                        <span class="custom-radio"></span>
+                        <span data-translate="q10_opt_c">It remains accessible, but only if you call the function again.</span>
+                    </label>
+                    <label class="option-label" for="q9d">
+                        <input type="radio" id="q9d" name="q9" value="d">
+                        <span class="custom-radio"></span>
+                        <span data-translate="q10_opt_d">It gets stored in a special file.</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="kc-buttons">
+                <button type="submit" class="kc-submit-button" data-translate="submit_button">Submit Answers</button>
+                <button type="button" class="kc-retry-button" id="kc-retry-button" data-translate="retry_button">Retry Knowledge Check</button>
+            </div>
+
+        </form>
+    </main>
+
+    <footer>
+        <p data-translate="footer_text">Part of the Road to Free Open AGI Project</p>
+    </footer>
+
+    <script>
+        const MODULE_ID = 19; // <<-- Set the Module ID here
+        const PASSING_SCORE = 6;
+        const TOTAL_QUESTIONS = 10;
+        const KNOWLEDGE_CHECK_STORAGE_KEY = 'knowledgeCheckStatus_v1';
+        const LANGUAGE_STORAGE_KEY = 'userLanguage';
+
+        // --- Translations Object ---
+        const translations = {
+            en: {
+                "page_title": `Module ${MODULE_ID} Knowledge Check - Understanding Scope`,
+                "header_title": `Module ${MODULE_ID}: Scope`,
+                "return_button": "Return to Dashboard",
+                "instructions": `Answer the following ${TOTAL_QUESTIONS} questions about Scope. You need to score at least ${PASSING_SCORE}/${TOTAL_QUESTIONS} to pass. You can retake this check as many times as you need.`,
+                "q1_text": "What is a 'local variable' in Python?",
+                "q1_opt_a": "A variable accessible from anywhere in the program.",
+                "q1_opt_b": "A variable defined inside a function and only usable within that function.",
+                "q1_opt_c": "A special type of variable used only for loops.",
+                "q1_opt_d": "A variable that stores text data.",
+                "q2_text": "What is a 'global variable' in Python?",
+                "q2_opt_a": "A variable defined outside of any function, typically at the top level of a script.",
+                "q2_opt_b": "A variable that can only be used inside one specific function.",
+                "q2_opt_c": "A variable that automatically stores the result of the last calculation.",
+                "q2_opt_d": "Another name for a function parameter.",
+                "q3_text": "Consider the following code:",
+                "q3_followup": "What will be printed?",
+                "q3_opt_a": "Hello<br>Hello",
+                "q3_opt_b": "Hi<br>Hi",
+                "q3_opt_c": "Hello<br>Hi",
+                "q3_opt_d": "Hi<br>Hello",
+                "q4_text": "Where can a variable defined *inside* a function (without using `global`) be accessed?",
+                "q4_opt_a": "Only outside the function.",
+                "q4_opt_b": "Both inside and outside the function.",
+                "q4_opt_c": "Only inside that specific function.",
+                "q4_opt_d": "Only in other functions called by this function.",
+                "q5_text": "Why is understanding scope important in programming?",
+                "q5_opt_a": "It helps avoid naming conflicts and makes code easier to understand and debug.",
+                "q5_opt_b": "It makes the program run faster.",
+                "q5_opt_c": "It's only important for very large and complex programs.",
+                "q5_opt_d": "It determines the data type of a variable.",
+                "q6_text": "If a function needs to modify a global variable, what keyword might it need to use *inside* the function before assigning a new value to that variable?",
+                "q6_opt_a": "`local`", "q6_opt_b": "`global`", "q6_opt_c": "`var`", "q6_opt_d": "`def`",
+                "q7_text": "Consider this code:",
+                "q7_followup": "What is the most likely outcome when running this code?",
+                "q7_opt_a": "It prints 1.",
+                "q7_opt_b": "It prints 0.",
+                "q7_opt_c": "It prints nothing.",
+                "q7_opt_d": "It causes an `UnboundLocalError` because `count` is referenced before assignment within the local scope.",
+                "q8_text": "Can a function access a global variable without using the `global` keyword?",
+                "q8_opt_a": "Yes, if it's only reading the value (not trying to change it).",
+                "q8_opt_b": "No, the `global` keyword is always required to access global variables inside functions.",
+                "q8_opt_c": "Only if the global variable is a number.",
+                "q8_opt_d": "Only if the function has no parameters.",
+                "q9_text": "What is the scope of a variable defined in a `for` loop statement (like `i` in `for i in range(5):`) within a function?",
+                "q9_opt_a": "Global scope.",
+                "q9_opt_b": "A special \"loop scope\", only accessible inside the loop block.",
+                "q9_opt_c": "Local scope (belonging to the function the loop is in).",
+                "q9_opt_d": "It doesn't have a scope.",
+                "q10_text": "If you define a variable inside a function, and then the function finishes executing, what happens to that local variable?",
+                "q10_opt_a": "It becomes a global variable automatically.",
+                "q10_opt_b": "It typically disappears and its memory is reclaimed (garbage collected).",
+                "q10_opt_c": "It remains accessible, but only if you call the function again.",
+                "q10_opt_d": "It gets stored in a special file.",
+                "result_pass": "<strong>Congratulations!</strong> You passed with a score of {score}/{total}.",
+                "result_fail": "<strong>Keep Trying!</strong> Your score is {score}/{total}. You need {passing_score} to pass. Review the material and try again!",
+                "submit_button": "Submit Answers",
+                "retry_button": "Retry Knowledge Check",
+                "footer_text": "Part of the Road to Free Open AGI Project",
+                "lang_select_aria": "Select Language",
+                "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文"
+            },
+            pt: {
+                "page_title": `Módulo ${MODULE_ID} Verificação - Entendendo Escopo`,
+                "header_title": `Módulo ${MODULE_ID}: Escopo`,
+                "return_button": "Voltar ao Painel",
+                "instructions": `Responda às ${TOTAL_QUESTIONS} perguntas seguintes sobre Escopo. Você precisa acertar pelo menos ${PASSING_SCORE}/${TOTAL_QUESTIONS} para passar. Você pode refazer esta verificação quantas vezes precisar.`,
+                "q1_text": "O que é uma 'variável local' em Python?",
+                "q1_opt_a": "Uma variável acessível de qualquer lugar no programa.",
+                "q1_opt_b": "Uma variável definida dentro de uma função e utilizável apenas dentro dessa função.",
+                "q1_opt_c": "Um tipo especial de variável usado apenas para loops.",
+                "q1_opt_d": "Uma variável que armazena dados de texto.",
+                "q2_text": "O que é uma 'variável global' em Python?",
+                "q2_opt_a": "Uma variável definida fora de qualquer função, tipicamente no nível superior de um script.",
+                "q2_opt_b": "Uma variável que só pode ser usada dentro de uma função específica.",
+                "q2_opt_c": "Uma variável que armazena automaticamente o resultado do último cálculo.",
+                "q2_opt_d": "Outro nome para um parâmetro de função.",
+                "q3_text": "Considere o seguinte código:",
+                "q3_followup": "O que será impresso?",
+                "q3_opt_a": "Hello<br>Hello", "q3_opt_b": "Hi<br>Hi", "q3_opt_c": "Hello<br>Hi", "q3_opt_d": "Hi<br>Hello",
+                "q4_text": "Onde uma variável definida *dentro* de uma função (sem usar `global`) pode ser acessada?",
+                "q4_opt_a": "Apenas fora da função.",
+                "q4_opt_b": "Tanto dentro quanto fora da função.",
+                "q4_opt_c": "Apenas dentro daquela função específica.",
+                "q4_opt_d": "Apenas em outras funções chamadas por esta função.",
+                "q5_text": "Por que entender escopo é importante na programação?",
+                "q5_opt_a": "Ajuda a evitar conflitos de nomes e torna o código mais fácil de entender e depurar.",
+                "q5_opt_b": "Faz o programa rodar mais rápido.",
+                "q5_opt_c": "É importante apenas para programas muito grandes e complexos.",
+                "q5_opt_d": "Determina o tipo de dado de uma variável.",
+                "q6_text": "Se uma função precisa modificar uma variável global, qual palavra-chave ela pode precisar usar *dentro* da função antes de atribuir um novo valor a essa variável?",
+                "q6_opt_a": "`local`", "q6_opt_b": "`global`", "q6_opt_c": "`var`", "q6_opt_d": "`def`",
+                "q7_text": "Considere este código:",
+                "q7_followup": "Qual é o resultado mais provável ao executar este código?",
+                "q7_opt_a": "Imprime 1.",
+                "q7_opt_b": "Imprime 0.",
+                "q7_opt_c": "Não imprime nada.",
+                "q7_opt_d": "Causa um `UnboundLocalError` porque `count` é referenciado antes da atribuição no escopo local.",
+                 "q8_text": "Uma função pode acessar uma variável global sem usar a palavra-chave `global`?",
+                "q8_opt_a": "Sim, se estiver apenas lendo o valor (sem tentar alterá-lo).",
+                "q8_opt_b": "Não, a palavra-chave `global` é sempre necessária para acessar variáveis globais dentro de funções.",
+                "q8_opt_c": "Apenas se a variável global for um número.",
+                "q8_opt_d": "Apenas se a função não tiver parâmetros.",
+                 "q9_text": "Qual é o escopo de uma variável definida na instrução de um loop `for` (como `i` em `for i in range(5):`) dentro de uma função?",
+                "q9_opt_a": "Escopo global.",
+                "q9_opt_b": "Um \"escopo de loop\" especial, acessível apenas dentro do bloco do loop.",
+                "q9_opt_c": "Escopo local (pertencente à função em que o loop está).",
+                "q9_opt_d": "Não tem escopo.",
+                 "q10_text": "Se você define uma variável dentro de uma função e, em seguida, a função termina de executar, o que acontece com essa variável local?",
+                "q10_opt_a": "Ela se torna automaticamente uma variável global.",
+                "q10_opt_b": "Ela tipicamente desaparece e sua memória é recuperada (coleta de lixo).",
+                "q10_opt_c": "Ela permanece acessível, mas apenas se você chamar a função novamente.",
+                "q10_opt_d": "Ela é armazenada em um arquivo especial.",
+                "result_pass": "<strong>Parabéns!</strong> Você passou com uma pontuação de {score}/{total}.",
+                "result_fail": "<strong>Continue Tentando!</strong> Sua pontuação é {score}/{total}. Você precisa de {passing_score} para passar. Revise o material e tente novamente!",
+                "submit_button": "Enviar Respostas",
+                "retry_button": "Tentar Novamente",
+                "footer_text": "Parte do Projeto Road to Free Open AGI",
+                "lang_select_aria": "Selecionar Idioma",
+                "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文"
+            },
+            zh: {
+                "page_title": `模块 ${MODULE_ID} 知识测验 - 理解作用域`,
+                "header_title": `模块 ${MODULE_ID}: 作用域`,
+                "return_button": "返回仪表板",
+                "instructions": `回答以下关于作用域的 ${TOTAL_QUESTIONS} 个问题。您需要至少答对 ${PASSING_SCORE}/${TOTAL_QUESTIONS} 题才能通过。您可以根据需要多次重试此测验。`,
+                "q1_text": "Python 中的“局部变量”是什么？",
+                "q1_opt_a": "在程序中任何地方都可以访问的变量。",
+                "q1_opt_b": "在函数内部定义且只能在该函数内部使用的变量。",
+                "q1_opt_c": "一种仅用于循环的特殊类型变量。",
+                "q1_opt_d": "存储文本数据的变量。",
+                "q2_text": "Python 中的“全局变量”是什么？",
+                "q2_opt_a": "在任何函数之外定义的变量，通常在脚本的顶层。",
+                "q2_opt_b": "只能在一个特定函数内部使用的变量。",
+                "q2_opt_c": "自动存储上次计算结果的变量。",
+                "q2_opt_d": "函数参数的别名。",
+                "q3_text": "思考以下代码：",
+                "q3_followup": "将会打印什么？",
+                "q3_opt_a": "Hello<br>Hello", "q3_opt_b": "Hi<br>Hi", "q3_opt_c": "Hello<br>Hi", "q3_opt_d": "Hi<br>Hello",
+                "q4_text": "在函数*内部*定义的变量（不使用 `global`）可以在哪里访问？",
+                "q4_opt_a": "只能在函数外部访问。",
+                "q4_opt_b": "在函数内部和外部都可以访问。",
+                "q4_opt_c": "只能在那个特定的函数内部访问。",
+                "q4_opt_d": "只能在该函数调用的其他函数中访问。",
+                "q5_text": "为什么在编程中理解作用域很重要？",
+                "q5_opt_a": "它有助于避免命名冲突，并使代码更易于理解和调试。",
+                "q5_opt_b": "它使程序运行得更快。",
+                "q5_opt_c": "它只对非常大型和复杂的程序很重要。",
+                "q5_opt_d": "它决定了变量的数据类型。",
+                "q6_text": "如果一个函数需要修改一个全局变量，在给该变量赋新值之前，它可能需要在函数*内部*使用哪个关键字？",
+                "q6_opt_a": "`local`", "q6_opt_b": "`global`", "q6_opt_c": "`var`", "q6_opt_d": "`def`",
+                "q7_text": "思考这段代码：",
+                "q7_followup": "运行此代码最可能的结果是什么？",
+                "q7_opt_a": "打印 1。",
+                "q7_opt_b": "打印 0。",
+                "q7_opt_c": "什么也不打印。",
+                "q7_opt_d": "导致 `UnboundLocalError`，因为 `count` 在局部作用域内赋值前被引用。",
+                "q8_text": "函数可以在不使用 `global` 关键字的情况下访问全局变量吗？",
+                "q8_opt_a": "可以，如果它只是读取值（而不是试图改变它）。",
+                "q8_opt_b": "不可以，访问函数内部的全局变量总是需要 `global` 关键字。",
+                "q8_opt_c": "仅当全局变量是数字时可以。",
+                "q8_opt_d": "仅当函数没有参数时可以。",
+                "q9_text": "在函数内的 `for` 循环语句中定义的变量（例如 `for i in range(5):` 中的 `i`）的作用域是什么？",
+                "q9_opt_a": "全局作用域。",
+                "q9_opt_b": "一个特殊的“循环作用域”，只能在循环块内部访问。",
+                "q9_opt_c": "局部作用域（属于循环所在的函数）。",
+                "q9_opt_d": "它没有作用域。",
+                "q10_text": "如果你在函数内部定义了一个变量，然后该函数执行完毕，那个局部变量会发生什么？",
+                "q10_opt_a": "它会自动变成一个全局变量。",
+                "q10_opt_b": "它通常会消失，其内存会被回收（垃圾回收）。",
+                "q10_opt_c": "它仍然可以访问，但前提是你再次调用该函数。",
+                "q10_opt_d": "它会被存储在一个特殊的文件中。",
+                "result_pass": "<strong>恭喜！</strong> 您通过了测验，得分 {score}/{total}。",
+                "result_fail": "<strong>请继续努力！</strong> 您的得分是 {score}/{total}。您需要达到 {passing_score} 分才能通过。请复习相关内容后重试！",
+                "submit_button": "提交答案",
+                "retry_button": "重试知识测验",
+                "footer_text": "通往自由开放AGI之路项目的一部分",
+                "lang_select_aria": "选择语言",
+                "lang_en": "🇬🇧 English", "lang_pt": "🇧🇷 Português", "lang_zh": "🇨🇳 中文"
+            }
+        };
+
+
+        // --- Core Logic ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const kcForm = document.getElementById('kc-form');
+            const resultDiv = document.getElementById('kc-result');
+            const retryButton = document.getElementById('kc-retry-button');
+            const submitButton = document.querySelector('.kc-submit-button');
+            const languageSelect = document.getElementById('languageSelect');
+
+            let currentScore = 0;
+            let submitted = false;
+
+            // --- Language Handling ---
+            function getStoredLanguage() {
+                const storedLang = localStorage.getItem(LANGUAGE_STORAGE_KEY);
+                if (storedLang && translations[storedLang]) return storedLang;
+                const browserLang = navigator.language || navigator.userLanguage;
+                if (browserLang.startsWith('pt')) return 'pt';
+                if (browserLang.startsWith('zh')) return 'zh';
+                return 'en'; // Default
+            }
+
+             function getTranslation(key, lang, replacements = {}) { let text = translations[lang]?.[key] ?? translations['en']?.[key] ?? `[${key}]`; for (const placeholder in replacements) { const regex = new RegExp(`\\{${placeholder}\\}`, 'g'); text = text.replace(regex, replacements[placeholder]); } return text; }
+
+            function translatePage(lang) {
+                if (!translations[lang]) lang = 'en'; // Fallback
+                document.documentElement.lang = lang;
+
+                // Update specific elements that need innerHTML for tags like <br>
+                document.querySelectorAll('[data-translate="q3_opt_a"], [data-translate="q3_opt_b"], [data-translate="q3_opt_c"], [data-translate="q3_opt_d"]').forEach(el => {
+                    const key = el.getAttribute('data-translate');
+                    el.innerHTML = getTranslation(key, lang);
+                });
+
+                // Update elements with simple text content
+                document.querySelectorAll('[data-translate]').forEach(el => {
+                    // Skip elements handled above
+                     if (!el.closest('[data-translate^="q3_opt_"]')) {
+                        const key = el.getAttribute('data-translate');
+                        const translation = getTranslation(key, lang);
+                        if (el.tagName === 'TITLE') { document.title = translation; }
+                         // Handle potential results text which also uses HTML
+                        else if (key === 'result_pass' || key === 'result_fail') {
+                             // Don't change the result text if it's currently displayed,
+                             // let displayResult handle the translation with scores.
+                             // Only translate placeholder/default text if needed.
+                             if (!resultDiv.style.display || resultDiv.style.display === 'none') {
+                                 // Not strictly needed as displayResult sets it, but safe.
+                             }
+                         }
+                        else if (translation.includes('<') && translation.includes('>')) {
+                             // Check if it's a simple span wrapper that only needs text
+                             if (el.children.length === 1 && el.children[0].tagName === 'SPAN' && !translation.match(/<br|<strong/i)) {
+                                 el.children[0].textContent = translation.replace(/<[^>]*>?/gm, ''); // Basic tag strip
+                             } else if (el.tagName !== 'OPTION'){ // Avoid setting innerHTML for options
+                                el.innerHTML = translation;
+                            } else {
+                                 el.textContent = translation;
+                            }
+                         } else {
+                            el.textContent = translation;
+                        }
+                    }
+                 });
+                 // Update aria-labels
+                document.querySelectorAll('[data-translate-aria-label]').forEach(el => {
+                    const key = el.getAttribute('data-translate-aria-label');
+                    el.setAttribute('aria-label', getTranslation(key, lang));
+                });
+
+                // Update result text if it's already displayed
+                 if (submitted) {
+                     displayResult(currentScore, currentScore >= PASSING_SCORE);
+                 }
+            }
+
+            function setLanguage(lang) {
+                localStorage.setItem(LANGUAGE_STORAGE_KEY, lang);
+                languageSelect.value = lang; // Ensure dropdown matches
+                translatePage(lang);
+                 // If quiz was submitted, ensure feedback text is re-translated
+                 if (submitted) {
+                     displayResult(currentScore, currentScore >= PASSING_SCORE);
+                 }
+            }
+
+            // --- LocalStorage Update ---
+             function loadKnowledgeCheckStatus() { try { const storedStatus = localStorage.getItem(KNOWLEDGE_CHECK_STORAGE_KEY); const parsed = storedStatus ? JSON.parse(storedStatus) : {}; return typeof parsed === 'object' && parsed !== null ? parsed : {}; } catch (e) { console.error("Error reading KC status from localStorage:", e); return {}; } }
+
+            function updateLocalStorage() {
+                try {
+                    const status = loadKnowledgeCheckStatus();
+                    status[MODULE_ID] = true; // Mark this module as passed
+                    localStorage.setItem(KNOWLEDGE_CHECK_STORAGE_KEY, JSON.stringify(status));
+                    console.log(`KC Status updated for Module ${MODULE_ID}: Passed`);
+                } catch (e) {
+                    console.error("Error writing KC status to localStorage:", e);
+                    // Optionally inform the user that progress might not be saved
+                    // resultDiv.innerHTML += "<p style='font-size:0.8em; color: var(--error-color);'>Note: Could not save progress.</p>";
+                }
+            }
+
+
+            // --- Quiz Logic ---
+            function displayResult(score, passed) {
+                const lang = getStoredLanguage();
+                let message = '';
+                if (passed) {
+                    message = getTranslation('result_pass', lang, { score: score, total: TOTAL_QUESTIONS });
+                    resultDiv.className = 'kc-result pass';
+                } else {
+                    message = getTranslation('result_fail', lang, { score: score, total: TOTAL_QUESTIONS, passing_score: PASSING_SCORE });
+                    resultDiv.className = 'kc-result fail';
+                }
+                resultDiv.innerHTML = message; // Use innerHTML to render <strong>
+                resultDiv.style.display = 'block';
+            }
+
+             function handleSubmit(event) {
+                 event.preventDefault();
+                 if (submitted) return; // Prevent re-submission
+
+                 submitted = true;
+                 currentScore = 0;
+                 const questions = kcForm.querySelectorAll('.kc-question');
+
+                 questions.forEach(question => {
+                     const questionId = question.dataset.questionId;
+                     const correctAnswer = question.dataset.correctAnswer;
+                     const selectedOption = kcForm.querySelector(`input[name="q${questionId}"]:checked`);
+                     const options = question.querySelectorAll('.option-label');
+
+                     question.classList.add('answered'); // Mark question as answered visually
+
+                     options.forEach(label => {
+                         const input = label.querySelector('input[type="radio"]');
+                         input.disabled = true; // Disable options
+
+                         // Highlight correct answer
+                         if (input.value === correctAnswer) {
+                             label.classList.add('correct-answer');
+                         }
+
+                         // If an option was selected and it's wrong, mark it
+                         if (selectedOption && selectedOption.value === input.value && input.value !== correctAnswer) {
+                             label.classList.add('incorrect-choice');
+                         }
+                     });
+
+                     if (selectedOption && selectedOption.value === correctAnswer) {
+                         currentScore++;
+                         question.classList.add('correct');
+                     } else {
+                          question.classList.add('incorrect');
+                     }
+                 });
+
+                 displayResult(currentScore, currentScore >= PASSING_SCORE);
+
+                 if (currentScore >= PASSING_SCORE) {
+                     updateLocalStorage();
+                 }
+
+                 submitButton.style.display = 'none';
+                 retryButton.style.display = 'inline-block';
+                  // Scroll to the result message
+                  resultDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+             }
+
+             function resetQuizUI() {
+                 submitted = false;
+                 currentScore = 0;
+                 resultDiv.style.display = 'none';
+                 resultDiv.className = 'kc-result'; // Reset classes
+                 resultDiv.textContent = '';
+                 submitButton.style.display = 'inline-block';
+                 retryButton.style.display = 'none';
+
+                 kcForm.reset(); // Clears selected radio buttons
+
+                 kcForm.querySelectorAll('.kc-question').forEach(question => {
+                     question.classList.remove('answered', 'correct', 'incorrect');
+                     question.querySelectorAll('.option-label').forEach(label => {
+                         label.classList.remove('correct-answer', 'incorrect-choice');
+                         label.querySelector('input[type="radio"]').disabled = false;
+                     });
+                 });
+                 // Scroll back to top smoothly
+                 window.scrollTo({ top: 0, behavior: 'smooth' });
+             }
+
+            // --- Event Listeners ---
+            kcForm.addEventListener('submit', handleSubmit);
+            retryButton.addEventListener('click', resetQuizUI);
+            languageSelect.addEventListener('change', (e) => {
+                 setLanguage(e.target.value);
+             });
+
+            // --- Initial Setup ---
+            const initialLang = getStoredLanguage();
+            languageSelect.value = initialLang; // Set dropdown to stored/detected lang
+            translatePage(initialLang); // Translate page on load
+
+        }); // End DOMContentLoaded
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<!-- Language set by JS -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Title set by JS -->
+    <title data-translate="page_title">Knowledge Check - Module 26</title>
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Orbitron:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* --- Base Styles & Variables (Mostly copied from dashboard) --- */
+        :root {
+            --primary-color: #007bff;
+            --secondary-color: #6c757d;
+            --background-page: #f0f2f5;
+            --background-card: #ffffff;
+            --text-light: #f8f9fa;
+            --text-dark: #343a40;
+            --text-muted: #6c757d;
+            --accent-color: #ffc107;
+            --success-color: #198754;
+            --error-color: #dc3545;
+            --info-color: #0dcaf0;
+            --check-color: #6f42c1; /* Used for KC progress */
+            --border-color: #dee2e6;
+            --border-radius: 8px;
+            --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+            --transition-speed: 0.3s;
+            --font-body: 'Roboto', sans-serif;
+            --font-title: 'Orbitron', sans-serif;
+
+             /* Specific Quiz Styles */
+             --correct-answer-bg: #d1e7dd; /* Light green */
+             --incorrect-answer-bg: #f8d7da; /* Light red */
+             --selected-answer-border: #adb5bd; /* Muted gray for selected wrong */
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; font-size: 16px; }
+        body {
+            font-family: var(--font-body); line-height: 1.6;
+            background-color: var(--background-page); color: var(--text-dark);
+            padding-bottom: 4rem; /* Ensure space for footer/results */
+        }
+
+        /* --- Header & Navigation --- */
+         .quiz-header {
+             background: linear-gradient(135deg, #0d6efd, #0a58ca); /* Same as dashboard */
+             color: var(--text-light);
+             padding: 1rem 1.5rem;
+             margin-bottom: 2rem;
+             display: flex;
+             justify-content: space-between;
+             align-items: center;
+             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+         }
+
+         .return-link {
+             color: var(--text-light);
+             text-decoration: none;
+             font-size: 0.95rem;
+             font-weight: 500;
+             padding: 0.5rem 1rem;
+             border: 1px solid rgba(255, 255, 255, 0.5);
+             border-radius: var(--border-radius);
+             transition: background-color var(--transition-speed), border-color var(--transition-speed);
+             display: inline-flex;
+             align-items: center;
+         }
+          .return-link i { margin-right: 8px; }
+         .return-link:hover {
+             background-color: rgba(255, 255, 255, 0.1);
+             border-color: var(--text-light);
+         }
+
+         .quiz-header h1 {
+             font-family: var(--font-title);
+             font-size: 1.6rem;
+             margin: 0;
+             text-align: center;
+             flex-grow: 1; /* Allow title to take space */
+             padding: 0 1rem; /* Avoid sticking to buttons */
+         }
+         .quiz-header h1 .module-number {
+             font-weight: 400;
+             font-size: 1.1rem;
+             opacity: 0.8;
+             margin-right: 5px;
+             background-color: rgba(255,255,255,0.2);
+             padding: 2px 6px;
+             border-radius: 4px;
+         }
+
+        /* --- Quiz Container & Content --- */
+        .quiz-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            background-color: var(--background-card);
+            border-radius: var(--border-radius);
+            box-shadow: var(--card-shadow);
+            border: 1px solid var(--border-color);
+            padding: 2rem;
+        }
+
+        .quiz-instructions {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px dashed var(--border-color);
+            line-height: 1.5;
+        }
+        .quiz-instructions strong { color: var(--text-dark); }
+        .quiz-instructions i { margin-right: 5px; }
+
+        .quiz-form { /* The form itself */ }
+
+        .quiz-question {
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid #eee;
+        }
+        .quiz-question:last-of-type {
+             border-bottom: none;
+             margin-bottom: 0;
+             padding-bottom: 0;
+         }
+
+        .question-text {
+            font-weight: 500;
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+            color: var(--text-dark);
+        }
+        .question-text code {
+            font-size: 0.95em;
+            background: #e9ecef;
+            padding: 2px 5px;
+            border-radius: 4px;
+            color: #c7254e;
+            font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+            white-space: pre-wrap; /* Allow code blocks to wrap */
+            display: block; /* Make code block take full width */
+            margin-top: 0.5rem;
+        }
+
+        .answer-options { list-style: none; padding: 0; margin: 0; }
+        .answer-options li { margin-bottom: 0.75rem; }
+        .answer-options label {
+            display: block;
+            padding: 0.8rem 1.2rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: background-color var(--transition-speed), border-color var(--transition-speed);
+            position: relative;
+            font-size: 0.95rem;
+        }
+        .answer-options label:hover { background-color: #f8f9fa; }
+        .answer-options input[type="radio"] {
+            margin-right: 10px;
+            position: relative;
+            top: 2px; /* Align better with text */
+            accent-color: var(--primary-color);
+        }
+        .answer-options .answer-text code {
+            font-size: 0.9em;
+            background: #eee;
+            padding: 1px 4px;
+            border-radius: 3px;
+            color: #c7254e;
+        }
+
+         /* Styling for showing results */
+         .answer-options label.correct {
+             background-color: var(--correct-answer-bg);
+             border-color: var(--success-color);
+             font-weight: 500;
+             color: #0a3622; /* Darker green text */
+         }
+         .answer-options label.incorrect {
+             background-color: var(--incorrect-answer-bg);
+             border-color: var(--error-color);
+             color: #58151c; /* Darker red text */
+         }
+         .answer-options label.selected:not(.correct) {
+             border-width: 2px;
+             border-color: var(--selected-answer-border);
+         }
+         .answer-options label.correct::after,
+         .answer-options label.incorrect::after {
+             font-family: 'Font Awesome 6 Free';
+             font-weight: 900;
+             position: absolute;
+             right: 15px;
+             top: 50%;
+             transform: translateY(-50%);
+             font-size: 1.1rem;
+         }
+         .answer-options label.correct::after { content: '\f00c'; color: var(--success-color); }
+         .answer-options label.incorrect::after { content: '\f00d'; color: var(--error-color); }
+
+         .quiz-form.submitted .answer-options label { cursor: default; }
+         .quiz-form.submitted .answer-options label:hover { background-color: inherit; } /* Disable hover effect */
+         .quiz-form.submitted .answer-options input[type="radio"] { display: none; } /* Hide radio buttons after submit */
+
+
+        /* --- Submit Button & Results Area --- */
+        .submit-area { text-align: center; margin-top: 2.5rem; }
+        .quiz-button {
+            background-color: var(--primary-color);
+            color: var(--text-light);
+            border: none;
+            padding: 0.8rem 2rem;
+            font-size: 1rem;
+            font-weight: 500;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: background-color var(--transition-speed), transform var(--transition-speed);
+            font-family: var(--font-body);
+        }
+        .quiz-button:hover { background-color: #0b5ed7; transform: translateY(-2px); }
+        .quiz-button:disabled { background-color: var(--secondary-color); cursor: not-allowed; opacity: 0.7; transform: none;}
+        .quiz-button.retake-button { background-color: var(--secondary-color); }
+        .quiz-button.retake-button:hover { background-color: #5a6268; }
+
+        #results-area {
+            margin-top: 2.5rem;
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            text-align: center;
+            display: none; /* Hidden by default */
+            border: 1px solid var(--border-color);
+        }
+        #results-area.pass { background-color: var(--correct-answer-bg); border-color: var(--success-color); }
+        #results-area.fail { background-color: var(--incorrect-answer-bg); border-color: var(--error-color); }
+
+        #results-area h3 {
+            font-family: var(--font-title);
+            margin-bottom: 0.5rem;
+            font-size: 1.4rem;
+        }
+        #results-area.pass h3 { color: var(--success-color); }
+        #results-area.fail h3 { color: var(--error-color); }
+
+        #score-display { font-size: 1.2rem; font-weight: 700; margin-bottom: 1rem; }
+        #feedback-message { font-size: 1rem; margin-bottom: 1.5rem; }
+
+        .hidden { display: none; }
+
+        /* --- Responsive --- */
+        @media (max-width: 992px) {
+            .quiz-header h1 { font-size: 1.4rem; }
+            .return-link { padding: 0.4rem 0.8rem; font-size: 0.9rem; }
+        }
+        @media (max-width: 768px) {
+            .quiz-container { padding: 1.5rem; margin: 1rem; }
+            .quiz-header { padding: 0.8rem 1rem; flex-direction: column; gap: 0.5rem;}
+             .quiz-header h1 { order: 2; font-size: 1.3rem; text-align: center; }
+             .return-link { order: 1; align-self: flex-start; } /* Move return link up */
+        }
+        @media (max-width: 576px) {
+            html { font-size: 15px; }
+            .quiz-container { padding: 1rem; }
+            .question-text { font-size: 1rem; }
+            .answer-options label { padding: 0.7rem 1rem; font-size: 0.9rem; }
+            .quiz-button { padding: 0.7rem 1.5rem; font-size: 0.95rem; }
+            #results-area { padding: 1rem; }
+             .quiz-header h1 { font-size: 1.2rem; }
+             .return-link { font-size: 0.85rem; padding: 0.3rem 0.6rem; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <header class="quiz-header">
+        <a href="ctp-dashboard.html" class="return-link"><i class="fas fa-arrow-left"></i> <span data-translate="return_button">Return to Dashboard</span></a>
+        <h1 data-translate="quiz_header_title">
+            <span class="module-number">26</span> Knowledge Check: Importing Modules
+        </h1>
+        <!-- Placeholder for potential future elements like language switcher if needed here -->
+    </header>
+
+    <div class="quiz-container">
+
+        <div class="quiz-instructions" data-translate="quiz_instructions">
+            <i class="fas fa-info-circle"></i> Answer all 10 questions below. You need at least 6 correct answers to pass. You can retake this check as many times as you need. Good luck!
+        </div>
+
+        <form id="quiz-form" class="quiz-form">
+            <!-- Questions will be loaded here by JavaScript -->
+            <div id="questions-container"></div>
+
+            <div class="submit-area">
+                <button type="submit" id="submit-button" class="quiz-button" data-translate="submit_button">Check Answers</button>
+            </div>
+        </form>
+
+        <div id="results-area">
+            <h3 id="result-title">Result</h3>
+            <p id="score-display" data-translate="score_label">Your Score: 0/10</p>
+            <p id="feedback-message">Feedback message here.</p>
+            <button type="button" id="retake-button" class="quiz-button retake-button hidden" data-translate="retake_button">Retake Quiz</button>
+        </div>
+
+    </div>
+
+    <script>
+        const translations = {
+             en: {
+                 "page_title": "Knowledge Check - Module 26: Importing Modules",
+                 "return_button": "Return to Dashboard",
+                 "quiz_header_title": "<span class='module-number'>26</span> Knowledge Check: Importing Modules",
+                 "quiz_instructions": "<i class='fas fa-info-circle'></i> Answer all 10 questions below. You need at least <strong>6 correct answers</strong> to pass. You can retake this check as many times as you need. Good luck!",
+                 "submit_button": "Check Answers",
+                 "retake_button": "Retake Quiz",
+                 "score_label": "Your Score: {score}/{total}",
+                 "result_pass_title": "Congratulations!",
+                 "result_fail_title": "Keep Trying!",
+                 "feedback_pass": "You passed! Module 26 knowledge check complete. Your progress has been saved.",
+                 "feedback_fail": "You need {passingScore} or more correct answers to pass. Review the material and try again!",
+                 "feedback_unanswered": "Please answer all questions before submitting.",
+                 // --- Module 26 Questions & Answers (EN) ---
+                 "kc26_q1_text": "Which keyword is used to bring code from another module into your current script?",
+                 "kc26_q1_opt_a": "`include`",
+                 "kc26_q1_opt_b": "`import`",
+                 "kc26_q1_opt_c": "`require`",
+                 "kc26_q1_opt_d": "`load`",
+                 "kc26_q2_text": "If you write `import math`, how would you call the square root function from that module?",
+                 "kc26_q2_opt_a": "`sqrt(16)`",
+                 "kc26_q2_opt_b": "`math.sqrt(16)`",
+                 "kc26_q2_opt_c": "`Math.sqrt(16)`",
+                 "kc26_q2_opt_d": "`math->sqrt(16)`",
+                 "kc26_q3_text": "What does the `random` module primarily help with?",
+                 "kc26_q3_opt_a": "Performing complex mathematical calculations.",
+                 "kc26_q3_opt_b": "Working with dates and times.",
+                 "kc26_q3_opt_c": "Generating pseudo-random numbers and making random choices.",
+                 "kc26_q3_opt_d": "Reading and writing files.",
+                 "kc26_q4_text": "Consider the code: \n```python\nimport random\n\nmy_list = ['a', 'b', 'c']\nprint(random.choice(my_list))\n```\nWhat is a possible output?",
+                 "kc26_q4_opt_a": "`a`",
+                 "kc26_q4_opt_b": "`['a', 'b', 'c']`",
+                 "kc26_q4_opt_c": "`random.choice`",
+                 "kc26_q4_opt_d": "An error",
+                 "kc26_q5_text": "What is the purpose of using `import random as rd`?",
+                 "kc26_q5_opt_a": "It imports only the `rd` function from the `random` module.",
+                 "kc26_q5_opt_b": "It gives the imported `random` module a shorter alias, `rd`.",
+                 "kc26_q5_opt_c": "It runs the `random` module in a special 'read-only' mode.",
+                 "kc26_q5_opt_d": "It is not valid Python syntax.",
+                 "kc26_q6_text": "If you only need the `randint` function from the `random` module, which import statement is the most specific?",
+                 "kc26_q6_opt_a": "`import random`",
+                 "kc26_q6_opt_b": "`import random.randint`",
+                 "kc26_q6_opt_c": "`from random import randint`",
+                 "kc26_q6_opt_d": "`require random.randint`",
+                 "kc26_q7_text": "After executing `from math import pi`, how do you access the value of Pi?",
+                 "kc26_q7_opt_a": "`math.pi`",
+                 "kc26_q7_opt_b": "`pi`",
+                 "kc26_q7_opt_c": "`Math.pi`",
+                 "kc26_q7_opt_d": "`math->pi`",
+                 "kc26_q8_text": "Which of these is NOT a typical benefit of using modules?",
+                 "kc26_q8_opt_a": "Code organization: Grouping related functions.",
+                 "kc26_q8_opt_b": "Code reusability: Using the same code in multiple projects.",
+                 "kc26_q8_opt_c": "Making your script run faster automatically.",
+                 "kc26_q8_opt_d": "Avoiding naming conflicts between different parts of a large program.",
+                 "kc26_q9_text": "What will `math.pow(2, 3)` likely calculate?",
+                 "kc26_q9_opt_a": "2 + 3 (which is 5)",
+                 "kc26_q9_opt_b": "2 * 3 (which is 6)",
+                 "kc26_q9_opt_c": "2 raised to the power of 3 (which is 8)",
+                 "kc26_q9_opt_d": "The square root of 2 (approximately 1.414)",
+                 "kc26_q10_text": "If you try to use a function from a module without importing the module first, what kind of error will you likely get?",
+                 "kc26_q10_opt_a": "`SyntaxError`",
+                 "kc26_q10_opt_b": "`TypeError`",
+                 "kc26_q10_opt_c": "`ValueError`",
+                 "kc26_q10_opt_d": "`NameError`"
+             },
+             pt: {
+                 "page_title": "Verificação de Conhecimento - Módulo 26: Importando Módulos",
+                 "return_button": "Voltar ao Painel",
+                 "quiz_header_title": "<span class='module-number'>26</span> Verificação de Conhecimento: Importando Módulos",
+                 "quiz_instructions": "<i class='fas fa-info-circle'></i> Responda a todas as 10 perguntas abaixo. Você precisa de pelo menos <strong>6 respostas corretas</strong> para passar. Você pode refazer esta verificação quantas vezes precisar. Boa sorte!",
+                 "submit_button": "Verificar Respostas",
+                 "retake_button": "Refazer Quiz",
+                 "score_label": "Sua Pontuação: {score}/{total}",
+                 "result_pass_title": "Parabéns!",
+                 "result_fail_title": "Continue Tentando!",
+                 "feedback_pass": "Você passou! Verificação de conhecimento do Módulo 26 completa. Seu progresso foi salvo.",
+                 "feedback_fail": "Você precisa de {passingScore} ou mais respostas corretas para passar. Revise o material e tente novamente!",
+                 "feedback_unanswered": "Por favor, responda todas as perguntas antes de enviar.",
+                  // --- Module 26 Questions & Answers (PT) ---
+                 "kc26_q1_text": "Qual palavra-chave é usada para trazer código de outro módulo para o seu script atual?",
+                 "kc26_q1_opt_a": "`include`",
+                 "kc26_q1_opt_b": "`import`",
+                 "kc26_q1_opt_c": "`require`",
+                 "kc26_q1_opt_d": "`load`",
+                 "kc26_q2_text": "Se você escrever `import math`, como você chamaria a função de raiz quadrada desse módulo?",
+                 "kc26_q2_opt_a": "`sqrt(16)`",
+                 "kc26_q2_opt_b": "`math.sqrt(16)`",
+                 "kc26_q2_opt_c": "`Math.sqrt(16)`",
+                 "kc26_q2_opt_d": "`math->sqrt(16)`",
+                 "kc26_q3_text": "Para que serve principalmente o módulo `random`?",
+                 "kc26_q3_opt_a": "Realizar cálculos matemáticos complexos.",
+                 "kc26_q3_opt_b": "Trabalhar com datas e horas.",
+                 "kc26_q3_opt_c": "Gerar números pseudoaleatórios e fazer escolhas aleatórias.",
+                 "kc26_q3_opt_d": "Ler e escrever arquivos.",
+                 "kc26_q4_text": "Considere o código: \n```python\nimport random\n\nminha_lista = ['a', 'b', 'c']\nprint(random.choice(minha_lista))\n```\nQual é uma saída possível?",
+                 "kc26_q4_opt_a": "`a`",
+                 "kc26_q4_opt_b": "`['a', 'b', 'c']`",
+                 "kc26_q4_opt_c": "`random.choice`",
+                 "kc26_q4_opt_d": "Um erro",
+                 "kc26_q5_text": "Qual é o propósito de usar `import random as rd`?",
+                 "kc26_q5_opt_a": "Importa apenas a função `rd` do módulo `random`.",
+                 "kc26_q5_opt_b": "Dá ao módulo `random` importado um apelido mais curto, `rd`.",
+                 "kc26_q5_opt_c": "Executa o módulo `random` em um modo especial 'somente leitura'.",
+                 "kc26_q5_opt_d": "Não é uma sintaxe Python válida.",
+                 "kc26_q6_text": "Se você precisa apenas da função `randint` do módulo `random`, qual instrução de importação é a mais específica?",
+                 "kc26_q6_opt_a": "`import random`",
+                 "kc26_q6_opt_b": "`import random.randint`",
+                 "kc26_q6_opt_c": "`from random import randint`",
+                 "kc26_q6_opt_d": "`require random.randint`",
+                 "kc26_q7_text": "Após executar `from math import pi`, como você acessa o valor de Pi?",
+                 "kc26_q7_opt_a": "`math.pi`",
+                 "kc26_q7_opt_b": "`pi`",
+                 "kc26_q7_opt_c": "`Math.pi`",
+                 "kc26_q7_opt_d": "`math->pi`",
+                 "kc26_q8_text": "Qual destes NÃO é um benefício típico do uso de módulos?",
+                 "kc26_q8_opt_a": "Organização do código: Agrupar funções relacionadas.",
+                 "kc26_q8_opt_b": "Reutilização de código: Usar o mesmo código em múltiplos projetos.",
+                 "kc26_q8_opt_c": "Fazer seu script rodar mais rápido automaticamente.",
+                 "kc26_q8_opt_d": "Evitar conflitos de nomes entre diferentes partes de um programa grande.",
+                 "kc26_q9_text": "O que `math.pow(2, 3)` provavelmente calculará?",
+                 "kc26_q9_opt_a": "2 + 3 (que é 5)",
+                 "kc26_q9_opt_b": "2 * 3 (que é 6)",
+                 "kc26_q9_opt_c": "2 elevado à potência de 3 (que é 8)",
+                 "kc26_q9_opt_d": "A raiz quadrada de 2 (aproximadamente 1.414)",
+                 "kc26_q10_text": "Se você tentar usar uma função de um módulo sem importá-lo primeiro, que tipo de erro você provavelmente receberá?",
+                 "kc26_q10_opt_a": "`SyntaxError`",
+                 "kc26_q10_opt_b": "`TypeError`",
+                 "kc26_q10_opt_c": "`ValueError`",
+                 "kc26_q10_opt_d": "`NameError`"
+             },
+             zh: {
+                 "page_title": "知识测验 - 模块 26: 导入模块",
+                 "return_button": "返回仪表板",
+                 "quiz_header_title": "<span class='module-number'>26</span> 知识测验: 导入模块",
+                 "quiz_instructions": "<i class='fas fa-info-circle'></i> 回答以下所有 10 个问题。您需要至少答对 <strong>6 题</strong> 才能通过。您可以根据需要多次重做此测验。祝您好运！",
+                 "submit_button": "检查答案",
+                 "retake_button": "重新测验",
+                 "score_label": "您的分数: {score}/{total}",
+                 "result_pass_title": "恭喜！",
+                 "result_fail_title": "继续努力！",
+                 "feedback_pass": "您已通过！模块 26 知识测验完成。您的进度已保存。",
+                 "feedback_fail": "您需要答对 {passingScore} 题或以上才能通过。请复习相关内容后重试！",
+                 "feedback_unanswered": "请在提交前回答所有问题。",
+                 // --- Module 26 Questions & Answers (ZH) ---
+                 "kc26_q1_text": "使用哪个关键字将另一个模块中的代码引入到当前脚本中？",
+                 "kc26_q1_opt_a": "`include`",
+                 "kc26_q1_opt_b": "`import`",
+                 "kc26_q1_opt_c": "`require`",
+                 "kc26_q1_opt_d": "`load`",
+                 "kc26_q2_text": "如果你写了 `import math`，你将如何调用该模块中的平方根函数？",
+                 "kc26_q2_opt_a": "`sqrt(16)`",
+                 "kc26_q2_opt_b": "`math.sqrt(16)`",
+                 "kc26_q2_opt_c": "`Math.sqrt(16)`",
+                 "kc26_q2_opt_d": "`math->sqrt(16)`",
+                 "kc26_q3_text": "`random` 模块主要用于什么？",
+                 "kc26_q3_opt_a": "执行复杂的数学计算。",
+                 "kc26_q3_opt_b": "处理日期和时间。",
+                 "kc26_q3_opt_c": "生成伪随机数和进行随机选择。",
+                 "kc26_q3_opt_d": "读写文件。",
+                 "kc26_q4_text": "考虑以下代码：\n```python\nimport random\n\nmy_list = ['a', 'b', 'c']\nprint(random.choice(my_list))\n```\n可能的输出是什么？",
+                 "kc26_q4_opt_a": "`a`",
+                 "kc26_q4_opt_b": "`['a', 'b', 'c']`",
+                 "kc26_q4_opt_c": "`random.choice`",
+                 "kc26_q4_opt_d": "一个错误",
+                 "kc26_q5_text": "使用 `import random as rd` 的目的是什么？",
+                 "kc26_q5_opt_a": "它只从 `random` 模块导入 `rd` 函数。",
+                 "kc26_q5_opt_b": "它给导入的 `random` 模块一个更短的别名 `rd`。",
+                 "kc26_q5_opt_c": "它以特殊的“只读”模式运行 `random` 模块。",
+                 "kc26_q5_opt_d": "这不是有效的 Python 语法。",
+                 "kc26_q6_text": "如果你只需要 `random` 模块中的 `randint` 函数，哪个导入语句是最具体的？",
+                 "kc26_q6_opt_a": "`import random`",
+                 "kc26_q6_opt_b": "`import random.randint`",
+                 "kc26_q6_opt_c": "`from random import randint`",
+                 "kc26_q6_opt_d": "`require random.randint`",
+                 "kc26_q7_text": "执行 `from math import pi` 后，你如何访问 Pi 的值？",
+                 "kc26_q7_opt_a": "`math.pi`",
+                 "kc26_q7_opt_b": "`pi`",
+                 "kc26_q7_opt_c": "`Math.pi`",
+                 "kc26_q7_opt_d": "`math->pi`",
+                 "kc26_q8_text": "以下哪项通常不是使用模块的好处？",
+                 "kc26_q8_opt_a": "代码组织：将相关函数分组。",
+                 "kc26_q8_opt_b": "代码可重用性：在多个项目中使用相同的代码。",
+                 "kc26_q8_opt_c": "自动使你的脚本运行得更快。",
+                 "kc26_q8_opt_d": "避免大型程序不同部分之间的命名冲突。",
+                 "kc26_q9_text": "`math.pow(2, 3)` 可能会计算什么？",
+                 "kc26_q9_opt_a": "2 + 3 (结果是 5)",
+                 "kc26_q9_opt_b": "2 * 3 (结果是 6)",
+                 "kc26_q9_opt_c": "2 的 3 次方 (结果是 8)",
+                 "kc26_q9_opt_d": "2 的平方根 (约 1.414)",
+                 "kc26_q10_text": "如果你尝试在没有先导入模块的情况下使用模块中的函数，你可能会得到哪种错误？",
+                 "kc26_q10_opt_a": "`SyntaxError` (语法错误)",
+                 "kc26_q10_opt_b": "`TypeError` (类型错误)",
+                 "kc26_q10_opt_c": "`ValueError` (值错误)",
+                 "kc26_q10_opt_d": "`NameError` (名称错误)"
+             }
+         };
+
+        const moduleId = 26; // <--- *** CHANGE THIS FOR EACH MODULE'S PAGE ***
+        const totalQuestions = 10;
+        const passingScore = 6;
+        const KNOWLEDGE_CHECK_STORAGE_KEY = 'knowledgeCheckStatus_v1'; // Same key as dashboard
+        const LANGUAGE_STORAGE_KEY = 'userLanguage';
+
+        // --- Quiz Data Structure (Specific to Module 26) ---
+        const quizData = [
+            { qKey: 'kc26_q1_text', options: ['kc26_q1_opt_a', 'kc26_q1_opt_b', 'kc26_q1_opt_c', 'kc26_q1_opt_d'], correct: 'b' },
+            { qKey: 'kc26_q2_text', options: ['kc26_q2_opt_a', 'kc26_q2_opt_b', 'kc26_q2_opt_c', 'kc26_q2_opt_d'], correct: 'b' },
+            { qKey: 'kc26_q3_text', options: ['kc26_q3_opt_a', 'kc26_q3_opt_b', 'kc26_q3_opt_c', 'kc26_q3_opt_d'], correct: 'c' },
+            { qKey: 'kc26_q4_text', options: ['kc26_q4_opt_a', 'kc26_q4_opt_b', 'kc26_q4_opt_c', 'kc26_q4_opt_d'], correct: 'a' }, // Any of a, b, c is technically possible, 'a' is a likely example.
+            { qKey: 'kc26_q5_text', options: ['kc26_q5_opt_a', 'kc26_q5_opt_b', 'kc26_q5_opt_c', 'kc26_q5_opt_d'], correct: 'b' },
+            { qKey: 'kc26_q6_text', options: ['kc26_q6_opt_a', 'kc26_q6_opt_b', 'kc26_q6_opt_c', 'kc26_q6_opt_d'], correct: 'c' },
+            { qKey: 'kc26_q7_text', options: ['kc26_q7_opt_a', 'kc26_q7_opt_b', 'kc26_q7_opt_c', 'kc26_q7_opt_d'], correct: 'b' },
+            { qKey: 'kc26_q8_text', options: ['kc26_q8_opt_a', 'kc26_q8_opt_b', 'kc26_q8_opt_c', 'kc26_q8_opt_d'], correct: 'c' },
+            { qKey: 'kc26_q9_text', options: ['kc26_q9_opt_a', 'kc26_q9_opt_b', 'kc26_q9_opt_c', 'kc26_q9_opt_d'], correct: 'c' },
+            { qKey: 'kc26_q10_text', options: ['kc26_q10_opt_a', 'kc26_q10_opt_b', 'kc26_q10_opt_c', 'kc26_q10_opt_d'], correct: 'd' },
+        ];
+
+        // --- DOM References ---
+        const quizForm = document.getElementById('quiz-form');
+        const questionsContainer = document.getElementById('questions-container');
+        const submitButton = document.getElementById('submit-button');
+        const resultsArea = document.getElementById('results-area');
+        const resultTitle = document.getElementById('result-title');
+        const scoreDisplay = document.getElementById('score-display');
+        const feedbackMessage = document.getElementById('feedback-message');
+        const retakeButton = document.getElementById('retake-button');
+
+        // --- Translation & Language Functions (Copied from dashboard) ---
+        function getStoredLanguage() { /* ... same as dashboard ... */
+            const storedLang = localStorage.getItem(LANGUAGE_STORAGE_KEY);
+            if (storedLang && translations[storedLang]) return storedLang;
+            const browserLang = navigator.language || navigator.userLanguage;
+            if (browserLang.startsWith('pt')) return 'pt';
+            if (browserLang.startsWith('zh')) return 'zh';
+            return 'en';
+        }
+
+        function getTranslation(key, lang, replacements = {}) { /* ... same as dashboard ... */
+            let text = translations[lang]?.[key] ?? translations['en']?.[key] ?? `[${key}]`;
+            for (const placeholder in replacements) {
+                const regex = new RegExp(`\\{${placeholder}\\}`, 'g');
+                text = text.replace(regex, replacements[placeholder]);
+            }
+            return text;
+        }
+
+        function translatePage(lang) { /* ... same as dashboard ... */
+             if (!translations[lang]) lang = 'en';
+             document.documentElement.lang = lang;
+             document.querySelectorAll('[data-translate]').forEach(el => {
+                 const key = el.getAttribute('data-translate');
+                 const translation = getTranslation(key, lang);
+                 if (el.tagName === 'TITLE') { document.title = translation; }
+                 else if (translation.includes('<') && translation.includes('>')) { el.innerHTML = translation; }
+                 else { el.textContent = translation; }
+             });
+             // Translate dynamic elements like score later when needed
+        }
+
+        // --- LocalStorage Functions ---
+        function loadKnowledgeCheckStatus() { /* ... same as dashboard ... */
+            try {
+                const storedStatus = localStorage.getItem(KNOWLEDGE_CHECK_STORAGE_KEY);
+                const parsed = storedStatus ? JSON.parse(storedStatus) : {};
+                return typeof parsed === 'object' && parsed !== null ? parsed : {};
+            } catch (e) {
+                console.error("Error reading KC status from localStorage:", e);
+                return {};
+            }
+        }
+
+        function saveKnowledgeCheckStatus(statusObject) { /* ... same as dashboard ... */
+            try {
+                localStorage.setItem(KNOWLEDGE_CHECK_STORAGE_KEY, JSON.stringify(statusObject));
+            } catch (e) {
+                console.error("Error saving KC status to localStorage:", e);
+            }
+        }
+
+        // --- Quiz Logic ---
+        function buildQuiz() {
+            questionsContainer.innerHTML = ''; // Clear previous questions if any
+            const lang = getStoredLanguage();
+
+            quizData.forEach((qData, index) => {
+                const questionDiv = document.createElement('div');
+                questionDiv.classList.add('quiz-question');
+
+                const questionTextP = document.createElement('p');
+                questionTextP.classList.add('question-text');
+                questionTextP.setAttribute('data-translate', qData.qKey);
+                // Inner HTML used to render potential <code> tags correctly
+                questionTextP.innerHTML = getTranslation(qData.qKey, lang);
+                questionDiv.appendChild(questionTextP);
+
+                const optionsList = document.createElement('ul');
+                optionsList.classList.add('answer-options');
+
+                const options = ['a', 'b', 'c', 'd']; // Assuming 4 options always
+                options.forEach(optLetter => {
+                    const optionKey = qData.options[options.indexOf(optLetter)];
+                    const li = document.createElement('li');
+                    const label = document.createElement('label');
+                    const input = document.createElement('input');
+                    input.type = 'radio';
+                    input.name = `q${index}`;
+                    input.value = optLetter;
+                    input.required = true; // Make answering mandatory
+
+                    const span = document.createElement('span');
+                    span.classList.add('answer-text');
+                    span.setAttribute('data-translate', optionKey);
+                    span.innerHTML = getTranslation(optionKey, lang); // Use innerHTML for potential <code>
+
+                    label.appendChild(input);
+                    label.appendChild(span);
+                    li.appendChild(label);
+                    optionsList.appendChild(li);
+                });
+
+                questionDiv.appendChild(optionsList);
+                questionsContainer.appendChild(questionDiv);
+            });
+             // Call translatePage again AFTER building to ensure static elements are also translated
+             translatePage(lang);
+        }
+
+        function showResults(score) {
+            const lang = getStoredLanguage();
+            const passed = score >= passingScore;
+
+            // Update score display
+            scoreDisplay.innerHTML = getTranslation('score_label', lang, { score: score, total: totalQuestions });
+
+            // Update feedback message and title
+            if (passed) {
+                resultTitle.innerHTML = getTranslation('result_pass_title', lang);
+                feedbackMessage.innerHTML = getTranslation('feedback_pass', lang);
+                resultsArea.classList.remove('fail');
+                resultsArea.classList.add('pass');
+
+                // Save progress to localStorage
+                const currentStatus = loadKnowledgeCheckStatus();
+                currentStatus[moduleId] = true; // Mark this module as complete
+                saveKnowledgeCheckStatus(currentStatus);
+
+            } else {
+                resultTitle.innerHTML = getTranslation('result_fail_title', lang);
+                feedbackMessage.innerHTML = getTranslation('feedback_fail', lang, { passingScore: passingScore });
+                resultsArea.classList.remove('pass');
+                resultsArea.classList.add('fail');
+            }
+
+            // Show results area, hide submit, show retake
+            resultsArea.style.display = 'block';
+            submitButton.classList.add('hidden');
+            retakeButton.classList.remove('hidden');
+
+            // Highlight answers and disable inputs
+            quizForm.classList.add('submitted'); // Add class to disable hover etc.
+            quizData.forEach((qData, index) => {
+                const options = questionsContainer.querySelectorAll(`input[name="q${index}"]`);
+                let selectedValue = null;
+                options.forEach(opt => {
+                    const label = opt.closest('label');
+                     opt.disabled = true; // Disable radio button
+                     if(opt.checked) {
+                        selectedValue = opt.value;
+                        label.classList.add('selected'); // Mark what user selected
+                     }
+                    // Highlight correct/incorrect
+                    if (opt.value === qData.correct) {
+                        label.classList.add('correct');
+                    } else if (opt.checked) { // If it was checked AND it's not the correct one
+                        label.classList.add('incorrect');
+                    }
+                });
+            });
+
+             // Scroll to results
+             resultsArea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        function resetQuiz() {
+            quizForm.reset(); // Clear selections
+            resultsArea.style.display = 'none'; // Hide results
+            submitButton.classList.remove('hidden'); // Show submit
+            retakeButton.classList.add('hidden'); // Hide retake
+            quizForm.classList.remove('submitted'); // Remove submitted state class
+
+             // Remove result styling from labels and enable inputs
+             questionsContainer.querySelectorAll('.answer-options label').forEach(label => {
+                 label.classList.remove('correct', 'incorrect', 'selected');
+             });
+             questionsContainer.querySelectorAll('.answer-options input[type="radio"]').forEach(input => {
+                 input.disabled = false;
+             });
+
+             // Scroll to top
+             window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+
+        // --- Event Listeners ---
+        quizForm.addEventListener('submit', (e) => {
+            e.preventDefault(); // Prevent actual form submission
+
+            let score = 0;
+            let answeredCount = 0;
+            const formData = new FormData(quizForm);
+            const userAnswers = {};
+
+             // Check if all questions are answered and store answers
+             for(let i = 0; i < totalQuestions; i++) {
+                const answer = formData.get(`q${i}`);
+                if (answer) {
+                    userAnswers[`q${i}`] = answer;
+                    answeredCount++;
+                }
+             }
+
+            if (answeredCount < totalQuestions) {
+                const lang = getStoredLanguage();
+                 alert(getTranslation('feedback_unanswered', lang));
+                 return; // Stop submission if not all answered
+             }
+
+            // Calculate score
+            quizData.forEach((qData, index) => {
+                if (userAnswers[`q${index}`] === qData.correct) {
+                    score++;
+                }
+            });
+
+            showResults(score);
+        });
+
+        retakeButton.addEventListener('click', resetQuiz);
+
+        // --- Initial Load ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const initialLang = getStoredLanguage();
+            buildQuiz(); // Build the quiz HTML structure
+            translatePage(initialLang); // Translate all static elements
+        });
+
+    </script>
+
+</body>
+</html>
