@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<!-- Language set to Portuguese BR -->
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Title set by JS -->
+    <title data-translate="page_title">Módulo 5: Gráficos Estatísticos (Parte 1)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* --- Reset & Base Styles --- */
+        :root {
+            --primary-color: #007bff; /* Azul primário */
+            --secondary-color: #6c757d; /* Cinza secundário */
+            --background-light: #f8f9fa; /* Fundo claro */
+            --background-dark: #343a40; /* Fundo escuro */
+            --text-light: #f8f9fa; /* Texto claro */
+            --text-dark: #212529; /* Texto escuro */
+            --accent-color: #ffc107; /* Amarelo accent */
+            --success-color: #28a745; /* Verde sucesso */
+            --error-color: #dc3545; /* Vermelho erro */
+            --info-color: #17a2b8;  /* Azul info */
+            --warning-color: #ffc107; /* Amarelo aviso */
+            --histogram-color: #fd7e14; /* Laranja para histogramas */
+            --bar-chart-color: #20c997; /* Verde água para barras */
+            --pie-chart-color: #e83e8c; /* Rosa para pizza */
+            --border-radius: 8px;
+            --transition-speed: 0.3s;
+            --animation-speed: 0.6s; /* Control fade-in speed */
+            --font-body: 'Roboto', sans-serif;
+            --font-title: 'Orbitron', sans-serif;
+            --nav-primary: #6e48aa; /* Roxo nav */
+            --nav-success: #4cc9f0; /* Azul claro nav */
+            --nav-dark: #1a1a2e; /* Azul escuro nav */
+            --footer-border-color: #495057;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; font-size: 16px; }
+        body {
+            font-family: var(--font-body); line-height: 1.7;
+            background-color: var(--background-light); color: var(--text-dark);
+            overflow-x: hidden; display: flex; flex-direction: column; min-height: 100vh;
+        }
+        main { flex-grow: 1; }
+
+        /* --- Utility Classes --- */
+        .container { max-width: 960px; margin: 0 auto; padding: 0 15px; }
+        .text-center { text-align: center; }
+        .highlight { color: var(--primary-color); font-weight: bold; }
+        .code-style { font-family: 'Courier New', Courier, monospace; background-color: #e9ecef; padding: 0.2em 0.4em; border-radius: 4px; font-size: 0.95em; border: 1px solid #ced4da; }
+
+        /* Elements to be animated by observer */
+        .fade-in-on-scroll {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+        }
+        .fade-in-on-scroll.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        /* Add delays for staggering */
+        .delay-1.visible { transition-delay: 0.1s; }
+        .delay-2.visible { transition-delay: 0.2s; }
+        .delay-3.visible { transition-delay: 0.3s; }
+        .delay-4.visible { transition-delay: 0.4s; }
+        .delay-5.visible { transition-delay: 0.5s; }
+        .delay-6.visible { transition-delay: 0.6s; }
+        .delay-7.visible { transition-delay: 0.7s; }
+
+
+        .button-group { margin-top: 2rem; display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; }
+        .action-button {
+             display: inline-flex; align-items: center; justify-content: center; gap: 0.5em;
+             padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold;
+             color: var(--text-light); background-color: var(--primary-color); border: none;
+             border-radius: var(--border-radius); cursor: pointer;
+             transition: background-color var(--transition-speed), transform var(--transition-speed), filter var(--transition-speed), box-shadow var(--transition-speed), opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out; /* Add animation transition */
+             margin-top: 1rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+             text-decoration: none; line-height: 1.2;
+             opacity: 0; /* Start hidden if animated */
+             transform: translateY(20px); /* Start offset if animated */
+        }
+        .action-button.visible { /* Make visible via observer */
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .action-button i.fas {}
+        .action-button:hover:not(:disabled) { background-color: #0056b3; transform: translateY(-2px) !important; box-shadow: 0 4px 8px rgba(0,0,0,0.15); } /* Use !important to override initial transform */
+        .action-button:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none !important; box-shadow: none; opacity: 0.7; }
+        .action-button.success { background-color: var(--success-color); }
+        .action-button.success:hover:not(:disabled) { background-color: #218838; }
+        .action-button.secondary { background-color: var(--secondary-color); }
+        .action-button.secondary:hover:not(:disabled) { background-color: #5a6268; }
+        .action-button:active:not(:disabled) { transform: translateY(1px) scale(0.98) !important; filter: brightness(0.95); }
+
+        /* --- Animations --- */
+        @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); } 50% { transform: scale(1.03); box-shadow: 0 0 15px rgba(0, 123, 255, 0.6); } 100% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); } }
+        @keyframes tada { from { transform: scale3d(1, 1, 1); } 10%, 20% { transform: scale3d(.9, .9, .9) rotate3d(0, 0, 1, -3deg); } 30%, 50%, 70%, 90% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, 3deg); } 40%, 60%, 80% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, -3deg); } to { transform: scale3d(1, 1, 1); } }
+        .tada-anim { animation: tada 1s ease; }
+        @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
+        @keyframes iconAppearCorrect { 0% { transform: scale(0.5) rotate(-15deg); opacity: 0; } 60% { transform: scale(1.2) rotate(5deg); opacity: 1; } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
+
+        /* --- Minimal Retractable Nav --- */
+        .minimal-nav-button { position: fixed; top: 15px; right: 15px; z-index: 1001; background-color: rgba(52, 58, 64, 0.75); color: var(--text-light); border: none; border-radius: var(--border-radius); padding: 8px 12px; cursor: pointer; transition: background-color var(--transition-speed), opacity var(--transition-speed), transform var(--transition-speed); font-size: 1.1rem; opacity: 0.6; box-shadow: 0 2px 5px rgba(0,0,0,0.2); line-height: 1; }
+        .minimal-nav-button:hover { background-color: rgba(52, 58, 64, 0.95); opacity: 1; transform: scale(1.05); }
+        .minimal-nav { position: fixed; top: 60px; right: 15px; z-index: 1000; background-color: var(--background-dark); border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.3); padding: 0.8rem; opacity: 0; transform: translateY(-15px) scale(0.95); transform-origin: top right; pointer-events: none; transition: opacity var(--transition-speed) ease, transform var(--transition-speed) ease; min-width: 200px; }
+        body.nav-active .minimal-nav { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+        .minimal-nav ul { list-style: none; margin: 0; padding: 0; }
+        .minimal-nav ul li { margin-bottom: 5px; }
+        .minimal-nav ul li:last-child { margin-bottom: 0; }
+        .minimal-nav ul li a { display: flex; align-items: center; color: var(--text-light); text-decoration: none; padding: 0.6rem 1rem; border-radius: 4px; transition: background-color var(--transition-speed), color var(--transition-speed); white-space: nowrap; font-weight: 400; font-size: 0.95rem; }
+        .minimal-nav ul li a i.fas { margin-right: 10px; width: 1.2em; text-align: center; opacity: 0.8; transition: opacity var(--transition-speed); }
+        .minimal-nav ul li a:hover { background-color: var(--primary-color); color: var(--text-light); }
+        .minimal-nav ul li a:hover i.fas { opacity: 1; }
+
+        /* --- Header --- */
+        .main-header { background: linear-gradient(135deg, var(--primary-color), #0056b3); color: var(--text-light); padding: 4rem 0 6rem; text-align: center; position: relative; overflow: hidden; }
+        .main-header .container { /* Start visible */ }
+        .main-header h1 { font-family: var(--font-title); font-size: 3rem; margin-bottom: 0.5rem; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); }
+        .main-header p { font-size: 1.2rem; font-weight: 300; opacity: 0.9; }
+        .header-shape { position: absolute; border-radius: 50%; background-color: rgba(255, 255, 255, 0.1); animation: pulse 5s infinite ease-in-out alternate; }
+        .shape1 { width: 150px; height: 150px; bottom: -50px; left: 10%; animation-duration: 6s; }
+        .shape2 { width: 80px; height: 80px; top: 50px; right: 15%; animation-duration: 4s; }
+        .shape3 { width: 50px; height: 50px; bottom: 20px; right: 30%; animation-duration: 7s; }
+
+        /* --- Section Styling --- */
+        section { padding: 4rem 0; border-bottom: 1px solid #eee; }
+        main section:last-of-type { border-bottom: none; padding-bottom: 0;}
+        section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); margin-bottom: 2rem; text-align: center; position: relative; padding-bottom: 10px; }
+        section h2::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 60px; height: 4px; background-color: var(--accent-color); border-radius: 2px; }
+
+        /* --- Welcome Section --- */
+        #welcome p { font-size: 1.1rem; max-width: 700px; margin: 0 auto 1rem; text-align: center; }
+
+        /* --- Chart Section Styling (Common) --- */
+        .chart-section .content-wrapper {
+            display: flex; flex-wrap: wrap; gap: 2rem; align-items: flex-start; margin-top: 2rem;
+        }
+        .chart-explanation { flex: 1; min-width: 300px; }
+        .chart-explanation h3 { font-size: 1.5rem; color: var(--text-dark); margin-bottom: 1rem; font-weight: 700; }
+        .chart-explanation p { margin-bottom: 1rem; font-size: 1.05rem; }
+        .chart-explanation ul { list-style: disc; margin-left: 20px; margin-bottom: 1rem; font-size: 1.05rem; }
+        .chart-placeholder {
+            flex-basis: 300px; flex-grow: 0; flex-shrink: 0;
+            height: 250px; background-color: #e9ecef; border-radius: var(--border-radius);
+            display: flex; align-items: center; justify-content: center;
+            text-align: center; color: var(--secondary-color); font-style: italic;
+            border: 2px dashed var(--secondary-color);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            transition: background-color var(--transition-speed), border-color var(--transition-speed);
+        }
+        .chart-placeholder:hover { background-color: #dfe4e9; border-color: #adb5bd; }
+        .chart-section .ai-relevance {
+            background-color: rgba(0, 123, 255, 0.05); border-left: 4px solid var(--primary-color);
+            padding: 1rem 1.5rem; margin-top: 1.5rem; border-radius: 0 var(--border-radius) var(--border-radius) 0;
+        }
+        .ai-relevance h4 { color: var(--primary-color); margin-bottom: 0.5rem; font-weight: bold; font-size: 1.1rem; }
+        .ai-relevance p { margin-bottom: 0; font-size: 1rem; }
+
+
+        /* Specific Chart Section Colors */
+        #histograms h2 { color: var(--histogram-color); }
+        #histograms h2::after { background-color: var(--histogram-color); }
+        #histograms .ai-relevance { border-left-color: var(--histogram-color); background-color: rgba(253, 126, 20, 0.05); }
+        #histograms .ai-relevance h4 { color: var(--histogram-color); }
+        #histograms .chart-placeholder { border-color: var(--histogram-color); }
+
+        #bar-charts h2 { color: var(--bar-chart-color); }
+        #bar-charts h2::after { background-color: var(--bar-chart-color); }
+        #bar-charts .ai-relevance { border-left-color: var(--bar-chart-color); background-color: rgba(32, 201, 151, 0.05); }
+        #bar-charts .ai-relevance h4 { color: var(--bar-chart-color); }
+        #bar-charts .chart-placeholder { border-color: var(--bar-chart-color); }
+
+        #pie-charts h2 { color: var(--pie-chart-color); }
+        #pie-charts h2::after { background-color: var(--pie-chart-color); }
+        #pie-charts .ai-relevance { border-left-color: var(--pie-chart-color); background-color: rgba(232, 62, 140, 0.05); }
+        #pie-charts .ai-relevance h4 { color: var(--pie-chart-color); }
+        #pie-charts .chart-placeholder { border-color: var(--pie-chart-color); }
+
+
+        /* --- Putting It Together Section --- */
+         #putting-it-together-m5 .scenario-box { /* Animated by observer */
+            background-color: #fff; padding: 2rem; border-radius: var(--border-radius);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08); margin-top: 2rem;
+            border-left: 5px solid var(--info-color);
+            opacity: 0; transition: opacity var(--animation-speed) ease-out; /* Only fade opacity */
+         }
+         #putting-it-together-m5 .scenario-box.visible { opacity: 1; }
+         #putting-it-together-m5 h3 { font-size: 1.5rem; color: var(--info-color); margin-bottom: 1rem; }
+         #putting-it-together-m5 p { font-size: 1.1rem; margin-bottom: 1rem; }
+         #putting-it-together-m5 strong { color: var(--text-dark); }
+
+        /* --- Knowledge Check Section --- */
+        #knowledge-check { background-color: #e9ecef; }
+        .quiz-container { /* Animated by observer */
+             background-color: #fff; padding: 2rem; border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.1); max-width: 700px; margin: 2rem auto 0;
+             opacity: 0; transition: opacity var(--animation-speed) ease-out; /* Only fade opacity */
+        }
+        .quiz-container.visible { opacity: 1; }
+        .quiz-question { font-size: 1.2rem; font-weight: bold; margin-bottom: 1.5rem; color: var(--text-dark); }
+        .quiz-options button { display: block; width: 100%; padding: 1rem; margin-bottom: 1rem; text-align: left; font-size: 1rem; background-color: #f8f9fa; border: 1px solid #ced4da; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), border-color var(--transition-speed), transform var(--transition-speed); }
+        .quiz-options button:not(:disabled):hover { background-color: #e2e6ea; border-color: #adb5bd; transform: translateX(5px); }
+        .quiz-options button:disabled { cursor: default; opacity: 0.7; }
+        .quiz-options button.correct { background-color: #d4edda; border-color: var(--success-color); color: #155724; font-weight: bold; }
+        .quiz-options button.incorrect { background-color: #f8d7da; border-color: var(--error-color); color: #721c24; font-weight: bold; }
+        .quiz-options button.incorrect.shake { animation: shake 0.5s ease; }
+        .quiz-feedback { margin-top: 1.5rem; padding: 1rem; border-radius: var(--border-radius); font-weight: bold; text-align: center; opacity: 0; transition: opacity 0.5s ease, height 0.5s ease, margin-bottom 0.5s ease; height: 0; overflow: hidden; margin-bottom: 0;}
+        .quiz-feedback.visible { opacity: 1; height: auto; margin-bottom: 1rem; }
+        .quiz-feedback.correct { background-color: #d4edda; color: #155724; }
+        .quiz-feedback.incorrect { background-color: #f8d7da; color: #721c24; }
+        #next-question-btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5em; margin: 1.5rem auto 0; padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold; color: var(--text-light); background-color: var(--primary-color); border: none; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), transform var(--transition-speed), opacity 0.3s, visibility 0.3s; opacity: 0; visibility: hidden; }
+        #next-question-btn:hover:not(:disabled) { background-color: #0056b3; transform: scale(1.05); }
+        #next-question-btn.visible { opacity: 1; visibility: visible; }
+        #next-question-btn:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none; opacity: 0.7; }
+
+
+        /* --- Completion Section Styling --- */
+        .completion-section { padding: 4rem 0; text-align: center; background-color: var(--background-light); }
+        .completion-section .icon { font-size: 4rem; color: var(--success-color); margin-bottom: 1rem; display: inline-block; animation: iconAppearCorrect 1s ease-out 0.5s forwards; opacity: 0; /* Initial state for animation */}
+        /* Ensure completion elements are targeted by observer */
+        .completion-section h2, .completion-section p {
+            opacity: 0; transform: translateY(20px);
+            transition: opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+        }
+        .completion-section h2.visible, .completion-section p.visible {
+            opacity: 1; transform: translateY(0);
+        }
+        .completion-section .button-group { margin-top: 2.5rem; }
+        .completion-section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); margin-bottom: 1rem; }
+        .completion-section h2::after { display: none; }
+        .completion-section p { font-size: 1.1rem; margin-top: 1rem; color: var(--secondary-color); max-width: 700px; margin-left: auto; margin-right: auto; line-height: 1.8; }
+
+
+        /* --- Footer Styling --- */
+        .main-footer {
+            background-color: var(--background-light);
+            color: var(--text-light);
+            text-align: center;
+            padding: 2rem 0;
+            font-size: 0.9rem;
+            margin-top: auto;
+            border-top: 1px solid var(--background-light);
+            opacity: 0.85;
+        }
+        .main-footer p { margin: 0; line-height: 1.5; }
+
+        /* --- Responsive Design --- */
+        @media (max-width: 768px) {
+            html { font-size: 15px; }
+            .main-header h1 { font-size: 2.5rem; } .main-header p { font-size: 1.1rem; }
+            section h2 { font-size: 1.8rem; }
+            .chart-section .content-wrapper { flex-direction: column; align-items: center; }
+            .chart-placeholder { width: 100%; max-width: 350px; flex-basis: 250px; } /* Adjust placeholder size */
+            .chart-explanation { min-width: 100%; }
+            #putting-it-together-m5 .scenario-box { padding: 1.5rem; }
+            #putting-it-together-m5 h3 { font-size: 1.3rem; }
+            #putting-it-together-m5 p { font-size: 1rem; }
+            .minimal-nav { min-width: 180px; } .minimal-nav ul li a { padding: 0.6rem 0.8rem; }
+            .completion-section h2 { font-size: 2rem; }
+            .completion-section .button-group { flex-direction: column; align-items: center; gap: 0.8rem; }
+            .completion-section .action-button { width: 80%; max-width: 350px; margin-top: 0; }
+            .main-footer { padding: 1.5rem 0; }
+        }
+        @media (max-width: 480px) {
+            html { font-size: 14px; }
+            .main-header h1 { font-size: 2rem; } .main-header p { font-size: 1rem; }
+            section h2 { font-size: 1.6rem; }
+            .quiz-options button { padding: 0.8rem; font-size: 0.95rem; }
+            .minimal-nav-button { top: 10px; right: 10px; padding: 6px 10px; font-size: 1rem; }
+            .minimal-nav { top: 48px; right: 10px; min-width: 160px; }
+            .minimal-nav ul li a { padding: 0.5rem 0.7rem; font-size: 0.9rem;}
+            .minimal-nav ul li a i.fas { margin-right: 8px; }
+            .completion-section .icon { font-size: 3.5rem; }
+            .completion-section h2 { font-size: 1.8rem; } .completion-section p { font-size: 1rem; }
+            .completion-section .action-button { width: 90%; max-width: 300px; }
+            .main-footer { padding: 1rem 0; font-size: 0.85rem; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- ========= Minimal Nav Handle ========= -->
+    <button id="minimal-nav-toggle" class="minimal-nav-button" aria-label="Alternar Menu de Navegação" aria-expanded="false">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- ========= Minimal Nav Panel ========= -->
+    <nav id="minimal-nav-panel" class="minimal-nav">
+        <ul>
+            <!-- IMPORTANT: Update hrefs to math-* and specific module number -->
+            <li><a href="math-practice-5.html"><i class="fas fa-pencil-alt fa-fw"></i> <span data-translate="nav_practice">Iniciar Prática</span></a></li>
+            <li><a href="math-advanced-5.html"><i class="fas fa-flask fa-fw"></i> <span data-translate="nav_advanced">Prática Avançada</span></a></li>
+            <li><a href="math-dashboard.html"><i class="fas fa-list fa-fw"></i> <span data-translate="nav_menu">Menu do Curso</span></a></li>
+             <hr style="border: none; border-top: 1px solid var(--secondary-color); margin: 8px 0;">
+             <li><a href="#welcome"><i class="fas fa-door-open fa-fw"></i> <span data-translate="nav_welcome_m5">Boas-vindas M5</span></a></li>
+             <li><a href="#histograms"><i class="fas fa-chart-bar fa-fw"></i> <span data-translate="nav_histograms">Histogramas</span></a></li>
+             <li><a href="#bar-charts"><i class="fas fa-align-left fa-fw"></i> <span data-translate="nav_bar_charts">Gráf. Barras</span></a></li>
+             <li><a href="#pie-charts"><i class="fas fa-chart-pie fa-fw"></i> <span data-translate="nav_pie_charts">Gráf. Setores</span></a></li>
+             <li><a href="#putting-it-together-m5"><i class="fas fa-cogs fa-fw"></i> <span data-translate="nav_putting_together_m5">Escolhendo</span></a></li>
+             <li><a href="#knowledge-check"><i class="fas fa-check-double fa-fw"></i> <span data-translate="nav_quiz">Teste Rápido</span></a></li>
+             <li><a href="#completion"><i class="fas fa-flag-checkered fa-fw"></i> <span data-translate="completion_theory_title_m5">Conclusão</span></a></li>
+        </ul>
+    </nav>
+
+    <header class="main-header">
+        <div class="header-shape shape1"></div>
+        <div class="header-shape shape2"></div>
+        <div class="header-shape shape3"></div>
+        <div class="container">
+            <!-- IMPORTANT: Update title and subtitle for Module 5 -->
+            <h1 data-translate="header_title_m5">Módulo 5: Gráficos Estatísticos (Parte 1)</h1>
+            <p data-translate="header_subtitle_m5">Representando dados visualmente: Histogramas, Gráficos de Barras e de Setores.</p>
+        </div>
+    </header>
+
+    <main>
+        <!-- ========= Welcome Section ========= -->
+        <section id="welcome">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="welcome_title_m5">📊 Visualizando Dados: O Primeiro Passo</h2>
+                <p class="fade-in-on-scroll delay-1" data-translate="welcome_p1_m5">
+                    Bem-vindo ao Módulo 5! Depois de organizar nossos dados, o próximo passo crucial na análise é a <span class="highlight">visualização</span>. Gráficos nos ajudam a entender padrões, distribuições e relações que tabelas de números por si só não revelam facilmente.
+                </p>
+                <p class="fade-in-on-scroll delay-2" data-translate="welcome_p2_m5">
+                    Neste módulo, focaremos em três tipos fundamentais de gráficos usados extensivamente em Análise de Dados e IA: <span class="highlight">Histogramas</span>, <span class="highlight">Gráficos de Barras</span> e <span class="highlight">Gráficos de Setores</span> (ou Pizza). Vamos descobrir como e quando usar cada um!
+                </p>
+            </div>
+        </section>
+
+        <!-- ========= Histograms Section ========= -->
+        <section id="histograms" class="chart-section">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="histograms_title">📊 Histogramas: Visualizando Distribuições</h2>
+                <p class="text-center fade-in-on-scroll delay-1" data-translate="histograms_subtitle">Entendendo a frequência de dados contínuos.</p>
+
+                <div class="content-wrapper">
+                    <div class="chart-explanation fade-in-on-scroll delay-2">
+                        <h3 data-translate="histograms_what_title">O que é um Histograma?</h3>
+                        <p data-translate="histograms_what_p1">
+                            Um histograma é uma representação gráfica da <span class="highlight">distribuição de frequências</span> de um conjunto de dados <span class="highlight">contínuos</span> ou quantitativos discretos agrupados. Ele se parece com um gráfico de barras, mas há diferenças cruciais.
+                        </p>
+                        <ul>
+                            <li data-translate="histograms_what_li1"><strong>Eixo X (Horizontal):</strong> Representa os <span class="highlight">intervalos (bins ou classes)</span> nos quais os dados são divididos.</li>
+                            <li data-translate="histograms_what_li2"><strong>Eixo Y (Vertical):</strong> Representa a <span class="highlight">frequência</span> (contagem de observações) ou frequência relativa (porcentagem) dentro de cada intervalo.</li>
+                            <li data-translate="histograms_what_li3"><strong>Barras:</strong> As barras em um histograma geralmente <span class="highlight">se tocam</span>, indicando que a variável no eixo X é contínua ou agrupada. A <span class="highlight">área</span> de cada barra é proporcional à frequência.</li>
+                        </ul>
+                        <p data-translate="histograms_what_p2">
+                            A escolha do número de intervalos (bins) pode afetar significativamente a aparência do histograma e as conclusões tiradas.
+                        </p>
+                    </div>
+                    <div class="chart-placeholder fade-in-on-scroll delay-3">
+                        <span data-translate="histograms_placeholder">Placeholder: Exemplo de Histograma (e.g., distribuição de idades)</span>
+                    </div>
+                </div>
+
+                <div class="ai-relevance fade-in-on-scroll delay-4">
+                     <h4 data-translate="histograms_ai_title"><i class="fas fa-robot"></i> Relevância para IA</h4>
+                     <p data-translate="histograms_ai_p1">
+                         Histogramas são essenciais para entender a <span class="highlight">distribuição das features (características)</span> nos seus dados. Isso ajuda a:
+                     </p>
+                      <ul>
+                            <li data-translate="histograms_ai_li1">Identificar <span class="highlight">assimetria</span> (skewness) e <span class="highlight">curtose</span> (kurtosis).</li>
+                            <li data-translate="histograms_ai_li2">Detectar <span class="highlight">outliers</span> (valores discrepantes).</li>
+                            <li data-translate="histograms_ai_li3">Verificar se uma feature segue uma <span class="highlight">distribuição específica</span> (como a normal), o que é pré-requisito para alguns algoritmos.</li>
+                            <li data-translate="histograms_ai_li4">Informar decisões sobre <span class="highlight">transformação de features</span> (e.g., logaritmo) para melhorar o desempenho do modelo.</li>
+                      </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========= Bar Charts Section ========= -->
+        <section id="bar-charts" class="chart-section">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="bar_charts_title">📊 Gráficos de Barras: Comparando Categorias</h2>
+                <p class="text-center fade-in-on-scroll delay-1" data-translate="bar_charts_subtitle">Visualizando contagens ou valores para dados categóricos.</p>
+
+                <div class="content-wrapper">
+                     <div class="chart-placeholder fade-in-on-scroll delay-3">
+                        <span data-translate="bar_charts_placeholder">Placeholder: Exemplo de Gráfico de Barras (e.g., contagem por tipo de produto)</span>
+                    </div>
+                    <div class="chart-explanation fade-in-on-scroll delay-2">
+                        <h3 data-translate="bar_charts_what_title">O que é um Gráfico de Barras?</h3>
+                        <p data-translate="bar_charts_what_p1">
+                            Gráficos de barras são usados para comparar <span class="highlight">valores</span> (como contagens, médias, porcentagens) entre diferentes <span class="highlight">categorias</span> ou grupos discretos.
+                        </p>
+                        <ul>
+                            <li data-translate="bar_charts_what_li1"><strong>Eixo X (ou Y):</strong> Representa as <span class="highlight">categorias discretas</span> (e.g., tipos de produtos, nomes de modelos, respostas de pesquisa).</li>
+                            <li data-translate="bar_charts_what_li2"><strong>Eixo Y (ou X):</strong> Representa o <span class="highlight">valor</span> associado a cada categoria (e.g., quantidade vendida, acurácia do modelo, número de respondentes).</li>
+                            <li data-translate="bar_charts_what_li3"><strong>Barras:</strong> As barras são <span class="highlight">separadas</span> por espaços, indicando que as categorias são distintas e não contínuas. O <span class="highlight">comprimento</span> (ou altura) da barra é proporcional ao valor.</li>
+                        </ul>
+                        <p data-translate="bar_charts_what_p2">
+                            Existem variações como gráficos de barras agrupados (para comparar subcategorias dentro de cada categoria principal) e empilhados (para mostrar a composição de cada categoria).
+                        </p>
+                    </div>
+
+                </div>
+
+                 <div class="ai-relevance fade-in-on-scroll delay-4">
+                     <h4 data-translate="bar_charts_ai_title"><i class="fas fa-robot"></i> Relevância para IA</h4>
+                     <p data-translate="bar_charts_ai_p1">
+                         Gráficos de barras são ferramentas visuais poderosas em IA para:
+                     </p>
+                      <ul>
+                            <li data-translate="bar_charts_ai_li1">Comparar <span class="highlight">métricas de performance</span> (acurácia, precisão, recall) entre diferentes modelos ou configurações.</li>
+                            <li data-translate="bar_charts_ai_li2">Visualizar a <span class="highlight">distribuição de classes</span> em um problema de classificação (identificar desbalanceamento).</li>
+                            <li data-translate="bar_charts_ai_li3">Mostrar a <span class="highlight">importância de features</span> calculada por alguns modelos.</li>
+                            <li data-translate="bar_charts_ai_li4">Apresentar resultados de <span class="highlight">testes A/B</span> ou experimentos.</li>
+                      </ul>
+                 </div>
+            </div>
+        </section>
+
+        <!-- ========= Pie Charts Section ========= -->
+        <section id="pie-charts" class="chart-section">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="pie_charts_title">🍕 Gráficos de Setores (Pizza): Mostrando Proporções</h2>
+                <p class="text-center fade-in-on-scroll delay-1" data-translate="pie_charts_subtitle">Representando partes de um todo.</p>
+
+                <div class="content-wrapper">
+                    <div class="chart-explanation fade-in-on-scroll delay-2">
+                         <h3 data-translate="pie_charts_what_title">O que é um Gráfico de Setores?</h3>
+                        <p data-translate="pie_charts_what_p1">
+                           Um gráfico de setores (ou gráfico de pizza) representa os dados como <span class="highlight">fatias</span> de um círculo, onde cada fatia representa uma <span class="highlight">proporção</span> ou porcentagem do todo.
+                        </p>
+                        <ul>
+                            <li data-translate="pie_charts_what_li1"><strong>Círculo Completo:</strong> Representa 100% do total dos dados.</li>
+                            <li data-translate="pie_charts_what_li2"><strong>Fatias (Setores):</strong> Cada fatia corresponde a uma <span class="highlight">categoria</span>. A <span class="highlight">área (ou ângulo)</span> de cada fatia é proporcional à porcentagem que essa categoria representa do total.</li>
+                        </ul>
+                        <p data-translate="pie_charts_what_p2">
+                           São eficazes para mostrar a <span class="highlight">composição</span> de um conjunto de dados quando há <span class="highlight">poucas categorias</span> (geralmente menos de 5-6).
+                        </p>
+                         <p data-translate="pie_charts_what_p3">
+                            <span class="highlight">Cuidado:</span> Gráficos de pizza se tornam difíceis de ler e comparar quando há muitas fatias ou quando as proporções são muito semelhantes. Nesses casos, um gráfico de barras costuma ser uma alternativa melhor.
+                        </p>
+                    </div>
+                     <div class="chart-placeholder fade-in-on-scroll delay-3">
+                        <span data-translate="pie_charts_placeholder">Placeholder: Exemplo de Gráfico de Pizza (e.g., divisão de orçamento)</span>
+                    </div>
+                </div>
+
+                 <div class="ai-relevance fade-in-on-scroll delay-4">
+                     <h4 data-translate="pie_charts_ai_title"><i class="fas fa-robot"></i> Relevância para IA</h4>
+                     <p data-translate="pie_charts_ai_p1">
+                        Embora menos usados para análises complexas, gráficos de setores podem ser úteis para:
+                     </p>
+                      <ul>
+                            <li data-translate="pie_charts_ai_li1">Visualizar a <span class="highlight">divisão de dados</span> em conjuntos de treino, validação e teste.</li>
+                            <li data-translate="pie_charts_ai_li2">Mostrar a <span class="highlight">distribuição percentual</span> de classes majoritárias em um dataset.</li>
+                            <li data-translate="pie_charts_ai_li3">Apresentar a <span class="highlight">alocação de recursos</span> computacionais (e.g., % de GPU vs CPU utilizada).</li>
+                            <li data-translate="pie_charts_ai_li4">Comunicar <span class="highlight">proporções simples</span> para um público não técnico.</li>
+                      </ul>
+                 </div>
+            </div>
+        </section>
+
+        <!-- ========= Putting It Together Section ========= -->
+        <section id="putting-it-together-m5">
+             <div class="container">
+                 <h2 class="fade-in-on-scroll" data-translate="putting_together_title_m5">⚙️ Escolhendo o Gráfico Certo</h2>
+                 <p class="text-center fade-in-on-scroll delay-1" data-translate="putting_together_subtitle_m5">Aplicando o conhecimento para selecionar a melhor visualização.</p>
+
+                 <div class="scenario-box fade-in-on-scroll delay-2"> <!-- Observe container -->
+                     <h3 data-translate="scenario_title">Cenário: Análise de Desempenho de Chatbot</h3>
+                     <p data-translate="scenario_p1">
+                         Imagine que você está analisando dados de um chatbot de atendimento ao cliente. Você coletou as seguintes informações:
+                     </p>
+                     <ul>
+                        <li data-translate="scenario_li1"><strong>Tempo de Resposta (segundos):</strong> Uma lista de tempos que o bot levou para responder a cada consulta (dados numéricos contínuos).</li>
+                        <li data-translate="scenario_li2"><strong>Tipo de Consulta:</strong> A categoria de cada pergunta feita ao bot (e.g., "Fatura", "Suporte Técnico", "Informação Produto", "Outros" - dados categóricos).</li>
+                        <li data-translate="scenario_li3"><strong>Avaliação do Usuário:</strong> A proporção de usuários que avaliaram a interação como "Satisfeito", "Neutro" ou "Insatisfeito" (dados categóricos representando partes de um todo).</li>
+                     </ul>
+                     <p data-translate="scenario_p2">
+                        <strong>Qual gráfico você usaria para cada informação?</strong>
+                     </p>
+                     <p data-translate="scenario_p3">
+                        <i class="fas fa-lightbulb" style="color: var(--accent-color);"></i> <strong data-translate="scenario_answer_intro">Resposta Provável:</strong>
+                        <ul>
+                            <li data-translate="scenario_answer_li1">Para o <strong>Tempo de Resposta</strong>: Um <strong style="color: var(--histogram-color)">Histograma</strong> seria ideal para ver a distribuição dos tempos (e.g., a maioria das respostas é rápida? Existem picos de lentidão?).</li>
+                            <li data-translate="scenario_answer_li2">Para o <strong>Tipo de Consulta</strong>: Um <strong style="color: var(--bar-chart-color)">Gráfico de Barras</strong> mostraria claramente qual tipo de consulta é mais frequente, permitindo comparar as contagens entre as categorias.</li>
+                            <li data-translate="scenario_answer_li3">Para a <strong>Avaliação do Usuário</strong>: Um <strong style="color: var(--pie-chart-color)">Gráfico de Setores (Pizza)</strong> poderia mostrar rapidamente a proporção geral de satisfação (e.g., 60% Satisfeito, 25% Neutro, 15% Insatisfeito).</li>
+                        </ul>
+                     </p>
+                      <p class="fade-in-on-scroll delay-3" data-translate="scenario_conclusion">
+                        Escolher o gráfico correto depende fundamentalmente do <span class="highlight">tipo de dado</span> que você tem e da <span class="highlight">pergunta</span> que você quer responder sobre ele.
+                      </p>
+                 </div>
+             </div>
+        </section>
+
+        <!-- ========= Knowledge Check Section ========= -->
+        <section id="knowledge-check">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="quiz_title">🧠 Teste Rápido!</h2>
+                <div class="quiz-container fade-in-on-scroll delay-1"> <!-- Observe container -->
+                    <div id="quiz-area">
+                         <p style="text-align: center; padding: 2rem 0;">Carregando quiz...</p>
+                    </div>
+                    <div id="quiz-feedback" class="quiz-feedback"></div>
+                    <button id="next-question-btn" data-translate="quiz_next_button">Próxima Pergunta</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========= Completion Section ========= -->
+        <section id="completion" class="completion-section"> <!-- Added ID for nav link -->
+            <div class="container">
+                 <div class="icon">
+                    <i class="fas fa-chart-bar"></i>
+                    <i class="fas fa-chart-pie"></i>
+                    <i class="fas fa-check-double"></i>
+                </div>
+                <!-- IMPORTANT: Update title and description for Module 5 -->
+                <h2 class="fade-in-on-scroll delay-1" data-translate="completion_theory_title_m5">Teoria do Módulo 5 Completa!</h2>
+                <p class="fade-in-on-scroll delay-2" data-translate="completion_theory_desc_m5">
+                    Excelente! Você aprendeu sobre três ferramentas visuais essenciais: Histogramas, Gráficos de Barras e Gráficos de Setores. Saber quando e como usá-los é fundamental para a análise exploratória de dados em IA.
+                    <br>Continue explorando estes conceitos na <strong>Zona de Prática</strong> ou avance para a <strong>Prática Avançada</strong> do Módulo 5.
+                </p>
+                <div class="button-group">
+                    <!-- IMPORTANT: Update hrefs to math-* and specific module number -->
+                    <a href="math-dashboard.html" class="action-button secondary fade-in-on-scroll delay-3"><i class="fas fa-list"></i> <span data-translate="nav_menu">Menu do Curso</span></a>
+                    <a href="math-practice-5.html" class="action-button success fade-in-on-scroll delay-4"><i class="fas fa-pencil-alt"></i> <span data-translate="nav_practice">Iniciar Prática</span></a>
+                    <a href="math-advanced-5.html" class="action-button secondary fade-in-on-scroll delay-5"><i class="fas fa-flask"></i> <span data-translate="nav_advanced">Prática Avançada</span></a>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="main-footer">
+        <div class="container">
+            <p data-translate="footer_copyright"></p>
+        </div>
+    </footer>
+
+    <script>
+    // --- Translations Object (Portuguese Only for Module 5) ---
+    const translations = {
+        pt: {
+            "page_title": "Módulo 5: Gráficos Estatísticos (Parte 1)",
+            "nav_practice": "Iniciar Prática",
+            "nav_advanced": "Prática Avançada",
+            "nav_menu": "Menu do Curso",
+            "nav_welcome_m5": "Boas-vindas M5",
+            "nav_histograms": "Histogramas",
+            "nav_bar_charts": "Gráf. Barras",
+            "nav_pie_charts": "Gráf. Setores",
+            "nav_putting_together_m5": "Escolhendo",
+            "nav_quiz": "Teste Rápido",
+            "header_title_m5": "Módulo 5: Gráficos Estatísticos (Parte 1)",
+            "header_subtitle_m5": "Representando dados visualmente: Histogramas, Gráficos de Barras e de Setores.",
+            "welcome_title_m5": "📊 Visualizando Dados: O Primeiro Passo",
+            "welcome_p1_m5": "Bem-vindo ao Módulo 5! Depois de organizar nossos dados, o próximo passo crucial na análise é a <span class=\"highlight\">visualização</span>. Gráficos nos ajudam a entender padrões, distribuições e relações que tabelas de números por si só não revelam facilmente.",
+            "welcome_p2_m5": "Neste módulo, focaremos em três tipos fundamentais de gráficos usados extensivamente em Análise de Dados e IA: <span class=\"highlight\">Histogramas</span>, <span class=\"highlight\">Gráficos de Barras</span> e <span class=\"highlight\">Gráficos de Setores</span> (ou Pizza). Vamos descobrir como e quando usar cada um!",
+
+            "histograms_title": "📊 Histogramas: Visualizando Distribuições",
+            "histograms_subtitle": "Entendendo a frequência de dados contínuos.",
+            "histograms_what_title": "O que é um Histograma?",
+            "histograms_what_p1": "Um histograma é uma representação gráfica da <span class=\"highlight\">distribuição de frequências</span> de um conjunto de dados <span class=\"highlight\">contínuos</span> ou quantitativos discretos agrupados. Ele se parece com um gráfico de barras, mas há diferenças cruciais.",
+            "histograms_what_li1": "<strong>Eixo X (Horizontal):</strong> Representa os <span class=\"highlight\">intervalos (bins ou classes)</span> nos quais os dados são divididos.",
+            "histograms_what_li2": "<strong>Eixo Y (Vertical):</strong> Representa a <span class=\"highlight\">frequência</span> (contagem de observações) ou frequência relativa (porcentagem) dentro de cada intervalo.",
+            "histograms_what_li3": "<strong>Barras:</strong> As barras em um histograma geralmente <span class=\"highlight\">se tocam</span>, indicando que a variável no eixo X é contínua ou agrupada. A <span class=\"highlight\">área</span> de cada barra é proporcional à frequência.",
+            "histograms_what_p2": "A escolha do número de intervalos (bins) pode afetar significativamente a aparência do histograma e as conclusões tiradas.",
+            "histograms_placeholder": "Placeholder: Exemplo de Histograma (e.g., distribuição de idades)",
+            "histograms_ai_title": "<i class=\"fas fa-robot\"></i> Relevância para IA",
+            "histograms_ai_p1": "Histogramas são essenciais para entender a <span class=\"highlight\">distribuição das features (características)</span> nos seus dados. Isso ajuda a:",
+            "histograms_ai_li1": "Identificar <span class=\"highlight\">assimetria</span> (skewness) e <span class=\"highlight\">curtose</span> (kurtosis).",
+            "histograms_ai_li2": "Detectar <span class=\"highlight\">outliers</span> (valores discrepantes).",
+            "histograms_ai_li3": "Verificar se uma feature segue uma <span class=\"highlight\">distribuição específica</span> (como a normal), o que é pré-requisito para alguns algoritmos.",
+            "histograms_ai_li4": "Informar decisões sobre <span class=\"highlight\">transformação de features</span> (e.g., logaritmo) para melhorar o desempenho do modelo.",
+
+            "bar_charts_title": "📊 Gráficos de Barras: Comparando Categorias",
+            "bar_charts_subtitle": "Visualizando contagens ou valores para dados categóricos.",
+            "bar_charts_what_title": "O que é um Gráfico de Barras?",
+            "bar_charts_what_p1": "Gráficos de barras são usados para comparar <span class=\"highlight\">valores</span> (como contagens, médias, porcentagens) entre diferentes <span class=\"highlight\">categorias</span> ou grupos discretos.",
+            "bar_charts_what_li1": "<strong>Eixo X (ou Y):</strong> Representa as <span class=\"highlight\">categorias discretas</span> (e.g., tipos de produtos, nomes de modelos, respostas de pesquisa).",
+            "bar_charts_what_li2": "<strong>Eixo Y (ou X):</strong> Representa o <span class=\"highlight\">valor</span> associado a cada categoria (e.g., quantidade vendida, acurácia do modelo, número de respondentes).",
+            "bar_charts_what_li3": "<strong>Barras:</strong> As barras são <span class=\"highlight\">separadas</span> por espaços, indicando que as categorias são distintas e não contínuas. O <span class=\"highlight\">comprimento</span> (ou altura) da barra é proporcional ao valor.",
+            "bar_charts_what_p2": "Existem variações como gráficos de barras agrupados (para comparar subcategorias dentro de cada categoria principal) e empilhados (para mostrar a composição de cada categoria).",
+            "bar_charts_placeholder": "Placeholder: Exemplo de Gráfico de Barras (e.g., contagem por tipo de produto)",
+            "bar_charts_ai_title": "<i class=\"fas fa-robot\"></i> Relevância para IA",
+            "bar_charts_ai_p1": "Gráficos de barras são ferramentas visuais poderosas em IA para:",
+            "bar_charts_ai_li1": "Comparar <span class=\"highlight\">métricas de performance</span> (acurácia, precisão, recall) entre diferentes modelos ou configurações.",
+            "bar_charts_ai_li2": "Visualizar a <span class=\"highlight\">distribuição de classes</span> em um problema de classificação (identificar desbalanceamento).",
+            "bar_charts_ai_li3": "Mostrar a <span class=\"highlight\">importância de features</span> calculada por alguns modelos.",
+            "bar_charts_ai_li4": "Apresentar resultados de <span class=\"highlight\">testes A/B</span> ou experimentos.",
+
+            "pie_charts_title": "🍕 Gráficos de Setores (Pizza): Mostrando Proporções",
+            "pie_charts_subtitle": "Representando partes de um todo.",
+            "pie_charts_what_title": "O que é um Gráfico de Setores?",
+            "pie_charts_what_p1": "Um gráfico de setores (ou gráfico de pizza) representa os dados como <span class=\"highlight\">fatias</span> de um círculo, onde cada fatia representa uma <span class=\"highlight\">proporção</span> ou porcentagem do todo.",
+            "pie_charts_what_li1": "<strong>Círculo Completo:</strong> Representa 100% do total dos dados.",
+            "pie_charts_what_li2": "<strong>Fatias (Setores):</strong> Cada fatia corresponde a uma <span class=\"highlight\">categoria</span>. A <span class=\"highlight\">área (ou ângulo)</span> de cada fatia é proporcional à porcentagem que essa categoria representa do total.",
+            "pie_charts_what_p2": "São eficazes para mostrar a <span class=\"highlight\">composição</span> de um conjunto de dados quando há <span class=\"highlight\">poucas categorias</span> (geralmente menos de 5-6).",
+            "pie_charts_what_p3": "<span class=\"highlight\">Cuidado:</span> Gráficos de pizza se tornam difíceis de ler e comparar quando há muitas fatias ou quando as proporções são muito semelhantes. Nesses casos, um gráfico de barras costuma ser uma alternativa melhor.",
+            "pie_charts_placeholder": "Placeholder: Exemplo de Gráfico de Pizza (e.g., divisão de orçamento)",
+            "pie_charts_ai_title": "<i class=\"fas fa-robot\"></i> Relevância para IA",
+            "pie_charts_ai_p1": "Embora menos usados para análises complexas, gráficos de setores podem ser úteis para:",
+            "pie_charts_ai_li1": "Visualizar a <span class=\"highlight\">divisão de dados</span> em conjuntos de treino, validação e teste.",
+            "pie_charts_ai_li2": "Mostrar a <span class=\"highlight\">distribuição percentual</span> de classes majoritárias em um dataset.",
+            "pie_charts_ai_li3": "Apresentar a <span class=\"highlight\">alocação de recursos</span> computacionais (e.g., % de GPU vs CPU utilizada).",
+            "pie_charts_ai_li4": "Comunicar <span class=\"highlight\">proporções simples</span> para um público não técnico.",
+
+            "putting_together_title_m5": "⚙️ Escolhendo o Gráfico Certo",
+            "putting_together_subtitle_m5": "Aplicando o conhecimento para selecionar a melhor visualização.",
+            "scenario_title": "Cenário: Análise de Desempenho de Chatbot",
+            "scenario_p1": "Imagine que você está analisando dados de um chatbot de atendimento ao cliente. Você coletou as seguintes informações:",
+            "scenario_li1": "<strong>Tempo de Resposta (segundos):</strong> Uma lista de tempos que o bot levou para responder a cada consulta (dados numéricos contínuos).",
+            "scenario_li2": "<strong>Tipo de Consulta:</strong> A categoria de cada pergunta feita ao bot (e.g., \"Fatura\", \"Suporte Técnico\", \"Informação Produto\", \"Outros\" - dados categóricos).",
+            "scenario_li3": "<strong>Avaliação do Usuário:</strong> A proporção de usuários que avaliaram a interação como \"Satisfeito\", \"Neutro\" ou \"Insatisfeito\" (dados categóricos representando partes de um todo).",
+            "scenario_p2": "<strong>Qual gráfico você usaria para cada informação?</strong>",
+            "scenario_p3": "<i class=\"fas fa-lightbulb\" style=\"color: var(--accent-color);\"></i> <strong data-translate=\"scenario_answer_intro\">Resposta Provável:</strong>",
+             "scenario_answer_intro": "Resposta Provável:",
+             "scenario_answer_li1": "Para o <strong>Tempo de Resposta</strong>: Um <strong style=\"color: var(--histogram-color)\">Histograma</strong> seria ideal para ver a distribuição dos tempos (e.g., a maioria das respostas é rápida? Existem picos de lentidão?).",
+             "scenario_answer_li2": "Para o <strong>Tipo de Consulta</strong>: Um <strong style=\"color: var(--bar-chart-color)\">Gráfico de Barras</strong> mostraria claramente qual tipo de consulta é mais frequente, permitindo comparar as contagens entre as categorias.",
+             "scenario_answer_li3": "Para a <strong>Avaliação do Usuário</strong>: Um <strong style=\"color: var(--pie-chart-color)\">Gráfico de Setores (Pizza)</strong> poderia mostrar rapidamente a proporção geral de satisfação (e.g., 60% Satisfeito, 25% Neutro, 15% Insatisfeito).",
+            "scenario_conclusion": "Escolher o gráfico correto depende fundamentalmente do <span class=\"highlight\">tipo de dado</span> que você tem e da <span class=\"highlight\">pergunta</span> que você quer responder sobre ele.",
+
+
+            "quiz_title": "🧠 Teste Rápido!", "quiz_next_button": "Próxima Pergunta",
+            "quiz_q1_m5": "Qual tipo de gráfico é mais adequado para visualizar a distribuição de frequências de uma variável contínua, como a altura de pessoas?",
+            "quiz_q1_m5_opt1": "Gráfico de Barras", "quiz_q1_m5_opt2": "Histograma", "quiz_q1_m5_opt3": "Gráfico de Setores (Pizza)", "quiz_q1_m5_opt4": "Gráfico de Linhas",
+            "quiz_q2_m5": "Você quer comparar o número de vendas de 3 produtos diferentes (Produto A, Produto B, Produto C) em uma loja. Qual gráfico é a melhor escolha?",
+            "quiz_q2_m5_opt1": "Histograma", "quiz_q2_m5_opt2": "Gráfico de Dispersão", "quiz_q2_m5_opt3": "Gráfico de Barras", "quiz_q2_m5_opt4": "Gráfico de Setores (Pizza)",
+            "quiz_q3_m5": "Gráficos de Setores (Pizza) são ideais para mostrar:",
+            "quiz_q3_m5_opt1": "A tendência de um valor ao longo do tempo", "quiz_q3_m5_opt2": "A relação entre duas variáveis numéricas", "quiz_q3_m5_opt3": "A distribuição de uma única variável contínua", "quiz_q3_m5_opt4": "As proporções de categorias que compõem um todo",
+            "quiz_q4_m5": "Qual é uma desvantagem comum dos Gráficos de Setores (Pizza)?",
+            "quiz_q4_m5_opt1": "Não podem mostrar dados categóricos", "quiz_q4_m5_opt2": "Ficam confusos com muitas categorias ou proporções similares", "quiz_q4_m5_opt3": "Só funcionam com dados contínuos", "quiz_q4_m5_opt4": "Exigem que as barras se toquem",
+            "quiz_feedback_correct": "Correto! 🎉", "quiz_feedback_incorrect": "Não foi bem assim! A resposta correta era: {correctAnswerText}",
+            "quiz_final_score_title": "Teste Rápido Completo!",
+            "quiz_final_score_summary": "Você respondeu {score} de {total} perguntas corretamente.",
+            "quiz_final_score_perfect": "Excelente! Você entendeu bem os gráficos básicos.",
+            "quiz_final_score_good": "Bom trabalho! Revise os usos de cada gráfico para fixar.",
+
+            "completion_theory_title_m5": "Teoria do Módulo 5 Completa!",
+            "completion_theory_desc_m5": "Excelente! Você aprendeu sobre três ferramentas visuais essenciais: Histogramas, Gráficos de Barras e Gráficos de Setores. Saber quando e como usá-los é fundamental para a análise exploratória de dados em IA.<br>Continue explorando estes conceitos na <strong>Zona de Prática</strong> ou avance para a <strong>Prática Avançada</strong> do Módulo 5.",
+            "footer_copyright": "© 2024 Matemática para IA. Todos os direitos reservados."
+        }
+    };
+
+    // --- Global Variables ---
+    let currentQuestionIndex = 0;
+    let score = 0;
+    const lang = 'pt'; // Hardcoded language
+
+    // --- DOM Elements (Get them once) ---
+    const navToggleButton = document.getElementById('minimal-nav-toggle');
+    const navPanel = document.getElementById('minimal-nav-panel');
+    const body = document.body;
+    const quizArea = document.getElementById('quiz-area');
+    const feedbackArea = document.getElementById('quiz-feedback');
+    const nextButton = document.getElementById('next-question-btn');
+
+    // --- Functions ---
+
+    function getTranslation(key, replacements = {}) {
+         let text = translations[lang]?.[key] ?? `[${key}]`;
+         for (const placeholder in replacements) {
+             const regex = new RegExp(`\\{${placeholder}\\}`, 'g');
+             text = text.replace(regex, replacements[placeholder]);
+         }
+         return text;
+    }
+
+    function translatePage() {
+         document.querySelectorAll('[data-translate]').forEach(el => {
+             const key = el.getAttribute('data-translate');
+             let translation = getTranslation(key);
+
+              if (el.tagName === 'TITLE') { document.title = translation; }
+              else if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') { /* Skip */ }
+               else if (el.tagName === 'SPAN' && el.parentElement.classList.contains('chart-placeholder')) {
+                    el.textContent = translation; // Keep placeholders as text
+               }
+              else {
+                   // Allow specific HTML tags safely within translations
+                   const safeHtmlRegex = /<\/?(code|strong|span|br|i|b|em|ul|li|strong|div)>/gi;
+                   let containsSafeHtml = safeHtmlRegex.test(translation);
+
+                   // Allow innerHTML if it contains only safe tags OR if it's in an allowed container
+                   // Expanded allowed containers for module 5
+                   if (containsSafeHtml || el.closest('.chart-explanation, .ai-relevance, .scenario-box, .welcome p, .completion-section p, .footer p')) {
+                      el.innerHTML = translation;
+                   } else {
+                      // Default to textContent for safety, unless it's explicitly allowed above
+                      el.textContent = translation;
+                   }
+              }
+         });
+    }
+
+    // --- Quiz Data & Functions (Module 5) ---
+    const quizData = [
+         { questionKey: "quiz_q1_m5", optionKeys: ["quiz_q1_m5_opt1", "quiz_q1_m5_opt2", "quiz_q1_m5_opt3", "quiz_q1_m5_opt4"], correctAnswer: 1 }, // Histograma para contínuo
+         { questionKey: "quiz_q2_m5", optionKeys: ["quiz_q2_m5_opt1", "quiz_q2_m5_opt2", "quiz_q2_m5_opt3", "quiz_q2_m5_opt4"], correctAnswer: 2 }, // Barras para comparar categorias
+         { questionKey: "quiz_q3_m5", optionKeys: ["quiz_q3_m5_opt1", "quiz_q3_m5_opt2", "quiz_q3_m5_opt3", "quiz_q3_m5_opt4"], correctAnswer: 3 }, // Pizza para proporções
+         { questionKey: "quiz_q4_m5", optionKeys: ["quiz_q4_m5_opt1", "quiz_q4_m5_opt2", "quiz_q4_m5_opt3", "quiz_q4_m5_opt4"], correctAnswer: 1 }  // Desvantagem da pizza: muitas categorias
+    ];
+
+    function loadQuestion() {
+          if (!quizArea) return; // Ensure quizArea exists
+
+          // If we reached the end, show score
+          if (currentQuestionIndex >= quizData.length) {
+              if (!quizArea.querySelector('[data-translate="quiz_final_score_title"]')) { // Avoid re-rendering score
+                 showFinalScore();
+              }
+              return;
+          }
+
+          const currentQuiz = quizData[currentQuestionIndex];
+          const questionText = getTranslation(currentQuiz.questionKey);
+          // Generate HTML for question and options
+          quizArea.innerHTML = `
+              <div class="quiz-question">${currentQuestionIndex + 1}. ${questionText.replace(/`(.*?)`/g, '<code>$1</code>')}</div>
+              <div class="quiz-options">
+                  ${currentQuiz.optionKeys.map((optionKey, index) => `
+                      <button class="quiz-option-btn" data-index="${index}">${getTranslation(optionKey).replace(/`(.*?)`/g, '<code>$1</code>')}</button>
+                  `).join('')}
+              </div>
+          `;
+
+          // Reset feedback and next button
+          if (feedbackArea) {
+            feedbackArea.classList.remove('visible', 'correct', 'incorrect');
+            feedbackArea.textContent = '';
+            feedbackArea.style.height = '0'; // Reset height
+            feedbackArea.style.marginBottom = '0'; // Reset margin
+          }
+          if (nextButton) {
+            nextButton.classList.remove('visible');
+            nextButton.disabled = true;
+          }
+
+          // Add event listeners to the new buttons
+          quizArea.querySelectorAll('.quiz-option-btn').forEach(button => {
+              button.addEventListener('click', handleAnswer);
+          });
+    }
+
+    function handleAnswer(event) {
+         const selectedButton = event.target;
+         const selectedIndex = parseInt(selectedButton.dataset.index);
+         const correctIndex = quizData[currentQuestionIndex].correctAnswer;
+         const correctOptionKey = quizData[currentQuestionIndex].optionKeys[correctIndex];
+
+         // Disable all options
+         quizArea.querySelectorAll('.quiz-option-btn').forEach(btn => {
+            btn.disabled = true;
+            btn.classList.remove('shake'); // Remove shake if present from previous incorrect
+         });
+
+         if (!feedbackArea || !nextButton) return; // Ensure elements exist
+
+         feedbackArea.classList.add('visible');
+
+         if (selectedIndex === correctIndex) {
+             selectedButton.classList.add('correct');
+             feedbackArea.innerHTML = getTranslation('quiz_feedback_correct');
+             feedbackArea.classList.add('correct');
+             feedbackArea.classList.remove('incorrect');
+             score++;
+             selectedButton.classList.add('tada-anim');
+         } else {
+             selectedButton.classList.add('incorrect');
+             const formattedCorrectAnswer = getTranslation(correctOptionKey).replace(/`(.*?)`/g, '<code>$1</code>');
+             feedbackArea.innerHTML = getTranslation('quiz_feedback_incorrect', { correctAnswerText: `<strong>${formattedCorrectAnswer}</strong>` });
+             feedbackArea.classList.add('incorrect');
+             feedbackArea.classList.remove('correct');
+             // Highlight the correct button as well
+             const correctButton = quizArea.querySelector(`.quiz-option-btn[data-index="${correctIndex}"]`);
+             if(correctButton) correctButton.classList.add('correct');
+             selectedButton.classList.add('shake');
+         }
+
+         // Remove animation classes after they finish
+          selectedButton.addEventListener('animationend', () => {
+               selectedButton.classList.remove('tada-anim', 'shake');
+          }, { once: true });
+
+         // Make feedback area adjust height and margin smoothly
+         feedbackArea.style.height = feedbackArea.scrollHeight + 'px';
+         feedbackArea.style.marginBottom = '1rem';
+
+
+         // Show and enable next button
+         nextButton.classList.add('visible');
+         nextButton.disabled = false;
+     }
+
+     function showFinalScore() {
+            if (!quizArea) return;
+            const totalQuestions = quizData.length;
+            // Determine message based on score percentage
+            let resultMessageKey = (score / totalQuestions) >= 0.75 ? 'quiz_final_score_perfect' : 'quiz_final_score_good'; // 75% threshold
+
+            quizArea.innerHTML = `
+               <div class="quiz-question text-center" data-translate="quiz_final_score_title" style="font-size: 1.5rem;">${getTranslation('quiz_final_score_title')}</div>
+               <p class="text-center" style="font-size: 1.2rem; margin-bottom: 1rem;">${getTranslation('quiz_final_score_summary', { score: score, total: totalQuestions })}</p>
+               <p class="text-center" style="color: ${score === totalQuestions ? 'var(--success-color)' : 'var(--primary-color)'}; font-weight: bold;">${getTranslation(resultMessageKey)}</p>
+            `;
+            if (feedbackArea) feedbackArea.classList.remove('visible'); // Hide feedback area
+            if (nextButton) nextButton.style.display = 'none'; // Hide next button
+            quizArea.scrollIntoView({ behavior: 'smooth', block: 'center' }); // Scroll score into view
+     }
+
+
+    // --- Intersection Observer Setup ---
+    function setupObservers() {
+        const observerOptions = {
+            root: null, // relative to viewport
+            rootMargin: '0px',
+            threshold: 0.1 // Trigger when 10% of the element is visible
+        };
+
+        const observerCallback = (entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    // Optional: Unobserve after it becomes visible to save resources
+                    // observer.unobserve(entry.target);
+                }
+                // Optional: Remove 'visible' if it scrolls out of view
+                // else {
+                //     entry.target.classList.remove('visible');
+                // }
+            });
+        };
+
+        const animationObserver = new IntersectionObserver(observerCallback, observerOptions);
+
+        // Observe elements with the fade-in class
+        document.querySelectorAll('.fade-in-on-scroll').forEach(el => {
+            animationObserver.observe(el);
+        });
+
+        // No specific code simulation observer needed for this module
+    }
+
+    // --- Event Listeners Setup ---
+    function setupEventListeners() {
+        // Navbar Toggle
+        if (navToggleButton && navPanel) {
+            navToggleButton.addEventListener('click', (event) => {
+                event.stopPropagation();
+                body.classList.toggle('nav-active');
+                navToggleButton.setAttribute('aria-expanded', body.classList.contains('nav-active'));
+            });
+
+            // Close nav if clicking outside
+            document.addEventListener('click', (event) => {
+                if (body.classList.contains('nav-active') && !navPanel.contains(event.target) && event.target !== navToggleButton && !navToggleButton.contains(event.target)) {
+                    body.classList.remove('nav-active');
+                    navToggleButton.setAttribute('aria-expanded', 'false');
+                }
+            });
+
+            // Close nav on link click
+            navPanel.querySelectorAll('a').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    // Check if it's an internal link
+                    if (link.getAttribute('href').startsWith('#')) {
+                         // Allow default scroll behavior
+                        // Close panel slightly delayed
+                        setTimeout(() => {
+                            body.classList.remove('nav-active');
+                            navToggleButton.setAttribute('aria-expanded', 'false');
+                        }, 150);
+                    }
+                    // External links will navigate away anyway
+                });
+            });
+
+            // Close nav on Escape key
+            document.addEventListener('keydown', (event) => {
+                 if (event.key === 'Escape' && body.classList.contains('nav-active')) {
+                     body.classList.remove('nav-active');
+                     navToggleButton.setAttribute('aria-expanded', 'false');
+                 }
+             });
+        }
+
+        // Quiz Next Button
+        if (nextButton) {
+            nextButton.addEventListener('click', () => {
+                if (!nextButton.disabled) {
+                    currentQuestionIndex++;
+                    loadQuestion(); // Load the next question
+                }
+            });
+        } else {
+            console.error("Elemento #next-question-btn não encontrado.");
+        }
+    }
+
+    // --- Initialization ---
+    document.addEventListener('DOMContentLoaded', () => {
+        // Check if elements needed for quiz exist before proceeding
+        if (!quizArea) console.error("Elemento #quiz-area não encontrado.");
+        if (!feedbackArea) console.error("Elemento #quiz-feedback não encontrado.");
+
+        translatePage();        // Apply translations first
+        setupEventListeners();  // Set up interactive elements
+        setupObservers();       // Set up animations
+
+        if (quizArea) {
+            loadQuestion();     // Load the first quiz question if container exists
+        }
+    });
+
+    </script>
+
+</body>
+</html>

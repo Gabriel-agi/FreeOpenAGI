@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<!-- Language set to Portuguese BR -->
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Title set by JS -->
+    <title data-translate="page_title">Módulo 24: Diagramas de Venn</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* --- Reset & Base Styles --- */
+        :root {
+            --primary-color: #007bff; /* Blue - Consistent */
+            --secondary-color: #6c757d; /* Gray - Consistent */
+            --background-light: #f8f9fa; /* Light Gray - Consistent */
+            --background-dark: #343a40; /* Dark Gray - Consistent */
+            --text-light: #f8f9fa; /* Light Text - Consistent */
+            --text-dark: #212529; /* Dark Text - Consistent */
+            --accent-color: #ffc107; /* Yellow - Consistent */
+            --success-color: #28a745; /* Green - Consistent */
+            --error-color: #dc3545; /* Red - Consistent */
+            /* Module Specific Colors (Optional - Can adjust if needed) */
+            --set-a-color: rgba(0, 123, 255, 0.6); /* Primary Blue semi-transparent */
+            --set-b-color: rgba(255, 193, 7, 0.6); /* Accent Yellow semi-transparent */
+            --intersection-color: rgba(40, 167, 69, 0.7); /* Success Green semi-transparent */
+            --complement-color: rgba(233, 236, 239, 0.8); /* Lighter Gray */
+            --border-radius: 8px;
+            --transition-speed: 0.3s;
+            --animation-speed: 0.6s; /* Control fade-in speed */
+            --font-body: 'Roboto', sans-serif;
+            --font-title: 'Orbitron', sans-serif;
+            --nav-primary: #6e48aa;
+            --nav-success: #4cc9f0;
+            --nav-dark: #1a1a2e;
+            --footer-border-color: #495057;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; font-size: 16px; }
+        body {
+            font-family: var(--font-body); line-height: 1.7;
+            background-color: var(--background-light); color: var(--text-dark);
+            overflow-x: hidden; display: flex; flex-direction: column; min-height: 100vh;
+        }
+        main { flex-grow: 1; }
+
+        /* --- Utility Classes --- */
+        .container { max-width: 960px; margin: 0 auto; padding: 0 15px; }
+        .text-center { text-align: center; }
+        .highlight { color: var(--primary-color); font-weight: bold; }
+
+        /* Elements to be animated by observer */
+        .fade-in-on-scroll {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+        }
+        .fade-in-on-scroll.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        /* Add delays for staggering */
+        .delay-1.visible { transition-delay: 0.1s; }
+        .delay-2.visible { transition-delay: 0.2s; }
+        .delay-3.visible { transition-delay: 0.3s; }
+        .delay-4.visible { transition-delay: 0.4s; }
+        .delay-5.visible { transition-delay: 0.5s; }
+        .delay-6.visible { transition-delay: 0.6s; }
+        .delay-7.visible { transition-delay: 0.7s; }
+
+
+        .button-group { margin-top: 2rem; display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; }
+        .action-button {
+             display: inline-flex; align-items: center; justify-content: center; gap: 0.5em;
+             padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold;
+             color: var(--text-light); background-color: var(--primary-color); border: none;
+             border-radius: var(--border-radius); cursor: pointer;
+             transition: background-color var(--transition-speed), transform var(--transition-speed), filter var(--transition-speed), box-shadow var(--transition-speed), opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out; /* Add animation transition */
+             margin-top: 1rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+             text-decoration: none; line-height: 1.2;
+             opacity: 0; /* Start hidden if animated */
+             transform: translateY(20px); /* Start offset if animated */
+        }
+        .action-button.visible { /* Make visible via observer */
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .action-button i.fas {}
+        .action-button:hover:not(:disabled) { background-color: #0056b3; transform: translateY(-2px) !important; box-shadow: 0 4px 8px rgba(0,0,0,0.15); } /* Use !important to override initial transform */
+        .action-button:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none !important; box-shadow: none; opacity: 0.7; }
+        .action-button.success { background-color: var(--success-color); }
+        .action-button.success:hover:not(:disabled) { background-color: #218838; }
+        .action-button.secondary { background-color: var(--secondary-color); }
+        .action-button.secondary:hover:not(:disabled) { background-color: #5a6268; }
+        .action-button:active:not(:disabled) { transform: translateY(1px) scale(0.98) !important; filter: brightness(0.95); }
+
+        /* --- Animations --- */
+        @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); } 50% { transform: scale(1.03); box-shadow: 0 0 15px rgba(0, 123, 255, 0.6); } 100% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); } }
+        @keyframes tada { from { transform: scale3d(1, 1, 1); } 10%, 20% { transform: scale3d(.9, .9, .9) rotate3d(0, 0, 1, -3deg); } 30%, 50%, 70%, 90% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, 3deg); } 40%, 60%, 80% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, -3deg); } to { transform: scale3d(1, 1, 1); } }
+        .tada-anim { animation: tada 1s ease; }
+        @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
+        @keyframes iconAppearCorrect { 0% { transform: scale(0.5) rotate(-15deg); opacity: 0; } 60% { transform: scale(1.2) rotate(5deg); opacity: 1; } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
+
+        /* --- Minimal Retractable Nav --- */
+        .minimal-nav-button { position: fixed; top: 15px; right: 15px; z-index: 1001; background-color: rgba(52, 58, 64, 0.75); color: var(--text-light); border: none; border-radius: var(--border-radius); padding: 8px 12px; cursor: pointer; transition: background-color var(--transition-speed), opacity var(--transition-speed), transform var(--transition-speed); font-size: 1.1rem; opacity: 0.6; box-shadow: 0 2px 5px rgba(0,0,0,0.2); line-height: 1; }
+        .minimal-nav-button:hover { background-color: rgba(52, 58, 64, 0.95); opacity: 1; transform: scale(1.05); }
+        .minimal-nav { position: fixed; top: 60px; right: 15px; z-index: 1000; background-color: var(--background-dark); border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.3); padding: 0.8rem; opacity: 0; transform: translateY(-15px) scale(0.95); transform-origin: top right; pointer-events: none; transition: opacity var(--transition-speed) ease, transform var(--transition-speed) ease; min-width: 200px; }
+        body.nav-active .minimal-nav { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+        .minimal-nav ul { list-style: none; margin: 0; padding: 0; }
+        .minimal-nav ul li { margin-bottom: 5px; }
+        .minimal-nav ul li:last-child { margin-bottom: 0; }
+        .minimal-nav ul li a { display: flex; align-items: center; color: var(--text-light); text-decoration: none; padding: 0.6rem 1rem; border-radius: 4px; transition: background-color var(--transition-speed), color var(--transition-speed); white-space: nowrap; font-weight: 400; font-size: 0.95rem; }
+        .minimal-nav ul li a i.fas { margin-right: 10px; width: 1.2em; text-align: center; opacity: 0.8; transition: opacity var(--transition-speed); }
+        .minimal-nav ul li a:hover { background-color: var(--primary-color); color: var(--text-light); }
+        .minimal-nav ul li a:hover i.fas { opacity: 1; }
+
+        /* --- Header --- */
+        .main-header { background: linear-gradient(135deg, var(--primary-color), #0056b3); color: var(--text-light); padding: 4rem 0 6rem; text-align: center; position: relative; overflow: hidden; }
+        .main-header .container { /* Start visible */ }
+        .main-header h1 { font-family: var(--font-title); font-size: 3rem; margin-bottom: 0.5rem; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); }
+        .main-header p { font-size: 1.2rem; font-weight: 300; opacity: 0.9; }
+        .header-shape { position: absolute; border-radius: 50%; background-color: rgba(255, 255, 255, 0.1); animation: pulse 5s infinite ease-in-out alternate; }
+        .shape1 { width: 150px; height: 150px; bottom: -50px; left: 10%; animation-duration: 6s; }
+        .shape2 { width: 80px; height: 80px; top: 50px; right: 15%; animation-duration: 4s; }
+        .shape3 { width: 50px; height: 50px; bottom: 20px; right: 30%; animation-duration: 7s; }
+
+        /* --- Section Styling --- */
+        section { padding: 4rem 0; border-bottom: 1px solid #eee; }
+        main section:last-of-type { border-bottom: none; padding-bottom: 0;}
+        section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); margin-bottom: 2rem; text-align: center; position: relative; padding-bottom: 10px; }
+        section h2::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 60px; height: 4px; background-color: var(--accent-color); border-radius: 2px; }
+
+        /* --- General Content Styling --- */
+        p { margin-bottom: 1rem; }
+        ul, ol { margin-left: 2rem; margin-bottom: 1rem; }
+        li { margin-bottom: 0.5rem; }
+        code {
+            background-color: #e9ecef; padding: 0.2em 0.4em; border-radius: 4px;
+            font-family: 'Courier New', Courier, monospace; color: #c7254e; /* Bootstrap code color */
+            font-size: 0.9em;
+        }
+        .placeholder-image {
+            text-align: center; padding: 30px; border: 2px dashed var(--secondary-color);
+            margin: 20px auto; max-width: 80%; background-color: #f0f0f0;
+            color: var(--secondary-color); font-style: italic; border-radius: var(--border-radius);
+        }
+
+        /* --- Venn Diagram Specific Section Styling --- */
+        #venn-operations .operation-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2.5rem; margin-top: 2.5rem;
+        }
+        .operation-card { /* Animated by observer */
+            background-color: #fff; padding: 1.5rem; border-radius: var(--border-radius);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.07); text-align: center;
+            transition: transform var(--transition-speed) ease, box-shadow var(--transition-speed) ease, opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+            opacity: 0; transform: translateY(20px); /* Start state */
+            border-top: 4px solid var(--primary-color);
+        }
+        .operation-card.visible { opacity: 1; transform: translateY(0); }
+        .operation-card:hover { transform: translateY(-5px) scale(1.02) !important; box-shadow: 0 8px 20px rgba(0,0,0,0.12); }
+        .operation-card h3 { font-family: var(--font-body); font-weight: 700; font-size: 1.4rem; margin-bottom: 1rem; color: var(--text-dark); }
+        .operation-card h3 code { font-size: 1.1rem; vertical-align: middle; background: none; padding: 0; color: #c7254e; }
+        .operation-card p { font-size: 1rem; color: var(--secondary-color); line-height: 1.6; margin-bottom: 1rem; }
+        .operation-card .placeholder-image { max-width: 250px; padding: 20px; font-size: 0.9rem; margin-top: 1rem;}
+
+
+        /* --- Examples Section --- */
+        #venn-examples .explanation { display: flex; gap: 2rem; align-items: flex-start; margin-top: 2rem; flex-wrap: wrap; }
+        .diagram-container { /* Was text-demo */ /* Animated by observer */
+            flex-basis: 55%; background-color: var(--background-light); /* Lighter background */
+            padding: 1.5rem; border-radius: var(--border-radius);
+            position: relative; min-height: 300px; box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            display: flex; justify-content: center; align-items: center;
+            opacity: 0; transition: opacity var(--animation-speed) ease-out; /* Only fade opacity */
+        }
+        .diagram-container.visible { opacity: 1; }
+        .diagram-container .placeholder-image { width: 100%; max-width: 450px; margin: 0; }
+
+        .explanation-text { /* Was text-explanation */ /* Animated by observer */
+            flex-basis: 40%; font-size: 1.05rem;
+             opacity: 0; transition: opacity var(--animation-speed) ease-out; /* Only fade opacity */
+        }
+        .explanation-text.visible { opacity: 1; }
+        .explanation-text p { margin-bottom: 1rem; }
+        .explanation-text ul { list-style: disc; margin-left: 1.5rem; }
+
+        /* --- Applications Section Styling --- */
+        #venn-applications .app-list {
+            list-style: none; padding: 0; max-width: 700px; margin: 2rem auto 0;
+        }
+        .app-list li { /* Animated by observer */
+            background-color: #fff; padding: 1rem 1.5rem; margin-bottom: 1rem;
+            border-radius: var(--border-radius); box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            display: flex; align-items: center; gap: 1rem;
+            opacity: 0; transform: translateX(-20px); /* Start state */
+            transition: opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+        }
+        .app-list li.visible { opacity: 1; transform: translateX(0); }
+        .app-list i.fas { font-size: 1.5rem; color: var(--primary-color); width: 1.5em; text-align: center; }
+        .app-list span { flex-grow: 1; }
+
+
+        /* --- Knowledge Check Section --- */
+        #knowledge-check { background-color: #e9ecef; }
+        .quiz-container { /* Animated by observer */
+             background-color: #fff; padding: 2rem; border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.1); max-width: 700px; margin: 2rem auto 0;
+             opacity: 0; transition: opacity var(--animation-speed) ease-out; /* Only fade opacity */
+        }
+        .quiz-container.visible { opacity: 1; }
+        .quiz-question { font-size: 1.2rem; font-weight: bold; margin-bottom: 1.5rem; color: var(--text-dark); }
+        .quiz-options button { display: block; width: 100%; padding: 1rem; margin-bottom: 1rem; text-align: left; font-size: 1rem; background-color: #f8f9fa; border: 1px solid #ced4da; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), border-color var(--transition-speed), transform var(--transition-speed); }
+        .quiz-options button:not(:disabled):hover { background-color: #e2e6ea; border-color: #adb5bd; transform: translateX(5px); }
+        .quiz-options button:disabled { cursor: default; opacity: 0.7; }
+        .quiz-options button.correct { background-color: #d4edda; border-color: var(--success-color); color: #155724; font-weight: bold; }
+        .quiz-options button.incorrect { background-color: #f8d7da; border-color: var(--error-color); color: #721c24; font-weight: bold; }
+        .quiz-options button.incorrect.shake { animation: shake 0.5s ease; }
+        .quiz-feedback { margin-top: 1.5rem; padding: 1rem; border-radius: var(--border-radius); font-weight: bold; text-align: center; opacity: 0; transition: opacity 0.5s ease, height 0.5s ease, margin-bottom 0.5s ease; height: 0; overflow: hidden; margin-bottom: 0;}
+        .quiz-feedback.visible { opacity: 1; height: auto; margin-bottom: 1rem; }
+        .quiz-feedback.correct { background-color: #d4edda; color: #155724; }
+        .quiz-feedback.incorrect { background-color: #f8d7da; color: #721c24; }
+        #next-question-btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5em; margin: 1.5rem auto 0; padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold; color: var(--text-light); background-color: var(--primary-color); border: none; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), transform var(--transition-speed), opacity 0.3s, visibility 0.3s; opacity: 0; visibility: hidden; }
+        #next-question-btn:hover:not(:disabled) { background-color: #0056b3; transform: scale(1.05); }
+        #next-question-btn.visible { opacity: 1; visibility: visible; }
+        #next-question-btn:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none; opacity: 0.7; }
+
+
+        /* --- Completion Section Styling --- */
+        .completion-section { padding: 4rem 0; text-align: center; background-color: var(--background-light); }
+        .completion-section .icon { font-size: 4rem; color: var(--success-color); margin-bottom: 1rem; display: inline-block; animation: iconAppearCorrect 1s ease-out 0.5s forwards; opacity: 0; /* Initial state for animation */}
+        /* Ensure completion elements are targeted by observer */
+        .completion-section h2, .completion-section p {
+            opacity: 0; transform: translateY(20px);
+            transition: opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+        }
+        .completion-section h2.visible, .completion-section p.visible {
+            opacity: 1; transform: translateY(0);
+        }
+        .completion-section .button-group { margin-top: 2.5rem; }
+        .completion-section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); margin-bottom: 1rem; }
+        .completion-section h2::after { display: none; }
+        .completion-section p { font-size: 1.1rem; margin-top: 1rem; color: var(--secondary-color); max-width: 700px; margin-left: auto; margin-right: auto; line-height: 1.8; }
+
+
+        /* --- Footer Styling --- */
+        .main-footer {
+            background-color: var(--background-light);
+            color: var(--text-light);
+            text-align: center;
+            padding: 2rem 0;
+            font-size: 0.9rem;
+            margin-top: auto;
+            border-top: 1px solid var(--background-light);
+            opacity: 0.85;
+        }
+        .main-footer p { margin: 0; line-height: 1.5; }
+
+        /* --- Responsive Design --- */
+        @media (max-width: 768px) {
+            html { font-size: 15px; }
+            .main-header h1 { font-size: 2.5rem; } .main-header p { font-size: 1.1rem; }
+            section h2 { font-size: 1.8rem; }
+            #venn-operations .operation-grid { grid-template-columns: 1fr; gap: 1.5rem;}
+            #venn-examples .explanation { flex-direction: column; }
+            .diagram-container, .explanation-text { flex-basis: 100%; }
+            .diagram-container { min-height: 250px; }
+            .minimal-nav { min-width: 180px; } .minimal-nav ul li a { padding: 0.6rem 0.8rem; }
+            .completion-section h2 { font-size: 2rem; }
+            .completion-section .button-group { flex-direction: column; align-items: center; gap: 0.8rem; }
+            .completion-section .action-button { width: 80%; max-width: 350px; margin-top: 0; }
+            .main-footer { padding: 1.5rem 0; }
+            .app-list li { flex-direction: column; text-align: center; gap: 0.5rem; padding: 1.2rem;}
+            .app-list i.fas { margin-bottom: 0.5rem;}
+        }
+        @media (max-width: 480px) {
+            html { font-size: 14px; }
+            .main-header h1 { font-size: 2rem; } .main-header p { font-size: 1rem; }
+            section h2 { font-size: 1.6rem; }
+            .quiz-options button { padding: 0.8rem; font-size: 0.95rem; }
+            .minimal-nav-button { top: 10px; right: 10px; padding: 6px 10px; font-size: 1rem; }
+            .minimal-nav { top: 48px; right: 10px; min-width: 160px; }
+            .minimal-nav ul li a { padding: 0.5rem 0.7rem; font-size: 0.9rem;}
+            .minimal-nav ul li a i.fas { margin-right: 8px; }
+            .completion-section .icon { font-size: 3.5rem; }
+            .completion-section h2 { font-size: 1.8rem; } .completion-section p { font-size: 1rem; }
+            .completion-section .action-button { width: 90%; max-width: 300px; }
+            .main-footer { padding: 1rem 0; font-size: 0.85rem; }
+            .operation-card { padding: 1.2rem; }
+            .operation-card h3 { font-size: 1.2rem; }
+            .diagram-container { min-height: 200px; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- ========= Minimal Nav Handle ========= -->
+    <button id="minimal-nav-toggle" class="minimal-nav-button" aria-label="Alternar Menu de Navegação" aria-expanded="false">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- ========= Minimal Nav Panel ========= -->
+    <nav id="minimal-nav-panel" class="minimal-nav">
+        <ul>
+            <!-- IMPORTANT: Updated hrefs for Module 24 -->
+            <li><a href="math-practice-24.html"><i class="fas fa-pencil-alt fa-fw"></i> <span data-translate="nav_practice">Iniciar Prática</span></a></li>
+            <li><a href="math-advanced-24.html"><i class="fas fa-flask fa-fw"></i> <span data-translate="nav_advanced">Prática Avançada</span></a></li>
+            <li><a href="math-dashboard.html"><i class="fas fa-list fa-fw"></i> <span data-translate="nav_menu">Menu do Curso</span></a></li>
+             <hr style="border: none; border-top: 1px solid var(--secondary-color); margin: 8px 0;">
+             <!-- Module 24 Specific Navigation -->
+             <li><a href="#welcome"><i class="fas fa-door-open fa-fw"></i> <span data-translate="nav_welcome_m24">Boas-vindas M24</span></a></li>
+             <li><a href="#venn-basics"><i class="fas fa-circle-notch fa-fw"></i> <span data-translate="nav_venn_basics">O Que São?</span></a></li>
+             <li><a href="#venn-operations"><i class="fas fa-adjust fa-fw"></i> <span data-translate="nav_venn_ops">Operações Visuais</span></a></li>
+             <li><a href="#venn-examples"><i class="fas fa-project-diagram fa-fw"></i> <span data-translate="nav_venn_examples">Exemplos</span></a></li>
+             <li><a href="#venn-applications"><i class="fas fa-cogs fa-fw"></i> <span data-translate="nav_venn_apps">Aplicações</span></a></li>
+             <li><a href="#knowledge-check"><i class="fas fa-check-double fa-fw"></i> <span data-translate="nav_quiz">Teste Rápido</span></a></li>
+             <li><a href="#completion"><i class="fas fa-flag-checkered fa-fw"></i> <span data-translate="completion_theory_title_m24">Conclusão</span></a></li>
+        </ul>
+    </nav>
+
+    <header class="main-header">
+        <div class="header-shape shape1"></div>
+        <div class="header-shape shape2"></div>
+        <div class="header-shape shape3"></div>
+        <div class="container"> <!-- Start visible -->
+            <h1 data-translate="header_title_m24">Módulo 24: Diagramas de Venn</h1>
+            <p data-translate="header_subtitle_m24">Visualizando relações e operações entre conjuntos.</p>
+        </div>
+    </header>
+
+    <main>
+        <!-- ========= Welcome Section ========= -->
+        <section id="welcome">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="welcome_title_m24">🎨 Visualizando Conjuntos</h2>
+                <p class="fade-in-on-scroll delay-1" data-translate="welcome_p1_m24">
+                    Bem-vindo ao Módulo 24! Já exploramos as operações entre conjuntos (união, interseção, etc.). Agora, vamos aprender uma forma poderosa de <span class="highlight">visualizar</span> essas relações: os <span class="highlight">Diagramas de Venn</span>.
+                </p>
+                <p class="fade-in-on-scroll delay-2" data-translate="welcome_p2_m24">
+                    Criados por John Venn, esses diagramas usam formas geométricas (geralmente círculos) para representar conjuntos e suas interconexões. Eles são ferramentas intuitivas para entender a lógica de conjuntos, probabilidades e até estruturas de dados.
+                </p>
+            </div>
+        </section>
+
+        <!-- ========= Venn Basics Section ========= -->
+        <section id="venn-basics">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="basics_title_m24">🧩 Componentes Essenciais</h2>
+                <p class="text-center fade-in-on-scroll delay-1" data-translate="basics_subtitle_m24">Os elementos básicos que formam um Diagrama de Venn.</p>
+
+                <div class="explanation" style="margin-top: 2rem;">
+                     <div class="diagram-container fade-in-on-scroll delay-2">
+                         <div class="placeholder-image" data-translate="basics_diagram_placeholder">Diagrama Básico: Universo (U) com um Conjunto (A) Dentro</div>
+                     </div>
+                     <div class="explanation-text fade-in-on-scroll delay-3">
+                         <p data-translate="basics_p1_m24">
+                             <strong class="highlight">Conjunto Universo (U):</strong> Representado por um retângulo, contém todos os elementos possíveis sob consideração para o problema.
+                         </p>
+                         <p data-translate="basics_p2_m24">
+                             <strong class="highlight">Conjuntos (A, B, C...):</strong> Representados por círculos (ou outras formas fechadas) dentro do retângulo. Cada círculo delimita os elementos que pertencem àquele conjunto específico.
+                         </p>
+                         <p data-translate="basics_p3_m24">
+                             <strong class="highlight">Regiões:</strong> As áreas dentro dos círculos, suas sobreposições e a área fora dos círculos representam diferentes subconjuntos e relações (pertence a A, pertence a B, pertence a ambos, pertence a nenhum, etc.).
+                         </p>
+                     </div>
+                 </div>
+            </div>
+        </section>
+
+        <!-- ========= Venn Operations Section ========= -->
+        <section id="venn-operations">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="ops_title_m24">🔄 Representando Operações</h2>
+                <p class="text-center fade-in-on-scroll delay-1" data-translate="ops_subtitle_m24">Como as operações de conjuntos que aprendemos se traduzem visualmente.</p>
+
+                <div class="operation-grid">
+                    <!-- Union -->
+                    <div class="operation-card fade-in-on-scroll delay-2">
+                        <h3 data-translate="ops_union_title">União (<code>A ∪ B</code>)</h3>
+                        <p data-translate="ops_union_desc">Elementos que pertencem a A, ou a B, ou a ambos.</p>
+                        <div class="placeholder-image" data-translate="ops_union_diagram">Diagrama: Círculos A e B totalmente sombreados</div>
+                    </div>
+                    <!-- Intersection -->
+                    <div class="operation-card fade-in-on-scroll delay-3">
+                        <h3 data-translate="ops_intersection_title">Interseção (<code>A ∩ B</code>)</h3>
+                        <p data-translate="ops_intersection_desc">Elementos que pertencem a A e também a B.</p>
+                        <div class="placeholder-image" data-translate="ops_intersection_diagram">Diagrama: Apenas a área de sobreposição entre A e B sombreada</div>
+                    </div>
+                    <!-- Difference -->
+                    <div class="operation-card fade-in-on-scroll delay-4">
+                         <h3 data-translate="ops_difference_title">Diferença (<code>A - B</code>)</h3>
+                         <p data-translate="ops_difference_desc">Elementos que pertencem a A, mas não pertencem a B.</p>
+                        <div class="placeholder-image" data-translate="ops_difference_diagram">Diagrama: Apenas a parte de A que não sobrepõe B sombreada</div>
+                    </div>
+                    <!-- Complement -->
+                    <div class="operation-card fade-in-on-scroll delay-5">
+                         <h3 data-translate="ops_complement_title">Complementar (<code>A'</code> ou A<sup>c</sup>)</h3>
+                         <p data-translate="ops_complement_desc">Elementos que pertencem ao Universo (U), mas não pertencem a A.</p>
+                        <div class="placeholder-image" data-translate="ops_complement_diagram">Diagrama: Área dentro de U mas fora de A sombreada</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========= Venn Examples Section ========= -->
+        <section id="venn-examples">
+             <div class="container">
+                 <h2 class="fade-in-on-scroll" data-translate="examples_title_m24">📊 Exemplos Práticos</h2>
+                 <p class="text-center fade-in-on-scroll delay-1" data-translate="examples_subtitle_m24">Vendo os diagramas em ação com conjuntos numéricos.</p>
+
+                 <div class="explanation">
+                     <div class="diagram-container fade-in-on-scroll delay-2">
+                         <div class="placeholder-image" data-translate="examples_diagram_placeholder">Diagrama de Exemplo: U={1..10}, A={pares}, B={múltiplos de 3}</div>
+                     </div>
+                     <div class="explanation-text fade-in-on-scroll delay-3">
+                         <p data-translate="examples_p1_m24">
+                            Considere o Universo <code>U = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10}</code>.
+                         </p>
+                          <p data-translate="examples_p2_m24">
+                              Sejam os conjuntos: <br>
+                              <code>A = {2, 4, 6, 8, 10}</code> (números pares) <br>
+                              <code>B = {3, 6, 9}</code> (múltiplos de 3)
+                          </p>
+                         <p data-translate="examples_p3_m24">
+                             Com o diagrama, podemos visualizar:
+                         </p>
+                         <ul>
+                             <li data-translate="examples_item1"><strong><code>A ∩ B</code>:</strong> {6} (apenas o 6 está na sobreposição)</li>
+                             <li data-translate="examples_item2"><strong><code>A ∪ B</code>:</strong> {2, 3, 4, 6, 8, 9, 10} (todos os números dentro de A ou B)</li>
+                             <li data-translate="examples_item3"><strong><code>A - B</code>:</strong> {2, 4, 8, 10} (pares que não são múltiplos de 3)</li>
+                             <li data-translate="examples_item4"><strong><code>B'</code>:</strong> {1, 2, 4, 5, 7, 8, 10} (todos em U que não são múltiplos de 3)</li>
+                             <li data-translate="examples_item5"><strong>Fora de A e B:</strong> {1, 5, 7} (números em U que não são pares nem múltiplos de 3)</li>
+                         </ul>
+                     </div>
+                 </div>
+
+                 <p class="text-center fade-in-on-scroll delay-4" style="margin-top: 3rem;" data-translate="examples_p4_m24">
+                    Diagramas de Venn podem ser usados com 3 ou mais conjuntos, embora a complexidade visual aumente. Eles ajudam a organizar o raciocínio sobre como os elementos se distribuem entre as categorias.
+                 </p>
+             </div>
+        </section>
+
+        <!-- ========= Applications Section ========= -->
+        <section id="venn-applications">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="apps_title_m24">💡 Aplicações dos Diagramas de Venn</h2>
+                <p class="text-center fade-in-on-scroll delay-1" data-translate="apps_subtitle_m24">Onde esses diagramas visuais são úteis, especialmente em computação.</p>
+
+                <ul class="app-list">
+                    <li class="fade-in-on-scroll delay-2">
+                        <i class="fas fa-brain"></i>
+                        <span data-translate="apps_item1"><strong>Lógica e Raciocínio:</strong> Visualizar a validade de argumentos e a relação entre proposições lógicas.</span>
+                    </li>
+                     <li class="fade-in-on-scroll delay-3">
+                        <i class="fas fa-chart-pie"></i>
+                         <span data-translate="apps_item2"><strong>Probabilidade:</strong> Calcular a probabilidade de eventos compostos (ex: P(A ou B), P(A e B)).</span>
+                     </li>
+                     <li class="fade-in-on-scroll delay-4">
+                         <i class="fas fa-database"></i>
+                         <span data-translate="apps_item3"><strong>Banco de Dados:</strong> Entender o resultado de operações SQL como <code>UNION</code>, <code>INTERSECT</code>, <code>EXCEPT</code> e <code>JOIN</code>s.</span>
+                     </li>
+                     <li class="fade-in-on-scroll delay-5">
+                         <i class="fas fa-laptop-code"></i>
+                         <span data-translate="apps_item4"><strong>Ciência de Dados e IA:</strong> Classificação, análise de sobreposição de características (features), visualização de agrupamentos (clustering).</span>
+                     </li>
+                     <li class="fade-in-on-scroll delay-6">
+                         <i class="fas fa-search"></i>
+                         <span data-translate="apps_item5"><strong>Pesquisa e Organização:</strong> Comparar e contrastar características de diferentes itens ou conceitos.</span>
+                     </li>
+                </ul>
+            </div>
+        </section>
+
+         <!-- ========= Knowledge Check Section ========= -->
+         <section id="knowledge-check">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="quiz_title">🧠 Teste Rápido!</h2>
+                <div class="quiz-container fade-in-on-scroll delay-1"> <!-- Observe container -->
+                    <div id="quiz-area">
+                         <p style="text-align: center; padding: 2rem 0;">Carregando quiz...</p>
+                    </div>
+                    <div id="quiz-feedback" class="quiz-feedback"></div>
+                    <button id="next-question-btn" data-translate="quiz_next_button">Próxima Pergunta</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========= Completion Section ========= -->
+        <section id="completion" class="completion-section"> <!-- Added ID for nav link -->
+            <div class="container">
+                 <div class="icon">
+                    <i class="fas fa-check-double"></i>
+                    <i class="fas fa-project-diagram"></i>
+                    <i class="fas fa-star"></i>
+                </div>
+                <h2 class="fade-in-on-scroll delay-1" data-translate="completion_theory_title_m24">Teoria do Módulo 24 Completa!</h2>
+                <p class="fade-in-on-scroll delay-2" data-translate="completion_theory_desc_m24">
+                    Excelente! Você agora compreende como os Diagramas de Venn oferecem uma representação visual clara para as operações e relações entre conjuntos. Essa habilidade de visualização é muito valiosa! <br>
+                    Pronto para aplicar esse conhecimento? Siga para a <strong>Zona de Prática</strong> ou <strong>Prática Avançada</strong> do Módulo 24.
+                </p>
+                <div class="button-group">
+                    <!-- Buttons observed - IMPORTANT: Updated hrefs -->
+                    <a href="math-dashboard.html" class="action-button secondary fade-in-on-scroll delay-3"><i class="fas fa-list"></i> <span data-translate="nav_menu">Menu do Curso</span></a>
+                    <a href="math-practice-24.html" class="action-button success fade-in-on-scroll delay-4"><i class="fas fa-pencil-alt"></i> <span data-translate="nav_practice">Iniciar Prática</span></a>
+                    <a href="math-advanced-24.html" class="action-button secondary fade-in-on-scroll delay-5"><i class="fas fa-flask"></i> <span data-translate="nav_advanced">Prática Avançada</span></a>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="main-footer">
+        <div class="container">
+            <p data-translate="footer_copyright"></p>
+        </div>
+    </footer>
+
+    <script>
+    // --- Translations Object (Portuguese Only - Module 24) ---
+    const translations = {
+        pt: {
+            "page_title": "Módulo 24: Diagramas de Venn",
+            "nav_practice": "Iniciar Prática",
+            "nav_advanced": "Prática Avançada",
+            "nav_menu": "Menu do Curso",
+            "nav_welcome_m24": "Boas-vindas M24",
+            "nav_venn_basics": "O Que São?",
+            "nav_venn_ops": "Operações Visuais",
+            "nav_venn_examples": "Exemplos",
+            "nav_venn_apps": "Aplicações",
+            "nav_quiz": "Teste Rápido",
+            "lang_pt": "🇧🇷 Português",
+            "header_title_m24": "Módulo 24: Diagramas de Venn",
+            "header_subtitle_m24": "Visualizando relações e operações entre conjuntos.",
+            "welcome_title_m24": "🎨 Visualizando Conjuntos",
+            "welcome_p1_m24": "Bem-vindo ao Módulo 24! Já exploramos as operações entre conjuntos (união, interseção, etc.). Agora, vamos aprender uma forma poderosa de <span class=\"highlight\">visualizar</span> essas relações: os <span class=\"highlight\">Diagramas de Venn</span>.",
+            "welcome_p2_m24": "Criados por John Venn, esses diagramas usam formas geométricas (geralmente círculos) para representar conjuntos e suas interconexões. Eles são ferramentas intuitivas para entender a lógica de conjuntos, probabilidades e até estruturas de dados.",
+            "basics_title_m24": "🧩 Componentes Essenciais",
+            "basics_subtitle_m24": "Os elementos básicos que formam um Diagrama de Venn.",
+            "basics_diagram_placeholder": "Diagrama Básico: Retângulo (U) com Círculo (A) Dentro",
+            "basics_p1_m24": "<strong class=\"highlight\">Conjunto Universo (U):</strong> Representado por um retângulo, contém todos os elementos possíveis sob consideração para o problema.",
+            "basics_p2_m24": "<strong class=\"highlight\">Conjuntos (A, B, C...):</strong> Representados por círculos (ou outras formas fechadas) dentro do retângulo. Cada círculo delimita os elementos que pertencem àquele conjunto específico.",
+            "basics_p3_m24": "<strong class=\"highlight\">Regiões:</strong> As áreas dentro dos círculos, suas sobreposições e a área fora dos círculos representam diferentes subconjuntos e relações (pertence a A, pertence a B, pertence a ambos, pertence a nenhum, etc.).",
+            "ops_title_m24": "🔄 Representando Operações",
+            "ops_subtitle_m24": "Como as operações de conjuntos que aprendemos se traduzem visualmente.",
+            "ops_union_title": "União (<code>A ∪ B</code>)",
+            "ops_union_desc": "Elementos que pertencem a A, ou a B, ou a ambos.",
+            "ops_union_diagram": "Diagrama: Círculos A e B totalmente sombreados",
+            "ops_intersection_title": "Interseção (<code>A ∩ B</code>)",
+            "ops_intersection_desc": "Elementos que pertencem a A e também a B.",
+            "ops_intersection_diagram": "Diagrama: Apenas a área de sobreposição entre A e B sombreada",
+            "ops_difference_title": "Diferença (<code>A - B</code>)",
+            "ops_difference_desc": "Elementos que pertencem a A, mas não pertencem a B.",
+            "ops_difference_diagram": "Diagrama: Apenas a parte de A que não sobrepõe B sombreada",
+            "ops_complement_title": "Complementar (<code>A'</code> ou A<sup>c</sup>)",
+            "ops_complement_desc": "Elementos que pertencem ao Universo (U), mas não pertencem a A.",
+            "ops_complement_diagram": "Diagrama: Área dentro de U mas fora de A sombreada",
+            "examples_title_m24": "📊 Exemplos Práticos",
+            "examples_subtitle_m24": "Vendo os diagramas em ação com conjuntos numéricos.",
+            "examples_diagram_placeholder": "Diagrama: U={1..10}, A={2,4,6,8,10}, B={3,6,9}",
+            "examples_p1_m24": "Considere o Universo <code>U = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10}</code>.",
+            "examples_p2_m24": "Sejam os conjuntos: <br><code>A = {2, 4, 6, 8, 10}</code> (números pares) <br><code>B = {3, 6, 9}</code> (múltiplos de 3)",
+            "examples_p3_m24": "Com o diagrama, podemos visualizar:",
+            "examples_item1": "<strong><code>A ∩ B</code>:</strong> {6} (apenas o 6 está na sobreposição)",
+            "examples_item2": "<strong><code>A ∪ B</code>:</strong> {2, 3, 4, 6, 8, 9, 10} (todos os números dentro de A ou B)",
+            "examples_item3": "<strong><code>A - B</code>:</strong> {2, 4, 8, 10} (pares que não são múltiplos de 3)",
+            "examples_item4": "<strong><code>B'</code>:</strong> {1, 2, 4, 5, 7, 8, 10} (todos em U que não são múltiplos de 3)",
+            "examples_item5": "<strong>Fora de A e B:</strong> {1, 5, 7} (números em U que não são pares nem múltiplos de 3)",
+            "examples_p4_m24": "Diagramas de Venn podem ser usados com 3 ou mais conjuntos, embora a complexidade visual aumente. Eles ajudam a organizar o raciocínio sobre como os elementos se distribuem entre as categorias.",
+            "apps_title_m24": "💡 Aplicações dos Diagramas de Venn",
+            "apps_subtitle_m24": "Onde esses diagramas visuais são úteis, especialmente em computação.",
+            "apps_item1": "<strong>Lógica e Raciocínio:</strong> Visualizar a validade de argumentos e a relação entre proposições lógicas.",
+            "apps_item2": "<strong>Probabilidade:</strong> Calcular a probabilidade de eventos compostos (ex: P(A ou B), P(A e B)).",
+            "apps_item3": "<strong>Banco de Dados:</strong> Entender o resultado de operações SQL como <code>UNION</code>, <code>INTERSECT</code>, <code>EXCEPT</code> e <code>JOIN</code>s.",
+            "apps_item4": "<strong>Ciência de Dados e IA:</strong> Classificação, análise de sobreposição de características (features), visualização de agrupamentos (clustering).",
+            "apps_item5": "<strong>Pesquisa e Organização:</strong> Comparar e contrastar características de diferentes itens ou conceitos.",
+            "quiz_title": "🧠 Teste Rápido!",
+            "quiz_next_button": "Próxima Pergunta",
+            "quiz_q1_m24": "No Diagrama de Venn, o que representa a área onde dois círculos (conjuntos) se sobrepõem?",
+            "quiz_q1_m24_opt1": "União (<code>A ∪ B</code>)", "quiz_q1_m24_opt2": "Interseção (<code>A ∩ B</code>)", "quiz_q1_m24_opt3": "Diferença (<code>A - B</code>)", "quiz_q1_m24_opt4": "Complementar (<code>A'</code>)",
+            "quiz_q2_m24": "Qual operação de conjunto corresponde a sombrear TODA a área de ambos os círculos A e B?",
+            "quiz_q2_m24_opt1": "<code>A ∩ B</code>", "quiz_q2_m24_opt2": "<code>A - B</code>", "quiz_q2_m24_opt3": "<code>A ∪ B</code>", "quiz_q2_m24_opt4": "<code>B'</code>",
+            "quiz_q3_m24": "A área dentro do retângulo (Universo), mas fora de um círculo (Conjunto A), representa qual operação?",
+            "quiz_q3_m24_opt1": "Interseção (<code>A ∩ U</code>)", "quiz_q3_m24_opt2": "União (<code>A ∪ U</code>)", "quiz_q3_m24_opt3": "Diferença Simétrica (<code>A Δ U</code>)", "quiz_q3_m24_opt4": "Complementar (<code>A'</code>)",
+            "quiz_q4_m24": "Diagramas de Venn são principalmente úteis para:",
+            "quiz_q4_m24_opt1": "Realizar cálculos numéricos complexos", "quiz_q4_m24_opt2": "Visualizar relações entre conjuntos", "quiz_q4_m24_opt3": "Escrever algoritmos eficientes", "quiz_q4_m24_opt4": "Treinar modelos de Machine Learning",
+            "quiz_feedback_correct": "Correto! 🎉", "quiz_feedback_incorrect": "Não foi bem assim! A resposta correta era: {correctAnswerText}",
+            "quiz_final_score_title": "Teste Rápido Completo!",
+            "quiz_final_score_summary": "Você respondeu {score} de {total} perguntas corretamente.",
+            "quiz_final_score_perfect": "Excelente! Você compreendeu bem os Diagramas de Venn.", "quiz_final_score_good": "Bom trabalho! Continue praticando a visualização de conjuntos.",
+            "completion_theory_title_m24": "Teoria do Módulo 24 Completa!",
+            "completion_theory_desc_m24": "Excelente! Você agora compreende como os Diagramas de Venn oferecem uma representação visual clara para as operações e relações entre conjuntos. Essa habilidade de visualização é muito valiosa! <br> Pronto para aplicar esse conhecimento? Siga para a <strong>Zona de Prática</strong> ou <strong>Prática Avançada</strong> do Módulo 24.",
+            "footer_copyright": "© 2024 Universidade Hélice. Todos os direitos reservados."
+        }
+    };
+
+    // --- Global Variables ---
+    let currentQuestionIndex = 0;
+    let score = 0;
+    const lang = 'pt-BR'; // Hardcoded language
+
+    // --- DOM Elements (Get them once) ---
+    const navToggleButton = document.getElementById('minimal-nav-toggle');
+    const navPanel = document.getElementById('minimal-nav-panel');
+    const body = document.body;
+    const quizArea = document.getElementById('quiz-area');
+    const feedbackArea = document.getElementById('quiz-feedback');
+    const nextButton = document.getElementById('next-question-btn');
+    // Remove elements specific to Module 3's code demo if they existed in the template copy
+    // const textDemoBox = document.querySelector('#putting-it-together-m3 .text-demo');
+    // const codeOutputArea = document.querySelector('#putting-it-together-m3 .code-output-area');
+
+    // --- Functions ---
+
+    function getTranslation(key, replacements = {}) {
+         // Use 'pt' as the key for the translations object
+         let text = translations['pt']?.[key] ?? `[${key}]`;
+         for (const placeholder in replacements) {
+             const regex = new RegExp(`\\{${placeholder}\\}`, 'g');
+             text = text.replace(regex, replacements[placeholder]);
+         }
+         return text;
+    }
+
+    function translatePage() {
+         document.querySelectorAll('[data-translate]').forEach(el => {
+             const key = el.getAttribute('data-translate');
+             let translation = getTranslation(key);
+
+              if (el.tagName === 'TITLE') { document.title = translation; }
+              else if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') { /* Skip */ }
+              else {
+                   // Allow specific HTML tags safely within translations
+                   const safeHtmlRegex = /<\/?(code|strong|span|br|i|b|em|sup)>|<\w+\s+class="[^"]*">/gi; // Added sup, general class attribute
+                   let containsSafeHtml = safeHtmlRegex.test(translation);
+
+                   // Allow innerHTML if it contains only safe tags OR if it's in an allowed container
+                   // Added placeholder-image and explanation-text to allowed containers
+                   if (containsSafeHtml || el.closest('.placeholder-image, .explanation-text, .operation-card p, .app-list span, .footer p')) {
+                      el.innerHTML = translation;
+                   } else {
+                      el.textContent = translation;
+                   }
+              }
+         });
+
+        // Tooltips are not used in this module example, but kept for structure if needed
+        /*
+          document.querySelectorAll('.code-highlight[data-translate-tooltip]').forEach(el => {
+              const tooltipKey = el.getAttribute('data-translate-tooltip');
+              const tooltipSpan = el.querySelector('.tooltip');
+              if(tooltipSpan && tooltipKey) {
+                 tooltipSpan.innerHTML = getTranslation(tooltipKey);
+              }
+          });
+        */
+    }
+
+    // --- Quiz Data & Functions (Module 24) ---
+    const quizData = [
+         { questionKey: "quiz_q1_m24", optionKeys: ["quiz_q1_m24_opt1", "quiz_q1_m24_opt2", "quiz_q1_m24_opt3", "quiz_q1_m24_opt4"], correctAnswer: 1 }, // Intersection
+         { questionKey: "quiz_q2_m24", optionKeys: ["quiz_q2_m24_opt1", "quiz_q2_m24_opt2", "quiz_q2_m24_opt3", "quiz_q2_m24_opt4"], correctAnswer: 2 }, // Union
+         { questionKey: "quiz_q3_m24", optionKeys: ["quiz_q3_m24_opt1", "quiz_q3_m24_opt2", "quiz_q3_m24_opt3", "quiz_q3_m24_opt4"], correctAnswer: 3 }, // Complement
+         { questionKey: "quiz_q4_m24", optionKeys: ["quiz_q4_m24_opt1", "quiz_q4_m24_opt2", "quiz_q4_m24_opt3", "quiz_q4_m24_opt4"], correctAnswer: 1 }  // Visualizing relationships
+    ];
+
+    function loadQuestion() {
+          if (!quizArea) return; // Ensure quizArea exists
+
+          // If we reached the end, show score
+          if (currentQuestionIndex >= quizData.length) {
+              if (!quizArea.querySelector('[data-translate="quiz_final_score_title"]')) { // Avoid re-rendering score
+                 showFinalScore();
+              }
+              return;
+          }
+
+          const currentQuiz = quizData[currentQuestionIndex];
+          const questionText = getTranslation(currentQuiz.questionKey);
+          // Generate HTML for question and options
+          quizArea.innerHTML = `
+              <div class="quiz-question">${currentQuestionIndex + 1}. ${questionText.replace(/`(.*?)`/g, '<code>$1</code>')}</div>
+              <div class="quiz-options">
+                  ${currentQuiz.optionKeys.map((optionKey, index) => `
+                      <button class="quiz-option-btn" data-index="${index}">${getTranslation(optionKey).replace(/`(.*?)`/g, '<code>$1</code>')}</button>
+                  `).join('')}
+              </div>
+          `;
+
+          // Reset feedback and next button
+          if (feedbackArea) {
+            feedbackArea.classList.remove('visible', 'correct', 'incorrect');
+            feedbackArea.textContent = '';
+            feedbackArea.style.height = '0'; // Reset height
+            feedbackArea.style.marginBottom = '0'; // Reset margin
+          }
+          if (nextButton) {
+            nextButton.classList.remove('visible');
+            nextButton.disabled = true;
+          }
+
+          // Add event listeners to the new buttons
+          quizArea.querySelectorAll('.quiz-option-btn').forEach(button => {
+              button.addEventListener('click', handleAnswer);
+          });
+    }
+
+    function handleAnswer(event) {
+         const selectedButton = event.target;
+         const selectedIndex = parseInt(selectedButton.dataset.index);
+         const correctIndex = quizData[currentQuestionIndex].correctAnswer;
+         const correctOptionKey = quizData[currentQuestionIndex].optionKeys[correctIndex];
+
+         // Disable all options
+         quizArea.querySelectorAll('.quiz-option-btn').forEach(btn => {
+            btn.disabled = true;
+            btn.classList.remove('shake'); // Remove shake if present from previous incorrect
+         });
+
+         if (!feedbackArea || !nextButton) return; // Ensure elements exist
+
+         feedbackArea.classList.add('visible');
+
+         if (selectedIndex === correctIndex) {
+             selectedButton.classList.add('correct');
+             feedbackArea.innerHTML = getTranslation('quiz_feedback_correct');
+             feedbackArea.classList.add('correct');
+             feedbackArea.classList.remove('incorrect');
+             score++;
+             selectedButton.classList.add('tada-anim');
+         } else {
+             selectedButton.classList.add('incorrect');
+             const formattedCorrectAnswer = getTranslation(correctOptionKey).replace(/`(.*?)`/g, '<code>$1</code>');
+             feedbackArea.innerHTML = getTranslation('quiz_feedback_incorrect', { correctAnswerText: `<strong>${formattedCorrectAnswer}</strong>` });
+             feedbackArea.classList.add('incorrect');
+             feedbackArea.classList.remove('correct');
+             // Highlight the correct button as well
+             const correctButton = quizArea.querySelector(`.quiz-option-btn[data-index="${correctIndex}"]`);
+             if(correctButton) correctButton.classList.add('correct');
+             selectedButton.classList.add('shake');
+         }
+
+         // Remove animation classes after they finish
+          selectedButton.addEventListener('animationend', () => {
+               selectedButton.classList.remove('tada-anim', 'shake');
+          }, { once: true });
+
+         // Make feedback area adjust height and margin smoothly
+         feedbackArea.style.height = feedbackArea.scrollHeight + 'px';
+         feedbackArea.style.marginBottom = '1rem';
+
+
+         // Show and enable next button
+         nextButton.classList.add('visible');
+         nextButton.disabled = false;
+     }
+
+     function showFinalScore() {
+            if (!quizArea) return;
+            const totalQuestions = quizData.length;
+            // Determine message based on score percentage
+            let resultMessageKey = (score / totalQuestions) >= 0.75 ? 'quiz_final_score_perfect' : 'quiz_final_score_good'; // 75% threshold
+
+            quizArea.innerHTML = `
+               <div class="quiz-question text-center" data-translate="quiz_final_score_title" style="font-size: 1.5rem;">${getTranslation('quiz_final_score_title')}</div>
+               <p class="text-center" style="font-size: 1.2rem; margin-bottom: 1rem;">${getTranslation('quiz_final_score_summary', { score: score, total: totalQuestions })}</p>
+               <p class="text-center" style="color: ${score === totalQuestions ? 'var(--success-color)' : 'var(--primary-color)'}; font-weight: bold;">${getTranslation(resultMessageKey)}</p>
+            `;
+            if (feedbackArea) feedbackArea.classList.remove('visible'); // Hide feedback area
+            if (nextButton) nextButton.style.display = 'none'; // Hide next button
+            // Optionally scroll score into view
+            // quizArea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+     }
+
+
+    // --- Intersection Observer Setup ---
+    function setupObservers() {
+        const observerOptions = {
+            root: null, // relative to viewport
+            rootMargin: '0px',
+            threshold: 0.1 // Trigger when 10% of the element is visible
+        };
+
+        const observerCallback = (entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    // Optional: Unobserve after it becomes visible to save resources
+                    // observer.unobserve(entry.target);
+                }
+                // Optional: Remove 'visible' if it scrolls out of view
+                // else {
+                //     entry.target.classList.remove('visible');
+                // }
+            });
+        };
+
+        const animationObserver = new IntersectionObserver(observerCallback, observerOptions);
+
+        // Observe elements with the fade-in class
+        document.querySelectorAll('.fade-in-on-scroll').forEach(el => {
+            animationObserver.observe(el);
+        });
+
+        // --- Remove Specific Observer for Code Output Simulation ---
+        // No code simulation needed for Module 24
+    }
+
+    // --- Event Listeners Setup ---
+    function setupEventListeners() {
+        // Navbar Toggle
+        if (navToggleButton && navPanel) {
+            navToggleButton.addEventListener('click', (event) => {
+                event.stopPropagation();
+                body.classList.toggle('nav-active');
+                navToggleButton.setAttribute('aria-expanded', body.classList.contains('nav-active'));
+            });
+
+            // Close nav if clicking outside
+            document.addEventListener('click', (event) => {
+                if (body.classList.contains('nav-active') && !navPanel.contains(event.target) && event.target !== navToggleButton && !navToggleButton.contains(event.target)) {
+                    body.classList.remove('nav-active');
+                    navToggleButton.setAttribute('aria-expanded', 'false');
+                }
+            });
+
+            // Close nav on link click
+            navPanel.querySelectorAll('a').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    // Check if it's an internal link
+                    if (link.getAttribute('href').startsWith('#')) {
+                         // Allow default scroll behavior
+                        // Close panel slightly delayed
+                        setTimeout(() => {
+                            body.classList.remove('nav-active');
+                            navToggleButton.setAttribute('aria-expanded', 'false');
+                        }, 150);
+                    }
+                    // External links will navigate away anyway
+                });
+            });
+
+            // Close nav on Escape key
+            document.addEventListener('keydown', (event) => {
+                 if (event.key === 'Escape' && body.classList.contains('nav-active')) {
+                     body.classList.remove('nav-active');
+                     navToggleButton.setAttribute('aria-expanded', 'false');
+                 }
+             });
+        }
+
+        // Quiz Next Button
+        if (nextButton) {
+            nextButton.addEventListener('click', () => {
+                if (!nextButton.disabled) {
+                    currentQuestionIndex++;
+                    loadQuestion(); // Load the next question
+                }
+            });
+        } else {
+            console.warn("Elemento #next-question-btn não encontrado (ou não necessário neste módulo).");
+        }
+    }
+
+    // --- Initialization ---
+    document.addEventListener('DOMContentLoaded', () => {
+        translatePage();        // Apply translations first
+        setupEventListeners();  // Set up interactive elements
+        setupObservers();       // Set up animations
+
+        // Check if elements needed for quiz exist before proceeding
+        if (quizArea) {
+            loadQuestion();     // Load the first quiz question if container exists
+        } else {
+            console.warn("Elemento #quiz-area não encontrado (quiz não será carregado).");
+        }
+        if (!feedbackArea) console.warn("Elemento #quiz-feedback não encontrado.");
+
+    });
+
+    </script>
+
+</body>
+</html>

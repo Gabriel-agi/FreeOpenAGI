@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<!-- Language set to Portuguese BR -->
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Title set by JS -->
+    <title data-translate="page_title">Módulo 26: Relações entre Conjuntos (Subconjuntos, Partições)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* --- Reset & Base Styles --- */
+        :root {
+            --primary-color: #007bff; /* Original blue */
+            --secondary-color: #6c757d; /* Original gray */
+            --background-light: #f8f9fa; /* Original light background */
+            --background-dark: #343a40; /* Original dark background */
+            --text-light: #f8f9fa;
+            --text-dark: #212529;
+            --accent-color: #ffc107; /* Original yellow */
+            --success-color: #28a745; /* Original green */
+            --error-color: #dc3545; /* Original red */
+            --subset-color: #17a2b8; /* Info blue for subsets */
+            --partition-color: #fd7e14; /* Orange for partitions */
+            --powerset-color: #6f42c1; /* Purple for power set */
+            --border-radius: 8px;
+            --transition-speed: 0.3s;
+            --animation-speed: 0.6s; /* Control fade-in speed */
+            --font-body: 'Roboto', sans-serif;
+            --font-title: 'Orbitron', sans-serif;
+            --nav-primary: #6e48aa;
+            --nav-success: #4cc9f0;
+            --nav-dark: #1a1a2e;
+            --footer-border-color: #495057;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; font-size: 16px; }
+        body {
+            font-family: var(--font-body); line-height: 1.7;
+            background-color: var(--background-light); color: var(--text-dark);
+            overflow-x: hidden; display: flex; flex-direction: column; min-height: 100vh;
+        }
+        main { flex-grow: 1; }
+
+        /* --- Utility Classes --- */
+        .container { max-width: 960px; margin: 0 auto; padding: 0 15px; }
+        .text-center { text-align: center; }
+        .highlight { color: var(--primary-color); font-weight: bold; }
+        .code-symbol { font-family: 'Courier New', Courier, monospace; background-color: #e9ecef; padding: 0.1em 0.4em; border-radius: 3px; color: var(--primary-color); }
+        .placeholder-image {
+            background-color: #e9ecef; border: 1px dashed var(--secondary-color);
+            padding: 2rem; text-align: center; color: var(--secondary-color);
+            font-style: italic; border-radius: var(--border-radius); margin: 1.5rem auto; max-width: 400px;
+        }
+
+        /* Elements to be animated by observer */
+        .fade-in-on-scroll {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+        }
+        .fade-in-on-scroll.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        /* Add delays for staggering */
+        .delay-1.visible { transition-delay: 0.1s; }
+        .delay-2.visible { transition-delay: 0.2s; }
+        .delay-3.visible { transition-delay: 0.3s; }
+        .delay-4.visible { transition-delay: 0.4s; }
+        .delay-5.visible { transition-delay: 0.5s; }
+        .delay-6.visible { transition-delay: 0.6s; }
+        .delay-7.visible { transition-delay: 0.7s; }
+
+
+        .button-group { margin-top: 2rem; display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; }
+        .action-button {
+             display: inline-flex; align-items: center; justify-content: center; gap: 0.5em;
+             padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold;
+             color: var(--text-light); background-color: var(--primary-color); border: none;
+             border-radius: var(--border-radius); cursor: pointer;
+             transition: background-color var(--transition-speed), transform var(--transition-speed), filter var(--transition-speed), box-shadow var(--transition-speed), opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out; /* Add animation transition */
+             margin-top: 1rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+             text-decoration: none; line-height: 1.2;
+             opacity: 0; /* Start hidden if animated */
+             transform: translateY(20px); /* Start offset if animated */
+        }
+        .action-button.visible { /* Make visible via observer */
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .action-button i.fas {}
+        .action-button:hover:not(:disabled) { background-color: #0056b3; transform: translateY(-2px) !important; box-shadow: 0 4px 8px rgba(0,0,0,0.15); } /* Use !important to override initial transform */
+        .action-button:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none !important; box-shadow: none; opacity: 0.7; }
+        .action-button.success { background-color: var(--success-color); }
+        .action-button.success:hover:not(:disabled) { background-color: #218838; }
+        .action-button.secondary { background-color: var(--secondary-color); }
+        .action-button.secondary:hover:not(:disabled) { background-color: #5a6268; }
+        .action-button:active:not(:disabled) { transform: translateY(1px) scale(0.98) !important; filter: brightness(0.95); }
+
+        /* --- Animations --- */
+        @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); } 50% { transform: scale(1.03); box-shadow: 0 0 15px rgba(0, 123, 255, 0.6); } 100% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); } }
+        @keyframes tada { from { transform: scale3d(1, 1, 1); } 10%, 20% { transform: scale3d(.9, .9, .9) rotate3d(0, 0, 1, -3deg); } 30%, 50%, 70%, 90% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, 3deg); } 40%, 60%, 80% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, -3deg); } to { transform: scale3d(1, 1, 1); } }
+        .tada-anim { animation: tada 1s ease; }
+        @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
+        @keyframes iconAppearCorrect { 0% { transform: scale(0.5) rotate(-15deg); opacity: 0; } 60% { transform: scale(1.2) rotate(5deg); opacity: 1; } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
+
+        /* --- Minimal Retractable Nav --- */
+        .minimal-nav-button { position: fixed; top: 15px; right: 15px; z-index: 1001; background-color: rgba(52, 58, 64, 0.75); color: var(--text-light); border: none; border-radius: var(--border-radius); padding: 8px 12px; cursor: pointer; transition: background-color var(--transition-speed), opacity var(--transition-speed), transform var(--transition-speed); font-size: 1.1rem; opacity: 0.6; box-shadow: 0 2px 5px rgba(0,0,0,0.2); line-height: 1; }
+        .minimal-nav-button:hover { background-color: rgba(52, 58, 64, 0.95); opacity: 1; transform: scale(1.05); }
+        .minimal-nav { position: fixed; top: 60px; right: 15px; z-index: 1000; background-color: var(--background-dark); border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.3); padding: 0.8rem; opacity: 0; transform: translateY(-15px) scale(0.95); transform-origin: top right; pointer-events: none; transition: opacity var(--transition-speed) ease, transform var(--transition-speed) ease; min-width: 200px; }
+        body.nav-active .minimal-nav { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+        .minimal-nav ul { list-style: none; margin: 0; padding: 0; }
+        .minimal-nav ul li { margin-bottom: 5px; }
+        .minimal-nav ul li:last-child { margin-bottom: 0; }
+        .minimal-nav ul li a { display: flex; align-items: center; color: var(--text-light); text-decoration: none; padding: 0.6rem 1rem; border-radius: 4px; transition: background-color var(--transition-speed), color var(--transition-speed); white-space: nowrap; font-weight: 400; font-size: 0.95rem; }
+        .minimal-nav ul li a i.fas { margin-right: 10px; width: 1.2em; text-align: center; opacity: 0.8; transition: opacity var(--transition-speed); }
+        .minimal-nav ul li a:hover { background-color: var(--primary-color); color: var(--text-light); }
+        .minimal-nav ul li a:hover i.fas { opacity: 1; }
+
+        /* --- Header --- */
+        .main-header { background: linear-gradient(135deg, var(--primary-color), #0056b3); color: var(--text-light); padding: 4rem 0 6rem; text-align: center; position: relative; overflow: hidden; }
+        .main-header .container { /* Start visible */ }
+        .main-header h1 { font-family: var(--font-title); font-size: 2.8rem; margin-bottom: 0.5rem; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); } /* Slightly smaller h1 */
+        .main-header p { font-size: 1.15rem; font-weight: 300; opacity: 0.9; } /* Slightly smaller p */
+        .header-shape { position: absolute; border-radius: 50%; background-color: rgba(255, 255, 255, 0.1); animation: pulse 5s infinite ease-in-out alternate; }
+        .shape1 { width: 150px; height: 150px; bottom: -50px; left: 10%; animation-duration: 6s; }
+        .shape2 { width: 80px; height: 80px; top: 50px; right: 15%; animation-duration: 4s; }
+        .shape3 { width: 50px; height: 50px; bottom: 20px; right: 30%; animation-duration: 7s; }
+
+        /* --- Section Styling --- */
+        section { padding: 4rem 0; border-bottom: 1px solid #eee; }
+        main section:last-of-type { border-bottom: none; padding-bottom: 0;}
+        section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); margin-bottom: 2rem; text-align: center; position: relative; padding-bottom: 10px; }
+        section h2::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 60px; height: 4px; background-color: var(--accent-color); border-radius: 2px; }
+
+        /* --- Welcome Section --- */
+        #welcome p { font-size: 1.1rem; max-width: 700px; margin: 0 auto 1rem; text-align: center; }
+
+        /* --- Subsets Section Styling (#subsets) --- */
+        #subsets .definition-box {
+            background-color: #fff; padding: 2rem; border-radius: var(--border-radius);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08); margin-top: 2rem; border-left: 5px solid var(--subset-color);
+        }
+        #subsets .definition-box h3 { color: var(--subset-color); margin-bottom: 1rem; font-size: 1.4rem; }
+        #subsets .example-list li { margin-bottom: 0.8rem; }
+        #subsets .power-set-box {
+            background-color: #fff; padding: 2rem; border-radius: var(--border-radius);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08); margin-top: 2rem; border-left: 5px solid var(--powerset-color);
+        }
+        #subsets .power-set-box h3 { color: var(--powerset-color); margin-bottom: 1rem; font-size: 1.4rem; }
+        #subsets .code-block {
+            background-color: var(--background-dark); color: var(--text-light); padding: 1rem;
+            border-radius: var(--border-radius); margin-top: 1rem; font-family: 'Courier New', Courier, monospace;
+            font-size: 0.95rem; white-space: pre-wrap; /* Allows wrapping */
+            word-wrap: break-word; /* Breaks long words */
+        }
+
+        /* --- Partitions Section Styling (#partitions) --- */
+        #partitions .definition-box {
+            background-color: #fff; padding: 2rem; border-radius: var(--border-radius);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08); margin-top: 2rem; border-left: 5px solid var(--partition-color);
+        }
+        #partitions .definition-box h3 { color: var(--partition-color); margin-bottom: 1rem; font-size: 1.4rem; }
+        #partitions .conditions-list li { margin-bottom: 0.8rem; }
+        #partitions .conditions-list .condition-num { font-weight: bold; color: var(--partition-color); margin-right: 5px; }
+
+        /* --- Applications Section Styling (#applications) --- */
+        #applications .application-cards {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem; margin-top: 2rem;
+        }
+        .application-card { /* Animated by observer */
+            background-color: #fff; padding: 1.5rem; border-radius: var(--border-radius);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.07);
+            transition: transform var(--transition-speed) ease, box-shadow var(--transition-speed) ease, opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+            opacity: 0; transform: translateY(20px); /* Start state */
+            border-top: 4px solid var(--primary-color);
+        }
+         .application-card:nth-child(1) { border-top-color: var(--subset-color); }
+         .application-card:nth-child(2) { border-top-color: var(--partition-color); }
+         .application-card:nth-child(3) { border-top-color: var(--secondary-color); } /* Optional third color */
+
+        .application-card.visible { opacity: 1; transform: translateY(0); }
+        .application-card:hover { transform: translateY(-5px) scale(1.02) !important; box-shadow: 0 8px 20px rgba(0,0,0,0.12); }
+        .app-icon { font-size: 2.5rem; margin-bottom: 1rem; text-align: center; display: block; }
+        .application-card h3 { font-family: var(--font-body); font-weight: 700; font-size: 1.3rem; margin-bottom: 0.8rem; color: var(--text-dark); text-align: center; }
+        .application-details {
+             font-size: 1rem; color: var(--secondary-color); margin-top: 1rem; line-height: 1.6;
+        }
+        .app-concept { font-weight: bold; }
+        #applications .app-icon.subset-icon { color: var(--subset-color); }
+        #applications .app-icon.partition-icon { color: var(--partition-color); }
+        #applications .app-icon.fsm-icon { color: var(--secondary-color); }
+
+
+        /* --- Knowledge Check Section --- */
+        #knowledge-check { background-color: #e9ecef; }
+        .quiz-container { /* Animated by observer */
+             background-color: #fff; padding: 2rem; border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.1); max-width: 700px; margin: 2rem auto 0;
+             opacity: 0; transition: opacity var(--animation-speed) ease-out; /* Only fade opacity */
+        }
+        .quiz-container.visible { opacity: 1; }
+        .quiz-question { font-size: 1.2rem; font-weight: bold; margin-bottom: 1.5rem; color: var(--text-dark); }
+        .quiz-options button { display: block; width: 100%; padding: 1rem; margin-bottom: 1rem; text-align: left; font-size: 1rem; background-color: #f8f9fa; border: 1px solid #ced4da; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), border-color var(--transition-speed), transform var(--transition-speed); }
+        .quiz-options button:not(:disabled):hover { background-color: #e2e6ea; border-color: #adb5bd; transform: translateX(5px); }
+        .quiz-options button:disabled { cursor: default; opacity: 0.7; }
+        .quiz-options button.correct { background-color: #d4edda; border-color: var(--success-color); color: #155724; font-weight: bold; }
+        .quiz-options button.incorrect { background-color: #f8d7da; border-color: var(--error-color); color: #721c24; font-weight: bold; }
+        .quiz-options button.incorrect.shake { animation: shake 0.5s ease; }
+        .quiz-feedback { margin-top: 1.5rem; padding: 1rem; border-radius: var(--border-radius); font-weight: bold; text-align: center; opacity: 0; transition: opacity 0.5s ease, height 0.5s ease, margin-bottom 0.5s ease; height: 0; overflow: hidden; margin-bottom: 0;}
+        .quiz-feedback.visible { opacity: 1; height: auto; margin-bottom: 1rem; }
+        .quiz-feedback.correct { background-color: #d4edda; color: #155724; }
+        .quiz-feedback.incorrect { background-color: #f8d7da; color: #721c24; }
+        #next-question-btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5em; margin: 1.5rem auto 0; padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold; color: var(--text-light); background-color: var(--primary-color); border: none; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), transform var(--transition-speed), opacity 0.3s, visibility 0.3s; opacity: 0; visibility: hidden; }
+        #next-question-btn:hover:not(:disabled) { background-color: #0056b3; transform: scale(1.05); }
+        #next-question-btn.visible { opacity: 1; visibility: visible; }
+        #next-question-btn:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none; opacity: 0.7; }
+
+        /* --- Completion Section Styling --- */
+        .completion-section { padding: 4rem 0; text-align: center; background-color: var(--background-light); }
+        .completion-section .icon { font-size: 4rem; color: var(--success-color); margin-bottom: 1rem; display: inline-block; animation: iconAppearCorrect 1s ease-out 0.5s forwards; opacity: 0; /* Initial state for animation */}
+        /* Ensure completion elements are targeted by observer */
+        .completion-section h2, .completion-section p {
+            opacity: 0; transform: translateY(20px);
+            transition: opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+        }
+        .completion-section h2.visible, .completion-section p.visible {
+            opacity: 1; transform: translateY(0);
+        }
+        .completion-section .button-group { margin-top: 2.5rem; }
+        .completion-section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); margin-bottom: 1rem; }
+        .completion-section h2::after { display: none; }
+        .completion-section p { font-size: 1.1rem; margin-top: 1rem; color: var(--secondary-color); max-width: 700px; margin-left: auto; margin-right: auto; line-height: 1.8; }
+
+        /* --- Footer Styling --- */
+        .main-footer {
+            background-color: var(--background-light);
+            color: var(--text-light);
+            text-align: center;
+            padding: 2rem 0;
+            font-size: 0.9rem;
+            margin-top: auto;
+            border-top: 1px solid var(--background-light);
+            opacity: 0.85;
+        }
+        .main-footer p { margin: 0; line-height: 1.5; }
+
+        /* --- Responsive Design --- */
+        @media (max-width: 768px) {
+            html { font-size: 15px; }
+            .main-header h1 { font-size: 2.3rem; } .main-header p { font-size: 1.1rem; }
+            section h2 { font-size: 1.8rem; }
+            #applications .application-cards { grid-template-columns: 1fr; }
+            .minimal-nav { min-width: 180px; } .minimal-nav ul li a { padding: 0.6rem 0.8rem; }
+            .completion-section h2 { font-size: 2rem; }
+            .completion-section .button-group { flex-direction: column; align-items: center; gap: 0.8rem; }
+            .completion-section .action-button { width: 80%; max-width: 350px; margin-top: 0; }
+            .main-footer { padding: 1.5rem 0; }
+        }
+        @media (max-width: 480px) {
+            html { font-size: 14px; }
+            .main-header h1 { font-size: 1.9rem; } .main-header p { font-size: 1rem; }
+            section h2 { font-size: 1.6rem; }
+            .quiz-options button { padding: 0.8rem; font-size: 0.95rem; }
+            .minimal-nav-button { top: 10px; right: 10px; padding: 6px 10px; font-size: 1rem; }
+            .minimal-nav { top: 48px; right: 10px; min-width: 160px; }
+            .minimal-nav ul li a { padding: 0.5rem 0.7rem; font-size: 0.9rem;}
+            .minimal-nav ul li a i.fas { margin-right: 8px; }
+            .completion-section .icon { font-size: 3.5rem; }
+            .completion-section h2 { font-size: 1.8rem; } .completion-section p { font-size: 1rem; }
+            .completion-section .action-button { width: 90%; max-width: 300px; }
+             #subsets .code-block { font-size: 0.9rem; }
+            .main-footer { padding: 1rem 0; font-size: 0.85rem; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- ========= Minimal Nav Handle ========= -->
+    <button id="minimal-nav-toggle" class="minimal-nav-button" aria-label="Alternar Menu de Navegação" aria-expanded="false">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- ========= Minimal Nav Panel ========= -->
+    <nav id="minimal-nav-panel" class="minimal-nav">
+        <ul>
+            <!-- IMPORTANT: Updated hrefs for Module 26 -->
+            <li><a href="math-practice-26.html"><i class="fas fa-pencil-alt fa-fw"></i> <span data-translate="nav_practice">Iniciar Prática</span></a></li>
+            <li><a href="math-advanced-26.html"><i class="fas fa-flask fa-fw"></i> <span data-translate="nav_advanced">Prática Avançada</span></a></li>
+            <li><a href="math-dashboard.html"><i class="fas fa-list fa-fw"></i> <span data-translate="nav_menu">Menu do Curso</span></a></li>
+             <hr style="border: none; border-top: 1px solid var(--secondary-color); margin: 8px 0;">
+             <!-- Updated nav links for Module 26 sections -->
+             <li><a href="#welcome"><i class="fas fa-door-open fa-fw"></i> <span data-translate="nav_welcome_m26">Boas-vindas M26</span></a></li>
+             <li><a href="#subsets"><i class="fas fa-project-diagram fa-fw"></i> <span data-translate="nav_subsets">Subconjuntos</span></a></li>
+             <li><a href="#partitions"><i class="fas fa-puzzle-piece fa-fw"></i> <span data-translate="nav_partitions">Partições</span></a></li>
+             <li><a href="#applications"><i class="fas fa-cogs fa-fw"></i> <span data-translate="nav_applications">Aplicações</span></a></li>
+             <li><a href="#knowledge-check"><i class="fas fa-check-double fa-fw"></i> <span data-translate="nav_quiz">Teste Rápido</span></a></li>
+             <li><a href="#completion"><i class="fas fa-flag-checkered fa-fw"></i> <span data-translate="completion_theory_title_m26">Conclusão</span></a></li>
+        </ul>
+    </nav>
+
+    <header class="main-header">
+        <div class="header-shape shape1"></div>
+        <div class="header-shape shape2"></div>
+        <div class="header-shape shape3"></div>
+        <div class="container"> <!-- Start visible -->
+            <!-- IMPORTANT: Updated Title and Subtitle for Module 26 -->
+            <h1 data-translate="header_title_m26">Módulo 26: Relações entre Conjuntos</h1>
+            <p data-translate="header_subtitle_m26">Explorando subconjuntos e partições: estruturas fundamentais na organização de dados e algoritmos.</p>
+        </div>
+    </header>
+
+    <main>
+        <!-- ========= Welcome Section ========= -->
+        <section id="welcome">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="welcome_title_m26">🤝 Compreendendo Relações entre Conjuntos</h2>
+                <p class="fade-in-on-scroll delay-1" data-translate="welcome_p1_m26">
+                    Bem-vindo ao Módulo 26! Já vimos o que são conjuntos e como operá-los. Agora, vamos explorar como os conjuntos podem se <span class="highlight">relacionar</span> uns com os outros. Especificamente, focaremos em <span class="highlight">subconjuntos</span> e <span class="highlight">partições</span>.
+                </p>
+                <p class="fade-in-on-scroll delay-2" data-translate="welcome_p2_m26">
+                    Esses conceitos são cruciais em ciência da computação e IA. Subconjuntos ajudam a definir hierarquias e seleções (como escolher características relevantes), enquanto partições são a base para classificação, agrupamento (clustering) e divisão de problemas complexos. Vamos mergulhar nessas estruturas!
+                </p>
+            </div>
+        </section>
+
+        <!-- ========= Subsets Section ========= -->
+        <section id="subsets">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="subsets_title">🧩 Subconjuntos e Conjunto das Partes</h2>
+                <p class="text-center fade-in-on-scroll delay-1" data-translate="subsets_subtitle">Definindo quando um conjunto está contido em outro e explorando todas as possibilidades.</p>
+
+                <div class="definition-box fade-in-on-scroll delay-2">
+                    <h3 data-translate="subset_def_title">O que é um Subconjunto?</h3>
+                    <p data-translate="subset_def_p1">
+                        Um conjunto <code class="code-symbol">A</code> é um <strong style="color: var(--subset-color);">subconjunto</strong> de um conjunto <code class="code-symbol">B</code> se <span class="highlight">todos</span> os elementos de <code class="code-symbol">A</code> também são elementos de <code class="code-symbol">B</code>.
+                    </p>
+                    <p data-translate="subset_def_p2">
+                        Usamos o símbolo <code class="code-symbol">⊆</code> para indicar subconjunto: <code class="code-symbol">A ⊆ B</code>.
+                    </p>
+                    <p data-translate="subset_def_p3">
+                        Se <code class="code-symbol">A ⊆ B</code> e <code class="code-symbol">A ≠ B</code> (ou seja, <code class="code-symbol">B</code> tem pelo menos um elemento que <code class="code-symbol">A</code> não tem), dizemos que <code class="code-symbol">A</code> é um <strong style="color: var(--subset-color);">subconjunto próprio</strong> de <code class="code-symbol">B</code>, denotado por <code class="code-symbol">⊂</code>: <code class="code-symbol">A ⊂ B</code>.
+                    </p>
+                    <h4 style="margin-top: 1.5rem; margin-bottom: 0.5rem;" data-translate="subset_examples_title">Exemplos:</h4>
+                    <ul class="example-list">
+                        <li data-translate="subset_ex1">Se <code class="code-symbol">A = {1, 2}</code> e <code class="code-symbol">B = {1, 2, 3}</code>, então <code class="code-symbol">A ⊂ B</code> (A é subconjunto próprio de B).</li>
+                        <li data-translate="subset_ex2">Se <code class="code-symbol">C = {a, b}</code> e <code class="code-symbol">D = {a, b}</code>, então <code class="code-symbol">C ⊆ D</code> e <code class="code-symbol">D ⊆ C</code> (são subconjuntos um do outro, pois são iguais).</li>
+                        <li data-translate="subset_ex3">O conjunto dos <code class="code-symbol">Inteiros (ℤ)</code> é um subconjunto próprio do conjunto dos <code class="code-symbol">Racionais (ℚ)</code>: <code class="code-symbol">ℤ ⊂ ℚ</code>.</li>
+                        <li data-translate="subset_ex4">O <strong style="color: var(--secondary-color);">conjunto vazio</strong> (<code class="code-symbol">∅</code> ou <code class="code-symbol">{}</code>) é subconjunto de <span class="highlight">qualquer</span> conjunto, incluindo ele mesmo: <code class="code-symbol">∅ ⊆ A</code> para todo A.</li>
+                        <li data-translate="subset_ex5">Todo conjunto é subconjunto de si mesmo: <code class="code-symbol">A ⊆ A</code>.</li>
+                    </ul>
+                    <div class="placeholder-image" data-translate="subset_diagram_placeholder">Diagrama de Venn: A contido em B</div>
+                </div>
+
+                <div class="power-set-box fade-in-on-scroll delay-3">
+                     <h3 data-translate="powerset_def_title">Conjunto das Partes (Power Set)</h3>
+                     <p data-translate="powerset_def_p1">
+                         O <strong style="color: var(--powerset-color);">conjunto das partes</strong> (ou conjunto potência) de um conjunto <code class="code-symbol">A</code>, denotado por <code class="code-symbol">P(A)</code> ou <code class="code-symbol">2<sup>A</sup></code>, é o conjunto de <span class="highlight">todos os possíveis subconjuntos</span> de <code class="code-symbol">A</code>.
+                     </p>
+                     <p data-translate="powerset_def_p2">
+                         Se um conjunto <code class="code-symbol">A</code> tem <code class="code-symbol">n</code> elementos (ou seja, <code class="code-symbol">|A| = n</code>), então seu conjunto das partes <code class="code-symbol">P(A)</code> terá <code class="code-symbol">2<sup>n</sup></code> elementos (subconjuntos).
+                     </p>
+                     <h4 style="margin-top: 1.5rem; margin-bottom: 0.5rem;" data-translate="powerset_example_title">Exemplo:</h4>
+                     <p data-translate="powerset_ex1">
+                         Se <code class="code-symbol">A = {1, 2}</code>. Seus subconjuntos são: <code class="code-symbol">∅</code>, <code class="code-symbol">{1}</code>, <code class="code-symbol">{2}</code>, <code class="code-symbol">{1, 2}</code>.
+                     </p>
+                     <p data-translate="powerset_ex2">
+                         Portanto, o conjunto das partes de A é:
+                         <div class="code-block">P(A) = { ∅, {1}, {2}, {1, 2} }</div>
+                     </p>
+                      <p data-translate="powerset_ex3">Note que <code class="code-symbol">|A| = 2</code> e <code class="code-symbol">|P(A)| = 4 = 2<sup>2</sup></code>.</p>
+                     <p style="margin-top: 1rem;" data-translate="powerset_relevance">
+                         O conjunto das partes é útil em computação para representar todas as combinações possíveis de itens, como a seleção de características em machine learning ou configurações possíveis em um sistema.
+                     </p>
+                </div>
+                 <p class="text-center fade-in-on-scroll delay-4" data-translate="subsets_conclusion">Compreender subconjuntos e o conjunto das partes nos permite analisar estruturas contidas em outras e enumerar todas as variações possíveis.</p>
+            </div>
+        </section>
+
+        <!-- ========= Partitions Section ========= -->
+        <section id="partitions">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="partitions_title">🧱 Partições de um Conjunto</h2>
+                <p class="text-center fade-in-on-scroll delay-1" data-translate="partitions_subtitle">Dividindo um conjunto em pedaços menores, disjuntos e que cobrem o todo.</p>
+
+                <div class="definition-box fade-in-on-scroll delay-2">
+                     <h3 data-translate="partition_def_title">O que é uma Partição?</h3>
+                     <p data-translate="partition_def_p1">
+                         Uma <strong style="color: var(--partition-color);">partição</strong> de um conjunto não vazio <code class="code-symbol">S</code> é uma coleção de subconjuntos <span class="highlight">não vazios</span> de <code class="code-symbol">S</code>, digamos <code class="code-symbol">{A<sub>1</sub>, A<sub>2</sub>, ..., A<sub>k</sub>}</code>, que satisfazem duas condições cruciais:
+                     </p>
+                     <ul class="conditions-list" style="margin-top: 1rem;">
+                         <li data-translate="partition_cond1"><span class="condition-num">1. Cobertura Total:</span> A união de todos os subconjuntos da coleção é igual ao conjunto original <code class="code-symbol">S</code>.
+                             <br><code class="code-symbol">A<sub>1</sub> ∪ A<sub>2</sub> ∪ ... ∪ A<sub>k</sub> = S</code>
+                         </li>
+                         <li data-translate="partition_cond2"><span class="condition-num">2. Disjunção Mútua:</span> Os subconjuntos são dois a dois disjuntos, ou seja, a interseção entre quaisquer dois subconjuntos <span class="highlight">distintos</span> da coleção é o conjunto vazio.
+                             <br><code class="code-symbol">A<sub>i</sub> ∩ A<sub>j</sub> = ∅</code> para todo <code class="code-symbol">i ≠ j</code>.
+                         </li>
+                     </ul>
+                     <p style="margin-top: 1rem;" data-translate="partition_def_p2">
+                         Em outras palavras, uma partição divide o conjunto <code class="code-symbol">S</code> em "pedaços" que não se sobrepõem e que, juntos, reconstituem <code class="code-symbol">S</code> completamente. Cada elemento de <code class="code-symbol">S</code> pertence a <span class="highlight">exatamente um</span> subconjunto da partição.
+                     </p>
+                      <h4 style="margin-top: 1.5rem; margin-bottom: 0.5rem;" data-translate="partition_examples_title">Exemplos:</h4>
+                     <ul class="example-list">
+                         <li data-translate="partition_ex1">Seja <code class="code-symbol">S = {1, 2, 3, 4, 5}</code>. A coleção <code class="code-symbol">P<sub>1</sub> = {{1, 3}, {2, 5}, {4}}</code> é uma partição de <code class="code-symbol">S</code>.
+                             <br>(União = S? Sim. Interseções vazias? Sim. Subconjuntos não vazios? Sim.)
+                         </li>
+                         <li data-translate="partition_ex2">Seja <code class="code-symbol">ℤ</code> o conjunto dos inteiros. A coleção <code class="code-symbol">{Pares, Ímpares}</code> é uma partição de <code class="code-symbol">ℤ</code>.
+                             <br>(Todo inteiro é par ou ímpar; Nenhum inteiro é par E ímpar).
+                         </li>
+                         <li data-translate="partition_ex3">Seja <code class="code-symbol">S = {a, b, c}</code>. A coleção <code class="code-symbol">P<sub>2</sub> = {{a, b}, {b, c}}</code> <span class="highlight">NÃO</span> é uma partição de <code class="code-symbol">S</code>, pois <code class="code-symbol">{a, b} ∩ {b, c} = {b} ≠ ∅</code> (Condição 2 falha).</li>
+                         <li data-translate="partition_ex4">Seja <code class="code-symbol">S = {a, b, c}</code>. A coleção <code class="code-symbol">P<sub>3</sub> = {{a}, {c}}</code> <span class="highlight">NÃO</span> é uma partição de <code class="code-symbol">S</code>, pois <code class="code-symbol">{a} ∪ {c} = {a, c} ≠ S</code> (Condição 1 falha).</li>
+                     </ul>
+                     <div class="placeholder-image" data-translate="partition_diagram_placeholder">Diagrama: Conjunto S dividido em A1, A2, A3 disjuntos</div>
+                      <p style="margin-top: 1rem;" data-translate="partition_relevance">
+                         Partições são fundamentais em algoritmos de <span class="highlight">classificação</span> (cada item vai para uma classe), <span class="highlight">agrupamento (clustering)</span> (pontos de dados agrupados em clusters disjuntos), balanceamento de carga, e estratégias de <span class="highlight">dividir para conquistar</span>.
+                      </p>
+                </div>
+                 <p class="text-center fade-in-on-scroll delay-3" data-translate="partitions_conclusion">Particionar um conjunto nos permite categorizar, organizar e processar seus elementos de forma estruturada e sem ambiguidades.</p>
+            </div>
+        </section>
+
+        <!-- ========= Applications Section ========= -->
+        <section id="applications">
+             <div class="container">
+                 <h2 class="fade-in-on-scroll" data-translate="applications_title_m26">⚙️ Relações entre Conjuntos na Prática</h2>
+                 <p class="text-center fade-in-on-scroll delay-1" data-translate="applications_subtitle_m26">Veja como subconjuntos e partições aparecem em problemas de Computação e IA.</p>
+
+                 <div class="application-cards">
+                     <!-- Application Card 1: Subsets in Feature Selection -->
+                     <div class="application-card fade-in-on-scroll delay-2">
+                         <span class="app-icon subset-icon"><i class="fas fa-filter"></i></span>
+                         <h3 data-translate="app_subset_title">Subconjuntos na Seleção de Features</h3>
+                         <div class="application-details">
+                             <p data-translate="app_subset_p1">
+                                 Em Machine Learning, frequentemente temos um grande conjunto <code class="code-symbol">F</code> de <span class="highlight">features</span> (características) disponíveis para um modelo. Nem todas podem ser úteis ou podem até prejudicar o desempenho.
+                             </p>
+                              <p data-translate="app_subset_p2">
+                                 O processo de <strong class="app-concept" style="color: var(--subset-color);">Seleção de Features</strong> busca encontrar um <strong class="app-concept" style="color: var(--subset-color);">subconjunto</strong> <code class="code-symbol">S ⊂ F</code> que contenha as features mais relevantes e informativas.
+                             </p>
+                             <p data-translate="app_subset_p3">
+                                 Explorar o <code class="code-symbol">P(F)</code> (conjunto das partes) é computacionalmente inviável para muitas features, mas a ideia central é encontrar o "melhor" subconjunto.
+                             </p>
+                         </div>
+                     </div>
+
+                     <!-- Application Card 2: Partitions in Data Clustering -->
+                     <div class="application-card fade-in-on-scroll delay-3">
+                         <span class="app-icon partition-icon"><i class="fas fa-object-group"></i></span>
+                         <h3 data-translate="app_partition_title">Partições no Agrupamento de Dados (Clustering)</h3>
+                          <div class="application-details">
+                             <p data-translate="app_partition_p1">
+                                 <strong class="app-concept" style="color: var(--partition-color);">Clustering</strong> é uma técnica de aprendizado não supervisionado que agrupa pontos de dados similares. O conjunto de todos os dados <code class="code-symbol">D</code> é o nosso universo.
+                             </p>
+                              <p data-translate="app_partition_p2">
+                                 Algoritmos como o K-Means buscam criar uma <strong class="app-concept" style="color: var(--partition-color);">partição</strong> de <code class="code-symbol">D</code> em <code class="code-symbol">k</code> clusters <code class="code-symbol">{C<sub>1</sub>, C<sub>2</sub>, ..., C<sub>k</sub>}</code>.
+                             </p>
+                              <p data-translate="app_partition_p3">
+                                 Cada ponto de dado pertence a <span class="highlight">exatamente um</span> cluster (<code class="code-symbol">C<sub>i</sub> ∩ C<sub>j</sub> = ∅</code> para <code class="code-symbol">i ≠ j</code>) e todos os pontos são atribuídos a algum cluster (<code class="code-symbol">∪ C<sub>i</sub> = D</code>).
+                              </p>
+                         </div>
+                     </div>
+
+                      <!-- Application Card 3: Partitions in State Machines (Optional) -->
+                      <div class="application-card fade-in-on-scroll delay-4">
+                         <span class="app-icon fsm-icon"><i class="fas fa-project-diagram"></i></span>
+                         <h3 data-translate="app_fsm_title">Partições na Minimização de Estados</h3>
+                         <div class="application-details">
+                             <p data-translate="app_fsm_p1">
+                                 Em teoria da computação, ao trabalhar com Autômatos Finitos Determinísticos (AFDs), queremos encontrar a versão mínima (com menos estados) que reconhece a mesma linguagem.
+                             </p>
+                             <p data-translate="app_fsm_p2">
+                                 O processo envolve <strong class="app-concept" style="color: var(--secondary-color);">particionar</strong> o conjunto de estados <code class="code-symbol">Q</code> em <span class="highlight">classes de equivalência</span>. Estados na mesma classe da partição são indistinguíveis e podem ser mesclados.
+                             </p>
+                             <p data-translate="app_fsm_p3">
+                                 A partição final leva diretamente ao autômato mínimo.
+                             </p>
+                         </div>
+                     </div>
+                 </div>
+             </div>
+        </section>
+
+        <!-- ========= Knowledge Check Section ========= -->
+        <section id="knowledge-check">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="quiz_title">🧠 Teste Rápido!</h2>
+                <div class="quiz-container fade-in-on-scroll delay-1"> <!-- Observe container -->
+                    <div id="quiz-area">
+                         <p style="text-align: center; padding: 2rem 0;">Carregando quiz...</p>
+                    </div>
+                    <div id="quiz-feedback" class="quiz-feedback"></div>
+                    <button id="next-question-btn" data-translate="quiz_next_button">Próxima Pergunta</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========= Completion Section ========= -->
+        <section id="completion" class="completion-section"> <!-- Added ID for nav link -->
+            <div class="container">
+                 <div class="icon">
+                     <i class="fas fa-check-double"></i>
+                     <i class="fas fa-shapes"></i> {/* Replaced file-alt with shapes */}
+                     <i class="fas fa-star"></i>
+                 </div>
+                <!-- IMPORTANT: Updated Title and Description for Module 26 -->
+                <h2 class="fade-in-on-scroll delay-1" data-translate="completion_theory_title_m26">Teoria do Módulo 26 Completa!</h2>
+                <p class="fade-in-on-scroll delay-2" data-translate="completion_theory_desc_m26">
+                    Excelente trabalho! Você agora compreende as relações fundamentais de <span class="highlight">subconjuntos</span> (incluindo o conjunto das partes) e <span class="highlight">partições</span>. Essas ferramentas são essenciais para organizar informações, classificar dados e projetar algoritmos eficientes em IA e ciência da computação.
+                    <br>Pronto para aplicar esses conceitos? Siga para a prática!
+                </p>
+                <div class="button-group">
+                    <!-- Buttons observed -->
+                     <!-- IMPORTANT: Updated hrefs for Module 26 -->
+                    <a href="math-dashboard.html" class="action-button secondary fade-in-on-scroll delay-3"><i class="fas fa-list"></i> <span data-translate="nav_menu">Menu do Curso</span></a>
+                    <a href="math-practice-26.html" class="action-button success fade-in-on-scroll delay-4"><i class="fas fa-pencil-alt"></i> <span data-translate="nav_practice">Iniciar Prática</span></a>
+                    <a href="math-advanced-26.html" class="action-button secondary fade-in-on-scroll delay-5"><i class="fas fa-flask"></i> <span data-translate="nav_advanced">Prática Avançada</span></a>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="main-footer">
+        <div class="container">
+            <p data-translate="footer_copyright"></p>
+        </div>
+    </footer>
+
+    <script>
+    // --- Translations Object (Portuguese Only for Module 26) ---
+    const translations = {
+        pt: {
+            // General & Nav
+            "page_title": "Módulo 26: Relações entre Conjuntos (Subconjuntos, Partições)",
+            "nav_practice": "Iniciar Prática",
+            "nav_advanced": "Prática Avançada",
+            "nav_menu": "Menu do Curso",
+            "nav_welcome_m26": "Boas-vindas M26", "nav_subsets": "Subconjuntos", "nav_partitions": "Partições", "nav_applications": "Aplicações", "nav_quiz": "Teste Rápido",
+            "lang_pt": "🇧🇷 Português",
+            "footer_copyright": "© 2024 Universidade Turing IA. Todos os direitos reservados.", // Example change
+
+            // Header M26
+            "header_title_m26": "Módulo 26: Relações entre Conjuntos",
+            "header_subtitle_m26": "Explorando subconjuntos e partições: estruturas fundamentais na organização de dados e algoritmos.",
+
+            // Welcome M26
+            "welcome_title_m26": "🤝 Compreendendo Relações entre Conjuntos",
+            "welcome_p1_m26": "Bem-vindo ao Módulo 26! Já vimos o que são conjuntos e como operá-los. Agora, vamos explorar como os conjuntos podem se <span class=\"highlight\">relacionar</span> uns com os outros. Especificamente, focaremos em <span class=\"highlight\">subconjuntos</span> e <span class=\"highlight\">partições</span>.",
+            "welcome_p2_m26": "Esses conceitos são cruciais em ciência da computação e IA. Subconjuntos ajudam a definir hierarquias e seleções (como escolher características relevantes), enquanto partições são a base para classificação, agrupamento (clustering) e divisão de problemas complexos. Vamos mergulhar nessas estruturas!",
+
+            // Subsets Section M26
+            "subsets_title": "🧩 Subconjuntos e Conjunto das Partes",
+            "subsets_subtitle": "Definindo quando um conjunto está contido em outro e explorando todas as possibilidades.",
+            "subset_def_title": "O que é um Subconjunto?",
+            "subset_def_p1": "Um conjunto <code class=\"code-symbol\">A</code> é um <strong style=\"color: var(--subset-color);\">subconjunto</strong> de um conjunto <code class=\"code-symbol\">B</code> se <span class=\"highlight\">todos</span> os elementos de <code class=\"code-symbol\">A</code> também são elementos de <code class=\"code-symbol\">B</code>.",
+            "subset_def_p2": "Usamos o símbolo <code class=\"code-symbol\">⊆</code> para indicar subconjunto: <code class=\"code-symbol\">A ⊆ B</code>.",
+            "subset_def_p3": "Se <code class=\"code-symbol\">A ⊆ B</code> e <code class=\"code-symbol\">A ≠ B</code> (ou seja, <code class=\"code-symbol\">B</code> tem pelo menos um elemento que <code class=\"code-symbol\">A</code> não tem), dizemos que <code class=\"code-symbol\">A</code> é um <strong style=\"color: var(--subset-color);\">subconjunto próprio</strong> de <code class=\"code-symbol\">B</code>, denotado por <code class=\"code-symbol\">⊂</code>: <code class=\"code-symbol\">A ⊂ B</code>.",
+            "subset_examples_title": "Exemplos:",
+            "subset_ex1": "Se <code class=\"code-symbol\">A = {1, 2}</code> e <code class=\"code-symbol\">B = {1, 2, 3}</code>, então <code class=\"code-symbol\">A ⊂ B</code> (A é subconjunto próprio de B).",
+            "subset_ex2": "Se <code class=\"code-symbol\">C = {a, b}</code> e <code class=\"code-symbol\">D = {a, b}</code>, então <code class=\"code-symbol\">C ⊆ D</code> e <code class=\"code-symbol\">D ⊆ C</code> (são subconjuntos um do outro, pois são iguais).",
+            "subset_ex3": "O conjunto dos <code class=\"code-symbol\">Inteiros (ℤ)</code> é um subconjunto próprio do conjunto dos <code class=\"code-symbol\">Racionais (ℚ)</code>: <code class=\"code-symbol\">ℤ ⊂ ℚ</code>.",
+            "subset_ex4": "O <strong style=\"color: var(--secondary-color);\">conjunto vazio</strong> (<code class=\"code-symbol\">∅</code> ou <code class=\"code-symbol\">{}</code>) é subconjunto de <span class=\"highlight\">qualquer</span> conjunto, incluindo ele mesmo: <code class=\"code-symbol\">∅ ⊆ A</code> para todo A.",
+            "subset_ex5": "Todo conjunto é subconjunto de si mesmo: <code class=\"code-symbol\">A ⊆ A</code>.",
+            "subset_diagram_placeholder": "Diagrama de Venn: A contido em B",
+            "powerset_def_title": "Conjunto das Partes (Power Set)",
+            "powerset_def_p1": "O <strong style=\"color: var(--powerset-color);\">conjunto das partes</strong> (ou conjunto potência) de um conjunto <code class=\"code-symbol\">A</code>, denotado por <code class=\"code-symbol\">P(A)</code> ou <code class=\"code-symbol\">2<sup>A</sup></code>, é o conjunto de <span class=\"highlight\">todos os possíveis subconjuntos</span> de <code class=\"code-symbol\">A</code>.",
+            "powerset_def_p2": "Se um conjunto <code class=\"code-symbol\">A</code> tem <code class=\"code-symbol\">n</code> elementos (ou seja, <code class=\"code-symbol\">|A| = n</code>), então seu conjunto das partes <code class=\"code-symbol\">P(A)</code> terá <code class=\"code-symbol\">2<sup>n</sup></code> elementos (subconjuntos).",
+            "powerset_example_title": "Exemplo:",
+            "powerset_ex1": "Se <code class=\"code-symbol\">A = {1, 2}</code>. Seus subconjuntos são: <code class=\"code-symbol\">∅</code>, <code class=\"code-symbol\">{1}</code>, <code class=\"code-symbol\">{2}</code>, <code class=\"code-symbol\">{1, 2}</code>.",
+            "powerset_ex2": "Portanto, o conjunto das partes de A é: <div class=\"code-block\">P(A) = { ∅, {1}, {2}, {1, 2} }</div>",
+            "powerset_ex3": "Note que <code class=\"code-symbol\">|A| = 2</code> e <code class=\"code-symbol\">|P(A)| = 4 = 2<sup>2</sup></code>.",
+            "powerset_relevance": "O conjunto das partes é útil em computação para representar todas as combinações possíveis de itens, como a seleção de características em machine learning ou configurações possíveis em um sistema.",
+            "subsets_conclusion": "Compreender subconjuntos e o conjunto das partes nos permite analisar estruturas contidas em outras e enumerar todas as variações possíveis.",
+
+            // Partitions Section M26
+            "partitions_title": "🧱 Partições de um Conjunto",
+            "partitions_subtitle": "Dividindo um conjunto em pedaços menores, disjuntos e que cobrem o todo.",
+            "partition_def_title": "O que é uma Partição?",
+            "partition_def_p1": "Uma <strong style=\"color: var(--partition-color);\">partição</strong> de um conjunto não vazio <code class=\"code-symbol\">S</code> é uma coleção de subconjuntos <span class=\"highlight\">não vazios</span> de <code class=\"code-symbol\">S</code>, digamos <code class=\"code-symbol\">{A<sub>1</sub>, A<sub>2</sub>, ..., A<sub>k</sub>}</code>, que satisfazem duas condições cruciais:",
+            "partition_cond1": "<span class=\"condition-num\">1. Cobertura Total:</span> A união de todos os subconjuntos da coleção é igual ao conjunto original <code class=\"code-symbol\">S</code>.<br><code class=\"code-symbol\">A<sub>1</sub> ∪ A<sub>2</sub> ∪ ... ∪ A<sub>k</sub> = S</code>",
+            "partition_cond2": "<span class=\"condition-num\">2. Disjunção Mútua:</span> Os subconjuntos são dois a dois disjuntos, ou seja, a interseção entre quaisquer dois subconjuntos <span class=\"highlight\">distintos</span> da coleção é o conjunto vazio.<br><code class=\"code-symbol\">A<sub>i</sub> ∩ A<sub>j</sub> = ∅</code> para todo <code class=\"code-symbol\">i ≠ j</code>.",
+            "partition_def_p2": "Em outras palavras, uma partição divide o conjunto <code class=\"code-symbol\">S</code> em \"pedaços\" que não se sobrepõem e que, juntos, reconstituem <code class=\"code-symbol\">S</code> completamente. Cada elemento de <code class=\"code-symbol\">S</code> pertence a <span class=\"highlight\">exatamente um</span> subconjunto da partição.",
+            "partition_examples_title": "Exemplos:",
+            "partition_ex1": "Seja <code class=\"code-symbol\">S = {1, 2, 3, 4, 5}</code>. A coleção <code class=\"code-symbol\">P<sub>1</sub> = {{1, 3}, {2, 5}, {4}}</code> é uma partição de <code class=\"code-symbol\">S</code>.<br>(União = S? Sim. Interseções vazias? Sim. Subconjuntos não vazios? Sim.)",
+            "partition_ex2": "Seja <code class=\"code-symbol\">ℤ</code> o conjunto dos inteiros. A coleção <code class=\"code-symbol\">{Pares, Ímpares}</code> é uma partição de <code class=\"code-symbol\">ℤ</code>.<br>(Todo inteiro é par ou ímpar; Nenhum inteiro é par E ímpar).",
+            "partition_ex3": "Seja <code class=\"code-symbol\">S = {a, b, c}</code>. A coleção <code class=\"code-symbol\">P<sub>2</sub> = {{a, b}, {b, c}}</code> <span class=\"highlight\">NÃO</span> é uma partição de <code class=\"code-symbol\">S</code>, pois <code class=\"code-symbol\">{a, b} ∩ {b, c} = {b} ≠ ∅</code> (Condição 2 falha).",
+            "partition_ex4": "Seja <code class=\"code-symbol\">S = {a, b, c}</code>. A coleção <code class=\"code-symbol\">P<sub>3</sub> = {{a}, {c}}</code> <span class=\"highlight\">NÃO</span> é uma partição de <code class=\"code-symbol\">S</code>, pois <code class=\"code-symbol\">{a} ∪ {c} = {a, c} ≠ S</code> (Condição 1 falha).",
+            "partition_diagram_placeholder": "Diagrama: Conjunto S dividido em A1, A2, A3 disjuntos",
+            "partition_relevance": "Partições são fundamentais em algoritmos de <span class=\"highlight\">classificação</span> (cada item vai para uma classe), <span class=\"highlight\">agrupamento (clustering)</span> (pontos de dados agrupados em clusters disjuntos), balanceamento de carga, e estratégias de <span class=\"highlight\">dividir para conquistar</span>.",
+            "partitions_conclusion": "Particionar um conjunto nos permite categorizar, organizar e processar seus elementos de forma estruturada e sem ambiguidades.",
+
+            // Applications Section M26
+            "applications_title_m26": "⚙️ Relações entre Conjuntos na Prática",
+            "applications_subtitle_m26": "Veja como subconjuntos e partições aparecem em problemas de Computação e IA.",
+            "app_subset_title": "Subconjuntos na Seleção de Features",
+            "app_subset_p1": "Em Machine Learning, frequentemente temos um grande conjunto <code class=\"code-symbol\">F</code> de <span class=\"highlight\">features</span> (características) disponíveis para um modelo. Nem todas podem ser úteis ou podem até prejudicar o desempenho.",
+            "app_subset_p2": "O processo de <strong class=\"app-concept\" style=\"color: var(--subset-color);\">Seleção de Features</strong> busca encontrar um <strong class=\"app-concept\" style=\"color: var(--subset-color);\">subconjunto</strong> <code class=\"code-symbol\">S ⊂ F</code> que contenha as features mais relevantes e informativas.",
+            "app_subset_p3": "Explorar o <code class=\"code-symbol\">P(F)</code> (conjunto das partes) é computacionalmente inviável para muitas features, mas a ideia central é encontrar o \"melhor\" subconjunto.",
+            "app_partition_title": "Partições no Agrupamento de Dados (Clustering)",
+            "app_partition_p1": "<strong class=\"app-concept\" style=\"color: var(--partition-color);\">Clustering</strong> é uma técnica de aprendizado não supervisionado que agrupa pontos de dados similares. O conjunto de todos os dados <code class=\"code-symbol\">D</code> é o nosso universo.",
+            "app_partition_p2": "Algoritmos como o K-Means buscam criar uma <strong class=\"app-concept\" style=\"color: var(--partition-color);\">partição</strong> de <code class=\"code-symbol\">D</code> em <code class=\"code-symbol\">k</code> clusters <code class=\"code-symbol\">{C<sub>1</sub>, C<sub>2</sub>, ..., C<sub>k</sub>}</code>.",
+            "app_partition_p3": "Cada ponto de dado pertence a <span class=\"highlight\">exatamente um</span> cluster (<code class=\"code-symbol\">C<sub>i</sub> ∩ C<sub>j</sub> = ∅</code> para <code class=\"code-symbol\">i ≠ j</code>) e todos os pontos são atribuídos a algum cluster (<code class=\"code-symbol\">∪ C<sub>i</sub> = D</code>).",
+            "app_fsm_title": "Partições na Minimização de Estados",
+            "app_fsm_p1": "Em teoria da computação, ao trabalhar com Autômatos Finitos Determinísticos (AFDs), queremos encontrar a versão mínima (com menos estados) que reconhece a mesma linguagem.",
+            "app_fsm_p2": "O processo envolve <strong class=\"app-concept\" style=\"color: var(--secondary-color);\">particionar</strong> o conjunto de estados <code class=\"code-symbol\">Q</code> em <span class=\"highlight\">classes de equivalência</span>. Estados na mesma classe da partição são indistinguíveis e podem ser mesclados.",
+            "app_fsm_p3": "A partição final leva diretamente ao autômato mínimo.",
+
+            // Quiz M26
+            "quiz_title": "🧠 Teste Rápido!",
+            "quiz_next_button": "Próxima Pergunta",
+            "quiz_q1_m26": "Se A = {x, y} e B = {x, y, z}, qual afirmação é VERDADEIRA?",
+            "quiz_q1_m26_opt1": "`A ⊂ B`", // Correct
+            "quiz_q1_m26_opt2": "`B ⊂ A`",
+            "quiz_q1_m26_opt3": "`A = B`",
+            "quiz_q1_m26_opt4": "`A ∈ P(B)`", // A is an element of P(B), which is true, but A ⊂ B is more direct relation between sets. Let's stick to subset relation.
+            "quiz_q2_m26": "Quantos elementos tem o conjunto das partes P(S) se S = {a, b, c}?",
+            "quiz_q2_m26_opt1": "3",
+            "quiz_q2_m26_opt2": "6",
+            "quiz_q2_m26_opt3": "8", // Correct (2^3)
+            "quiz_q2_m26_opt4": "9",
+            "quiz_q3_m26": "Qual das seguintes coleções forma uma partição do conjunto S = {1, 2, 3, 4}?",
+            "quiz_q3_m26_opt1": "`{{1, 2}, {3}}`", // Fails coverage
+            "quiz_q3_m26_opt2": "`{{1}, {2, 3}, {3, 4}}`", // Fails disjointness (3 is repeated)
+            "quiz_q3_m26_opt3": "`{{1, 4}, {2}, {3}}`", // Correct
+            "quiz_q3_m26_opt4": "`{{1, 2, 3, 4}}`", // Valid partition, but usually partition implies more than one subset if |S|>1. Option 3 is better specific example.
+            "quiz_q4_m26": "Para uma coleção de subconjuntos ser uma partição de S, qual condição NÃO é necessária?",
+            "quiz_q4_m26_opt1": "A união dos subconjuntos deve ser igual a S.",
+            "quiz_q4_m26_opt2": "Todos os subconjuntos devem ser não vazios.",
+            "quiz_q4_m26_opt3": "Os subconjuntos devem ser mutuamente disjuntos.",
+            "quiz_q4_m26_opt4": "Todos os subconjuntos devem ter o mesmo tamanho.", // Correct - Not necessary
+
+            "quiz_feedback_correct": "Correto! 🎉",
+            "quiz_feedback_incorrect": "Não foi bem assim! A resposta correta era: {correctAnswerText}",
+            "quiz_final_score_title": "Teste Rápido Completo!",
+            "quiz_final_score_summary": "Você respondeu {score} de {total} perguntas corretamente.",
+            "quiz_final_score_perfect": "Excelente! Você compreendeu bem as relações entre conjuntos.",
+            "quiz_final_score_good": "Bom trabalho! Revise os conceitos se necessário.",
+
+            // Completion M26
+            "completion_theory_title_m26": "Teoria do Módulo 26 Completa!",
+            "completion_theory_desc_m26": "Excelente trabalho! Você agora compreende as relações fundamentais de <span class=\"highlight\">subconjuntos</span> (incluindo o conjunto das partes) e <span class=\"highlight\">partições</span>. Essas ferramentas são essenciais para organizar informações, classificar dados e projetar algoritmos eficientes em IA e ciência da computação.<br>Pronto para aplicar esses conceitos? Siga para a prática!",
+        }
+    };
+
+    // --- Global Variables ---
+    let currentQuestionIndex = 0;
+    let score = 0;
+    const lang = 'pt'; // Hardcoded language
+
+    // --- DOM Elements (Get them once) ---
+    const navToggleButton = document.getElementById('minimal-nav-toggle');
+    const navPanel = document.getElementById('minimal-nav-panel');
+    const body = document.body;
+    const quizArea = document.getElementById('quiz-area');
+    const feedbackArea = document.getElementById('quiz-feedback');
+    const nextButton = document.getElementById('next-question-btn');
+    // Removed elements specific to Module 3 example
+    // const textDemoBox = document.querySelector('#putting-it-together-m3 .text-demo');
+    // const codeOutputArea = document.querySelector('#putting-it-together-m3 .code-output-area');
+
+    // --- Functions ---
+
+    function getTranslation(key, replacements = {}) {
+         let text = translations[lang]?.[key] ?? `[${key}]`; // Default to key if not found
+         for (const placeholder in replacements) {
+             const regex = new RegExp(`\\{${placeholder}\\}`, 'g');
+             text = text.replace(regex, replacements[placeholder]);
+         }
+         return text;
+    }
+
+    function translatePage() {
+         document.querySelectorAll('[data-translate]').forEach(el => {
+             const key = el.getAttribute('data-translate');
+             let translation = getTranslation(key);
+
+              if (el.tagName === 'TITLE') { document.title = translation; }
+              else if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'BUTTON' && el.closest('.quiz-options')) { /* Skip quiz buttons here, handled by loadQuestion */ }
+               else if (el.id === 'next-question-btn' && el.tagName === 'BUTTON') {
+                 // Handle Next button specifically to keep icon
+                 const icon = el.querySelector('i');
+                 if (icon) {
+                    el.innerHTML = icon.outerHTML + ' ' + translation;
+                 } else {
+                    el.textContent = translation;
+                 }
+              }
+               else if (el.closest('.action-button') && el.tagName === 'SPAN') {
+                 el.textContent = translation; // Translate only the span inside action buttons
+               }
+               else {
+                   // Allow specific HTML tags safely within translated strings
+                   const safeHtmlRegex = /<\/?(code|strong|span|br|i|b|em|strong|div|sub)>|(&[a-zA-Z0-9#]+;)/gi; // Added div, sub, entities
+                   let containsSafeHtml = safeHtmlRegex.test(translation);
+
+                   // Allow innerHTML if it contains only safe tags OR if it's in an explicitly allowed container
+                   const allowedContainers = '.definition-box, .power-set-box, .application-details, .example-list li, .conditions-list li, footer p, .completion-section p, #welcome p, section > .container > p.text-center';
+                   if (containsSafeHtml || el.closest(allowedContainers)) {
+                      el.innerHTML = translation;
+                   } else {
+                       // Default to textContent for safety, unless it's a known safe element like H1, H2 etc.
+                       if (['H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'P', 'LI', 'SPAN', 'TITLE'].includes(el.tagName)) {
+                            el.textContent = translation; // Assuming these generally don't need complex HTML from translation keys
+                       } else {
+                            // Fallback just in case, but most content should be covered above
+                            el.innerHTML = translation;
+                       }
+                   }
+              }
+         });
+
+        // Specific handling for tooltips (if any were added for M26 - currently none)
+         // document.querySelectorAll('.code-highlight[data-translate-tooltip]').forEach(el => { ... });
+
+        // Specific handling for code comments (if any were added for M26 - currently none)
+         // document.querySelectorAll('.code-comment[data-translate]').forEach(commentSpan => { ... });
+    }
+
+    // --- Quiz Data & Functions (Updated for Module 26) ---
+    const quizData = [
+         { questionKey: "quiz_q1_m26", optionKeys: ["quiz_q1_m26_opt1", "quiz_q1_m26_opt2", "quiz_q1_m26_opt3", "quiz_q1_m26_opt4"], correctAnswer: 0 },
+         { questionKey: "quiz_q2_m26", optionKeys: ["quiz_q2_m26_opt1", "quiz_q2_m26_opt2", "quiz_q2_m26_opt3", "quiz_q2_m26_opt4"], correctAnswer: 2 },
+         { questionKey: "quiz_q3_m26", optionKeys: ["quiz_q3_m26_opt1", "quiz_q3_m26_opt2", "quiz_q3_m26_opt3", "quiz_q3_m26_opt4"], correctAnswer: 2 },
+         { questionKey: "quiz_q4_m26", optionKeys: ["quiz_q4_m26_opt1", "quiz_q4_m26_opt2", "quiz_q4_m26_opt3", "quiz_q4_m26_opt4"], correctAnswer: 3 }
+    ];
+
+    function loadQuestion() {
+          if (!quizArea) return; // Ensure quizArea exists
+
+          // If we reached the end, show score
+          if (currentQuestionIndex >= quizData.length) {
+              if (!quizArea.querySelector('[data-translate="quiz_final_score_title"]')) { // Avoid re-rendering score
+                 showFinalScore();
+              }
+              return;
+          }
+
+          const currentQuiz = quizData[currentQuestionIndex];
+          const questionText = getTranslation(currentQuiz.questionKey);
+          // Generate HTML for question and options, parsing code tags
+          quizArea.innerHTML = `
+              <div class="quiz-question">${currentQuestionIndex + 1}. ${questionText.replace(/`([^`]+)`/g, '<code class="code-symbol">$1</code>')}</div>
+              <div class="quiz-options">
+                  ${currentQuiz.optionKeys.map((optionKey, index) => `
+                      <button class="quiz-option-btn" data-index="${index}">${getTranslation(optionKey).replace(/`([^`]+)`/g, '<code class="code-symbol">$1</code>')}</button>
+                  `).join('')}
+              </div>
+          `;
+
+          // Reset feedback and next button
+          if (feedbackArea) {
+            feedbackArea.classList.remove('visible', 'correct', 'incorrect');
+            feedbackArea.textContent = '';
+            feedbackArea.style.height = '0'; // Reset height
+            feedbackArea.style.marginBottom = '0'; // Reset margin
+          }
+          if (nextButton) {
+            nextButton.classList.remove('visible');
+            nextButton.disabled = true;
+          }
+
+          // Add event listeners to the new buttons
+          quizArea.querySelectorAll('.quiz-option-btn').forEach(button => {
+              button.addEventListener('click', handleAnswer);
+          });
+    }
+
+    function handleAnswer(event) {
+         const selectedButton = event.target;
+         const selectedIndex = parseInt(selectedButton.dataset.index);
+         const correctIndex = quizData[currentQuestionIndex].correctAnswer;
+         const correctOptionKey = quizData[currentQuestionIndex].optionKeys[correctIndex];
+
+         // Disable all options
+         quizArea.querySelectorAll('.quiz-option-btn').forEach(btn => {
+            btn.disabled = true;
+            btn.classList.remove('shake'); // Remove shake if present from previous incorrect
+         });
+
+         if (!feedbackArea || !nextButton) return; // Ensure elements exist
+
+         feedbackArea.classList.add('visible');
+
+         if (selectedIndex === correctIndex) {
+             selectedButton.classList.add('correct');
+             feedbackArea.innerHTML = getTranslation('quiz_feedback_correct');
+             feedbackArea.classList.add('correct');
+             feedbackArea.classList.remove('incorrect');
+             score++;
+             selectedButton.classList.add('tada-anim');
+         } else {
+             selectedButton.classList.add('incorrect');
+             // Parse code tags in the correct answer text for feedback
+             const formattedCorrectAnswer = getTranslation(correctOptionKey).replace(/`([^`]+)`/g, '<code class="code-symbol">$1</code>');
+             feedbackArea.innerHTML = getTranslation('quiz_feedback_incorrect', { correctAnswerText: `<strong>${formattedCorrectAnswer}</strong>` });
+             feedbackArea.classList.add('incorrect');
+             feedbackArea.classList.remove('correct');
+             // Highlight the correct button as well
+             const correctButton = quizArea.querySelector(`.quiz-option-btn[data-index="${correctIndex}"]`);
+             if(correctButton) correctButton.classList.add('correct');
+             selectedButton.classList.add('shake');
+         }
+
+         // Remove animation classes after they finish
+          selectedButton.addEventListener('animationend', () => {
+               selectedButton.classList.remove('tada-anim', 'shake');
+          }, { once: true });
+
+         // Make feedback area adjust height and margin smoothly
+         feedbackArea.style.height = feedbackArea.scrollHeight + 'px';
+         feedbackArea.style.marginBottom = '1rem';
+
+         // Show and enable next button
+         nextButton.classList.add('visible');
+         nextButton.disabled = false;
+     }
+
+     function showFinalScore() {
+            if (!quizArea) return;
+            const totalQuestions = quizData.length;
+            // Determine message based on score percentage
+            let resultMessageKey = (score / totalQuestions) >= 0.75 ? 'quiz_final_score_perfect' : 'quiz_final_score_good'; // 75% threshold
+
+            quizArea.innerHTML = `
+               <div class="quiz-question text-center" data-translate="quiz_final_score_title" style="font-size: 1.5rem;">${getTranslation('quiz_final_score_title')}</div>
+               <p class="text-center" style="font-size: 1.2rem; margin-bottom: 1rem;">${getTranslation('quiz_final_score_summary', { score: score, total: totalQuestions })}</p>
+               <p class="text-center" style="color: ${score === totalQuestions ? 'var(--success-color)' : 'var(--primary-color)'}; font-weight: bold;">${getTranslation(resultMessageKey)}</p>
+            `;
+            if (feedbackArea) feedbackArea.classList.remove('visible'); // Hide feedback area
+            if (nextButton) nextButton.style.display = 'none'; // Hide next button
+            quizArea.scrollIntoView({ behavior: 'smooth', block: 'center' }); // Scroll score into view
+     }
+
+
+    // --- Intersection Observer Setup ---
+    function setupObservers() {
+        const observerOptions = {
+            root: null, // relative to viewport
+            rootMargin: '0px',
+            threshold: 0.1 // Trigger when 10% of the element is visible
+        };
+
+        // Callback remains the same as example
+        const observerCallback = (entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    // Optional: Unobserve after it becomes visible to save resources
+                    // observer.unobserve(entry.target);
+                }
+                // Optional: Remove 'visible' if it scrolls out of view
+                // else {
+                //     entry.target.classList.remove('visible');
+                // }
+            });
+        };
+
+        const animationObserver = new IntersectionObserver(observerCallback, observerOptions);
+
+        // Observe elements with the fade-in class
+        document.querySelectorAll('.fade-in-on-scroll').forEach(el => {
+            animationObserver.observe(el);
+        });
+
+        // No specific code output simulation for Module 26, so removing that observer setup.
+    }
+
+    // --- Event Listeners Setup ---
+    function setupEventListeners() {
+        // Navbar Toggle (same as example)
+        if (navToggleButton && navPanel) {
+            navToggleButton.addEventListener('click', (event) => {
+                event.stopPropagation();
+                body.classList.toggle('nav-active');
+                navToggleButton.setAttribute('aria-expanded', body.classList.contains('nav-active'));
+            });
+
+            document.addEventListener('click', (event) => {
+                if (body.classList.contains('nav-active') && !navPanel.contains(event.target) && event.target !== navToggleButton && !navToggleButton.contains(event.target)) {
+                    body.classList.remove('nav-active');
+                    navToggleButton.setAttribute('aria-expanded', 'false');
+                }
+            });
+
+            navPanel.querySelectorAll('a').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    if (link.getAttribute('href').startsWith('#')) {
+                        setTimeout(() => {
+                            body.classList.remove('nav-active');
+                            navToggleButton.setAttribute('aria-expanded', 'false');
+                        }, 150);
+                    }
+                });
+            });
+
+            document.addEventListener('keydown', (event) => {
+                 if (event.key === 'Escape' && body.classList.contains('nav-active')) {
+                     body.classList.remove('nav-active');
+                     navToggleButton.setAttribute('aria-expanded', 'false');
+                 }
+             });
+        }
+
+        // Quiz Next Button (same as example)
+        if (nextButton) {
+            nextButton.addEventListener('click', () => {
+                if (!nextButton.disabled) {
+                    currentQuestionIndex++;
+                    loadQuestion(); // Load the next question
+                }
+            });
+        } else {
+            console.error("Elemento #next-question-btn não encontrado.");
+        }
+    }
+
+    // --- Initialization ---
+    document.addEventListener('DOMContentLoaded', () => {
+        // Check if elements needed for quiz exist before proceeding
+        if (!quizArea) console.error("Elemento #quiz-area não encontrado.");
+        if (!feedbackArea) console.error("Elemento #quiz-feedback não encontrado.");
+
+        translatePage();        // Apply translations first
+        setupEventListeners();  // Set up interactive elements
+        setupObservers();       // Set up animations
+
+        if (quizArea) {
+            loadQuestion();     // Load the first quiz question if container exists
+        }
+    });
+
+    </script>
+
+</body>
+</html>

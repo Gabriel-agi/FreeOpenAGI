@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<!-- Language set to Portuguese BR -->
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Title set by JS -->
+    <title data-translate="page_title_m11">Módulo 11: Introdução à Probabilidade</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* --- Reset & Base Styles --- */
+        :root {
+            --primary-color: #007bff; /* Blue */
+            --secondary-color: #6c757d; /* Gray */
+            --background-light: #f8f9fa;
+            --background-dark: #343a40;
+            --text-light: #f8f9fa;
+            --text-dark: #212529;
+            --accent-color: #ffc107; /* Yellow */
+            --success-color: #28a745; /* Green */
+            --error-color: #dc3545; /* Red */
+            --info-color: #17a2b8; /* Teal */
+            --probability-color: #fd7e14; /* Orange */
+            --set-color: #6f42c1; /* Indigo */
+            --border-radius: 8px;
+            --transition-speed: 0.3s;
+            --animation-speed: 0.6s; /* Control fade-in speed */
+            --font-body: 'Roboto', sans-serif;
+            --font-title: 'Orbitron', sans-serif;
+            --nav-primary: #6e48aa;
+            --nav-success: #4cc9f0;
+            --nav-dark: #1a1a2e;
+            --footer-border-color: #495057;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; font-size: 16px; }
+        body {
+            font-family: var(--font-body); line-height: 1.7;
+            background-color: var(--background-light); color: var(--text-dark);
+            overflow-x: hidden; display: flex; flex-direction: column; min-height: 100vh;
+        }
+        main { flex-grow: 1; }
+
+        /* --- Utility Classes --- */
+        .container { max-width: 960px; margin: 0 auto; padding: 0 15px; }
+        .text-center { text-align: center; }
+        .highlight { color: var(--primary-color); font-weight: bold; }
+        .math-term { font-style: italic; color: var(--set-color); } /* For mathematical terms */
+        .formula { font-family: 'Courier New', Courier, monospace; background-color: #e9ecef; padding: 0.3em 0.6em; border-radius: 4px; color: var(--probability-color); border: 1px solid #ced4da; display: inline-block; }
+        .placeholder-image {
+            background-color: #e9ecef; border: 2px dashed var(--secondary-color);
+            padding: 3rem 1rem; text-align: center; color: var(--secondary-color);
+            border-radius: var(--border-radius); margin: 2rem auto; max-width: 70%;
+            font-style: italic;
+        }
+
+        /* Elements to be animated by observer */
+        .fade-in-on-scroll {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+        }
+        .fade-in-on-scroll.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        /* Add delays for staggering */
+        .delay-1.visible { transition-delay: 0.1s; }
+        .delay-2.visible { transition-delay: 0.2s; }
+        .delay-3.visible { transition-delay: 0.3s; }
+        .delay-4.visible { transition-delay: 0.4s; }
+        .delay-5.visible { transition-delay: 0.5s; }
+        .delay-6.visible { transition-delay: 0.6s; }
+        .delay-7.visible { transition-delay: 0.7s; }
+
+
+        .button-group { margin-top: 2rem; display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; }
+        .action-button {
+             display: inline-flex; align-items: center; justify-content: center; gap: 0.5em;
+             padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold;
+             color: var(--text-light); background-color: var(--primary-color); border: none;
+             border-radius: var(--border-radius); cursor: pointer;
+             transition: background-color var(--transition-speed), transform var(--transition-speed), filter var(--transition-speed), box-shadow var(--transition-speed), opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out; /* Add animation transition */
+             margin-top: 1rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+             text-decoration: none; line-height: 1.2;
+             opacity: 0; /* Start hidden if animated */
+             transform: translateY(20px); /* Start offset if animated */
+        }
+        .action-button.visible { /* Make visible via observer */
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .action-button i.fas {}
+        .action-button:hover:not(:disabled) { background-color: #0056b3; transform: translateY(-2px) !important; box-shadow: 0 4px 8px rgba(0,0,0,0.15); } /* Use !important to override initial transform */
+        .action-button:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none !important; box-shadow: none; opacity: 0.7; }
+        .action-button.success { background-color: var(--success-color); }
+        .action-button.success:hover:not(:disabled) { background-color: #218838; }
+        .action-button.secondary { background-color: var(--secondary-color); }
+        .action-button.secondary:hover:not(:disabled) { background-color: #5a6268; }
+        .action-button:active:not(:disabled) { transform: translateY(1px) scale(0.98) !important; filter: brightness(0.95); }
+
+        /* --- Animations --- */
+        @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); } 50% { transform: scale(1.03); box-shadow: 0 0 15px rgba(0, 123, 255, 0.6); } 100% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); } }
+        @keyframes tada { from { transform: scale3d(1, 1, 1); } 10%, 20% { transform: scale3d(.9, .9, .9) rotate3d(0, 0, 1, -3deg); } 30%, 50%, 70%, 90% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, 3deg); } 40%, 60%, 80% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, -3deg); } to { transform: scale3d(1, 1, 1); } }
+        .tada-anim { animation: tada 1s ease; }
+        @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
+        @keyframes iconAppearCorrect { 0% { transform: scale(0.5) rotate(-15deg); opacity: 0; } 60% { transform: scale(1.2) rotate(5deg); opacity: 1; } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
+
+        /* --- Minimal Retractable Nav --- */
+        .minimal-nav-button { position: fixed; top: 15px; right: 15px; z-index: 1001; background-color: rgba(52, 58, 64, 0.75); color: var(--text-light); border: none; border-radius: var(--border-radius); padding: 8px 12px; cursor: pointer; transition: background-color var(--transition-speed), opacity var(--transition-speed), transform var(--transition-speed); font-size: 1.1rem; opacity: 0.6; box-shadow: 0 2px 5px rgba(0,0,0,0.2); line-height: 1; }
+        .minimal-nav-button:hover { background-color: rgba(52, 58, 64, 0.95); opacity: 1; transform: scale(1.05); }
+        .minimal-nav { position: fixed; top: 60px; right: 15px; z-index: 1000; background-color: var(--background-dark); border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.3); padding: 0.8rem; opacity: 0; transform: translateY(-15px) scale(0.95); transform-origin: top right; pointer-events: none; transition: opacity var(--transition-speed) ease, transform var(--transition-speed) ease; min-width: 200px; }
+        body.nav-active .minimal-nav { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+        .minimal-nav ul { list-style: none; margin: 0; padding: 0; }
+        .minimal-nav ul li { margin-bottom: 5px; }
+        .minimal-nav ul li:last-child { margin-bottom: 0; }
+        .minimal-nav ul li a { display: flex; align-items: center; color: var(--text-light); text-decoration: none; padding: 0.6rem 1rem; border-radius: 4px; transition: background-color var(--transition-speed), color var(--transition-speed); white-space: nowrap; font-weight: 400; font-size: 0.95rem; }
+        .minimal-nav ul li a i.fas { margin-right: 10px; width: 1.2em; text-align: center; opacity: 0.8; transition: opacity var(--transition-speed); }
+        .minimal-nav ul li a:hover { background-color: var(--primary-color); color: var(--text-light); }
+        .minimal-nav ul li a:hover i.fas { opacity: 1; }
+
+        /* --- Header --- */
+        .main-header { background: linear-gradient(135deg, var(--primary-color), #0056b3); color: var(--text-light); padding: 4rem 0 6rem; text-align: center; position: relative; overflow: hidden; }
+        .main-header .container { /* Start visible */ }
+        .main-header h1 { font-family: var(--font-title); font-size: 2.8rem; margin-bottom: 0.5rem; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); }
+        .main-header p { font-size: 1.2rem; font-weight: 300; opacity: 0.9; }
+        .header-shape { position: absolute; border-radius: 50%; background-color: rgba(255, 255, 255, 0.1); animation: pulse 5s infinite ease-in-out alternate; }
+        .shape1 { width: 150px; height: 150px; bottom: -50px; left: 10%; animation-duration: 6s; }
+        .shape2 { width: 80px; height: 80px; top: 50px; right: 15%; animation-duration: 4s; }
+        .shape3 { width: 50px; height: 50px; bottom: 20px; right: 30%; animation-duration: 7s; }
+
+        /* --- Section Styling --- */
+        section { padding: 4rem 0; border-bottom: 1px solid #eee; }
+        main section:last-of-type { border-bottom: none; padding-bottom: 0;}
+        section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); margin-bottom: 2rem; text-align: center; position: relative; padding-bottom: 10px; }
+        section h2::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 60px; height: 4px; background-color: var(--accent-color); border-radius: 2px; }
+        section h3 { font-size: 1.5rem; color: var(--primary-color); margin-top: 2rem; margin-bottom: 1rem; font-weight: 700; }
+        section h4 { font-size: 1.2rem; color: var(--secondary-color); margin-top: 1.5rem; margin-bottom: 0.8rem; font-weight: 700; border-left: 4px solid var(--accent-color); padding-left: 10px;}
+        section ul { margin-left: 20px; margin-bottom: 1rem; list-style: disc; }
+        section li { margin-bottom: 0.5rem; }
+        code { /* Inline code style */
+          font-family: 'Courier New', Courier, monospace;
+          background-color: rgba(27,31,35,.05);
+          padding: .2em .4em;
+          margin: 0;
+          font-size: 90%;
+          border-radius: 3px;
+        }
+        pre code { /* Block code style */
+          display: block;
+          background-color: var(--background-dark);
+          color: var(--text-light);
+          padding: 1em;
+          border-radius: var(--border-radius);
+          font-size: 0.9rem;
+          line-height: 1.5;
+          overflow-x: auto;
+          margin-top: 1rem;
+          margin-bottom: 1rem;
+        }
+
+        /* Specific Section Styles */
+        .concept-box {
+            background-color: #fff; padding: 1.5rem; border-radius: var(--border-radius);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.07); margin-bottom: 2rem;
+            border-left: 5px solid var(--info-color);
+        }
+        .concept-box h4 { border-left: none; padding-left: 0; margin-top: 0; color: var(--info-color); }
+        .definition { font-weight: bold; color: var(--primary-color); }
+
+        .example-box {
+            background-color: #e9f7ef; /* Light green background */
+            border: 1px solid var(--success-color);
+            padding: 1.5rem; border-radius: var(--border-radius);
+            margin: 1.5rem 0;
+        }
+        .example-box strong { color: var(--success-color); }
+
+        .axioms-list { list-style: none; padding-left: 0; }
+        .axioms-list li {
+            background-color: #fff; border: 1px solid #ddd;
+            padding: 1rem 1.5rem; margin-bottom: 1rem;
+            border-radius: var(--border-radius);
+            display: flex; align-items: center; gap: 1rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .axiom-number {
+            font-size: 1.5rem; font-weight: bold; color: var(--primary-color);
+            flex-shrink: 0; width: 30px; text-align: center;
+        }
+        .axiom-content .formula { font-size: 1.1rem; margin-right: 0.5em; }
+
+        /* --- Knowledge Check Section --- */
+        #knowledge-check { background-color: #e9ecef; }
+        .quiz-container { /* Animated by observer */
+             background-color: #fff; padding: 2rem; border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.1); max-width: 700px; margin: 2rem auto 0;
+             opacity: 0; transition: opacity var(--animation-speed) ease-out; /* Only fade opacity */
+        }
+        .quiz-container.visible { opacity: 1; }
+        .quiz-question { font-size: 1.2rem; font-weight: bold; margin-bottom: 1.5rem; color: var(--text-dark); }
+        .quiz-options button { display: block; width: 100%; padding: 1rem; margin-bottom: 1rem; text-align: left; font-size: 1rem; background-color: #f8f9fa; border: 1px solid #ced4da; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), border-color var(--transition-speed), transform var(--transition-speed); }
+        .quiz-options button:not(:disabled):hover { background-color: #e2e6ea; border-color: #adb5bd; transform: translateX(5px); }
+        .quiz-options button:disabled { cursor: default; opacity: 0.7; }
+        .quiz-options button.correct { background-color: #d4edda; border-color: var(--success-color); color: #155724; font-weight: bold; }
+        .quiz-options button.incorrect { background-color: #f8d7da; border-color: var(--error-color); color: #721c24; font-weight: bold; }
+        .quiz-options button.incorrect.shake { animation: shake 0.5s ease; }
+        .quiz-feedback { margin-top: 1.5rem; padding: 1rem; border-radius: var(--border-radius); font-weight: bold; text-align: center; opacity: 0; transition: opacity 0.5s ease, height 0.5s ease, margin-bottom 0.5s ease; height: 0; overflow: hidden; margin-bottom: 0;}
+        .quiz-feedback.visible { opacity: 1; height: auto; margin-bottom: 1rem; }
+        .quiz-feedback.correct { background-color: #d4edda; color: #155724; }
+        .quiz-feedback.incorrect { background-color: #f8d7da; color: #721c24; }
+        #next-question-btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5em; margin: 1.5rem auto 0; padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold; color: var(--text-light); background-color: var(--primary-color); border: none; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), transform var(--transition-speed), opacity 0.3s, visibility 0.3s; opacity: 0; visibility: hidden; }
+        #next-question-btn:hover:not(:disabled) { background-color: #0056b3; transform: scale(1.05); }
+        #next-question-btn.visible { opacity: 1; visibility: visible; }
+        #next-question-btn:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none; opacity: 0.7; }
+
+        /* --- Completion Section Styling --- */
+        .completion-section { padding: 4rem 0; text-align: center; background-color: var(--background-light); }
+        .completion-section .icon { font-size: 4rem; color: var(--success-color); margin-bottom: 1rem; display: inline-block; animation: iconAppearCorrect 1s ease-out 0.5s forwards; opacity: 0; /* Initial state for animation */}
+        /* Ensure completion elements are targeted by observer */
+        .completion-section h2, .completion-section p {
+            opacity: 0; transform: translateY(20px);
+            transition: opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+        }
+        .completion-section h2.visible, .completion-section p.visible {
+            opacity: 1; transform: translateY(0);
+        }
+        .completion-section .button-group { margin-top: 2.5rem; }
+        .completion-section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); margin-bottom: 1rem; }
+        .completion-section h2::after { display: none; }
+        .completion-section p { font-size: 1.1rem; margin-top: 1rem; color: var(--secondary-color); max-width: 700px; margin-left: auto; margin-right: auto; line-height: 1.8; }
+
+        /* --- Footer Styling --- */
+        .main-footer {
+            background-color: var(--background-light);
+            color: var(--text-light);
+            text-align: center;
+            padding: 2rem 0;
+            font-size: 0.9rem;
+            margin-top: auto;
+            border-top: 1px solid var(--background-light);
+            opacity: 0.85;
+        }
+        .main-footer p { margin: 0; line-height: 1.5; }
+
+        /* --- Responsive Design --- */
+        @media (max-width: 768px) {
+            html { font-size: 15px; }
+            .main-header h1 { font-size: 2.5rem; } .main-header p { font-size: 1.1rem; }
+            section h2 { font-size: 1.8rem; }
+            section h3 { font-size: 1.4rem; }
+            section h4 { font-size: 1.1rem; }
+            .minimal-nav { min-width: 180px; } .minimal-nav ul li a { padding: 0.6rem 0.8rem; }
+            .completion-section h2 { font-size: 2rem; }
+            .completion-section .button-group { flex-direction: column; align-items: center; gap: 0.8rem; }
+            .completion-section .action-button { width: 80%; max-width: 350px; margin-top: 0; }
+            .main-footer { padding: 1.5rem 0; }
+            .placeholder-image { max-width: 90%; }
+            .axioms-list li { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+            .axiom-number { width: auto; margin-bottom: 0.5rem; }
+        }
+        @media (max-width: 480px) {
+            html { font-size: 14px; }
+            .main-header h1 { font-size: 2rem; } .main-header p { font-size: 1rem; }
+            section h2 { font-size: 1.6rem; }
+            section h3 { font-size: 1.3rem; }
+            .quiz-options button { padding: 0.8rem; font-size: 0.95rem; }
+            .minimal-nav-button { top: 10px; right: 10px; padding: 6px 10px; font-size: 1rem; }
+            .minimal-nav { top: 48px; right: 10px; min-width: 160px; }
+            .minimal-nav ul li a { padding: 0.5rem 0.7rem; font-size: 0.9rem;}
+            .minimal-nav ul li a i.fas { margin-right: 8px; }
+            .completion-section .icon { font-size: 3.5rem; }
+            .completion-section h2 { font-size: 1.8rem; } .completion-section p { font-size: 1rem; }
+            .completion-section .action-button { width: 90%; max-width: 300px; }
+            .main-footer { padding: 1rem 0; font-size: 0.85rem; }
+            pre code { font-size: 0.85rem; }
+            .formula { font-size: 0.95rem; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- ========= Minimal Nav Handle ========= -->
+    <button id="minimal-nav-toggle" class="minimal-nav-button" aria-label="Alternar Menu de Navegação" aria-expanded="false">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- ========= Minimal Nav Panel ========= -->
+    <nav id="minimal-nav-panel" class="minimal-nav">
+        <ul>
+            <!-- IMPORTANT: Links updated to math-* and module 11 -->
+            <li><a href="math-practice-11.html"><i class="fas fa-pencil-alt fa-fw"></i> <span data-translate="nav_practice">Iniciar Prática</span></a></li>
+            <li><a href="math-advanced-11.html"><i class="fas fa-flask fa-fw"></i> <span data-translate="nav_advanced">Prática Avançada</span></a></li>
+            <li><a href="math-dashboard.html"><i class="fas fa-list fa-fw"></i> <span data-translate="nav_menu">Menu do Curso</span></a></li>
+            <hr style="border: none; border-top: 1px solid var(--secondary-color); margin: 8px 0;">
+            <li><a href="#welcome"><i class="fas fa-door-open fa-fw"></i> <span data-translate="nav_welcome_m11">Boas-vindas M11</span></a></li>
+            <li><a href="#sample-space"><i class="fas fa-th fa-fw"></i> <span data-translate="nav_sample_space">Espaço Amostral</span></a></li>
+            <li><a href="#events"><i class="fas fa-star fa-fw"></i> <span data-translate="nav_events">Eventos</span></a></li>
+            <li><a href="#probability-definitions"><i class="fas fa-calculator fa-fw"></i> <span data-translate="nav_prob_def">Definindo Probabilidade</span></a></li>
+            <li><a href="#axioms"><i class="fas fa-check-circle fa-fw"></i> <span data-translate="nav_axioms">Axiomas</span></a></li>
+            <li><a href="#putting-it-together-m11"><i class="fas fa-cogs fa-fw"></i> <span data-translate="nav_putting_together_m11">Em Ação</span></a></li>
+            <li><a href="#knowledge-check"><i class="fas fa-check-double fa-fw"></i> <span data-translate="nav_quiz">Teste Rápido</span></a></li>
+            <li><a href="#completion"><i class="fas fa-flag-checkered fa-fw"></i> <span data-translate="completion_theory_title_m11">Conclusão</span></a></li>
+        </ul>
+    </nav>
+
+    <header class="main-header">
+        <div class="header-shape shape1"></div>
+        <div class="header-shape shape2"></div>
+        <div class="header-shape shape3"></div>
+        <div class="container"> <!-- Start visible -->
+            <h1 data-translate="header_title_m11">Módulo 11: Introdução à Probabilidade</h1>
+            <p data-translate="header_subtitle_m11">Compreendendo a incerteza: espaços amostrais, eventos e as bases da probabilidade.</p>
+        </div>
+    </header>
+
+    <main>
+        <!-- ========= Welcome Section ========= -->
+        <section id="welcome">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="welcome_title_m11">🎲 Quantificando a Incerteza</h2>
+                <p class="fade-in-on-scroll delay-1" data-translate="welcome_p1_m11">
+                    Bem-vindo ao Módulo 11! O mundo da Inteligência Artificial lida constantemente com a <span class="highlight">incerteza</span>. Um modelo de reconhecimento de imagem está 95% certo? Qual a chance de um usuário clicar em uma recomendação? Um sensor pode falhar? A teoria da probabilidade nos fornece a linguagem matemática para <span class="highlight">quantificar</span> e <span class="highlight">raciocinar</span> sobre essa incerteza.
+                </p>
+                <p class="fade-in-on-scroll delay-2" data-translate="welcome_p2_m11">
+                    Neste módulo, vamos introduzir os conceitos fundamentais: o que são <span class="math-term">experimentos aleatórios</span>, como definir todos os resultados possíveis (<span class="math-term">espaço amostral</span>), como descrever resultados de interesse (<span class="math-term">eventos</span>) e as regras básicas que governam a probabilidade. Essencial para entender modelos probabilísticos em IA!
+                </p>
+            </div>
+        </section>
+
+        <!-- ========= Sample Space Section ========= -->
+        <section id="sample-space">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="sample_space_title">🌌 O Universo de Possibilidades: Espaço Amostral</h2>
+                <p class="fade-in-on-scroll delay-1" data-translate="sample_space_intro">
+                    Tudo começa com um <span class="definition">experimento aleatório</span> – um processo cujo resultado não pode ser previsto com certeza antes de ocorrer (ex: lançar uma moeda, medir a temperatura, verificar se um email é spam). O <span class="definition">Espaço Amostral</span>, denotado por <code class="formula">S</code> (ou Ω), é o <span class="highlight">conjunto de todos os resultados possíveis</span> desse experimento.
+                </p>
+
+                <div class="concept-box fade-in-on-scroll delay-2">
+                    <h4 data-translate="sample_space_definition_title">Definição Formal</h4>
+                    <p data-translate="sample_space_definition_text">
+                        O <span class="math-term">Espaço Amostral (S)</span> é o conjunto que contém todos os resultados possíveis e mutuamente exclusivos de um experimento aleatório. Cada elemento individual em S é chamado de <span class="math-term">ponto amostral</span>.
+                    </p>
+                </div>
+
+                <h4 class="fade-in-on-scroll delay-3" data-translate="sample_space_examples_title">Exemplos:</h4>
+                <ul class="fade-in-on-scroll delay-4">
+                    <li data-translate="sample_space_ex1"><strong>Lançar uma moeda:</strong> O resultado pode ser Cara (C) ou Coroa (K). Então, <code class="formula">S = {C, K}</code>.</li>
+                    <li data-translate="sample_space_ex2"><strong>Lançar um dado de 6 faces:</strong> Os resultados são os números de 1 a 6. <code class="formula">S = {1, 2, 3, 4, 5, 6}</code>.</li>
+                    <li data-translate="sample_space_ex3"><strong>Estado de um Servidor:</strong> Um servidor pode estar 'Online', 'Offline' ou em 'Manutenção'. <code class="formula">S = {Online, Offline, Manutenção}</code>. Isso é relevante para análise de confiabilidade de sistemas.</li>
+                    <li data-translate="sample_space_ex4"><strong>Classificação de Email:</strong> Um classificador de IA pode rotular um email como 'Spam' ou 'Não Spam'. <code class="formula">S = {Spam, Não Spam}</code>.</li>
+                    <li data-translate="sample_space_ex5"><strong>Cliques em um Anúncio:</strong> Observando um usuário, o resultado pode ser 'Clicou' ou 'Não Clicou'. <code class="formula">S = {Clicou, Não Clicou}</code>. Fundamental em marketing digital e A/B testing.</li>
+                </ul>
+
+                <div class="placeholder-image fade-in-on-scroll delay-5">
+                    <span data-translate="sample_space_diagram_placeholder">Diagrama de Árvore: Lançamento de duas moedas (S = {CC, CK, KC, KK})</span>
+                </div>
+
+                <p class="fade-in-on-scroll delay-6" data-translate="sample_space_conclusion">
+                    Definir corretamente o espaço amostral é o primeiro passo crucial para qualquer análise probabilística. Ele estabelece o "universo" dentro do qual calcularemos as chances dos eventos ocorrerem.
+                </p>
+            </div>
+        </section>
+
+        <!-- ========= Events Section ========= -->
+        <section id="events">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="events_title">⭐ Focando no Interesse: Eventos</h2>
+                <p class="fade-in-on-scroll delay-1" data-translate="events_intro">
+                    Frequentemente, não estamos interessados em todos os resultados possíveis individualmente, mas sim em um <span class="highlight">conjunto de resultados</span> com uma característica comum. Esse conjunto é chamado de <span class="definition">Evento</span>.
+                </p>
+
+                <div class="concept-box fade-in-on-scroll delay-2">
+                    <h4 data-translate="events_definition_title">Definição Formal</h4>
+                    <p data-translate="events_definition_text">
+                        Um <span class="math-term">Evento (A, B, C, ...)</span> é qualquer <span class="highlight">subconjunto</span> do espaço amostral S. Dizemos que um evento A <span class="highlight">ocorreu</span> se o resultado do experimento aleatório pertence ao conjunto A.
+                    </p>
+                </div>
+
+                <h4 class="fade-in-on-scroll delay-3" data-translate="events_examples_title">Exemplos (usando os Espaços Amostrais anteriores):</h4>
+                <ul class="fade-in-on-scroll delay-4">
+                    <li data-translate="events_ex1"><strong>Experimento: Lançar um dado (S = {1, 2, 3, 4, 5, 6})</strong>
+                        <ul>
+                            <li>Evento A: Obter um número par. <code class="formula">A = {2, 4, 6}</code>.</li>
+                            <li>Evento B: Obter um número maior que 4. <code class="formula">B = {5, 6}</code>.</li>
+                            <li>Evento C: Obter o número 3. <code class="formula">C = {3}</code> (Este é um <span class="math-term">evento simples</span> ou elementar).</li>
+                        </ul>
+                    </li>
+                    <li data-translate="events_ex2"><strong>Experimento: Estado do Servidor (S = {Online, Offline, Manutenção})</strong>
+                        <ul>
+                            <li>Evento D: O servidor não está online. <code class="formula">D = {Offline, Manutenção}</code>.</li>
+                        </ul>
+                    </li>
+                     <li data-translate="events_ex3"><strong>Experimento: Lançar duas moedas (S = {CC, CK, KC, KK})</strong>
+                        <ul>
+                            <li>Evento E: Obter pelo menos uma Cara. <code class="formula">E = {CC, CK, KC}</code>.</li>
+                        </ul>
+                    </li>
+                </ul>
+
+                <h4 class="fade-in-on-scroll delay-5" data-translate="events_types_title">Tipos Especiais de Eventos:</h4>
+                <ul class="fade-in-on-scroll delay-6">
+                   <li data-translate="events_type_certain"><strong>Evento Certo:</strong> É o próprio espaço amostral <code class="formula">S</code>. Sempre ocorre. (Ex: Obter um número de 1 a 6 no lançamento de um dado).</li>
+                   <li data-translate="events_type_impossible"><strong>Evento Impossível:</strong> É o conjunto vazio <code class="formula">∅</code> ou <code class="formula">{}</code>. Nunca ocorre. (Ex: Obter o número 7 no lançamento de um dado de 6 faces).</li>
+                   <li data-translate="events_type_simple"><strong>Evento Simples (ou Elementar):</strong> Um evento que contém apenas um ponto amostral. (Ex: Obter 'Cara' ao lançar uma moeda, <code class="formula">{C}</code>).</li>
+                   <li data-translate="events_type_compound"><strong>Evento Composto:</strong> Um evento que contém mais de um ponto amostral. (Ex: Obter um número par no dado, <code class="formula">{2, 4, 6}</code>).</li>
+                </ul>
+
+                 <p class="fade-in-on-scroll delay-7" data-translate="events_operations_intro">
+                    Podemos combinar eventos usando operações de conjuntos (que veremos em detalhes nos Módulos 21-30):
+                    <br> - <strong>União (A ∪ B):</strong> Ocorre se A <span class="highlight">OU</span> B (ou ambos) ocorrem.
+                    <br> - <strong>Interseção (A ∩ B):</strong> Ocorre se A <span class="highlight">E</span> B ocorrem simultaneamente.
+                    <br> - <strong>Complementar (A'):</strong> Ocorre se A <span class="highlight">NÃO</span> ocorre.
+                 </p>
+            </div>
+        </section>
+
+        <!-- ========= Probability Definitions Section ========= -->
+        <section id="probability-definitions">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="prob_def_title">💯 Como Medir a Chance: Definições de Probabilidade</h2>
+                <p class="fade-in-on-scroll delay-1" data-translate="prob_def_intro">
+                    Agora que temos o espaço amostral e os eventos, como atribuímos um número que represente a "chance" ou "verossimilhança" de um evento ocorrer? Existem duas abordagens principais:
+                </p>
+
+                <h3 class="fade-in-on-scroll delay-2" data-translate="prob_def_classical_title">1. Definição Clássica (Laplace)</h3>
+                <p class="fade-in-on-scroll delay-3" data-translate="prob_def_classical_text">
+                    Esta definição se aplica quando todos os resultados (pontos amostrais) no espaço amostral <code class="formula">S</code> são <span class="highlight">igualmente prováveis</span> (equiprováveis). Isso ocorre em situações idealizadas como moedas não viciadas, dados justos, sorteios honestos.
+                </p>
+                <div class="concept-box fade-in-on-scroll delay-4">
+                    <h4 data-translate="prob_def_classical_formula_title">Fórmula Clássica</h4>
+                    <p data-translate="prob_def_classical_formula_text">
+                        Se S é um espaço amostral finito com <code class="formula">N</code> resultados equiprováveis, e A é um evento com <code class="formula">n(A)</code> resultados favoráveis, então a probabilidade de A é:
+                    </p>
+                    <p class="text-center" style="margin-top:1rem;"><code class="formula" style="font-size: 1.2em;">P(A) = n(A) / N</code></p>
+                    <p data-translate="prob_def_classical_formula_meaning">(Probabilidade = Número de Casos Favoráveis / Número Total de Casos Possíveis)</p>
+                </div>
+                <div class="example-box fade-in-on-scroll delay-5">
+                    <strong data-translate="prob_def_classical_example_title">Exemplo:</strong> Qual a probabilidade de obter um número par (evento A = {2, 4, 6}) ao lançar um dado justo (S = {1, 2, 3, 4, 5, 6})?
+                    <ul style="margin-top: 0.5rem;">
+                        <li data-translate="prob_def_classical_example_step1">Número total de casos (N): 6 (os números de 1 a 6).</li>
+                        <li data-translate="prob_def_classical_example_step2">Número de casos favoráveis a A (n(A)): 3 (os números 2, 4, 6).</li>
+                        <li data-translate="prob_def_classical_example_step3">Probabilidade: <code class="formula">P(A) = n(A) / N = 3 / 6 = 0.5</code> (ou 50%).</li>
+                    </ul>
+                </div>
+
+                <h3 class="fade-in-on-scroll delay-6" data-translate="prob_def_frequentist_title">2. Definição Frequentista (Empírica)</h3>
+                 <p class="fade-in-on-scroll delay-7" data-translate="prob_def_frequentist_text">
+                    E quando os resultados não são igualmente prováveis, ou quando não conhecemos a "justiça" do processo (ex: uma moeda viciada, a chance de chuva amanhã)? A abordagem frequentista define a probabilidade como a <span class="highlight">frequência relativa</span> de ocorrência de um evento após realizar o experimento <span class="highlight">muitas vezes</span> (idealmente, um número infinito de vezes).
+                 </p>
+                 <div class="concept-box fade-in-on-scroll delay-8">
+                    <h4 data-translate="prob_def_frequentist_formula_title">Conceito Frequentista</h4>
+                    <p data-translate="prob_def_frequentist_formula_text">
+                        Se um experimento é repetido <code class="formula">N</code> vezes sob as mesmas condições, e o evento A ocorre <code class="formula">n(A)</code> vezes, a frequência relativa é <code class="formula">f(A) = n(A) / N</code>. A probabilidade de A é o limite desta frequência quando N tende ao infinito:
+                    </p>
+                    <p class="text-center" style="margin-top:1rem;"><code class="formula" style="font-size: 1.2em;">P(A) = lim (N→∞) [n(A) / N]</code></p>
+                 </div>
+                 <div class="example-box fade-in-on-scroll delay-9">
+                    <strong data-translate="prob_def_frequentist_example_title">Exemplo (IA):</strong> Para estimar a probabilidade de um usuário clicar em um novo botão (evento A), exibimos o botão para 10.000 usuários (N=10000) e observamos 350 cliques (n(A)=350).
+                    <ul style="margin-top: 0.5rem;">
+                       <li data-translate="prob_def_frequentist_example_step1">Frequência relativa: <code class="formula">f(A) = 350 / 10000 = 0.035</code>.</li>
+                       <li data-translate="prob_def_frequentist_example_step2">Estimativa da Probabilidade: <code class="formula">P(A) ≈ 0.035</code> (ou 3.5%). Quanto mais usuários (maior N), mais confiável a estimativa.</li>
+                    </ul>
+                    <p style="margin-top: 1rem;" data-translate="prob_def_frequentist_example_relevance">Esta abordagem é a base para muitas estimativas em IA baseadas em dados observados (taxas de acerto de modelos, taxas de conversão, etc.) e para simulações (Método de Monte Carlo).</p>
+                 </div>
+            </div>
+        </section>
+
+        <!-- ========= Axioms Section ========= -->
+        <section id="axioms">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="axioms_title">📜 As Regras do Jogo: Axiomas da Probabilidade</h2>
+                <p class="fade-in-on-scroll delay-1" data-translate="axioms_intro">
+                    Independentemente de como definimos a probabilidade (clássica ou frequentista), ela deve obedecer a três regras fundamentais, conhecidas como <span class="definition">Axiomas de Kolmogorov</span>. Eles garantem que nossas medidas de chance sejam consistentes e lógicas.
+                </p>
+
+                <ul class="axioms-list fade-in-on-scroll delay-2">
+                    <li>
+                        <div class="axiom-number">1</div>
+                        <div class="axiom-content">
+                           <strong data-translate="axioms_axiom1_title">Não-Negatividade:</strong> <span data-translate="axioms_axiom1_text">A probabilidade de qualquer evento A é sempre um número entre 0 e 1, inclusive.</span>
+                           <br><code class="formula">0 ≤ P(A) ≤ 1</code>
+                           <p style="font-size: 0.9em; color: var(--secondary-color); margin-top: 0.5rem;" data-translate="axioms_axiom1_meaning">Significa que a chance de algo acontecer não pode ser negativa nem maior que 100%.</p>
+                        </div>
+                    </li>
+                     <li>
+                        <div class="axiom-number">2</div>
+                        <div class="axiom-content">
+                           <strong data-translate="axioms_axiom2_title">Certeza:</strong> <span data-translate="axioms_axiom2_text">A probabilidade do espaço amostral (o evento certo) é 1.</span>
+                           <br><code class="formula">P(S) = 1</code>
+                           <p style="font-size: 0.9em; color: var(--secondary-color); margin-top: 0.5rem;" data-translate="axioms_axiom2_meaning">Significa que é 100% certo que *algum* dos resultados possíveis ocorrerá.</p>
+                        </div>
+                    </li>
+                     <li>
+                        <div class="axiom-number">3</div>
+                        <div class="axiom-content">
+                           <strong data-translate="axioms_axiom3_title">Aditividade (para eventos mutuamente exclusivos):</strong> <span data-translate="axioms_axiom3_text">Se dois eventos A e B são <span class="math-term">mutuamente exclusivos</span> (ou <span class="math-term">disjuntos</span>), o que significa que eles não podem ocorrer ao mesmo tempo (sua interseção é vazia, A ∩ B = ∅), então a probabilidade de A <span class="highlight">OU</span> B ocorrer é a soma de suas probabilidades individuais.</span>
+                           <br><code class="formula">Se A ∩ B = ∅, então P(A ∪ B) = P(A) + P(B)</code>
+                           <p style="font-size: 0.9em; color: var(--secondary-color); margin-top: 0.5rem;" data-translate="axioms_axiom3_meaning">Isso se estende para qualquer número de eventos mutuamente exclusivos.</p>
+                        </div>
+                    </li>
+                </ul>
+
+                <div class="placeholder-image fade-in-on-scroll delay-3">
+                    <span data-translate="axioms_venn_placeholder">Diagrama de Venn mostrando dois eventos Disjuntos (A e B) e a União</span>
+                </div>
+
+                <h4 class="fade-in-on-scroll delay-4" data-translate="axioms_consequences_title">Algumas Consequências Imediatas:</h4>
+                 <ul class="fade-in-on-scroll delay-5">
+                    <li data-translate="axioms_consequence1"><strong>Probabilidade do Evento Impossível:</strong> <code class="formula">P(∅) = 0</code>.</li>
+                    <li data-translate="axioms_consequence2"><strong>Regra do Complemento:</strong> A probabilidade de um evento A não ocorrer (A') é 1 menos a probabilidade de ele ocorrer. <code class="formula">P(A') = 1 - P(A)</code>. Muito útil em cálculos! (Ex: P(não chover) = 1 - P(chover)).</li>
+                 </ul>
+                 <p class="fade-in-on-scroll delay-6" data-translate="axioms_conclusion">
+                     Esses axiomas são a base sobre a qual toda a teoria da probabilidade é construída, permitindo derivar regras mais complexas e analisar cenários de incerteza em IA e outras áreas.
+                 </p>
+            </div>
+        </section>
+
+        <!-- ========= Putting It Together Section ========= -->
+        <section id="putting-it-together-m11">
+             <div class="container">
+                 <h2 class="fade-in-on-scroll" data-translate="putting_together_title_m11">⚙️ Conceitos em Ação: Um Exemplo Simples</h2>
+                 <p class="text-center fade-in-on-scroll delay-1" data-translate="putting_together_subtitle_m11">Vamos aplicar o que aprendemos para calcular a probabilidade de um evento usando a definição clássica.</p>
+
+                 <div class="example-box fade-in-on-scroll delay-2">
+                    <strong data-translate="putting_together_scenario_title">Cenário:</strong> Retirar uma carta de um baralho padrão de 52 cartas. Qual a probabilidade de retirar uma Dama (Q) ou um Rei (K)?
+                    <ol style="margin-top: 1rem;">
+                        <li class="fade-in-on-scroll delay-3" data-translate="putting_together_step1">
+                            <strong>Definir o Espaço Amostral (S):</strong> Todas as 52 cartas do baralho. O número total de resultados possíveis é <code class="formula">N = 52</code>. Assumimos que cada carta tem a mesma chance de ser retirada (resultados equiprováveis).
+                        </li>
+                         <li class="fade-in-on-scroll delay-4" data-translate="putting_together_step2">
+                            <strong>Definir os Eventos de Interesse:</strong>
+                            <ul>
+                                <li>Evento A: Retirar uma Dama (Q). Existem 4 Damas (Q♠, Q♥, Q♦, Q♣). Número de resultados favoráveis: <code class="formula">n(A) = 4</code>.</li>
+                                <li>Evento B: Retirar um Rei (K). Existem 4 Reis (K♠, K♥, K♦, K♣). Número de resultados favoráveis: <code class="formula">n(B) = 4</code>.</li>
+                            </ul>
+                         </li>
+                         <li class="fade-in-on-scroll delay-5" data-translate="putting_together_step3">
+                             <strong>Verificar se os Eventos são Mutuamente Exclusivos:</strong> Uma carta não pode ser uma Dama E um Rei ao mesmo tempo. Portanto, A e B são mutuamente exclusivos (<code class="formula">A ∩ B = ∅</code>).
+                         </li>
+                          <li class="fade-in-on-scroll delay-6" data-translate="putting_together_step4">
+                             <strong>Calcular as Probabilidades Individuais (usando Definição Clássica):</strong>
+                             <ul>
+                                <li><code class="formula">P(A) = n(A) / N = 4 / 52 = 1 / 13</code></li>
+                                <li><code class="formula">P(B) = n(B) / N = 4 / 52 = 1 / 13</code></li>
+                             </ul>
+                         </li>
+                         <li class="fade-in-on-scroll delay-7" data-translate="putting_together_step5">
+                             <strong>Aplicar o Axioma 3 (Aditividade):</strong> Queremos a probabilidade de retirar uma Dama <span class="highlight">OU</span> um Rei, que é <code class="formula">P(A ∪ B)</code>. Como A e B são mutuamente exclusivos:
+                             <br><code class="formula">P(A ∪ B) = P(A) + P(B) = (1 / 13) + (1 / 13) = 2 / 13</code>
+                         </li>
+                         <li class="fade-in-on-scroll delay-8" data-translate="putting_together_step6">
+                             <strong>Conclusão:</strong> A probabilidade de retirar uma Dama ou um Rei de um baralho padrão é <code class="formula">2/13</code>, aproximadamente 15.4%.
+                         </li>
+                    </ol>
+                 </div>
+                 <p class="text-center fade-in-on-scroll delay-9" data-translate="putting_together_conclusion_m11">Este exemplo ilustra como definir S, eventos, verificar exclusividade e usar os axiomas e definições para calcular a probabilidade desejada.</p>
+             </div>
+        </section>
+
+        <!-- ========= Knowledge Check Section ========= -->
+        <section id="knowledge-check">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="quiz_title">🧠 Teste Rápido!</h2>
+                <div class="quiz-container fade-in-on-scroll delay-1"> <!-- Observe container -->
+                    <div id="quiz-area">
+                         <p style="text-align: center; padding: 2rem 0;">Carregando quiz...</p>
+                    </div>
+                    <div id="quiz-feedback" class="quiz-feedback"></div>
+                    <button id="next-question-btn" data-translate="quiz_next_button">Próxima Pergunta</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========= Completion Section ========= -->
+        <section id="completion" class="completion-section"> <!-- Added ID for nav link -->
+            <div class="container">
+                 <div class="icon">
+                    <i class="fas fa-check-double"></i>
+                    <i class="fas fa-calculator"></i>
+                    <i class="fas fa-star"></i>
+                </div>
+                <h2 class="fade-in-on-scroll delay-1" data-translate="completion_theory_title_m11">Teoria do Módulo 11 Completa!</h2>
+                <p class="fade-in-on-scroll delay-2" data-translate="completion_theory_desc_m11">
+                    Parabéns! Você aprendeu os conceitos fundamentais da probabilidade: espaços amostrais, eventos, as definições clássica e frequentista, e os axiomas essenciais. <br>
+                    Esta base é crucial para entender tópicos mais avançados como probabilidade condicional e distribuições, que veremos a seguir e são vitais em muitas áreas da IA.
+                </p>
+                <div class="button-group">
+                    <!-- Buttons observed - IMPORTANT: Links updated to math-* and module 11 -->
+                    <a href="math-dashboard.html" class="action-button secondary fade-in-on-scroll delay-3"><i class="fas fa-list"></i> <span data-translate="nav_menu">Menu do Curso</span></a>
+                    <a href="math-practice-11.html" class="action-button success fade-in-on-scroll delay-4"><i class="fas fa-pencil-alt"></i> <span data-translate="nav_practice">Iniciar Prática</span></a>
+                    <a href="math-advanced-11.html" class="action-button secondary fade-in-on-scroll delay-5"><i class="fas fa-flask"></i> <span data-translate="nav_advanced">Prática Avançada</span></a>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="main-footer">
+        <div class="container">
+            <p data-translate="footer_copyright"></p>
+        </div>
+    </footer>
+
+    <script>
+    // --- Translations Object (Portuguese Only for Module 11) ---
+    const translations = {
+        pt: {
+            "page_title_m11": "Módulo 11: Introdução à Probabilidade",
+            "nav_practice": "Iniciar Prática",
+            "nav_advanced": "Prática Avançada",
+            "nav_menu": "Menu do Curso",
+            "nav_welcome_m11": "Boas-vindas M11", "nav_sample_space": "Espaço Amostral", "nav_events": "Eventos", "nav_prob_def": "Definindo Probabilidade", "nav_axioms": "Axiomas", "nav_putting_together_m11": "Em Ação", "nav_quiz": "Teste Rápido",
+            "header_title_m11": "Módulo 11: Introdução à Probabilidade", "header_subtitle_m11": "Compreendendo a incerteza: espaços amostrais, eventos e as bases da probabilidade.",
+            "welcome_title_m11": "🎲 Quantificando a Incerteza",
+            "welcome_p1_m11": "Bem-vindo ao Módulo 11! O mundo da Inteligência Artificial lida constantemente com a <span class=\"highlight\">incerteza</span>. Um modelo de reconhecimento de imagem está 95% certo? Qual a chance de um usuário clicar em uma recomendação? Um sensor pode falhar? A teoria da probabilidade nos fornece a linguagem matemática para <span class=\"highlight\">quantificar</span> e <span class=\"highlight\">raciocinar</span> sobre essa incerteza.",
+            "welcome_p2_m11": "Neste módulo, vamos introduzir os conceitos fundamentais: o que são <span class=\"math-term\">experimentos aleatórios</span>, como definir todos os resultados possíveis (<span class=\"math-term\">espaço amostral</span>), como descrever resultados de interesse (<span class=\"math-term\">eventos</span>) e as regras básicas que governam a probabilidade. Essencial para entender modelos probabilísticos em IA!",
+            "sample_space_title": "🌌 O Universo de Possibilidades: Espaço Amostral",
+            "sample_space_intro": "Tudo começa com um <span class=\"definition\">experimento aleatório</span> – um processo cujo resultado não pode ser previsto com certeza antes de ocorrer (ex: lançar uma moeda, medir a temperatura, verificar se um email é spam). O <span class=\"definition\">Espaço Amostral</span>, denotado por <code class=\"formula\">S</code> (ou Ω), é o <span class=\"highlight\">conjunto de todos os resultados possíveis</span> desse experimento.",
+            "sample_space_definition_title": "Definição Formal",
+            "sample_space_definition_text": "O <span class=\"math-term\">Espaço Amostral (S)</span> é o conjunto que contém todos os resultados possíveis e mutuamente exclusivos de um experimento aleatório. Cada elemento individual em S é chamado de <span class=\"math-term\">ponto amostral</span>.",
+            "sample_space_examples_title": "Exemplos:",
+            "sample_space_ex1": "<strong>Lançar uma moeda:</strong> O resultado pode ser Cara (C) ou Coroa (K). Então, <code class=\"formula\">S = {C, K}</code>.",
+            "sample_space_ex2": "<strong>Lançar um dado de 6 faces:</strong> Os resultados são os números de 1 a 6. <code class=\"formula\">S = {1, 2, 3, 4, 5, 6}</code>.",
+            "sample_space_ex3": "<strong>Estado de um Servidor:</strong> Um servidor pode estar 'Online', 'Offline' ou em 'Manutenção'. <code class=\"formula\">S = {Online, Offline, Manutenção}</code>. Isso é relevante para análise de confiabilidade de sistemas.",
+            "sample_space_ex4": "<strong>Classificação de Email:</strong> Um classificador de IA pode rotular um email como 'Spam' ou 'Não Spam'. <code class=\"formula\">S = {Spam, Não Spam}</code>.",
+            "sample_space_ex5": "<strong>Cliques em um Anúncio:</strong> Observando um usuário, o resultado pode ser 'Clicou' ou 'Não Clicou'. <code class=\"formula\">S = {Clicou, Não Clicou}</code>. Fundamental em marketing digital e A/B testing.",
+            "sample_space_diagram_placeholder": "Diagrama de Árvore: Lançamento de duas moedas (S = {CC, CK, KC, KK})",
+            "sample_space_conclusion": "Definir corretamente o espaço amostral é o primeiro passo crucial para qualquer análise probabilística. Ele estabelece o \"universo\" dentro do qual calcularemos as chances dos eventos ocorrerem.",
+            "events_title": "⭐ Focando no Interesse: Eventos",
+            "events_intro": "Frequentemente, não estamos interessados em todos os resultados possíveis individualmente, mas sim em um <span class=\"highlight\">conjunto de resultados</span> com uma característica comum. Esse conjunto é chamado de <span class=\"definition\">Evento</span>.",
+            "events_definition_title": "Definição Formal",
+            "events_definition_text": "Um <span class=\"math-term\">Evento (A, B, C, ...)</span> é qualquer <span class=\"highlight\">subconjunto</span> do espaço amostral S. Dizemos que um evento A <span class=\"highlight\">ocorreu</span> se o resultado do experimento aleatório pertence ao conjunto A.",
+            "events_examples_title": "Exemplos (usando os Espaços Amostrais anteriores):",
+            "events_ex1": "<strong>Experimento: Lançar um dado (S = {1, 2, 3, 4, 5, 6})</strong><ul><li>Evento A: Obter um número par. <code class=\"formula\">A = {2, 4, 6}</code>.</li><li>Evento B: Obter um número maior que 4. <code class=\"formula\">B = {5, 6}</code>.</li><li>Evento C: Obter o número 3. <code class=\"formula\">C = {3}</code> (Este é um <span class=\"math-term\">evento simples</span> ou elementar).</li></ul>",
+            "events_ex2": "<strong>Experimento: Estado do Servidor (S = {Online, Offline, Manutenção})</strong><ul><li>Evento D: O servidor não está online. <code class=\"formula\">D = {Offline, Manutenção}</code>.</li></ul>",
+            "events_ex3": "<strong>Experimento: Lançar duas moedas (S = {CC, CK, KC, KK})</strong><ul><li>Evento E: Obter pelo menos uma Cara. <code class=\"formula\">E = {CC, CK, KC}</code>.</li></ul>",
+            "events_types_title": "Tipos Especiais de Eventos:",
+            "events_type_certain": "<strong>Evento Certo:</strong> É o próprio espaço amostral <code class=\"formula\">S</code>. Sempre ocorre. (Ex: Obter um número de 1 a 6 no lançamento de um dado).",
+            "events_type_impossible": "<strong>Evento Impossível:</strong> É o conjunto vazio <code class=\"formula\">∅</code> ou <code class=\"formula\">{}</code>. Nunca ocorre. (Ex: Obter o número 7 no lançamento de um dado de 6 faces).",
+            "events_type_simple": "<strong>Evento Simples (ou Elementar):</strong> Um evento que contém apenas um ponto amostral. (Ex: Obter 'Cara' ao lançar uma moeda, <code class=\"formula\">{C}</code>).",
+            "events_type_compound": "<strong>Evento Composto:</strong> Um evento que contém mais de um ponto amostral. (Ex: Obter um número par no dado, <code class=\"formula\">{2, 4, 6}</code>).",
+            "events_operations_intro": "Podemos combinar eventos usando operações de conjuntos (que veremos em detalhes nos Módulos 21-30):<br> - <strong>União (A ∪ B):</strong> Ocorre se A <span class=\"highlight\">OU</span> B (ou ambos) ocorrem.<br> - <strong>Interseção (A ∩ B):</strong> Ocorre se A <span class=\"highlight\">E</span> B ocorrem simultaneamente.<br> - <strong>Complementar (A'):</strong> Ocorre se A <span class=\"highlight\">NÃO</span> ocorre.",
+            "prob_def_title": "💯 Como Medir a Chance: Definições de Probabilidade",
+            "prob_def_intro": "Agora que temos o espaço amostral e os eventos, como atribuímos um número que represente a \"chance\" ou \"verossimilhança\" de um evento ocorrer? Existem duas abordagens principais:",
+            "prob_def_classical_title": "1. Definição Clássica (Laplace)",
+            "prob_def_classical_text": "Esta definição se aplica quando todos os resultados (pontos amostrais) no espaço amostral <code class=\"formula\">S</code> são <span class=\"highlight\">igualmente prováveis</span> (equiprováveis). Isso ocorre em situações idealizadas como moedas não viciadas, dados justos, sorteios honestos.",
+            "prob_def_classical_formula_title": "Fórmula Clássica",
+            "prob_def_classical_formula_text": "Se S é um espaço amostral finito com <code class=\"formula\">N</code> resultados equiprováveis, e A é um evento com <code class=\"formula\">n(A)</code> resultados favoráveis, então a probabilidade de A é:",
+            "prob_def_classical_formula_meaning": "(Probabilidade = Número de Casos Favoráveis / Número Total de Casos Possíveis)",
+            "prob_def_classical_example_title": "Exemplo:",
+            "prob_def_classical_example_step1": "Número total de casos (N): 6 (os números de 1 a 6).",
+            "prob_def_classical_example_step2": "Número de casos favoráveis a A (n(A)): 3 (os números 2, 4, 6).",
+            "prob_def_classical_example_step3": "Probabilidade: <code class=\"formula\">P(A) = n(A) / N = 3 / 6 = 0.5</code> (ou 50%).",
+            "prob_def_frequentist_title": "2. Definição Frequentista (Empírica)",
+            "prob_def_frequentist_text": "E quando os resultados não são igualmente prováveis, ou quando não conhecemos a \"justiça\" do processo (ex: uma moeda viciada, a chance de chuva amanhã)? A abordagem frequentista define a probabilidade como a <span class=\"highlight\">frequência relativa</span> de ocorrência de um evento após realizar o experimento <span class=\"highlight\">muitas vezes</span> (idealmente, um número infinito de vezes).",
+            "prob_def_frequentist_formula_title": "Conceito Frequentista",
+            "prob_def_frequentist_formula_text": "Se um experimento é repetido <code class=\"formula\">N</code> vezes sob as mesmas condições, e o evento A ocorre <code class=\"formula\">n(A)</code> vezes, a frequência relativa é <code class=\"formula\">f(A) = n(A) / N</code>. A probabilidade de A é o limite desta frequência quando N tende ao infinito:",
+            "prob_def_frequentist_example_title": "Exemplo (IA):",
+            "prob_def_frequentist_example_step1": "Frequência relativa: <code class=\"formula\">f(A) = 350 / 10000 = 0.035</code>.",
+            "prob_def_frequentist_example_step2": "Estimativa da Probabilidade: <code class=\"formula\">P(A) ≈ 0.035</code> (ou 3.5%). Quanto mais usuários (maior N), mais confiável a estimativa.",
+            "prob_def_frequentist_example_relevance": "Esta abordagem é a base para muitas estimativas em IA baseadas em dados observados (taxas de acerto de modelos, taxas de conversão, etc.) e para simulações (Método de Monte Carlo).",
+            "axioms_title": "📜 As Regras do Jogo: Axiomas da Probabilidade",
+            "axioms_intro": "Independentemente de como definimos a probabilidade (clássica ou frequentista), ela deve obedecer a três regras fundamentais, conhecidas como <span class=\"definition\">Axiomas de Kolmogorov</span>. Eles garantem que nossas medidas de chance sejam consistentes e lógicas.",
+            "axioms_axiom1_title": "Não-Negatividade:", "axioms_axiom1_text": "A probabilidade de qualquer evento A é sempre um número entre 0 e 1, inclusive.", "axioms_axiom1_meaning": "Significa que a chance de algo acontecer não pode ser negativa nem maior que 100%.",
+            "axioms_axiom2_title": "Certeza:", "axioms_axiom2_text": "A probabilidade do espaço amostral (o evento certo) é 1.", "axioms_axiom2_meaning": "Significa que é 100% certo que *algum* dos resultados possíveis ocorrerá.",
+            "axioms_axiom3_title": "Aditividade (para eventos mutuamente exclusivos):", "axioms_axiom3_text": "Se dois eventos A e B são <span class=\"math-term\">mutuamente exclusivos</span> (ou <span class=\"math-term\">disjuntos</span>), o que significa que eles não podem ocorrer ao mesmo tempo (sua interseção é vazia, A ∩ B = ∅), então a probabilidade de A <span class=\"highlight\">OU</span> B ocorrer é a soma de suas probabilidades individuais.", "axioms_axiom3_meaning": "Isso se estende para qualquer número de eventos mutuamente exclusivos.",
+            "axioms_venn_placeholder": "Diagrama de Venn mostrando dois eventos Disjuntos (A e B) e a União",
+            "axioms_consequences_title": "Algumas Consequências Imediatas:",
+            "axioms_consequence1": "<strong>Probabilidade do Evento Impossível:</strong> <code class=\"formula\">P(∅) = 0</code>.",
+            "axioms_consequence2": "<strong>Regra do Complemento:</strong> A probabilidade de um evento A não ocorrer (A') é 1 menos a probabilidade de ele ocorrer. <code class=\"formula\">P(A') = 1 - P(A)</code>. Muito útil em cálculos! (Ex: P(não chover) = 1 - P(chover)).",
+            "axioms_conclusion": "Esses axiomas são a base sobre a qual toda a teoria da probabilidade é construída, permitindo derivar regras mais complexas e analisar cenários de incerteza em IA e outras áreas.",
+            "putting_together_title_m11": "⚙️ Conceitos em Ação: Um Exemplo Simples",
+            "putting_together_subtitle_m11": "Vamos aplicar o que aprendemos para calcular a probabilidade de um evento usando a definição clássica.",
+            "putting_together_scenario_title": "Cenário:",
+            "putting_together_step1": "<strong>Definir o Espaço Amostral (S):</strong> Todas as 52 cartas do baralho. O número total de resultados possíveis é <code class=\"formula\">N = 52</code>. Assumimos que cada carta tem a mesma chance de ser retirada (resultados equiprováveis).",
+            "putting_together_step2": "<strong>Definir os Eventos de Interesse:</strong><ul><li>Evento A: Retirar uma Dama (Q). Existem 4 Damas (Q♠, Q♥, Q♦, Q♣). Número de resultados favoráveis: <code class=\"formula\">n(A) = 4</code>.</li><li>Evento B: Retirar um Rei (K). Existem 4 Reis (K♠, K♥, K♦, K♣). Número de resultados favoráveis: <code class=\"formula\">n(B) = 4</code>.</li></ul>",
+            "putting_together_step3": "<strong>Verificar se os Eventos são Mutuamente Exclusivos:</strong> Uma carta não pode ser uma Dama E um Rei ao mesmo tempo. Portanto, A e B são mutuamente exclusivos (<code class=\"formula\">A ∩ B = ∅</code>).",
+            "putting_together_step4": "<strong>Calcular as Probabilidades Individuais (usando Definição Clássica):</strong><ul><li><code class=\"formula\">P(A) = n(A) / N = 4 / 52 = 1 / 13</code></li><li><code class=\"formula\">P(B) = n(B) / N = 4 / 52 = 1 / 13</code></li></ul>",
+            "putting_together_step5": "<strong>Aplicar o Axioma 3 (Aditividade):</strong> Queremos a probabilidade de retirar uma Dama <span class=\"highlight\">OU</span> um Rei, que é <code class=\"formula\">P(A ∪ B)</code>. Como A e B são mutuamente exclusivos:<br><code class=\"formula\">P(A ∪ B) = P(A) + P(B) = (1 / 13) + (1 / 13) = 2 / 13</code>",
+            "putting_together_step6": "<strong>Conclusão:</strong> A probabilidade de retirar uma Dama ou um Rei de um baralho padrão é <code class=\"formula\">2/13</code>, aproximadamente 15.4%.",
+            "putting_together_conclusion_m11": "Este exemplo ilustra como definir S, eventos, verificar exclusividade e usar os axiomas e definições para calcular a probabilidade desejada.",
+            "quiz_title": "🧠 Teste Rápido!", "quiz_next_button": "Próxima Pergunta",
+            "quiz_q1_m11": "Ao lançar um dado justo de 6 faces, qual é o Espaço Amostral (S)?",
+            "quiz_q1_m11_opt1": "`{1, 6}`", "quiz_q1_m11_opt2": "`{Par, Ímpar}`", "quiz_q1_m11_opt3": "`{1, 2, 3, 4, 5, 6}`", "quiz_q1_m11_opt4": "`{0, 1, 2, 3, 4, 5, 6}`",
+            "quiz_q2_m11": "No lançamento de um dado justo, o evento 'Obter um número maior que 4' (A = {5, 6}) é um exemplo de:",
+            "quiz_q2_m11_opt1": "Evento Impossível", "quiz_q2_m11_opt2": "Evento Simples", "quiz_q2_m11_opt3": "Evento Certo", "quiz_q2_m11_opt4": "Evento Composto",
+            "quiz_q3_m11": "Se a probabilidade de chover amanhã é P(Chuva) = 0.3, qual a probabilidade de NÃO chover?",
+            "quiz_q3_m11_opt1": "0.3", "quiz_q3_m11_opt2": "0.7", "quiz_q3_m11_opt3": "1.0", "quiz_q3_m11_opt4": "Não pode ser determinada",
+            "quiz_q4_m11": "De acordo com os axiomas da probabilidade, qual dos seguintes valores NÃO pode ser uma probabilidade?",
+            "quiz_q4_m11_opt1": "0.0", "quiz_q4_m11_opt2": "1.0", "quiz_q4_m11_opt3": "0.5", "quiz_q4_m11_opt4": "1.2",
+            "quiz_q5_m11": "Em um saco com 5 bolas vermelhas e 3 bolas azuis (total 8), qual a probabilidade de retirar uma bola azul (assumindo equiprobabilidade)?",
+            "quiz_q5_m11_opt1": "3/5", "quiz_q5_m11_opt2": "5/8", "quiz_q5_m11_opt3": "3/8", "quiz_q5_m11_opt4": "1/3",
+            "quiz_feedback_correct": "Correto! 🎉", "quiz_feedback_incorrect": "Não foi bem assim! A resposta correta era: {correctAnswerText}",
+            "quiz_final_score_title": "Teste Rápido Completo!",
+            "quiz_final_score_summary": "Você respondeu {score} de {total} perguntas corretamente.",
+            "quiz_final_score_perfect": "Excelente! Você compreendeu bem os conceitos básicos de probabilidade.", "quiz_final_score_good": "Bom trabalho! Revise os pontos onde teve dúvida para fortalecer sua base.",
+            "completion_theory_title_m11": "Teoria do Módulo 11 Completa!",
+            "completion_theory_desc_m11": "Parabéns! Você aprendeu os conceitos fundamentais da probabilidade: espaços amostrais, eventos, as definições clássica e frequentista, e os axiomas essenciais. <br> Esta base é crucial para entender tópicos mais avançados como probabilidade condicional e distribuições, que veremos a seguir e são vitais em muitas áreas da IA.",
+            "footer_copyright": "© 2024 Matemática para IA. Todos os direitos reservados."
+        }
+    };
+
+    // --- Global Variables ---
+    let currentQuestionIndex = 0;
+    let score = 0;
+    const lang = 'pt'; // Hardcoded language
+
+    // --- DOM Elements (Get them once) ---
+    const navToggleButton = document.getElementById('minimal-nav-toggle');
+    const navPanel = document.getElementById('minimal-nav-panel');
+    const body = document.body;
+    const quizArea = document.getElementById('quiz-area');
+    const feedbackArea = document.getElementById('quiz-feedback');
+    const nextButton = document.getElementById('next-question-btn');
+
+    // --- Functions ---
+
+    function getTranslation(key, replacements = {}) {
+         let text = translations[lang]?.[key] ?? `[${key}]`; // Default to key if not found
+         for (const placeholder in replacements) {
+             // Use a more robust regex to avoid issues with special characters in replacements
+             const regex = new RegExp(`\\{${placeholder}\\}`, 'g');
+             text = text.replace(regex, replacements[placeholder]);
+         }
+         // Basic sanitization: Allow specific tags known to be used in translations
+         // This is NOT a foolproof XSS protection, but limits risks for this specific content.
+         const allowedTags = /<\/?(code|span|strong|br|ul|li|b|i|em|div|p|ol)>|(&lt;)|(&gt;)|(&amp;)/gi;
+         // Remove any tags NOT in the allowed list
+         text = text.replace(/<(?!\/?(code|span|strong|br|ul|li|b|i|em|div|p|ol|hr)\b)[^>]*>/gi, '');
+         return text;
+    }
+
+
+    function translatePage() {
+         document.querySelectorAll('[data-translate]').forEach(el => {
+             const key = el.getAttribute('data-translate');
+             let translation = getTranslation(key);
+
+              if (el.tagName === 'TITLE') { document.title = translation; }
+              // For elements where we specifically allow HTML (like paragraphs, list items, etc.)
+              else if (['P', 'LI', 'SPAN', 'STRONG', 'H1', 'H2', 'H3', 'H4', 'TD', 'TH', 'BUTTON', 'A', 'DIV', 'FOOTER'].includes(el.tagName)) {
+                 // Check if the translation string actually contains HTML tags
+                 if (/<[a-z][\s\S]*>/i.test(translation)) {
+                    el.innerHTML = translation; // Use innerHTML only if HTML is present
+                 } else {
+                    el.textContent = translation; // Otherwise, use textContent for safety
+                 }
+              }
+              // Default to textContent for other elements or if no HTML is detected
+              else {
+                  el.textContent = translation;
+              }
+         });
+    }
+
+
+    // --- Quiz Data & Functions (Module 11) ---
+    const quizData = [
+         { questionKey: "quiz_q1_m11", optionKeys: ["quiz_q1_m11_opt1", "quiz_q1_m11_opt2", "quiz_q1_m11_opt3", "quiz_q1_m11_opt4"], correctAnswer: 2 }, // S = {1, 2, 3, 4, 5, 6}
+         { questionKey: "quiz_q2_m11", optionKeys: ["quiz_q2_m11_opt1", "quiz_q2_m11_opt2", "quiz_q2_m11_opt3", "quiz_q2_m11_opt4"], correctAnswer: 3 }, // A = {5, 6} is Composto
+         { questionKey: "quiz_q3_m11", optionKeys: ["quiz_q3_m11_opt1", "quiz_q3_m11_opt2", "quiz_q3_m11_opt3", "quiz_q3_m11_opt4"], correctAnswer: 1 }, // P(A') = 1 - P(A) = 1 - 0.3 = 0.7
+         { questionKey: "quiz_q4_m11", optionKeys: ["quiz_q4_m11_opt1", "quiz_q4_m11_opt2", "quiz_q4_m11_opt3", "quiz_q4_m11_opt4"], correctAnswer: 3 }, // Probability must be <= 1
+         { questionKey: "quiz_q5_m11", optionKeys: ["quiz_q5_m11_opt1", "quiz_q5_m11_opt2", "quiz_q5_m11_opt3", "quiz_q5_m11_opt4"], correctAnswer: 2 }  // n(Azul)=3, N=8 -> P(Azul) = 3/8
+    ];
+
+    function loadQuestion() {
+          if (!quizArea) return; // Ensure quizArea exists
+
+          // If we reached the end, show score
+          if (currentQuestionIndex >= quizData.length) {
+              if (!quizArea.querySelector('[data-translate="quiz_final_score_title"]')) { // Avoid re-rendering score
+                 showFinalScore();
+              }
+              return;
+          }
+
+          const currentQuiz = quizData[currentQuestionIndex];
+          const questionText = getTranslation(currentQuiz.questionKey);
+          // Generate HTML for question and options
+          quizArea.innerHTML = `
+              <div class="quiz-question">${currentQuestionIndex + 1}. ${questionText.replace(/`(.*?)`/g, '<code>$1</code>')}</div>
+              <div class="quiz-options">
+                  ${currentQuiz.optionKeys.map((optionKey, index) => `
+                      <button class="quiz-option-btn" data-index="${index}">${getTranslation(optionKey).replace(/`(.*?)`/g, '<code>$1</code>')}</button>
+                  `).join('')}
+              </div>
+          `;
+
+          // Reset feedback and next button
+          if (feedbackArea) {
+            feedbackArea.classList.remove('visible', 'correct', 'incorrect');
+            feedbackArea.textContent = '';
+            feedbackArea.style.height = '0'; // Reset height
+            feedbackArea.style.marginBottom = '0'; // Reset margin
+          }
+          if (nextButton) {
+            nextButton.classList.remove('visible');
+            nextButton.disabled = true;
+          }
+
+          // Add event listeners to the new buttons
+          quizArea.querySelectorAll('.quiz-option-btn').forEach(button => {
+              button.addEventListener('click', handleAnswer);
+          });
+    }
+
+    function handleAnswer(event) {
+         const selectedButton = event.target.closest('.quiz-option-btn'); // Ensure we get the button itself
+         if (!selectedButton) return; // Exit if click wasn't on a button
+
+         const selectedIndex = parseInt(selectedButton.dataset.index);
+         const correctIndex = quizData[currentQuestionIndex].correctAnswer;
+         const correctOptionKey = quizData[currentQuestionIndex].optionKeys[correctIndex];
+
+         // Disable all options
+         quizArea.querySelectorAll('.quiz-option-btn').forEach(btn => {
+            btn.disabled = true;
+            btn.classList.remove('shake'); // Remove shake if present from previous incorrect
+         });
+
+         if (!feedbackArea || !nextButton) return; // Ensure elements exist
+
+         feedbackArea.classList.add('visible');
+
+         if (selectedIndex === correctIndex) {
+             selectedButton.classList.add('correct');
+             feedbackArea.innerHTML = getTranslation('quiz_feedback_correct'); // InnerHTML for potential icon
+             feedbackArea.classList.add('correct');
+             feedbackArea.classList.remove('incorrect');
+             score++;
+             selectedButton.classList.add('tada-anim');
+         } else {
+             selectedButton.classList.add('incorrect');
+             const formattedCorrectAnswer = getTranslation(correctOptionKey).replace(/`(.*?)`/g, '<code>$1</code>');
+             // Use innerHTML here to render the strong tag
+             feedbackArea.innerHTML = getTranslation('quiz_feedback_incorrect', { correctAnswerText: `<strong>${formattedCorrectAnswer}</strong>` });
+             feedbackArea.classList.add('incorrect');
+             feedbackArea.classList.remove('correct');
+             // Highlight the correct button as well
+             const correctButton = quizArea.querySelector(`.quiz-option-btn[data-index="${correctIndex}"]`);
+             if(correctButton) correctButton.classList.add('correct');
+             selectedButton.classList.add('shake');
+         }
+
+         // Remove animation classes after they finish
+          selectedButton.addEventListener('animationend', () => {
+               selectedButton.classList.remove('tada-anim', 'shake');
+          }, { once: true });
+
+         // Make feedback area adjust height and margin smoothly
+         feedbackArea.style.height = feedbackArea.scrollHeight + 'px';
+         feedbackArea.style.marginBottom = '1rem';
+
+
+         // Show and enable next button
+         nextButton.classList.add('visible');
+         nextButton.disabled = false;
+     }
+
+     function showFinalScore() {
+            if (!quizArea) return;
+            const totalQuestions = quizData.length;
+            // Determine message based on score percentage
+            let resultMessageKey = (score / totalQuestions) >= 0.8 ? 'quiz_final_score_perfect' : 'quiz_final_score_good'; // 80% threshold for perfect
+
+            quizArea.innerHTML = `
+               <div class="quiz-question text-center" data-translate="quiz_final_score_title" style="font-size: 1.5rem;">${getTranslation('quiz_final_score_title')}</div>
+               <p class="text-center" style="font-size: 1.2rem; margin-bottom: 1rem;">${getTranslation('quiz_final_score_summary', { score: score, total: totalQuestions })}</p>
+               <p class="text-center" style="color: ${score === totalQuestions ? 'var(--success-color)' : 'var(--primary-color)'}; font-weight: bold;">${getTranslation(resultMessageKey)}</p>
+            `;
+            if (feedbackArea) feedbackArea.classList.remove('visible'); // Hide feedback area
+            if (nextButton) nextButton.style.display = 'none'; // Hide next button
+            // Optional: Scroll score into view smoothly
+            // quizArea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+     }
+
+
+    // --- Intersection Observer Setup ---
+    function setupObservers() {
+        const observerOptions = {
+            root: null, // relative to viewport
+            rootMargin: '0px',
+            threshold: 0.1 // Trigger when 10% of the element is visible
+        };
+
+        const observerCallback = (entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    // Optional: Unobserve after it becomes visible to save resources
+                    // observer.unobserve(entry.target);
+                }
+                // Optional: Remove 'visible' if it scrolls out of view
+                // else {
+                //     entry.target.classList.remove('visible');
+                // }
+            });
+        };
+
+        const animationObserver = new IntersectionObserver(observerCallback, observerOptions);
+
+        // Observe elements with the fade-in class
+        document.querySelectorAll('.fade-in-on-scroll').forEach(el => {
+            animationObserver.observe(el);
+        });
+    }
+
+    // --- Event Listeners Setup ---
+    function setupEventListeners() {
+        // Navbar Toggle
+        if (navToggleButton && navPanel) {
+            navToggleButton.addEventListener('click', (event) => {
+                event.stopPropagation();
+                body.classList.toggle('nav-active');
+                navToggleButton.setAttribute('aria-expanded', body.classList.contains('nav-active'));
+            });
+
+            // Close nav if clicking outside
+            document.addEventListener('click', (event) => {
+                if (body.classList.contains('nav-active') && !navPanel.contains(event.target) && event.target !== navToggleButton && !navToggleButton.contains(event.target)) {
+                    body.classList.remove('nav-active');
+                    navToggleButton.setAttribute('aria-expanded', 'false');
+                }
+            });
+
+            // Close nav on link click (internal # links)
+            navPanel.querySelectorAll('a').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    // Check if it's an internal link before closing
+                    if (link.getAttribute('href').startsWith('#')) {
+                        // Allow default scroll behavior
+                        // Close panel slightly delayed to allow scroll to start
+                        setTimeout(() => {
+                            body.classList.remove('nav-active');
+                            navToggleButton.setAttribute('aria-expanded', 'false');
+                        }, 150);
+                    }
+                    // External links will navigate away, closing is implicit
+                });
+            });
+
+            // Close nav on Escape key
+            document.addEventListener('keydown', (event) => {
+                 if (event.key === 'Escape' && body.classList.contains('nav-active')) {
+                     body.classList.remove('nav-active');
+                     navToggleButton.setAttribute('aria-expanded', 'false');
+                 }
+             });
+        }
+
+        // Quiz Next Button
+        if (nextButton) {
+            nextButton.addEventListener('click', () => {
+                if (!nextButton.disabled) {
+                    currentQuestionIndex++;
+                    loadQuestion(); // Load the next question
+                }
+            });
+        } else {
+            console.error("Elemento #next-question-btn não encontrado.");
+        }
+    }
+
+    // --- Initialization ---
+    document.addEventListener('DOMContentLoaded', () => {
+        // Check if elements needed for quiz exist before proceeding
+        if (!quizArea) console.error("Elemento #quiz-area não encontrado.");
+        if (!feedbackArea) console.error("Elemento #quiz-feedback não encontrado.");
+
+        translatePage();        // Apply translations first
+        setupEventListeners();  // Set up interactive elements
+        setupObservers();       // Set up animations
+
+        if (quizArea) {
+            loadQuestion();     // Load the first quiz question if container exists
+        }
+    });
+
+    </script>
+
+</body>
+</html>

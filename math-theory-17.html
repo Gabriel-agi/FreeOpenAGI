@@ -1,0 +1,1048 @@
+<!DOCTYPE html>
+<!-- Language set to Portuguese BR -->
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Title set by JS -->
+    <title data-translate="page_title">Módulo 17: Distribuições Contínuas (Parte 2)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* --- Reset & Base Styles --- */
+        :root {
+            --primary-color: #007bff; /* Blue */
+            --secondary-color: #6c757d; /* Gray */
+            --background-light: #f8f9fa;
+            --background-dark: #343a40;
+            --text-light: #f8f9fa;
+            --text-dark: #212529;
+            --accent-color: #ffc107; /* Yellow */
+            --success-color: #28a745; /* Green */
+            --error-color: #dc3545; /* Red */
+            --info-color-1: #17a2b8; /* Teal for Uniform */
+            --info-color-2: #fd7e14; /* Orange for Exponential */
+            --border-radius: 8px;
+            --transition-speed: 0.3s;
+            --animation-speed: 0.6s; /* Control fade-in speed */
+            --font-body: 'Roboto', sans-serif;
+            --font-title: 'Orbitron', sans-serif;
+            --nav-primary: #6e48aa;
+            --nav-success: #4cc9f0;
+            --nav-dark: #1a1a2e;
+            --footer-border-color: #495057;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; font-size: 16px; }
+        body {
+            font-family: var(--font-body); line-height: 1.7;
+            background-color: var(--background-light); color: var(--text-dark);
+            overflow-x: hidden; display: flex; flex-direction: column; min-height: 100vh;
+        }
+        main { flex-grow: 1; }
+
+        /* --- Utility Classes --- */
+        .container { max-width: 960px; margin: 0 auto; padding: 0 15px; }
+        .text-center { text-align: center; }
+        .highlight { color: var(--primary-color); font-weight: bold; }
+        .formula {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #e9ecef;
+            padding: 0.8rem 1rem;
+            border-radius: 4px;
+            margin: 1rem auto; /* Center block formulas */
+            font-size: 1.1rem;
+            color: var(--text-dark);
+            display: block; /* Make it block for centering */
+            border: 1px solid #ced4da;
+            max-width: fit-content; /* Adjust width to content */
+            text-align: center;
+            overflow-x: auto; /* Allow scrolling if formula is too wide */
+        }
+        .inline-formula {
+             font-family: 'Courier New', Courier, monospace;
+             background-color: rgba(0, 123, 255, 0.08);
+             padding: 0.2em 0.4em;
+             border-radius: 3px;
+             font-size: 0.95em; /* Slightly smaller than surrounding text */
+             color: #0056b3;
+        }
+        .placeholder-image {
+            background-color: #e9ecef;
+            border: 2px dashed var(--secondary-color);
+            padding: 3rem 1rem;
+            text-align: center;
+            color: var(--secondary-color);
+            font-style: italic;
+            margin: 2rem auto;
+            max-width: 400px;
+            border-radius: var(--border-radius);
+        }
+
+        /* Elements to be animated by observer */
+        .fade-in-on-scroll {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+        }
+        .fade-in-on-scroll.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        /* Add delays for staggering */
+        .delay-1.visible { transition-delay: 0.1s; }
+        .delay-2.visible { transition-delay: 0.2s; }
+        .delay-3.visible { transition-delay: 0.3s; }
+        .delay-4.visible { transition-delay: 0.4s; }
+        .delay-5.visible { transition-delay: 0.5s; }
+        .delay-6.visible { transition-delay: 0.6s; }
+        .delay-7.visible { transition-delay: 0.7s; }
+
+        .button-group { margin-top: 2rem; display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; }
+        .action-button {
+             display: inline-flex; align-items: center; justify-content: center; gap: 0.5em;
+             padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold;
+             color: var(--text-light); background-color: var(--primary-color); border: none;
+             border-radius: var(--border-radius); cursor: pointer;
+             transition: background-color var(--transition-speed), transform var(--transition-speed), filter var(--transition-speed), box-shadow var(--transition-speed), opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out; /* Add animation transition */
+             margin-top: 1rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+             text-decoration: none; line-height: 1.2;
+             opacity: 0; /* Start hidden if animated */
+             transform: translateY(20px); /* Start offset if animated */
+        }
+        .action-button.visible { /* Make visible via observer */
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .action-button i.fas {}
+        .action-button:hover:not(:disabled) { background-color: #0056b3; transform: translateY(-2px) !important; box-shadow: 0 4px 8px rgba(0,0,0,0.15); } /* Use !important to override initial transform */
+        .action-button:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none !important; box-shadow: none; opacity: 0.7; }
+        .action-button.success { background-color: var(--success-color); }
+        .action-button.success:hover:not(:disabled) { background-color: #218838; }
+        .action-button.secondary { background-color: var(--secondary-color); }
+        .action-button.secondary:hover:not(:disabled) { background-color: #5a6268; }
+        .action-button:active:not(:disabled) { transform: translateY(1px) scale(0.98) !important; filter: brightness(0.95); }
+
+        /* --- Animations --- */
+        @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); } 50% { transform: scale(1.03); box-shadow: 0 0 15px rgba(0, 123, 255, 0.6); } 100% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); } }
+        @keyframes tada { from { transform: scale3d(1, 1, 1); } 10%, 20% { transform: scale3d(.9, .9, .9) rotate3d(0, 0, 1, -3deg); } 30%, 50%, 70%, 90% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, 3deg); } 40%, 60%, 80% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, -3deg); } to { transform: scale3d(1, 1, 1); } }
+        .tada-anim { animation: tada 1s ease; }
+        @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
+        @keyframes iconAppearCorrect { 0% { transform: scale(0.5) rotate(-15deg); opacity: 0; } 60% { transform: scale(1.2) rotate(5deg); opacity: 1; } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
+
+        /* --- Minimal Retractable Nav --- */
+        .minimal-nav-button { position: fixed; top: 15px; right: 15px; z-index: 1001; background-color: rgba(52, 58, 64, 0.75); color: var(--text-light); border: none; border-radius: var(--border-radius); padding: 8px 12px; cursor: pointer; transition: background-color var(--transition-speed), opacity var(--transition-speed), transform var(--transition-speed); font-size: 1.1rem; opacity: 0.6; box-shadow: 0 2px 5px rgba(0,0,0,0.2); line-height: 1; }
+        .minimal-nav-button:hover { background-color: rgba(52, 58, 64, 0.95); opacity: 1; transform: scale(1.05); }
+        .minimal-nav { position: fixed; top: 60px; right: 15px; z-index: 1000; background-color: var(--background-dark); border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.3); padding: 0.8rem; opacity: 0; transform: translateY(-15px) scale(0.95); transform-origin: top right; pointer-events: none; transition: opacity var(--transition-speed) ease, transform var(--transition-speed) ease; min-width: 200px; }
+        body.nav-active .minimal-nav { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+        .minimal-nav ul { list-style: none; margin: 0; padding: 0; }
+        .minimal-nav ul li { margin-bottom: 5px; }
+        .minimal-nav ul li:last-child { margin-bottom: 0; }
+        .minimal-nav ul li a { display: flex; align-items: center; color: var(--text-light); text-decoration: none; padding: 0.6rem 1rem; border-radius: 4px; transition: background-color var(--transition-speed), color var(--transition-speed); white-space: nowrap; font-weight: 400; font-size: 0.95rem; }
+        .minimal-nav ul li a i.fas { margin-right: 10px; width: 1.2em; text-align: center; opacity: 0.8; transition: opacity var(--transition-speed); }
+        .minimal-nav ul li a:hover { background-color: var(--primary-color); color: var(--text-light); }
+        .minimal-nav ul li a:hover i.fas { opacity: 1; }
+
+        /* --- Header --- */
+        .main-header { background: linear-gradient(135deg, var(--primary-color), #0056b3); color: var(--text-light); padding: 4rem 0 6rem; text-align: center; position: relative; overflow: hidden; }
+        .main-header .container { /* Start visible */ }
+        .main-header h1 { font-family: var(--font-title); font-size: 3rem; margin-bottom: 0.5rem; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); }
+        .main-header p { font-size: 1.2rem; font-weight: 300; opacity: 0.9; }
+        .header-shape { position: absolute; border-radius: 50%; background-color: rgba(255, 255, 255, 0.1); animation: pulse 5s infinite ease-in-out alternate; }
+        .shape1 { width: 150px; height: 150px; bottom: -50px; left: 10%; animation-duration: 6s; }
+        .shape2 { width: 80px; height: 80px; top: 50px; right: 15%; animation-duration: 4s; }
+        .shape3 { width: 50px; height: 50px; bottom: 20px; right: 30%; animation-duration: 7s; }
+
+        /* --- Section Styling --- */
+        section { padding: 4rem 0; border-bottom: 1px solid #eee; }
+        main section:last-of-type { border-bottom: none; padding-bottom: 0;}
+        section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); margin-bottom: 2rem; text-align: center; position: relative; padding-bottom: 10px; }
+        section h2::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 60px; height: 4px; background-color: var(--accent-color); border-radius: 2px; }
+
+        /* --- Welcome Section --- */
+        #welcome p { font-size: 1.1rem; max-width: 700px; margin: 0 auto 1rem; text-align: center; }
+
+        /* --- Uniform Distribution Section --- */
+        #uniform-distribution .dist-analogy {
+            display: flex; align-items: flex-start; justify-content: space-around;
+            background-color: #fff; padding: 2rem; border-radius: var(--border-radius);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08); margin-top: 2rem; flex-wrap: wrap; gap: 2rem;
+        }
+        .dist-part { /* Animated by observer */
+            text-align: center; max-width: 250px;
+            opacity: 0; transform: scale(0.9) translateY(10px); /* Start state */
+            transition: opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+        }
+        .dist-part.visible { opacity: 1; transform: scale(1) translateY(0); }
+        .dist-icon {
+            font-size: 3rem; margin-bottom: 1rem; color: var(--info-color-1); /* Uniform color */
+            display: inline-block; transition: transform var(--transition-speed) ease;
+        }
+        .dist-part:hover .dist-icon { transform: scale(1.15); }
+        .dist-example { /* Replaces op-example */
+            font-family: 'Courier New', Courier, monospace; background-color: #e9ecef;
+            padding: 0.5rem 0.8rem; border-radius: 4px; margin-top: 1rem;
+            font-size: 0.95rem; color: var(--text-dark); display: inline-block;
+            border: 1px solid #ced4da;
+        }
+        #uniform-distribution > .container > p:last-of-type { /* Conclusion para */
+            margin-top: 2rem;
+        }
+
+        /* --- Exponential Distribution Section --- */
+        #exponential-distribution .info-cards {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem; margin-top: 2rem;
+        }
+        .info-card { /* Animated by observer */
+            background-color: #fff; padding: 1.5rem; border-radius: var(--border-radius);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.07); text-align: center;
+            transition: transform var(--transition-speed) ease, box-shadow var(--transition-speed) ease, opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+            opacity: 0; transform: translateY(20px); /* Start state */
+            border-top: 4px solid var(--info-color-2); /* Exponential color */
+        }
+        .info-card.visible { opacity: 1; transform: translateY(0); }
+        .info-card:hover { transform: translateY(-5px) scale(1.02) !important; box-shadow: 0 8px 20px rgba(0,0,0,0.12); }
+        .info-icon { font-size: 2.5rem; margin-bottom: 1rem; color: var(--info-color-2); } /* Exponential color */
+        .info-card h3 { font-family: var(--font-body); font-weight: 700; font-size: 1.3rem; margin-bottom: 0.8rem; color: var(--text-dark); }
+        .info-details {
+             font-size: 1rem; color: var(--secondary-color); margin-top: 1rem; line-height: 1.6;
+        }
+        .info-example { /* Replaces op-example */
+            font-family: 'Courier New', Courier, monospace; background-color: #e9ecef;
+            padding: 0.5rem 0.8rem; border-radius: 4px; margin-top: 1rem;
+            font-size: 0.95rem; color: var(--text-dark); display: block;
+            border: 1px solid #ced4da; margin-left: auto; margin-right: auto; max-width: 90%;
+        }
+        .memoryless-highlight { background-color: rgba(253, 126, 20, 0.15); padding: 0.2em 0.4em; border-radius: 3px; font-weight: bold; color: #b95b0e; }
+        #exponential-distribution > .container > p:last-of-type { /* Conclusion para */
+             margin-top: 2rem;
+        }
+
+        /* --- Applications & Comparison Section --- */
+        #distributions-in-ai .explanation { display: flex; gap: 2rem; align-items: flex-start; margin-top: 2rem; flex-wrap: wrap; }
+        .comparison-area { /* Replaces text-demo */
+             flex-basis: 55%; background-color: var(--background-dark); color: #eee;
+             padding: 1.5rem; border-radius: var(--border-radius); font-family: 'Courier New', Courier, monospace;
+             position: relative; min-height: 300px; box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+             font-size: 0.9rem; line-height: 1.6;
+             opacity: 0; transition: opacity var(--animation-speed) ease-out; /* Only fade opacity */
+        }
+        .comparison-area.visible { opacity: 1; }
+        .comparison-area .code-line { margin-bottom: 0.7rem; display: block; white-space: nowrap; overflow: hidden; }
+        .comparison-area .code-output-area { /* Animated by JS after parent visible */
+            color: var(--accent-color); font-weight: bold; font-size: 1rem;
+            border-top: 1px dashed var(--secondary-color); padding-top: 1rem; margin-top: 1rem;
+            opacity: 0; transition: opacity 0.8s ease 0.4s; /* Delay appearance */
+            line-height: 1.8;
+        }
+        .comparison-area .code-output-area.visible { opacity: 1; }
+        .comparison-explanation { /* Replaces text-explanation */
+            flex-basis: 40%; font-size: 1.05rem;
+             opacity: 0; transition: opacity var(--animation-speed) ease-out; /* Only fade opacity */
+        }
+        .comparison-explanation.visible { opacity: 1; }
+        .comparison-explanation p { margin-bottom: 1rem; }
+        .comparison-explanation ul { list-style: inside; padding-left: 1rem; margin-bottom: 1rem; }
+        .comparison-explanation li { margin-bottom: 0.5rem; }
+        .code-highlight {
+            background-color: rgba(0, 123, 255, 0.1); color: #0056b3; padding: 0.2em 0.4em;
+            border-radius: 4px; font-family: 'Courier New', Courier, monospace; font-weight: bold;
+            cursor: pointer; transition: background-color var(--transition-speed);
+            display: inline-block; position: relative;
+        }
+        .code-highlight:hover { background-color: rgba(0, 123, 255, 0.2); }
+        .tooltip {
+            visibility: hidden; width: 220px; background-color: var(--background-dark);
+            color: var(--text-light); text-align: center; border-radius: 6px; padding: 8px 5px;
+            position: absolute; z-index: 1; bottom: 125%; left: 50%; margin-left: -110px; /* Adjust width */
+            opacity: 0; transition: opacity 0.3s; font-family: var(--font-body);
+            font-size: 0.9rem; font-weight: normal; pointer-events: none; line-height: 1.3;
+        }
+        .tooltip::after { content: ""; position: absolute; top: 100%; left: 50%; margin-left: -5px; border-width: 5px; border-style: solid; border-color: var(--background-dark) transparent transparent transparent; }
+        .code-highlight:hover .tooltip { visibility: visible; opacity: 1; }
+        .code-variable { color: #9cdcfe; }
+        .code-operator { color: var(--info-color-1); }
+        .code-keyword { color: #569cd6; }
+        .code-string { color: #ce9178; }
+        .code-comment { color: #6a9955; font-style: italic;}
+        .code-function { color: #dcdcaa; }
+        .code-number { color: #b5cea8; }
+        .code-parameter { color: var(--info-color-2); } /* Different color for params */
+
+        /* --- Knowledge Check Section --- */
+        #knowledge-check { background-color: #e9ecef; }
+        .quiz-container { /* Animated by observer */
+             background-color: #fff; padding: 2rem; border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.1); max-width: 700px; margin: 2rem auto 0;
+             opacity: 0; transition: opacity var(--animation-speed) ease-out; /* Only fade opacity */
+        }
+        .quiz-container.visible { opacity: 1; }
+        .quiz-question { font-size: 1.2rem; font-weight: bold; margin-bottom: 1.5rem; color: var(--text-dark); }
+        .quiz-options button { display: block; width: 100%; padding: 1rem; margin-bottom: 1rem; text-align: left; font-size: 1rem; background-color: #f8f9fa; border: 1px solid #ced4da; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), border-color var(--transition-speed), transform var(--transition-speed); }
+        .quiz-options button:not(:disabled):hover { background-color: #e2e6ea; border-color: #adb5bd; transform: translateX(5px); }
+        .quiz-options button:disabled { cursor: default; opacity: 0.7; }
+        .quiz-options button.correct { background-color: #d4edda; border-color: var(--success-color); color: #155724; font-weight: bold; }
+        .quiz-options button.incorrect { background-color: #f8d7da; border-color: var(--error-color); color: #721c24; font-weight: bold; }
+        .quiz-options button.incorrect.shake { animation: shake 0.5s ease; }
+        .quiz-feedback { margin-top: 1.5rem; padding: 1rem; border-radius: var(--border-radius); font-weight: bold; text-align: center; opacity: 0; transition: opacity 0.5s ease, height 0.5s ease, margin-bottom 0.5s ease; height: 0; overflow: hidden; margin-bottom: 0;}
+        .quiz-feedback.visible { opacity: 1; height: auto; margin-bottom: 1rem; }
+        .quiz-feedback.correct { background-color: #d4edda; color: #155724; }
+        .quiz-feedback.incorrect { background-color: #f8d7da; color: #721c24; }
+        #next-question-btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5em; margin: 1.5rem auto 0; padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold; color: var(--text-light); background-color: var(--primary-color); border: none; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), transform var(--transition-speed), opacity 0.3s, visibility 0.3s; opacity: 0; visibility: hidden; }
+        #next-question-btn:hover:not(:disabled) { background-color: #0056b3; transform: scale(1.05); }
+        #next-question-btn.visible { opacity: 1; visibility: visible; }
+        #next-question-btn:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none; opacity: 0.7; }
+
+        /* --- Completion Section Styling --- */
+        .completion-section { padding: 4rem 0; text-align: center; background-color: var(--background-light); }
+        .completion-section .icon { font-size: 4rem; color: var(--success-color); margin-bottom: 1rem; display: inline-block; animation: iconAppearCorrect 1s ease-out 0.5s forwards; opacity: 0; /* Initial state for animation */}
+        /* Ensure completion elements are targeted by observer */
+        .completion-section h2, .completion-section p {
+            opacity: 0; transform: translateY(20px);
+            transition: opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+        }
+        .completion-section h2.visible, .completion-section p.visible {
+            opacity: 1; transform: translateY(0);
+        }
+        .completion-section .button-group { margin-top: 2.5rem; }
+        .completion-section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); margin-bottom: 1rem; }
+        .completion-section h2::after { display: none; }
+        .completion-section p { font-size: 1.1rem; margin-top: 1rem; color: var(--secondary-color); max-width: 700px; margin-left: auto; margin-right: auto; line-height: 1.8; }
+
+        /* --- Footer Styling --- */
+        .main-footer {
+            background-color: var(--background-light);
+            color: var(--text-light);
+            text-align: center;
+            padding: 2rem 0;
+            font-size: 0.9rem;
+            margin-top: auto;
+            border-top: 1px solid var(--background-light);
+            opacity: 0.85;
+        }
+        .main-footer p { margin: 0; line-height: 1.5; }
+
+        /* --- Responsive Design --- */
+        @media (max-width: 768px) {
+            html { font-size: 15px; }
+            .main-header h1 { font-size: 2.5rem; } .main-header p { font-size: 1.1rem; }
+            section h2 { font-size: 1.8rem; }
+            .dist-analogy { flex-direction: column; gap: 1.5rem; align-items: center; }
+            #exponential-distribution .info-cards { grid-template-columns: 1fr; }
+            #distributions-in-ai .explanation { flex-direction: column; }
+            .comparison-area, .comparison-explanation { flex-basis: 100%; }
+            .minimal-nav { min-width: 180px; } .minimal-nav ul li a { padding: 0.6rem 0.8rem; }
+            .completion-section h2 { font-size: 2rem; }
+            .completion-section .button-group { flex-direction: column; align-items: center; gap: 0.8rem; }
+            .completion-section .action-button { width: 80%; max-width: 350px; margin-top: 0; }
+            .main-footer { padding: 1.5rem 0; }
+             .formula { font-size: 1rem; padding: 0.6rem 0.8rem; }
+        }
+        @media (max-width: 480px) {
+            html { font-size: 14px; }
+            .main-header h1 { font-size: 2rem; } .main-header p { font-size: 1rem; }
+            section h2 { font-size: 1.6rem; }
+            .quiz-options button { padding: 0.8rem; font-size: 0.95rem; }
+            .tooltip { width: 180px; margin-left: -90px; font-size: 0.8rem;} /* Adjust tooltip */
+            .minimal-nav-button { top: 10px; right: 10px; padding: 6px 10px; font-size: 1rem; }
+            .minimal-nav { top: 48px; right: 10px; min-width: 160px; }
+            .minimal-nav ul li a { padding: 0.5rem 0.7rem; font-size: 0.9rem;}
+            .minimal-nav ul li a i.fas { margin-right: 8px; }
+            .completion-section .icon { font-size: 3.5rem; }
+            .completion-section h2 { font-size: 1.8rem; } .completion-section p { font-size: 1rem; }
+            .completion-section .action-button { width: 90%; max-width: 300px; }
+             .comparison-area { font-size: 0.85rem; }
+            .main-footer { padding: 1rem 0; font-size: 0.85rem; }
+            .formula { font-size: 0.9rem; padding: 0.5rem 0.6rem; }
+            .inline-formula { font-size: 0.9em; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- ========= Minimal Nav Handle ========= -->
+    <button id="minimal-nav-toggle" class="minimal-nav-button" aria-label="Alternar Menu de Navegação" aria-expanded="false">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- ========= Minimal Nav Panel ========= -->
+    <nav id="minimal-nav-panel" class="minimal-nav">
+        <ul>
+            <!-- IMPORTANT: Changed ctp to math and module number -->
+            <li><a href="math-practice-17.html"><i class="fas fa-pencil-alt fa-fw"></i> <span data-translate="nav_practice">Iniciar Prática</span></a></li>
+            <li><a href="math-advanced-17.html"><i class="fas fa-flask fa-fw"></i> <span data-translate="nav_advanced">Prática Avançada</span></a></li>
+            <li><a href="math-dashboard.html"><i class="fas fa-list fa-fw"></i> <span data-translate="nav_menu">Menu do Curso</span></a></li>
+             <hr style="border: none; border-top: 1px solid var(--secondary-color); margin: 8px 0;">
+             <li><a href="#welcome"><i class="fas fa-door-open fa-fw"></i> <span data-translate="nav_welcome_m17">Boas-vindas M17</span></a></li>
+             <li><a href="#uniform-distribution"><i class="fas fa-ruler-horizontal fa-fw"></i> <span data-translate="nav_uniform">Dist. Uniforme</span></a></li>
+             <li><a href="#exponential-distribution"><i class="fas fa-hourglass-half fa-fw"></i> <span data-translate="nav_exponential">Dist. Exponencial</span></a></li>
+             <li><a href="#distributions-in-ai"><i class="fas fa-brain fa-fw"></i> <span data-translate="nav_applications">Aplicações</span></a></li>
+             <li><a href="#knowledge-check"><i class="fas fa-check-double fa-fw"></i> <span data-translate="nav_quiz">Teste Rápido</span></a></li>
+             <li><a href="#completion"><i class="fas fa-flag-checkered fa-fw"></i> <span data-translate="completion_theory_title_m17">Conclusão</span></a></li>
+        </ul>
+    </nav>
+
+    <header class="main-header">
+        <div class="header-shape shape1"></div>
+        <div class="header-shape shape2"></div>
+        <div class="header-shape shape3"></div>
+        <div class="container"> <!-- Start visible -->
+             <!-- IMPORTANT: Changed module number and title -->
+            <h1 data-translate="header_title_m17">Módulo 17: Distribuições Contínuas (Parte 2)</h1>
+            <p data-translate="header_subtitle_m17">Modelando eventos com probabilidade uniforme e tempos de espera com a Exponencial.</p>
+        </div>
+    </header>
+
+    <main>
+        <!-- ========= Welcome Section ========= -->
+        <section id="welcome">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="welcome_title_m17">🎲 Modelando o Contínuo: Uniforme e Exponencial</h2>
+                <p class="fade-in-on-scroll delay-1" data-translate="welcome_p1_m17">
+                    Bem-vindo ao Módulo 17! Continuando nossa exploração das distribuições contínuas, agora focaremos em duas distribuições fundamentais: a <span class="highlight">Uniforme Contínua</span> e a <span class="highlight">Exponencial</span>.
+                </p>
+                <p class="fade-in-on-scroll delay-2" data-translate="welcome_p2_m17">
+                    A Uniforme descreve situações onde qualquer valor dentro de um intervalo específico é igualmente provável, essencial para <span class="highlight">geração de números aleatórios</span> e <span class="highlight">amostragem</span>. A Exponencial modela o <span class="highlight">tempo até a ocorrência de um evento</span> em processos onde a taxa de ocorrência é constante, crucial para <span class="highlight">análise de confiabilidade</span> e <span class="highlight">teoria das filas</span> em sistemas computacionais e IA.
+                </p>
+                 <p class="fade-in-on-scroll delay-3" data-translate="welcome_p3_m17">
+                     Vamos entender suas definições, propriedades e como aplicá-las em cenários de IA.
+                 </p>
+            </div>
+        </section>
+
+        <!-- ========= Uniform Distribution Section ========= -->
+        <section id="uniform-distribution">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="uniform_title">📏 Distribuição Uniforme Contínua</h2>
+                <p class="text-center fade-in-on-scroll delay-1" data-translate="uniform_subtitle">Quando todas as possibilidades em um intervalo são igualmente prováveis.</p>
+                <p class="text-center fade-in-on-scroll delay-2" data-translate="uniform_intro">
+                    Imagine escolher um número aleatório entre `a` e `b`. Se cada ponto nesse intervalo tem a mesma chance de ser escolhido, a variável aleatória segue uma distribuição Uniforme Contínua, denotada como <code class="inline-formula">X ~ U(a, b)</code>.
+                </p>
+
+                <div class="placeholder-image fade-in-on-scroll delay-3" data-translate="uniform_pdf_placeholder">Formato da PDF Uniforme (Retângulo)</div>
+
+                <div class="dist-analogy">
+                    <div class="dist-part fade-in-on-scroll delay-4">
+                        <span class="dist-icon"><i class="fas fa-file-pdf"></i></span>
+                        <h3 data-translate="uniform_pdf_title">Função Densidade de Probabilidade (PDF)</h3>
+                        <p data-translate="uniform_pdf_text">É constante dentro do intervalo [a, b] e zero fora dele.</p>
+                        <div class="dist-example formula" data-translate="uniform_pdf_formula"><code>f(x) = 1 / (b - a)</code><br>para a ≤ x ≤ b<br><code>f(x) = 0</code>, caso contrário</div>
+                    </div>
+                    <div class="dist-part fade-in-on-scroll delay-5">
+                        <span class="dist-icon"><i class="fas fa-chart-area"></i></span>
+                        <h3 data-translate="uniform_cdf_title">Função Distribuição Acumulada (CDF)</h3>
+                        <p data-translate="uniform_cdf_text">Representa a probabilidade P(X ≤ x). Cresce linearmente.</p>
+                        <div class="dist-example formula" data-translate="uniform_cdf_formula"><code>F(x) = 0</code>, se x < a<br><code>F(x) = (x - a) / (b - a)</code>, se a ≤ x ≤ b<br><code>F(x) = 1</code>, se x > b</div>
+                    </div>
+                    <div class="dist-part fade-in-on-scroll delay-6">
+                        <span class="dist-icon"><i class="fas fa-bullseye"></i></span>
+                        <h3 data-translate="uniform_mean_title">Média (Valor Esperado)</h3>
+                        <p data-translate="uniform_mean_text">O ponto médio do intervalo.</p>
+                        <div class="dist-example formula" data-translate="uniform_mean_formula"><code>E[X] = (a + b) / 2</code></div>
+                    </div>
+                     <div class="dist-part fade-in-on-scroll delay-7">
+                        <span class="dist-icon"><i class="fas fa-arrows-alt-h"></i></span>
+                        <h3 data-translate="uniform_variance_title">Variância</h3>
+                        <p data-translate="uniform_variance_text">Mede a dispersão dos dados.</p>
+                        <div class="dist-example formula" data-translate="uniform_variance_formula"><code>Var(X) = (b - a)² / 12</code></div>
+                    </div>
+                </div>
+                 <p class="text-center fade-in-on-scroll delay-7" data-translate="uniform_conclusion">A distribuição uniforme é a base para muitos geradores de números pseudo-aleatórios usados em simulações, criptografia e inicialização de parâmetros em algoritmos de IA.</p>
+            </div>
+        </section>
+
+        <!-- ========= Exponential Distribution Section ========= -->
+        <section id="exponential-distribution">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="exponential_title">⏳ Distribuição Exponencial</h2>
+                <p class="text-center fade-in-on-scroll delay-1" data-translate="exponential_subtitle">Modelando o tempo até o próximo evento.</p>
+                 <p class="text-center fade-in-on-scroll delay-2" data-translate="exponential_intro">
+                     Esta distribuição descreve o tempo entre eventos em um <span class="highlight">processo de Poisson</span>, onde eventos ocorrem a uma taxa média constante (<code class="inline-formula">λ</code>, lambda). É frequentemente usada para modelar tempos de espera ou de vida útil. Denotamos <code class="inline-formula">X ~ Exp(λ)</code>.
+                 </p>
+
+                 <div class="placeholder-image fade-in-on-scroll delay-3" data-translate="exponential_pdf_placeholder">Formato da PDF Exponencial (Decaimento)</div>
+
+                <div class="info-cards">
+                    <div class="info-card fade-in-on-scroll delay-4" id="card-exp-pdf">
+                        <span class="info-icon"><i class="fas fa-file-pdf"></i></span>
+                        <h3 data-translate="exponential_pdf_title">Função Densidade de Probabilidade (PDF)</h3>
+                        <div class="info-details">
+                            <p data-translate="exponential_pdf_text">A probabilidade decai exponencialmente à medida que o tempo `x` aumenta.</p>
+                            <div class="info-example formula" data-translate="exponential_pdf_formula"><code>f(x; λ) = λ * e^(-λx)</code><br>para x ≥ 0<br><code>f(x; λ) = 0</code>, para x < 0</div>
+                        </div>
+                    </div>
+                    <div class="info-card fade-in-on-scroll delay-5" id="card-exp-cdf">
+                        <span class="info-icon"><i class="fas fa-chart-area"></i></span>
+                        <h3 data-translate="exponential_cdf_title">Função Distribuição Acumulada (CDF)</h3>
+                        <div class="info-details">
+                            <p data-translate="exponential_cdf_text">Probabilidade de o evento ocorrer até o tempo `x`.</p>
+                            <div class="info-example formula" data-translate="exponential_cdf_formula"><code>F(x; λ) = 1 - e^(-λx)</code><br>para x ≥ 0<br><code>F(x; λ) = 0</code>, para x < 0</div>
+                        </div>
+                    </div>
+                     <div class="info-card fade-in-on-scroll delay-6" id="card-exp-mean">
+                        <span class="info-icon"><i class="fas fa-stopwatch"></i></span>
+                        <h3 data-translate="exponential_mean_title">Média (Valor Esperado)</h3>
+                        <div class="info-details">
+                            <p data-translate="exponential_mean_text">O tempo médio de espera até o evento.</p>
+                            <div class="info-example formula" data-translate="exponential_mean_formula"><code>E[X] = 1 / λ</code></div>
+                        </div>
+                    </div>
+                     <div class="info-card fade-in-on-scroll delay-7" id="card-exp-variance">
+                        <span class="info-icon"><i class="fas fa-wave-square"></i></span>
+                        <h3 data-translate="exponential_variance_title">Variância</h3>
+                        <div class="info-details">
+                            <p data-translate="exponential_variance_text">Dispersão do tempo de espera.</p>
+                            <div class="info-example formula" data-translate="exponential_variance_formula"><code>Var(X) = 1 / λ²</code></div>
+                        </div>
+                    </div>
+                     <div class="info-card fade-in-on-scroll delay-7" id="card-exp-memoryless">
+                        <span class="info-icon"><i class="fas fa-history"></i></span>
+                        <h3 data-translate="exponential_memoryless_title">Propriedade de Falta de Memória</h3>
+                        <div class="info-details">
+                            <p data-translate="exponential_memoryless_text">A probabilidade de esperar mais `t` unidades de tempo, dado que já se esperou `s`, é a mesma que a probabilidade inicial de esperar mais `t` unidades. <span class="memoryless-highlight">O passado não influencia o futuro.</span></p>
+                            <div class="info-example formula" data-translate="exponential_memoryless_formula"><code>P(X > s + t | X > s) = P(X > t)</code></div>
+                        </div>
+                    </div>
+                </div>
+                 <p class="text-center fade-in-on-scroll delay-8" data-translate="exponential_conclusion">A distribuição exponencial é vital para modelar a durabilidade de componentes eletrônicos, o tempo entre chegadas de clientes em sistemas (IA para otimização de filas), ou até o tempo de decaimento radioativo.</p>
+            </div>
+        </section>
+
+        <!-- ========= Applications & Comparison Section ========= -->
+        <section id="distributions-in-ai">
+             <div class="container">
+                 <h2 class="fade-in-on-scroll" data-translate="applications_title_m17">⚙️ Aplicações em IA e Comparação</h2>
+                 <p class="text-center fade-in-on-scroll delay-1" data-translate="applications_subtitle_m17">Entendendo quando usar cada distribuição e seus papéis em IA.</p>
+
+                 <div class="explanation">
+                     <div class="comparison-area fade-in-on-scroll delay-2"> <!-- Observe container -->
+                        <span class="code-line"><span class="code-comment"># Exemplo Conceitual: Probabilidades</span></span>
+                        <span class="code-line"><span class="code-comment"># Uniforme U(0, 10) vs Exponencial Exp(λ=0.1), onde E[X] = 1/0.1 = 10</span></span>
+
+                        <span class="code-line" style="margin-top: 1rem;"><span class="code-comment"># -- Uniforme U(0, 10) --</span></span>
+                        <span class="code-line"><span class="code-variable">a_unif</span> <span class="code-operator">=</span> <span class="code-number">0</span></span>
+                        <span class="code-line"><span class="code-variable">b_unif</span> <span class="code-operator">=</span> <span class="code-number">10</span></span>
+                        <span class="code-line"><span class="code-variable">pdf_unif</span> <span class="code-operator">=</span> <span class="code-number">1</span> <span class="code-operator">/</span> (<span class="code-variable">b_unif</span> <span class="code-operator">-</span> <span class="code-variable">a_unif</span>)  <span class="code-comment"># 1/10 = 0.1</span></span>
+                        <span class="code-line"><span class="code-comment"># P(X_unif <= 2) = (2 - 0) / (10 - 0)</span></span>
+                        <span class="code-line"><span class="code-variable">prob_unif_le_2</span> <span class="code-operator">=</span> (<span class="code-number">2</span> <span class="code-operator">-</span> <span class="code-variable">a_unif</span>) <span class="code-operator">/</span> (<span class="code-variable">b_unif</span> <span class="code-operator">-</span> <span class="code-variable">a_unif</span>)</span>
+
+                        <span class="code-line" style="margin-top: 1rem;"><span class="code-comment"># -- Exponencial Exp(0.1) --</span></span>
+                        <span class="code-line"><span class="code-variable">lambda_exp</span> <span class="code-operator">=</span> <span class="code-number">0.1</span></span>
+                         <span class="code-line"><span class="code-comment"># P(X_exp <= 2) = 1 - e^(-λ * 2)</span></span>
+                         <span class="code-line"><span class="code-variable">prob_exp_le_2</span> <span class="code-operator">=</span> <span class="code-number">1</span> <span class="code-operator">-</span> <span class="code-function">Math.exp</span>(<span class="code-operator">-</span><span class="code-variable">lambda_exp</span> <span class="code-operator">*</span> <span class="code-number">2</span>) <span class="code-comment"># Usando JS Math.exp</span></span>
+
+                         <span class="code-line" style="margin-top: 1.5rem;"><span class="code-keyword">print</span>(<span class="code-string">f"Uniforme U(0, 10):"</span>)</span>
+                         <span class="code-line"><span class="code-keyword">print</span>(<span class="code-string">f"  PDF = {pdf_unif:.2f}"</span>)</span>
+                         <span class="code-line"><span class="code-keyword">print</span>(<span class="code-string">f"  P(X <= 2) = {prob_unif_le_2:.4f}"</span>)</span>
+                         <span class="code-line" style="margin-top: 1rem;"><span class="code-keyword">print</span>(<span class="code-string">f"Exponencial Exp(0.1):"</span>)</span>
+                         <span class="code-line"><span class="code-keyword">print</span>(<span class="code-string">f"  λ = {lambda_exp}"</span>)</span>
+                         <span class="code-line"><span class="code-keyword">print</span>(<span class="code-string">f"  P(X <= 2) = {prob_exp_le_2:.4f}"</span>)</span>
+
+                        <div class="code-output-area"> <!-- JS will add .visible -->
+                            <!-- Output will appear here via JS -->
+                        </div>
+                     </div>
+                     <div class="comparison-explanation fade-in-on-scroll delay-3"> <!-- Observe container -->
+                         <h3 data-translate="applications_comparison_title" style="margin-bottom: 1rem;">Uniforme vs. Exponencial</h3>
+                         <p data-translate="applications_comparison_p1">
+                            A escolha entre Uniforme e Exponencial depende fundamentalmente da natureza do fenômeno que estamos modelando:
+                         </p>
+                         <ul>
+                             <li data-translate="applications_comparison_li1"><span class="code-highlight" data-translate-tooltip="tooltip_uniform"><i class="fas fa-ruler-horizontal"></i> Uniforme<span class="tooltip">Use quando qualquer valor num intervalo [a, b] é igualmente provável. Não há "preferência" por nenhum valor. Limites definidos.</span></span>: Ausência de informação sobre a probabilidade dentro de um intervalo limitado.</li>
+                             <li data-translate="applications_comparison_li2"><span class="code-highlight" data-translate-tooltip="tooltip_exponential"><i class="fas fa-hourglass-half"></i> Exponencial<span class="tooltip">Use para modelar tempo entre eventos independentes que ocorrem a uma taxa constante (λ). Possui falta de memória. Limite inferior em 0.</span></span>: Modela o tempo até um evento ocorrer, assumindo taxa constante e falta de memória.</li>
+                         </ul>
+                          <h3 data-translate="applications_ai_title" style="margin-top: 2rem; margin-bottom: 1rem;">Aplicações em IA</h3>
+                         <ul>
+                             <li data-translate="applications_ai_li1"><strong>Uniforme:</strong> Usada na <span class="highlight">inicialização de pesos</span> em redes neurais (para evitar vieses iniciais), em algoritmos de <span class="highlight">busca aleatória</span>, e como base para gerar amostras de outras distribuições em <span class="highlight">Simulações de Monte Carlo</span>.</li>
+                             <li data-translate="applications_ai_li2"><strong>Exponencial:</strong> Modela tempos de chegada/serviço em <span class="highlight">simulações de sistemas</span> (ex: call centers, tráfego de rede), <span class="highlight">análise de confiabilidade</span> de hardware/software (tempo até a falha), e em alguns modelos de <span class="highlight">processamento de linguagem natural</span> (intervalos entre palavras ou eventos).</li>
+                         </ul>
+                     </div>
+                 </div>
+             </div>
+        </section>
+
+        <!-- ========= Knowledge Check Section ========= -->
+        <section id="knowledge-check">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="quiz_title">🧠 Teste Rápido!</h2>
+                <div class="quiz-container fade-in-on-scroll delay-1"> <!-- Observe container -->
+                    <div id="quiz-area">
+                         <p style="text-align: center; padding: 2rem 0;">Carregando quiz...</p>
+                    </div>
+                    <div id="quiz-feedback" class="quiz-feedback"></div>
+                    <button id="next-question-btn" data-translate="quiz_next_button">Próxima Pergunta</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========= Completion Section ========= -->
+        <section id="completion" class="completion-section"> <!-- Added ID for nav link -->
+            <div class="container">
+                 <div class="icon">
+                    <i class="fas fa-check-double"></i>
+                    <i class="fas fa-calculator"></i> <!-- Changed icon -->
+                    <i class="fas fa-star"></i>
+                </div>
+                 <!-- IMPORTANT: Changed module number -->
+                <h2 class="fade-in-on-scroll delay-1" data-translate="completion_theory_title_m17">Teoria do Módulo 17 Completa!</h2>
+                <p class="fade-in-on-scroll delay-2" data-translate="completion_theory_desc_m17">
+                    Excelente! Você explorou as distribuições Uniforme Contínua e Exponencial, entendendo suas características e aplicações. Essas ferramentas são essenciais para modelar incertezas e eventos temporais em IA. <br>
+                    Continue aprimorando seus conhecimentos na <strong>Zona de Prática</strong> ou na <strong>Prática Avançada</strong> do Módulo 17.
+                </p>
+                <div class="button-group">
+                    <!-- Buttons observed -->
+                     <!-- IMPORTANT: Changed ctp to math and module number -->
+                    <a href="math-dashboard.html" class="action-button secondary fade-in-on-scroll delay-3"><i class="fas fa-list"></i> <span data-translate="nav_menu">Menu do Curso</span></a>
+                    <a href="math-practice-17.html" class="action-button success fade-in-on-scroll delay-4"><i class="fas fa-pencil-alt"></i> <span data-translate="nav_practice">Iniciar Prática</span></a>
+                    <a href="math-advanced-17.html" class="action-button secondary fade-in-on-scroll delay-5"><i class="fas fa-flask"></i> <span data-translate="nav_advanced">Prática Avançada</span></a>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="main-footer">
+        <div class="container">
+            <p data-translate="footer_copyright"></p>
+        </div>
+    </footer>
+
+    <script>
+    // --- Translations Object (Portuguese Only) ---
+    const translations = {
+        pt: {
+            "page_title": "Módulo 17: Distribuições Contínuas (Parte 2)",
+            "nav_practice": "Iniciar Prática",
+            "nav_advanced": "Prática Avançada",
+            "nav_menu": "Menu do Curso",
+            "nav_welcome_m17": "Boas-vindas M17", "nav_uniform": "Dist. Uniforme", "nav_exponential": "Dist. Exponencial", "nav_applications": "Aplicações", "nav_quiz": "Teste Rápido",
+            "header_title_m17": "Módulo 17: Distribuições Contínuas (Parte 2)", "header_subtitle_m17": "Modelando eventos com probabilidade uniforme e tempos de espera com a Exponencial.",
+            "welcome_title_m17": "🎲 Modelando o Contínuo: Uniforme e Exponencial",
+            "welcome_p1_m17": "Bem-vindo ao Módulo 17! Continuando nossa exploração das distribuições contínuas, agora focaremos em duas distribuições fundamentais: a Uniforme Contínua e a Exponencial.",
+            "welcome_p2_m17": "A Uniforme descreve situações onde qualquer valor dentro de um intervalo específico é igualmente provável, essencial para geração de números aleatórios e amostragem. A Exponencial modela o tempo até a ocorrência de um evento em processos onde a taxa de ocorrência é constante, crucial para análise de confiabilidade e teoria das filas em sistemas computacionais e IA.",
+            "welcome_p3_m17": "Vamos entender suas definições, propriedades e como aplicá-las em cenários de IA.",
+
+            "uniform_title": "📏 Distribuição Uniforme Contínua",
+            "uniform_subtitle": "Quando todas as possibilidades em um intervalo são igualmente prováveis.",
+            "uniform_intro": "Imagine escolher um número aleatório entre `a` e `b`. Se cada ponto nesse intervalo tem a mesma chance de ser escolhido, a variável aleatória segue uma distribuição Uniforme Contínua, denotada como <code class=\"inline-formula\">X ~ U(a, b)</code>.",
+            "uniform_pdf_placeholder": "Formato da PDF Uniforme (Retângulo)",
+            "uniform_pdf_title": "Função Densidade de Probabilidade (PDF)",
+            "uniform_pdf_text": "É constante dentro do intervalo [a, b] e zero fora dele.",
+            "uniform_pdf_formula": "<code>f(x) = 1 / (b - a)</code><br>para a ≤ x ≤ b<br><code>f(x) = 0</code>, caso contrário",
+            "uniform_cdf_title": "Função Distribuição Acumulada (CDF)",
+            "uniform_cdf_text": "Representa a probabilidade P(X ≤ x). Cresce linearmente.",
+            "uniform_cdf_formula": "<code>F(x) = 0</code>, se x < a<br><code>F(x) = (x - a) / (b - a)</code>, se a ≤ x ≤ b<br><code>F(x) = 1</code>, se x > b",
+            "uniform_mean_title": "Média (Valor Esperado)",
+            "uniform_mean_text": "O ponto médio do intervalo.",
+            "uniform_mean_formula": "<code>E[X] = (a + b) / 2</code>",
+            "uniform_variance_title": "Variância",
+            "uniform_variance_text": "Mede a dispersão dos dados.",
+            "uniform_variance_formula": "<code>Var(X) = (b - a)² / 12</code>",
+            "uniform_conclusion": "A distribuição uniforme é a base para muitos geradores de números pseudo-aleatórios usados em simulações, criptografia e inicialização de parâmetros em algoritmos de IA.",
+
+            "exponential_title": "⏳ Distribuição Exponencial",
+            "exponential_subtitle": "Modelando o tempo até o próximo evento.",
+            "exponential_intro": "Esta distribuição descreve o tempo entre eventos em um processo de Poisson, onde eventos ocorrem a uma taxa média constante (<code class=\"inline-formula\">λ</code>, lambda). É frequentemente usada para modelar tempos de espera ou de vida útil. Denotamos <code class=\"inline-formula\">X ~ Exp(λ)</code>.",
+            "exponential_pdf_placeholder": "Formato da PDF Exponencial (Decaimento)",
+            "exponential_pdf_title": "Função Densidade de Probabilidade (PDF)",
+            "exponential_pdf_text": "A probabilidade decai exponencialmente à medida que o tempo `x` aumenta.",
+            "exponential_pdf_formula": "<code>f(x; λ) = λ * e^(-λx)</code><br>para x ≥ 0<br><code>f(x; λ) = 0</code>, para x < 0",
+            "exponential_cdf_title": "Função Distribuição Acumulada (CDF)",
+            "exponential_cdf_text": "Probabilidade de o evento ocorrer até o tempo `x`.",
+            "exponential_cdf_formula": "<code>F(x; λ) = 1 - e^(-λx)</code><br>para x ≥ 0<br><code>F(x; λ) = 0</code>, para x < 0",
+            "exponential_mean_title": "Média (Valor Esperado)",
+            "exponential_mean_text": "O tempo médio de espera até o evento.",
+            "exponential_mean_formula": "<code>E[X] = 1 / λ</code>",
+            "exponential_variance_title": "Variância",
+            "exponential_variance_text": "Dispersão do tempo de espera.",
+            "exponential_variance_formula": "<code>Var(X) = 1 / λ²</code>",
+            "exponential_memoryless_title": "Propriedade de Falta de Memória",
+            "exponential_memoryless_text": "A probabilidade de esperar mais `t` unidades de tempo, dado que já se esperou `s`, é a mesma que a probabilidade inicial de esperar mais `t` unidades. <span class=\"memoryless-highlight\">O passado não influencia o futuro.</span>",
+            "exponential_memoryless_formula": "<code>P(X > s + t | X > s) = P(X > t)</code>",
+            "exponential_conclusion": "A distribuição exponencial é vital para modelar a durabilidade de componentes eletrônicos, o tempo entre chegadas de clientes em sistemas (IA para otimização de filas), ou até o tempo de decaimento radioativo.",
+
+            "applications_title_m17": "⚙️ Aplicações em IA e Comparação",
+            "applications_subtitle_m17": "Entendendo quando usar cada distribuição e seus papéis em IA.",
+            "applications_comparison_title": "Uniforme vs. Exponencial",
+            "applications_comparison_p1": "A escolha entre Uniforme e Exponencial depende fundamentalmente da natureza do fenômeno que estamos modelando:",
+            "applications_comparison_li1": "<span class=\"code-highlight\" data-translate-tooltip=\"tooltip_uniform\"><i class=\"fas fa-ruler-horizontal\"></i> Uniforme<span class=\"tooltip\">Use quando qualquer valor num intervalo [a, b] é igualmente provável. Não há \"preferência\" por nenhum valor. Limites definidos.</span></span>: Ausência de informação sobre a probabilidade dentro de um intervalo limitado.",
+            "applications_comparison_li2": "<span class=\"code-highlight\" data-translate-tooltip=\"tooltip_exponential\"><i class=\"fas fa-hourglass-half\"></i> Exponencial<span class=\"tooltip\">Use para modelar tempo entre eventos independentes que ocorrem a uma taxa constante (λ). Possui falta de memória. Limite inferior em 0.</span></span>: Modela o tempo até um evento ocorrer, assumindo taxa constante e falta de memória.",
+            "tooltip_uniform": "Use quando qualquer valor num intervalo [a, b] é igualmente provável. Não há \"preferência\" por nenhum valor. Limites definidos.",
+            "tooltip_exponential": "Use para modelar tempo entre eventos independentes que ocorrem a uma taxa constante (λ). Possui falta de memória. Limite inferior em 0.",
+            "applications_ai_title": "Aplicações em IA",
+            "applications_ai_li1": "<strong>Uniforme:</strong> Usada na inicialização de pesos em redes neurais (para evitar vieses iniciais), em algoritmos de busca aleatória, e como base para gerar amostras de outras distribuições em Simulações de Monte Carlo.",
+            "applications_ai_li2": "<strong>Exponencial:</strong> Modela tempos de chegada/serviço em simulações de sistemas (ex: call centers, tráfego de rede), análise de confiabilidade de hardware/software (tempo até a falha), e em alguns modelos de processamento de linguagem natural (intervalos entre palavras ou eventos).",
+
+            "quiz_title": "🧠 Teste Rápido!", "quiz_next_button": "Próxima Pergunta",
+            "quiz_q1_m17": "Qual cenário é melhor modelado por uma Distribuição Uniforme Contínua?",
+            "quiz_q1_m17_opt1": "O tempo até a próxima falha de um disco rígido.",
+            "quiz_q1_m17_opt2": "A altura dos alunos em uma turma.",
+            "quiz_q1_m17_opt3": "Gerar um número aleatório entre 0.0 e 1.0, onde qualquer valor é igualmente provável.",
+            "quiz_q1_m17_opt4": "O número de clientes que chegam a uma loja em uma hora.",
+            "quiz_q2_m17": "Para uma variável aleatória X ~ U(5, 15), qual é a probabilidade P(X ≤ 8)?",
+            "quiz_q2_m17_opt1": "0.3",
+            "quiz_q2_m17_opt2": "0.8",
+            "quiz_q2_m17_opt3": "0.5",
+            "quiz_q2_m17_opt4": "0.1",
+            "quiz_q3_m17": "A propriedade de 'falta de memória' é característica de qual distribuição?",
+            "quiz_q3_m17_opt1": "Normal",
+            "quiz_q3_m17_opt2": "Uniforme Contínua",
+            "quiz_q3_m17_opt3": "Binomial",
+            "quiz_q3_m17_opt4": "Exponencial",
+            "quiz_q4_m17": "Na distribuição Exponencial X ~ Exp(λ), o que representa o parâmetro λ?",
+            "quiz_q4_m17_opt1": "O tempo médio até o evento.",
+            "quiz_q4_m17_opt2": "A taxa média de ocorrência do evento por unidade de tempo.",
+            "quiz_q4_m17_opt3": "A variância do tempo de espera.",
+            "quiz_q4_m17_opt4": "A probabilidade máxima.",
+            "quiz_q5_m17": "Se o tempo médio de espera para um cliente ser atendido é de 5 minutos (seguindo uma distribuição exponencial), qual é o valor de λ?",
+            "quiz_q5_m17_opt1": "5",
+            "quiz_q5_m17_opt2": "1/5 = 0.2",
+            "quiz_q5_m17_opt3": "25",
+            "quiz_q5_m17_opt4": "Não pode ser determinado.",
+
+            "quiz_feedback_correct": "Correto! 🎉", "quiz_feedback_incorrect": "Não foi bem assim! A resposta correta era: {correctAnswerText}",
+            "quiz_final_score_title": "Teste Rápido Completo!",
+            "quiz_final_score_summary": "Você respondeu {score} de {total} perguntas corretamente.",
+            "quiz_final_score_perfect": "Excelente! Você compreendeu bem as distribuições Uniforme e Exponencial.", "quiz_final_score_good": "Bom trabalho! Continue praticando para solidificar os conceitos.",
+            "completion_theory_title_m17": "Teoria do Módulo 17 Completa!",
+            "completion_theory_desc_m17": "Excelente! Você explorou as distribuições Uniforme Contínua e Exponencial, entendendo suas características e aplicações. Essas ferramentas são essenciais para modelar incertezas e eventos temporais em IA. <br> Continue aprimorando seus conhecimentos na <strong>Zona de Prática</strong> ou na <strong>Prática Avançada</strong> do Módulo 17.",
+            "footer_copyright": "© 2024 Matemática para IA. Todos os direitos reservados."
+        }
+    };
+
+    // --- Global Variables ---
+    let currentQuestionIndex = 0;
+    let score = 0;
+    const lang = 'pt'; // Hardcoded language
+
+    // --- DOM Elements (Get them once) ---
+    const navToggleButton = document.getElementById('minimal-nav-toggle');
+    const navPanel = document.getElementById('minimal-nav-panel');
+    const body = document.body;
+    const quizArea = document.getElementById('quiz-area');
+    const feedbackArea = document.getElementById('quiz-feedback');
+    const nextButton = document.getElementById('next-question-btn');
+    const comparisonBox = document.querySelector('#distributions-in-ai .comparison-area'); // Updated selector
+    const codeOutputArea = document.querySelector('#distributions-in-ai .code-output-area'); // Updated selector
+
+    // --- Functions ---
+
+    function getTranslation(key, replacements = {}) {
+         let text = translations[lang]?.[key] ?? `[${key}]`;
+         for (const placeholder in replacements) {
+             const regex = new RegExp(`\\{${placeholder}\\}`, 'g');
+             text = text.replace(regex, replacements[placeholder]);
+         }
+         return text;
+    }
+
+    function translatePage() {
+         document.querySelectorAll('[data-translate]').forEach(el => {
+             const key = el.getAttribute('data-translate');
+             let translation = getTranslation(key);
+
+              if (el.tagName === 'TITLE') { document.title = translation; }
+              else if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') { /* Skip */ }
+              else {
+                   // Allow specific HTML tags safely (added i, b, em, strong, div, span for structure)
+                   const safeHtmlRegex = /<\/?(code|strong|span|br|i|b|em|strong|div)>/gi;
+                   let containsSafeHtml = safeHtmlRegex.test(translation);
+
+                   // Allow innerHTML if it contains only safe tags OR if it's in an allowed container (formula, examples, details, explanations, footer)
+                    const allowedContainers = '.formula, .dist-example, .info-example, .info-details, .comparison-explanation, .footer p, .quiz-feedback, .quiz-question, .quiz-options button';
+                   if (containsSafeHtml || el.closest(allowedContainers)) {
+                      // Special case for formulas to keep line breaks
+                      if (el.classList.contains('formula')) {
+                         translation = translation.replace(/<br>/gi, '\n'); // Temp replace br
+                         el.innerText = translation; // Use innerText to preserve line breaks from \n
+                      } else {
+                         el.innerHTML = translation;
+                      }
+                   } else {
+                      el.textContent = translation;
+                   }
+              }
+         });
+
+          document.querySelectorAll('.code-highlight[data-translate-tooltip]').forEach(el => {
+              const tooltipKey = el.getAttribute('data-translate-tooltip');
+              const tooltipSpan = el.querySelector('.tooltip');
+              if(tooltipSpan && tooltipKey) {
+                 tooltipSpan.innerHTML = getTranslation(tooltipKey); // Tooltips can have simple HTML
+              }
+          });
+
+           document.querySelectorAll('.code-comment[data-translate]').forEach(commentSpan => {
+               const key = commentSpan.getAttribute('data-translate');
+               let translatedText = getTranslation(key);
+               let commentContent = translatedText.startsWith('#') ? translatedText.substring(1).trim() : translatedText;
+               commentSpan.textContent = '# ' + commentContent;
+           });
+    }
+
+    // --- Quiz Data & Functions ---
+    const quizData = [
+         { questionKey: "quiz_q1_m17", optionKeys: ["quiz_q1_m17_opt1", "quiz_q1_m17_opt2", "quiz_q1_m17_opt3", "quiz_q1_m17_opt4"], correctAnswer: 2 }, // Uniform: random number gen
+         { questionKey: "quiz_q2_m17", optionKeys: ["quiz_q2_m17_opt1", "quiz_q2_m17_opt2", "quiz_q2_m17_opt3", "quiz_q2_m17_opt4"], correctAnswer: 0 }, // P(X<=8) for U(5,15) = (8-5)/(15-5) = 3/10 = 0.3
+         { questionKey: "quiz_q3_m17", optionKeys: ["quiz_q3_m17_opt1", "quiz_q3_m17_opt2", "quiz_q3_m17_opt3", "quiz_q3_m17_opt4"], correctAnswer: 3 }, // Memoryless: Exponential
+         { questionKey: "quiz_q4_m17", optionKeys: ["quiz_q4_m17_opt1", "quiz_q4_m17_opt2", "quiz_q4_m17_opt3", "quiz_q4_m17_opt4"], correctAnswer: 1 }, // Lambda: rate of occurrence
+         { questionKey: "quiz_q5_m17", optionKeys: ["quiz_q5_m17_opt1", "quiz_q5_m17_opt2", "quiz_q5_m17_opt3", "quiz_q5_m17_opt4"], correctAnswer: 1 }  // E[X] = 1/lambda => lambda = 1/E[X] = 1/5 = 0.2
+    ];
+
+    function loadQuestion() {
+          if (!quizArea) return; // Ensure quizArea exists
+
+          // If we reached the end, show score
+          if (currentQuestionIndex >= quizData.length) {
+              if (!quizArea.querySelector('[data-translate="quiz_final_score_title"]')) { // Avoid re-rendering score
+                 showFinalScore();
+              }
+              return;
+          }
+
+          const currentQuiz = quizData[currentQuestionIndex];
+          const questionText = getTranslation(currentQuiz.questionKey);
+          // Generate HTML for question and options
+          // Use innerHTML safely here as we control the quizData content
+          quizArea.innerHTML = `
+              <div class="quiz-question">${currentQuestionIndex + 1}. ${questionText.replace(/`(.*?)`/g, '<code>$1</code>')}</div>
+              <div class="quiz-options">
+                  ${currentQuiz.optionKeys.map((optionKey, index) => `
+                      <button class="quiz-option-btn" data-index="${index}">${getTranslation(optionKey).replace(/`(.*?)`/g, '<code>$1</code>')}</button>
+                  `).join('')}
+              </div>
+          `;
+
+          // Reset feedback and next button
+          if (feedbackArea) {
+            feedbackArea.classList.remove('visible', 'correct', 'incorrect');
+            feedbackArea.textContent = '';
+            feedbackArea.style.height = '0'; // Reset height
+            feedbackArea.style.marginBottom = '0'; // Reset margin
+          }
+          if (nextButton) {
+            nextButton.classList.remove('visible');
+            nextButton.disabled = true;
+          }
+
+          // Add event listeners to the new buttons
+          quizArea.querySelectorAll('.quiz-option-btn').forEach(button => {
+              button.addEventListener('click', handleAnswer);
+          });
+    }
+
+    function handleAnswer(event) {
+         const selectedButton = event.target;
+         const selectedIndex = parseInt(selectedButton.dataset.index);
+         const correctIndex = quizData[currentQuestionIndex].correctAnswer;
+         const correctOptionKey = quizData[currentQuestionIndex].optionKeys[correctIndex];
+
+         // Disable all options
+         quizArea.querySelectorAll('.quiz-option-btn').forEach(btn => {
+            btn.disabled = true;
+            btn.classList.remove('shake'); // Remove shake if present from previous incorrect
+         });
+
+         if (!feedbackArea || !nextButton) return; // Ensure elements exist
+
+         feedbackArea.classList.add('visible');
+
+         if (selectedIndex === correctIndex) {
+             selectedButton.classList.add('correct');
+             // Use innerHTML for feedback to allow strong tag
+             feedbackArea.innerHTML = getTranslation('quiz_feedback_correct');
+             feedbackArea.classList.add('correct');
+             feedbackArea.classList.remove('incorrect');
+             score++;
+             selectedButton.classList.add('tada-anim');
+         } else {
+             selectedButton.classList.add('incorrect');
+             const formattedCorrectAnswer = getTranslation(correctOptionKey).replace(/`(.*?)`/g, '<code>$1</code>');
+             // Use innerHTML for feedback to allow strong tag
+             feedbackArea.innerHTML = getTranslation('quiz_feedback_incorrect', { correctAnswerText: `<strong>${formattedCorrectAnswer}</strong>` });
+             feedbackArea.classList.add('incorrect');
+             feedbackArea.classList.remove('correct');
+             // Highlight the correct button as well
+             const correctButton = quizArea.querySelector(`.quiz-option-btn[data-index="${correctIndex}"]`);
+             if(correctButton) correctButton.classList.add('correct');
+             selectedButton.classList.add('shake');
+         }
+
+         // Remove animation classes after they finish
+          selectedButton.addEventListener('animationend', () => {
+               selectedButton.classList.remove('tada-anim', 'shake');
+          }, { once: true });
+
+         // Make feedback area adjust height and margin smoothly
+         feedbackArea.style.height = feedbackArea.scrollHeight + 'px';
+         feedbackArea.style.marginBottom = '1rem';
+
+
+         // Show and enable next button
+         nextButton.classList.add('visible');
+         nextButton.disabled = false;
+     }
+
+     function showFinalScore() {
+            if (!quizArea) return;
+            const totalQuestions = quizData.length;
+            // Determine message based on score percentage
+            let resultMessageKey = (score / totalQuestions) >= 0.7 ? 'quiz_final_score_perfect' : 'quiz_final_score_good'; // 70% threshold
+
+            // Use innerHTML safely here
+            quizArea.innerHTML = `
+               <div class="quiz-question text-center" data-translate="quiz_final_score_title" style="font-size: 1.5rem;">${getTranslation('quiz_final_score_title')}</div>
+               <p class="text-center" style="font-size: 1.2rem; margin-bottom: 1rem;">${getTranslation('quiz_final_score_summary', { score: score, total: totalQuestions })}</p>
+               <p class="text-center" style="color: ${score / totalQuestions >= 0.7 ? 'var(--success-color)' : 'var(--primary-color)'}; font-weight: bold;">${getTranslation(resultMessageKey)}</p>
+            `;
+            if (feedbackArea) feedbackArea.classList.remove('visible'); // Hide feedback area
+            if (nextButton) nextButton.style.display = 'none'; // Hide next button
+            quizArea.scrollIntoView({ behavior: 'smooth', block: 'center' }); // Scroll score into view
+     }
+
+
+    // --- Intersection Observer Setup ---
+    function setupObservers() {
+        const observerOptions = {
+            root: null, // relative to viewport
+            rootMargin: '0px',
+            threshold: 0.1 // Trigger when 10% of the element is visible
+        };
+
+        const codeObserverOptions = {
+            root: null,
+            rootMargin: '0px',
+            threshold: 0.4 // Trigger when 40% of the code box is visible
+        };
+
+        const observerCallback = (entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    // Optional: Unobserve after it becomes visible to save resources
+                    // observer.unobserve(entry.target);
+                }
+                // Optional: Remove 'visible' if it scrolls out of view
+                // else {
+                //     entry.target.classList.remove('visible');
+                // }
+            });
+        };
+
+        const animationObserver = new IntersectionObserver(observerCallback, observerOptions);
+
+        // Observe elements with the fade-in class
+        document.querySelectorAll('.fade-in-on-scroll').forEach(el => {
+            animationObserver.observe(el);
+        });
+
+        // --- Specific Observer for Code Output Simulation ---
+        if (codeOutputArea && comparisonBox) { // Updated selector
+             const codeOutputObserver = new IntersectionObserver((entries, observer) => {
+                 entries.forEach(entry => {
+                     // Trigger only when the comparisonBox is intersecting
+                     if (entry.isIntersecting && !codeOutputArea.classList.contains('visible')) {
+                        // Short delay to ensure parent's fade-in completes visually
+                        setTimeout(() => {
+                            // Calculate values from the example code
+                            const a_unif = 0;
+                            const b_unif = 10;
+                            const pdf_unif = 1 / (b_unif - a_unif);
+                            const prob_unif_le_2 = (2 - a_unif) / (b_unif - a_unif);
+
+                            const lambda_exp = 0.1;
+                            const prob_exp_le_2 = 1 - Math.exp(-lambda_exp * 2);
+
+                            let outputText = `> Uniforme U(0, 10):\n>   PDF = ${pdf_unif.toFixed(2)}\n>   P(X <= 2) = ${prob_unif_le_2.toFixed(4)}\n>\n> Exponencial Exp(0.1):\n>   λ = ${lambda_exp}\n>   P(X <= 2) = ${prob_exp_le_2.toFixed(4)}`;
+                            // Replace newlines with <br> for HTML display
+                            codeOutputArea.innerHTML = outputText.replace(/\n/g, '<br>');
+                            codeOutputArea.classList.add('visible');
+                        }, 400); // Adjust delay slightly if needed
+                        observer.unobserve(entry.target); // Unobserve after triggering
+                     }
+                 });
+             }, codeObserverOptions); // Use the specific threshold for this
+             codeOutputObserver.observe(comparisonBox); // Observe the container
+        }
+    }
+
+    // --- Event Listeners Setup ---
+    function setupEventListeners() {
+        // Navbar Toggle
+        if (navToggleButton && navPanel) {
+            navToggleButton.addEventListener('click', (event) => {
+                event.stopPropagation();
+                body.classList.toggle('nav-active');
+                navToggleButton.setAttribute('aria-expanded', body.classList.contains('nav-active'));
+            });
+
+            // Close nav if clicking outside
+            document.addEventListener('click', (event) => {
+                if (body.classList.contains('nav-active') && !navPanel.contains(event.target) && event.target !== navToggleButton && !navToggleButton.contains(event.target)) {
+                    body.classList.remove('nav-active');
+                    navToggleButton.setAttribute('aria-expanded', 'false');
+                }
+            });
+
+            // Close nav on link click
+            navPanel.querySelectorAll('a').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    // Check if it's an internal link
+                    if (link.getAttribute('href').startsWith('#')) {
+                         // Allow default scroll behavior
+                        // Close panel slightly delayed
+                        setTimeout(() => {
+                            body.classList.remove('nav-active');
+                            navToggleButton.setAttribute('aria-expanded', 'false');
+                        }, 150);
+                    }
+                    // External links will navigate away anyway
+                });
+            });
+
+            // Close nav on Escape key
+            document.addEventListener('keydown', (event) => {
+                 if (event.key === 'Escape' && body.classList.contains('nav-active')) {
+                     body.classList.remove('nav-active');
+                     navToggleButton.setAttribute('aria-expanded', 'false');
+                 }
+             });
+        }
+
+        // Quiz Next Button
+        if (nextButton) {
+            nextButton.addEventListener('click', () => {
+                if (!nextButton.disabled) {
+                    currentQuestionIndex++;
+                    loadQuestion(); // Load the next question
+                }
+            });
+        } else {
+            console.error("Elemento #next-question-btn não encontrado.");
+        }
+    }
+
+    // --- Initialization ---
+    document.addEventListener('DOMContentLoaded', () => {
+        // Check if elements needed for quiz exist before proceeding
+        if (!quizArea) console.error("Elemento #quiz-area não encontrado.");
+        if (!feedbackArea) console.error("Elemento #quiz-feedback não encontrado.");
+
+        translatePage();        // Apply translations first
+        setupEventListeners();  // Set up interactive elements
+        setupObservers();       // Set up animations
+
+        if (quizArea) {
+            loadQuestion();     // Load the first quiz question if container exists
+        }
+    });
+
+    </script>
+
+</body>
+</html>

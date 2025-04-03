@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<!-- Language set to Portuguese BR -->
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Title set by JS -->
+    <title data-translate="page_title">Módulo 18: Correlação e Regressão</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* --- Reset & Base Styles --- */
+        :root {
+            --primary-color: #007bff; /* Azul primário */
+            --secondary-color: #6c757d; /* Cinza secundário */
+            --background-light: #f8f9fa; /* Fundo claro */
+            --background-dark: #343a40; /* Fundo escuro */
+            --text-light: #f8f9fa; /* Texto claro */
+            --text-dark: #212529; /* Texto escuro */
+            --accent-color: #ffc107; /* Amarelo accent */
+            --success-color: #28a745; /* Verde sucesso */
+            --error-color: #dc3545; /* Vermelho erro */
+            --correlation-pos-color: #17a2b8; /* Azul info/positivo */
+            --correlation-neg-color: #fd7e14; /* Laranja/negativo */
+            --regression-color: #6f42c1; /* Roxo/regressão */
+            --border-radius: 8px;
+            --transition-speed: 0.3s;
+            --animation-speed: 0.6s; /* Control fade-in speed */
+            --font-body: 'Roboto', sans-serif;
+            --font-title: 'Orbitron', sans-serif;
+            --nav-primary: #6e48aa;
+            --nav-success: #4cc9f0;
+            --nav-dark: #1a1a2e;
+            --footer-border-color: #495057;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; font-size: 16px; }
+        body {
+            font-family: var(--font-body); line-height: 1.7;
+            background-color: var(--background-light); color: var(--text-dark);
+            overflow-x: hidden; display: flex; flex-direction: column; min-height: 100vh;
+        }
+        main { flex-grow: 1; }
+
+        /* --- Utility Classes --- */
+        .container { max-width: 960px; margin: 0 auto; padding: 0 15px; }
+        .text-center { text-align: center; }
+        .highlight { color: var(--primary-color); font-weight: bold; }
+        .formula {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #e9ecef;
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            margin: 1.5rem auto;
+            border: 1px solid #ced4da;
+            overflow-x: auto;
+            text-align: center;
+            font-size: 1.1rem;
+        }
+        .placeholder-image {
+            background-color: #e0e0e0;
+            border: 1px dashed var(--secondary-color);
+            padding: 3rem 1rem;
+            text-align: center;
+            color: var(--secondary-color);
+            font-weight: bold;
+            border-radius: var(--border-radius);
+            margin: 2rem auto;
+            max-width: 80%;
+        }
+
+
+        /* Elements to be animated by observer */
+        .fade-in-on-scroll {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+        }
+        .fade-in-on-scroll.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        /* Add delays for staggering */
+        .delay-1.visible { transition-delay: 0.1s; }
+        .delay-2.visible { transition-delay: 0.2s; }
+        .delay-3.visible { transition-delay: 0.3s; }
+        .delay-4.visible { transition-delay: 0.4s; }
+        .delay-5.visible { transition-delay: 0.5s; }
+        .delay-6.visible { transition-delay: 0.6s; }
+        .delay-7.visible { transition-delay: 0.7s; }
+
+
+        .button-group { margin-top: 2rem; display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; }
+        .action-button {
+             display: inline-flex; align-items: center; justify-content: center; gap: 0.5em;
+             padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold;
+             color: var(--text-light); background-color: var(--primary-color); border: none;
+             border-radius: var(--border-radius); cursor: pointer;
+             transition: background-color var(--transition-speed), transform var(--transition-speed), filter var(--transition-speed), box-shadow var(--transition-speed), opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out; /* Add animation transition */
+             margin-top: 1rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+             text-decoration: none; line-height: 1.2;
+             opacity: 0; /* Start hidden if animated */
+             transform: translateY(20px); /* Start offset if animated */
+        }
+        .action-button.visible { /* Make visible via observer */
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .action-button i.fas {}
+        .action-button:hover:not(:disabled) { background-color: #0056b3; transform: translateY(-2px) !important; box-shadow: 0 4px 8px rgba(0,0,0,0.15); } /* Use !important to override initial transform */
+        .action-button:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none !important; box-shadow: none; opacity: 0.7; }
+        .action-button.success { background-color: var(--success-color); }
+        .action-button.success:hover:not(:disabled) { background-color: #218838; }
+        .action-button.secondary { background-color: var(--secondary-color); }
+        .action-button.secondary:hover:not(:disabled) { background-color: #5a6268; }
+        .action-button:active:not(:disabled) { transform: translateY(1px) scale(0.98) !important; filter: brightness(0.95); }
+
+        /* --- Animations --- */
+        @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); } 50% { transform: scale(1.03); box-shadow: 0 0 15px rgba(0, 123, 255, 0.6); } 100% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); } }
+        @keyframes tada { from { transform: scale3d(1, 1, 1); } 10%, 20% { transform: scale3d(.9, .9, .9) rotate3d(0, 0, 1, -3deg); } 30%, 50%, 70%, 90% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, 3deg); } 40%, 60%, 80% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, -3deg); } to { transform: scale3d(1, 1, 1); } }
+        .tada-anim { animation: tada 1s ease; }
+        @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
+        @keyframes iconAppearCorrect { 0% { transform: scale(0.5) rotate(-15deg); opacity: 0; } 60% { transform: scale(1.2) rotate(5deg); opacity: 1; } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
+
+        /* --- Minimal Retractable Nav --- */
+        .minimal-nav-button { position: fixed; top: 15px; right: 15px; z-index: 1001; background-color: rgba(52, 58, 64, 0.75); color: var(--text-light); border: none; border-radius: var(--border-radius); padding: 8px 12px; cursor: pointer; transition: background-color var(--transition-speed), opacity var(--transition-speed), transform var(--transition-speed); font-size: 1.1rem; opacity: 0.6; box-shadow: 0 2px 5px rgba(0,0,0,0.2); line-height: 1; }
+        .minimal-nav-button:hover { background-color: rgba(52, 58, 64, 0.95); opacity: 1; transform: scale(1.05); }
+        .minimal-nav { position: fixed; top: 60px; right: 15px; z-index: 1000; background-color: var(--background-dark); border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.3); padding: 0.8rem; opacity: 0; transform: translateY(-15px) scale(0.95); transform-origin: top right; pointer-events: none; transition: opacity var(--transition-speed) ease, transform var(--transition-speed) ease; min-width: 200px; }
+        body.nav-active .minimal-nav { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+        .minimal-nav ul { list-style: none; margin: 0; padding: 0; }
+        .minimal-nav ul li { margin-bottom: 5px; }
+        .minimal-nav ul li:last-child { margin-bottom: 0; }
+        .minimal-nav ul li a { display: flex; align-items: center; color: var(--text-light); text-decoration: none; padding: 0.6rem 1rem; border-radius: 4px; transition: background-color var(--transition-speed), color var(--transition-speed); white-space: nowrap; font-weight: 400; font-size: 0.95rem; }
+        .minimal-nav ul li a i.fas { margin-right: 10px; width: 1.2em; text-align: center; opacity: 0.8; transition: opacity var(--transition-speed); }
+        .minimal-nav ul li a:hover { background-color: var(--primary-color); color: var(--text-light); }
+        .minimal-nav ul li a:hover i.fas { opacity: 1; }
+
+        /* --- Header --- */
+        .main-header { background: linear-gradient(135deg, var(--primary-color), #0056b3); color: var(--text-light); padding: 4rem 0 6rem; text-align: center; position: relative; overflow: hidden; }
+        .main-header .container { /* Start visible */ }
+        .main-header h1 { font-family: var(--font-title); font-size: 3rem; margin-bottom: 0.5rem; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); }
+        .main-header p { font-size: 1.2rem; font-weight: 300; opacity: 0.9; }
+        .header-shape { position: absolute; border-radius: 50%; background-color: rgba(255, 255, 255, 0.1); animation: pulse 5s infinite ease-in-out alternate; }
+        .shape1 { width: 150px; height: 150px; bottom: -50px; left: 10%; animation-duration: 6s; }
+        .shape2 { width: 80px; height: 80px; top: 50px; right: 15%; animation-duration: 4s; }
+        .shape3 { width: 50px; height: 50px; bottom: 20px; right: 30%; animation-duration: 7s; }
+
+        /* --- Section Styling --- */
+        section { padding: 4rem 0; border-bottom: 1px solid #eee; }
+        main section:last-of-type { border-bottom: none; padding-bottom: 0;}
+        section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); margin-bottom: 2rem; text-align: center; position: relative; padding-bottom: 10px; }
+        section h2::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 60px; height: 4px; background-color: var(--accent-color); border-radius: 2px; }
+
+        /* --- Welcome Section --- */
+        #welcome p { font-size: 1.1rem; max-width: 750px; margin: 0 auto 1rem; text-align: center; }
+
+        /* --- Correlation Section --- */
+        #correlation-concept .concept-parts {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem; margin-top: 2rem;
+        }
+        .concept-part { /* Animated by observer */
+            background-color: #fff; padding: 1.5rem; border-radius: var(--border-radius);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.07); text-align: center;
+            transition: transform var(--transition-speed) ease, box-shadow var(--transition-speed) ease, opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+            opacity: 0; transform: translateY(20px); /* Start state */
+            border-top: 4px solid transparent;
+        }
+        .concept-part.visible { opacity: 1; transform: translateY(0); }
+        .concept-part:hover { transform: translateY(-5px) scale(1.02) !important; box-shadow: 0 8px 20px rgba(0,0,0,0.12); }
+        .concept-icon { font-size: 2.5rem; margin-bottom: 1rem; }
+        #corr-positive .concept-icon { color: var(--correlation-pos-color); }
+        #corr-negative .concept-icon { color: var(--correlation-neg-color); }
+        #corr-zero .concept-icon { color: var(--secondary-color); }
+        .concept-part h3 { font-family: var(--font-body); font-weight: 700; font-size: 1.3rem; margin-bottom: 0.8rem; color: var(--text-dark); }
+        .concept-part p { font-size: 1rem; color: var(--secondary-color); margin-top: 1rem; line-height: 1.6; }
+        #corr-positive { border-top-color: var(--correlation-pos-color); }
+        #corr-negative { border-top-color: var(--correlation-neg-color); }
+        #corr-zero { border-top-color: var(--secondary-color); }
+        .scatter-plot-info { margin-top: 2.5rem; }
+
+        /* --- Pearson Section --- */
+        #pearson-coefficient .pearson-details {
+            background-color: #fff; padding: 2rem; border-radius: var(--border-radius);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08); margin-top: 2rem;
+            display: flex; flex-direction: column; align-items: center;
+        }
+        .pearson-interpretation {
+            margin-top: 1.5rem; width: 100%; max-width: 600px;
+        }
+        .pearson-interpretation ul { list-style: none; padding-left: 0; }
+        .pearson-interpretation li {
+            margin-bottom: 0.8rem; padding-left: 1.5em; position: relative;
+            font-size: 1.05rem;
+        }
+        .pearson-interpretation li::before {
+            content: '\f00c'; /* Font Awesome check */
+            font-family: 'Font Awesome 5 Free'; font-weight: 900;
+            position: absolute; left: 0; top: 2px;
+            color: var(--success-color);
+        }
+        .pearson-interpretation li strong { color: var(--primary-color); }
+
+
+        /* --- Regression Section --- */
+        #regression-concept .regression-explanation {
+            display: flex; gap: 2rem; align-items: center; margin-top: 2rem; flex-wrap: wrap;
+        }
+        .regression-text { /* Animated by observer */
+            flex-basis: 50%;
+            opacity: 0; transition: opacity var(--animation-speed) ease-out;
+        }
+        .regression-text.visible { opacity: 1; }
+        .regression-viz { /* Animated by observer */
+            flex-basis: 45%;
+            opacity: 0; transition: opacity var(--animation-speed) ease-out;
+        }
+        .regression-viz.visible { opacity: 1; }
+        .regression-viz .placeholder-image { max-width: 100%; margin: 0; }
+        .regression-text p { margin-bottom: 1rem; font-size: 1.05rem; }
+        .regression-equation {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: rgba(111, 66, 193, 0.1);
+            color: var(--regression-color);
+            padding: 0.8rem 1.2rem; border-radius: 4px; margin: 1.5rem 0;
+            border: 1px solid rgba(111, 66, 193, 0.3);
+            font-size: 1.1rem; font-weight: bold; text-align: center;
+        }
+
+
+        /* --- Application Section --- */
+        #applications .app-example { /* Animated by observer */
+            background-color: #fff; padding: 2rem; border-radius: var(--border-radius);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08); margin-top: 2rem;
+             opacity: 0; transition: opacity var(--animation-speed) ease-out; /* Only fade opacity */
+        }
+        #applications .app-example.visible { opacity: 1; }
+        #applications .app-example h3 { color: var(--regression-color); margin-bottom: 1rem; }
+        #applications .app-example p { margin-bottom: 0.5rem; }
+
+
+        /* --- Knowledge Check Section --- */
+        #knowledge-check { background-color: #e9ecef; }
+        .quiz-container { /* Animated by observer */
+             background-color: #fff; padding: 2rem; border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.1); max-width: 700px; margin: 2rem auto 0;
+             opacity: 0; transition: opacity var(--animation-speed) ease-out; /* Only fade opacity */
+        }
+        .quiz-container.visible { opacity: 1; }
+        .quiz-question { font-size: 1.2rem; font-weight: bold; margin-bottom: 1.5rem; color: var(--text-dark); }
+        .quiz-options button { display: block; width: 100%; padding: 1rem; margin-bottom: 1rem; text-align: left; font-size: 1rem; background-color: #f8f9fa; border: 1px solid #ced4da; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), border-color var(--transition-speed), transform var(--transition-speed); }
+        .quiz-options button:not(:disabled):hover { background-color: #e2e6ea; border-color: #adb5bd; transform: translateX(5px); }
+        .quiz-options button:disabled { cursor: default; opacity: 0.7; }
+        .quiz-options button.correct { background-color: #d4edda; border-color: var(--success-color); color: #155724; font-weight: bold; }
+        .quiz-options button.incorrect { background-color: #f8d7da; border-color: var(--error-color); color: #721c24; font-weight: bold; }
+        .quiz-options button.incorrect.shake { animation: shake 0.5s ease; }
+        .quiz-feedback { margin-top: 1.5rem; padding: 1rem; border-radius: var(--border-radius); font-weight: bold; text-align: center; opacity: 0; transition: opacity 0.5s ease, height 0.5s ease, margin-bottom 0.5s ease; height: 0; overflow: hidden; margin-bottom: 0;}
+        .quiz-feedback.visible { opacity: 1; height: auto; margin-bottom: 1rem; }
+        .quiz-feedback.correct { background-color: #d4edda; color: #155724; }
+        .quiz-feedback.incorrect { background-color: #f8d7da; color: #721c24; }
+        #next-question-btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5em; margin: 1.5rem auto 0; padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold; color: var(--text-light); background-color: var(--primary-color); border: none; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), transform var(--transition-speed), opacity 0.3s, visibility 0.3s; opacity: 0; visibility: hidden; }
+        #next-question-btn:hover:not(:disabled) { background-color: #0056b3; transform: scale(1.05); }
+        #next-question-btn.visible { opacity: 1; visibility: visible; }
+        #next-question-btn:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none; opacity: 0.7; }
+
+
+        /* --- Completion Section Styling --- */
+        .completion-section { padding: 4rem 0; text-align: center; background-color: var(--background-light); }
+        .completion-section .icon { font-size: 4rem; color: var(--success-color); margin-bottom: 1rem; display: inline-block; animation: iconAppearCorrect 1s ease-out 0.5s forwards; opacity: 0; /* Initial state for animation */}
+        /* Ensure completion elements are targeted by observer */
+        .completion-section h2, .completion-section p {
+            opacity: 0; transform: translateY(20px);
+            transition: opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+        }
+        .completion-section h2.visible, .completion-section p.visible {
+            opacity: 1; transform: translateY(0);
+        }
+        .completion-section .button-group { margin-top: 2.5rem; }
+        .completion-section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); margin-bottom: 1rem; }
+        .completion-section h2::after { display: none; }
+        .completion-section p { font-size: 1.1rem; margin-top: 1rem; color: var(--secondary-color); max-width: 700px; margin-left: auto; margin-right: auto; line-height: 1.8; }
+
+
+        /* --- Footer Styling --- */
+        .main-footer {
+            background-color: var(--background-light);
+            color: var(--text-light);
+            text-align: center;
+            padding: 2rem 0;
+            font-size: 0.9rem;
+            margin-top: auto;
+            border-top: 1px solid var(--background-light);
+            opacity: 0.85;
+        }
+        .main-footer p { margin: 0; line-height: 1.5; }
+
+        /* --- Responsive Design --- */
+        @media (max-width: 768px) {
+            html { font-size: 15px; }
+            .main-header h1 { font-size: 2.5rem; } .main-header p { font-size: 1.1rem; }
+            section h2 { font-size: 1.8rem; }
+            #correlation-concept .concept-parts { grid-template-columns: 1fr; }
+            #regression-concept .regression-explanation { flex-direction: column; }
+            .regression-text, .regression-viz { flex-basis: 100%; }
+            .minimal-nav { min-width: 180px; } .minimal-nav ul li a { padding: 0.6rem 0.8rem; }
+            .completion-section h2 { font-size: 2rem; }
+            .completion-section .button-group { flex-direction: column; align-items: center; gap: 0.8rem; }
+            .completion-section .action-button { width: 80%; max-width: 350px; margin-top: 0; }
+            .main-footer { padding: 1.5rem 0; }
+            .formula { font-size: 1rem; }
+        }
+        @media (max-width: 480px) {
+            html { font-size: 14px; }
+            .main-header h1 { font-size: 2rem; } .main-header p { font-size: 1rem; }
+            section h2 { font-size: 1.6rem; }
+            .quiz-options button { padding: 0.8rem; font-size: 0.95rem; }
+            .minimal-nav-button { top: 10px; right: 10px; padding: 6px 10px; font-size: 1rem; }
+            .minimal-nav { top: 48px; right: 10px; min-width: 160px; }
+            .minimal-nav ul li a { padding: 0.5rem 0.7rem; font-size: 0.9rem;}
+            .minimal-nav ul li a i.fas { margin-right: 8px; }
+            .completion-section .icon { font-size: 3.5rem; }
+            .completion-section h2 { font-size: 1.8rem; } .completion-section p { font-size: 1rem; }
+            .completion-section .action-button { width: 90%; max-width: 300px; }
+            .main-footer { padding: 1rem 0; font-size: 0.85rem; }
+            .formula { font-size: 0.9rem; padding: 0.8rem; }
+            .placeholder-image { padding: 2rem 0.5rem; font-size: 0.9rem; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- ========= Minimal Nav Handle ========= -->
+    <button id="minimal-nav-toggle" class="minimal-nav-button" aria-label="Alternar Menu de Navegação" aria-expanded="false">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- ========= Minimal Nav Panel ========= -->
+    <nav id="minimal-nav-panel" class="minimal-nav">
+        <ul>
+            <!-- IMPORTANT: Update hrefs to math- and module 18 -->
+            <li><a href="math-practice-18.html"><i class="fas fa-pencil-alt fa-fw"></i> <span data-translate="nav_practice">Iniciar Prática</span></a></li>
+            <li><a href="math-advanced-18.html"><i class="fas fa-flask fa-fw"></i> <span data-translate="nav_advanced">Prática Avançada</span></a></li>
+            <li><a href="math-dashboard.html"><i class="fas fa-list fa-fw"></i> <span data-translate="nav_menu">Menu do Curso</span></a></li>
+             <hr style="border: none; border-top: 1px solid var(--secondary-color); margin: 8px 0;">
+             <li><a href="#welcome"><i class="fas fa-door-open fa-fw"></i> <span data-translate="nav_welcome_m18">Boas-vindas M18</span></a></li>
+             <li><a href="#correlation-concept"><i class="fas fa-link fa-fw"></i> <span data-translate="nav_correlation">Correlação</span></a></li>
+             <li><a href="#pearson-coefficient"><i class="fas fa-calculator fa-fw"></i> <span data-translate="nav_pearson">Coef. Pearson</span></a></li>
+             <li><a href="#regression-concept"><i class="fas fa-chart-line fa-fw"></i> <span data-translate="nav_regression">Regressão</span></a></li>
+             <li><a href="#applications"><i class="fas fa-cogs fa-fw"></i> <span data-translate="nav_applications">Aplicações</span></a></li>
+             <li><a href="#knowledge-check"><i class="fas fa-check-double fa-fw"></i> <span data-translate="nav_quiz">Teste Rápido</span></a></li>
+             <li><a href="#completion"><i class="fas fa-flag-checkered fa-fw"></i> <span data-translate="completion_theory_title_m18">Conclusão</span></a></li>
+        </ul>
+    </nav>
+
+    <header class="main-header">
+        <div class="header-shape shape1"></div>
+        <div class="header-shape shape2"></div>
+        <div class="header-shape shape3"></div>
+        <div class="container"> <!-- Start visible -->
+            <!-- IMPORTANT: Update title and subtitle for Module 18 -->
+            <h1 data-translate="header_title_m18">Módulo 18: Correlação e Regressão</h1>
+            <p data-translate="header_subtitle_m18">Analisando relações entre variáveis e fazendo previsões.</p>
+        </div>
+    </header>
+
+    <main>
+        <!-- ========= Welcome Section ========= -->
+        <section id="welcome">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="welcome_title_m18">📈 Entendendo Relações e Padrões</h2>
+                <p class="fade-in-on-scroll delay-1" data-translate="welcome_p1_m18">
+                    Bem-vindo ao Módulo 18! Em Inteligência Artificial e análise de dados, frequentemente queremos entender como diferentes variáveis se relacionam. Por exemplo, a experiência de um programador está relacionada ao seu salário? O tamanho de uma casa influencia seu preço?
+                </p>
+                <p class="fade-in-on-scroll delay-2" data-translate="welcome_p2_m18">
+                    A <span class="highlight">correlação</span> nos ajuda a medir a força e a direção dessa relação. A <span class="highlight">regressão</span> vai um passo além, permitindo-nos construir um modelo para prever o valor de uma variável com base em outra.
+                </p>
+                 <p class="fade-in-on-scroll delay-3" data-translate="welcome_p3_m18">
+                    Neste módulo, exploraremos a visualização de dados com gráficos de dispersão, calcularemos o famoso <span class="highlight">Coeficiente de Correlação de Pearson (r)</span> e introduziremos a ideia de <span class="highlight">regressão linear simples</span>. Essas são ferramentas fundamentais para análise exploratória e modelagem preditiva em IA.
+                </p>
+            </div>
+        </section>
+
+        <!-- ========= Correlation Concept Section ========= -->
+        <section id="correlation-concept">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="correlation_title">🔗 O que é Correlação?</h2>
+                <p class="text-center fade-in-on-scroll delay-1" data-translate="correlation_subtitle">Medindo a associação entre duas variáveis quantitativas.</p>
+
+                <div class="concept-parts">
+                    <div class="concept-part fade-in-on-scroll delay-2" id="corr-positive">
+                        <span class="concept-icon"><i class="fas fa-arrow-trend-up"></i></span>
+                        <h3 data-translate="corr_pos_title">Correlação Positiva</h3>
+                        <p data-translate="corr_pos_text">Quando uma variável aumenta, a outra tende a aumentar também. Exemplo: Horas de estudo e nota na prova.</p>
+                    </div>
+                    <div class="concept-part fade-in-on-scroll delay-3" id="corr-negative">
+                        <span class="concept-icon"><i class="fas fa-arrow-trend-down"></i></span>
+                        <h3 data-translate="corr_neg_title">Correlação Negativa</h3>
+                        <p data-translate="corr_neg_text">Quando uma variável aumenta, a outra tende a diminuir. Exemplo: Temperatura externa e venda de casacos.</p>
+                    </div>
+                     <div class="concept-part fade-in-on-scroll delay-4" id="corr-zero">
+                        <span class="concept-icon"><i class="fas fa-arrows-left-right"></i></span>
+                        <h3 data-translate="corr_zero_title">Correlação Próxima de Zero</h3>
+                        <p data-translate="corr_zero_text">Não há uma tendência linear clara entre as variáveis. Exemplo: Número do sapato e QI.</p>
+                    </div>
+                </div>
+
+                <div class="scatter-plot-info fade-in-on-scroll delay-5">
+                     <p class="text-center" data-translate="scatter_intro">A melhor forma de visualizar a relação entre duas variáveis quantitativas é através de um <span class="highlight">gráfico de dispersão (scatter plot)</span>.</p>
+                     <div class="placeholder-image" data-translate="scatter_placeholder">Gráfico de Dispersão (Scatter Plot) Mostrando Pontos Aqui</div>
+                     <p class="text-center" data-translate="scatter_desc">Cada ponto no gráfico representa um par de valores (um para cada variável). O padrão formado pelos pontos nos dá uma ideia visual da correlação.</p>
+                </div>
+                 <p class="text-center fade-in-on-scroll delay-6" data-translate="correlation_caution">
+                     <i class="fas fa-exclamation-triangle" style="color: var(--accent-color);"></i> <strong data-translate="correlation_caution_strong">Importante:</strong> Correlação <strong data-translate="correlation_caution_not">NÃO</strong> implica causalidade! Só porque duas variáveis estão correlacionadas, não significa que uma causa a outra. Pode haver outros fatores envolvidos.
+                </p>
+            </div>
+        </section>
+
+        <!-- ========= Pearson Coefficient Section ========= -->
+        <section id="pearson-coefficient">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="pearson_title">🔢 Coeficiente de Correlação de Pearson (r)</h2>
+                <p class="text-center fade-in-on-scroll delay-1" data-translate="pearson_subtitle">Quantificando a força e a direção da relação linear.</p>
+
+                <div class="pearson-details fade-in-on-scroll delay-2">
+                    <p data-translate="pearson_intro">O Coeficiente de Correlação de Pearson, denotado por <span class="highlight"><code>r</code></span>, é um valor numérico que varia entre <span class="highlight">-1 e +1</span>.</p>
+                    <p data-translate="pearson_what_it_measures">Ele mede especificamente a <strong data-translate="pearson_linear">força da relação linear</strong> entre duas variáveis quantitativas contínuas.</p>
+
+                    <div class="pearson-interpretation fade-in-on-scroll delay-3">
+                        <h3 data-translate="pearson_interpretation_title" style="text-align: center; margin-bottom: 1rem;">Interpretando o Valor de <code>r</code>:</h3>
+                        <ul>
+                            <li data-translate="pearson_interp_pos1"><code>r = +1</code>: Correlação linear positiva <strong data-translate="pearson_interp_perfect">perfeita</strong>. Todos os pontos caem exatamente em uma linha reta ascendente.</li>
+                            <li data-translate="pearson_interp_neg1"><code>r = -1</code>: Correlação linear negativa <strong data-translate="pearson_interp_perfect">perfeita</strong>. Todos os pontos caem exatamente em uma linha reta descendente.</li>
+                            <li data-translate="pearson_interp_zero"><code>r = 0</code>: <strong data-translate="pearson_interp_no_linear">Nenhuma correlação linear</strong>. Não há tendência linear nos dados (mas pode haver outros tipos de relação!).</li>
+                            <li data-translate="pearson_interp_pos_strong">Valores <strong data-translate="pearson_interp_close_to">próximos de +1</strong> (e.g., 0.7 a 0.9): Correlação linear positiva <strong data-translate="pearson_interp_strong">forte</strong>.</li>
+                            <li data-translate="pearson_interp_neg_strong">Valores <strong data-translate="pearson_interp_close_to">próximos de -1</strong> (e.g., -0.7 a -0.9): Correlação linear negativa <strong data-translate="pearson_interp_strong">forte</strong>.</li>
+                            <li data-translate="pearson_interp_moderate">Valores <strong data-translate="pearson_interp_moderate_range">intermediários</strong> (e.g., ±0.4 a ±0.6): Correlação linear <strong data-translate="pearson_interp_moderate_strength">moderada</strong>.</li>
+                            <li data-translate="pearson_interp_weak">Valores <strong data-translate="pearson_interp_close_to_zero">próximos de 0</strong> (e.g., ±0.1 a ±0.3): Correlação linear <strong data-translate="pearson_interp_weak_strength">fraca</strong> ou inexistente.</li>
+                        </ul>
+                    </div>
+                     <p class="fade-in-on-scroll delay-4" data-translate="pearson_calculation" style="margin-top: 1.5rem;">O cálculo de <code>r</code> envolve as médias e desvios padrão das duas variáveis, mas geralmente usamos software (como Python com bibliotecas como `scipy` ou `pandas`) para calculá-lo.</p>
+                     <p class="fade-in-on-scroll delay-5" data-translate="pearson_assumptions" style="margin-top: 1rem; font-size: 0.9rem; color: var(--secondary-color);"><strong data-translate="pearson_assumptions_strong">Suposições:</strong> O Coeficiente de Pearson funciona melhor quando a relação entre as variáveis é aproximadamente linear e os dados não possuem outliers extremos.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========= Regression Concept Section ========= -->
+        <section id="regression-concept">
+             <div class="container">
+                 <h2 class="fade-in-on-scroll" data-translate="regression_title">📊 Regressão Linear Simples</h2>
+                 <p class="text-center fade-in-on-scroll delay-1" data-translate="regression_subtitle">Modelando a relação linear para fazer previsões.</p>
+
+                 <div class="regression-explanation">
+                     <div class="regression-text fade-in-on-scroll delay-2">
+                         <p data-translate="regression_p1">Se encontrarmos uma correlação linear (forte ou moderada) entre duas variáveis, podemos usar a <span class="highlight">regressão linear simples</span> para criar um modelo matemático dessa relação.</p>
+                         <p data-translate="regression_p2">O objetivo é encontrar a <strong data-translate="regression_best_fit">linha reta que melhor se ajusta</strong> aos pontos no gráfico de dispersão.</p>
+                         <p data-translate="regression_p3">Essa linha, chamada <strong data-translate="regression_line">linha de regressão</strong>, nos permite <strong data-translate="regression_predict">prever</strong> o valor de uma variável (dependente, Y) com base no valor da outra variável (independente, X).</p>
+                         <p data-translate="regression_p4">A equação da linha de regressão simples é:</p>
+                         <div class="regression-equation" data-translate="regression_equation_text"><code>Y = β₀ + β₁X + ε</code></div>
+                         <ul>
+                              <li data-translate="regression_eq_beta0"><code>β₀</code> (Beta zero): O <strong data-translate="regression_intercept">intercepto</strong> - valor previsto de Y quando X é 0.</li>
+                              <li data-translate="regression_eq_beta1"><code>β₁</code> (Beta um): O <strong data-translate="regression_slope">coeficiente angular</strong> (inclinação) - quanto Y muda, em média, para cada unidade de aumento em X.</li>
+                              <li data-translate="regression_eq_epsilon"><code>ε</code> (Épsilon): O <strong data-translate="regression_error">termo de erro</strong> (resíduo) - a diferença entre o valor real de Y e o valor previsto pela linha.</li>
+                         </ul>
+                     </div>
+                     <div class="regression-viz fade-in-on-scroll delay-3">
+                          <div class="placeholder-image" data-translate="regression_placeholder">Gráfico de Dispersão com Linha de Regressão Ajustada Aqui</div>
+                          <p class="text-center" style="margin-top: 1rem;" data-translate="regression_viz_desc">A linha representa o modelo que tenta capturar a tendência geral dos dados.</p>
+                     </div>
+                 </div>
+                  <p class="text-center fade-in-on-scroll delay-4" data-translate="regression_software" style="margin-top: 2rem;">Assim como a correlação, a determinação dos coeficientes da regressão (β₀ e β₁) é feita computacionalmente, usando métodos como o de Mínimos Quadrados Ordinários (MQO).</p>
+             </div>
+        </section>
+
+        <!-- ========= Application Section ========= -->
+        <section id="applications">
+             <div class="container">
+                 <h2 class="fade-in-on-scroll" data-translate="applications_title">💡 Aplicações em IA e Computação</h2>
+                 <p class="text-center fade-in-on-scroll delay-1" data-translate="applications_subtitle">Onde correlação e regressão são úteis.</p>
+
+                 <div class="app-example fade-in-on-scroll delay-2">
+                     <h3 data-translate="app1_title"><i class="fas fa-robot"></i> Análise de Features em Machine Learning</h3>
+                     <p data-translate="app1_p1">Antes de treinar um modelo de IA, analisamos a correlação entre as variáveis de entrada (features) e a variável de saída (target).</p>
+                     <p data-translate="app1_p2">Features altamente correlacionadas com o target são geralmente mais importantes. Também verificamos a correlação entre features (multicolinearidade), que pode afetar alguns modelos.</p>
+                 </div>
+
+                 <div class="app-example fade-in-on-scroll delay-3">
+                     <h3 data-translate="app2_title"><i class="fas fa-dollar-sign"></i> Modelagem Preditiva</h3>
+                     <p data-translate="app2_p1">A regressão é a base de muitos modelos preditivos.</p>
+                     <ul style="margin-left: 20px; margin-top: 0.5rem;">
+                        <li data-translate="app2_ex1">Prever o preço de um imóvel com base em sua área, número de quartos, etc.</li>
+                        <li data-translate="app2_ex2">Estimar o tempo de entrega de um pedido com base na distância e hora do dia.</li>
+                        <li data-translate="app2_ex3">Prever a receita de vendas com base no investimento em marketing.</li>
+                     </ul>
+                 </div>
+
+                 <div class="app-example fade-in-on-scroll delay-4">
+                     <h3 data-translate="app3_title"><i class="fas fa-chart-pie"></i> Análise de Dados Exploratória (EDA)</h3>
+                     <p data-translate="app3_p1">Gráficos de dispersão e coeficientes de correlação são ferramentas essenciais na EDA para descobrir padrões e relações ocultas nos dados.</p>
+                     <p data-translate="app3_p2">Isso ajuda a formular hipóteses e a guiar os próximos passos da análise ou modelagem.</p>
+                 </div>
+             </div>
+        </section>
+
+        <!-- ========= Knowledge Check Section ========= -->
+        <section id="knowledge-check">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="quiz_title">🧠 Teste Rápido!</h2>
+                <div class="quiz-container fade-in-on-scroll delay-1"> <!-- Observe container -->
+                    <div id="quiz-area">
+                         <p style="text-align: center; padding: 2rem 0;">Carregando quiz...</p>
+                    </div>
+                    <div id="quiz-feedback" class="quiz-feedback"></div>
+                    <button id="next-question-btn" data-translate="quiz_next_button">Próxima Pergunta</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========= Completion Section ========= -->
+        <section id="completion" class="completion-section"> <!-- Added ID for nav link -->
+            <div class="container">
+                 <div class="icon">
+                    <i class="fas fa-chart-line"></i>
+                    <i class="fas fa-calculator"></i>
+                    <i class="fas fa-star"></i>
+                </div>
+                <!-- IMPORTANT: Update title and description for Module 18 -->
+                <h2 class="fade-in-on-scroll delay-1" data-translate="completion_theory_title_m18">Teoria do Módulo 18 Completa!</h2>
+                <p class="fade-in-on-scroll delay-2" data-translate="completion_theory_desc_m18">
+                    Excelente! Você agora compreende os conceitos fundamentais de correlação e regressão linear simples. Aprendeu a interpretar gráficos de dispersão, o significado do coeficiente de Pearson (r) e o propósito da regressão para modelagem e previsão. Lembre-se sempre da diferença crucial entre correlação e causalidade.
+                    <br>Pronto para aplicar esses conhecimentos?
+                </p>
+                <div class="button-group">
+                    <!-- IMPORTANT: Update hrefs to math- and module 18 -->
+                    <a href="math-dashboard.html" class="action-button secondary fade-in-on-scroll delay-3"><i class="fas fa-list"></i> <span data-translate="nav_menu">Menu do Curso</span></a>
+                    <a href="math-practice-18.html" class="action-button success fade-in-on-scroll delay-4"><i class="fas fa-pencil-alt"></i> <span data-translate="nav_practice">Iniciar Prática</span></a>
+                    <a href="math-advanced-18.html" class="action-button secondary fade-in-on-scroll delay-5"><i class="fas fa-flask"></i> <span data-translate="nav_advanced">Prática Avançada</span></a>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="main-footer">
+        <div class="container">
+            <p data-translate="footer_copyright"></p>
+        </div>
+    </footer>
+
+    <script>
+    // --- Translations Object (Portuguese Only for Module 18) ---
+    const translations = {
+        pt: {
+            "page_title": "Módulo 18: Correlação e Regressão",
+            "nav_practice": "Iniciar Prática",
+            "nav_advanced": "Prática Avançada",
+            "nav_menu": "Menu do Curso",
+            "nav_welcome_m18": "Boas-vindas M18", "nav_correlation": "Correlação", "nav_pearson": "Coef. Pearson", "nav_regression": "Regressão", "nav_applications": "Aplicações", "nav_quiz": "Teste Rápido",
+            "lang_pt": "🇧🇷 Português",
+            "header_title_m18": "Módulo 18: Correlação e Regressão", "header_subtitle_m18": "Analisando relações entre variáveis e fazendo previsões.",
+            "welcome_title_m18": "📈 Entendendo Relações e Padrões",
+            "welcome_p1_m18": "Bem-vindo ao Módulo 18! Em Inteligência Artificial e análise de dados, frequentemente queremos entender como diferentes variáveis se relacionam. Por exemplo, a experiência de um programador está relacionada ao seu salário? O tamanho de uma casa influencia seu preço?",
+            "welcome_p2_m18": "A <span class=\"highlight\">correlação</span> nos ajuda a medir a força e a direção dessa relação. A <span class=\"highlight\">regressão</span> vai um passo além, permitindo-nos construir um modelo para prever o valor de uma variável com base em outra.",
+            "welcome_p3_m18": "Neste módulo, exploraremos a visualização de dados com gráficos de dispersão, calcularemos o famoso <span class=\"highlight\">Coeficiente de Correlação de Pearson (r)</span> e introduziremos a ideia de <span class=\"highlight\">regressão linear simples</span>. Essas são ferramentas fundamentais para análise exploratória e modelagem preditiva em IA.",
+            "correlation_title": "🔗 O que é Correlação?", "correlation_subtitle": "Medindo a associação entre duas variáveis quantitativas.",
+            "corr_pos_title": "Correlação Positiva", "corr_pos_text": "Quando uma variável aumenta, a outra tende a aumentar também. Exemplo: Horas de estudo e nota na prova.",
+            "corr_neg_title": "Correlação Negativa", "corr_neg_text": "Quando uma variável aumenta, a outra tende a diminuir. Exemplo: Temperatura externa e venda de casacos.",
+            "corr_zero_title": "Correlação Próxima de Zero", "corr_zero_text": "Não há uma tendência linear clara entre as variáveis. Exemplo: Número do sapato e QI.",
+            "scatter_intro": "A melhor forma de visualizar a relação entre duas variáveis quantitativas é através de um <span class=\"highlight\">gráfico de dispersão (scatter plot)</span>.",
+            "scatter_placeholder": "Gráfico de Dispersão (Scatter Plot) Mostrando Pontos Aqui",
+            "scatter_desc": "Cada ponto no gráfico representa um par de valores (um para cada variável). O padrão formado pelos pontos nos dá uma ideia visual da correlação.",
+            "correlation_caution": "<i class=\"fas fa-exclamation-triangle\" style=\"color: var(--accent-color);\"></i> <strong>Importante:</strong> Correlação <strong>NÃO</strong> implica causalidade! Só porque duas variáveis estão correlacionadas, não significa que uma causa a outra. Pode haver outros fatores envolvidos.",
+             "correlation_caution_strong": "Importante:", "correlation_caution_not": "NÃO",
+            "pearson_title": "🔢 Coeficiente de Correlação de Pearson (r)", "pearson_subtitle": "Quantificando a força e a direção da relação linear.",
+            "pearson_intro": "O Coeficiente de Correlação de Pearson, denotado por <span class=\"highlight\"><code>r</code></span>, é um valor numérico que varia entre <span class=\"highlight\">-1 e +1</span>.",
+            "pearson_what_it_measures": "Ele mede especificamente a <strong>força da relação linear</strong> entre duas variáveis quantitativas contínuas.", "pearson_linear": "força da relação linear",
+            "pearson_interpretation_title": "Interpretando o Valor de <code>r</code>:",
+            "pearson_interp_pos1": "<code>r = +1</code>: Correlação linear positiva <strong>perfeita</strong>. Todos os pontos caem exatamente em uma linha reta ascendente.",
+            "pearson_interp_neg1": "<code>r = -1</code>: Correlação linear negativa <strong>perfeita</strong>. Todos os pontos caem exatamente em uma linha reta descendente.",
+            "pearson_interp_zero": "<code>r = 0</code>: <strong>Nenhuma correlação linear</strong>. Não há tendência linear nos dados (mas pode haver outros tipos de relação!).",
+            "pearson_interp_pos_strong": "Valores <strong>próximos de +1</strong> (e.g., 0.7 a 0.9): Correlação linear positiva <strong>forte</strong>.",
+            "pearson_interp_neg_strong": "Valores <strong>próximos de -1</strong> (e.g., -0.7 a -0.9): Correlação linear negativa <strong>forte</strong>.",
+            "pearson_interp_moderate": "Valores <strong>intermediários</strong> (e.g., ±0.4 a ±0.6): Correlação linear <strong>moderada</strong>.",
+            "pearson_interp_weak": "Valores <strong>próximos de 0</strong> (e.g., ±0.1 a ±0.3): Correlação linear <strong>fraca</strong> ou inexistente.",
+             "pearson_interp_perfect": "perfeita", "pearson_interp_no_linear": "Nenhuma correlação linear", "pearson_interp_close_to": "próximos de", "pearson_interp_strong": "forte", "pearson_interp_moderate_range": "intermediários", "pearson_interp_moderate_strength": "moderada", "pearson_interp_close_to_zero": "próximos de 0", "pearson_interp_weak_strength": "fraca",
+            "pearson_calculation": "O cálculo de <code>r</code> envolve as médias e desvios padrão das duas variáveis, mas geralmente usamos software (como Python com bibliotecas como `scipy` ou `pandas`) para calculá-lo.",
+            "pearson_assumptions": "<strong>Suposições:</strong> O Coeficiente de Pearson funciona melhor quando a relação entre as variáveis é aproximadamente linear e os dados não possuem outliers extremos.", "pearson_assumptions_strong": "Suposições:",
+            "regression_title": "📊 Regressão Linear Simples", "regression_subtitle": "Modelando a relação linear para fazer previsões.",
+            "regression_p1": "Se encontrarmos uma correlação linear (forte ou moderada) entre duas variáveis, podemos usar a <span class=\"highlight\">regressão linear simples</span> para criar um modelo matemático dessa relação.",
+            "regression_p2": "O objetivo é encontrar a <strong>linha reta que melhor se ajusta</strong> aos pontos no gráfico de dispersão.", "regression_best_fit": "linha reta que melhor se ajusta",
+            "regression_p3": "Essa linha, chamada <strong>linha de regressão</strong>, nos permite <strong>prever</strong> o valor de uma variável (dependente, Y) com base no valor da outra variável (independente, X).", "regression_line": "linha de regressão", "regression_predict": "prever",
+            "regression_p4": "A equação da linha de regressão simples é:",
+            "regression_equation_text": "<code>Y = β₀ + β₁X + ε</code>",
+            "regression_eq_beta0": "<code>β₀</code> (Beta zero): O <strong>intercepto</strong> - valor previsto de Y quando X é 0.", "regression_intercept": "intercepto",
+            "regression_eq_beta1": "<code>β₁</code> (Beta um): O <strong>coeficiente angular</strong> (inclinação) - quanto Y muda, em média, para cada unidade de aumento em X.", "regression_slope": "coeficiente angular",
+            "regression_eq_epsilon": "<code>ε</code> (Épsilon): O <strong>termo de erro</strong> (resíduo) - a diferença entre o valor real de Y e o valor previsto pela linha.", "regression_error": "termo de erro",
+            "regression_placeholder": "Gráfico de Dispersão com Linha de Regressão Ajustada Aqui",
+            "regression_viz_desc": "A linha representa o modelo que tenta capturar a tendência geral dos dados.",
+            "regression_software": "Assim como a correlação, a determinação dos coeficientes da regressão (β₀ e β₁) é feita computacionalmente, usando métodos como o de Mínimos Quadrados Ordinários (MQO).",
+            "applications_title": "💡 Aplicações em IA e Computação", "applications_subtitle": "Onde correlação e regressão são úteis.",
+            "app1_title": "<i class=\"fas fa-robot\"></i> Análise de Features em Machine Learning",
+            "app1_p1": "Antes de treinar um modelo de IA, analisamos a correlação entre as variáveis de entrada (features) e a variável de saída (target).",
+            "app1_p2": "Features altamente correlacionadas com o target são geralmente mais importantes. Também verificamos a correlação entre features (multicolinearidade), que pode afetar alguns modelos.",
+            "app2_title": "<i class=\"fas fa-dollar-sign\"></i> Modelagem Preditiva",
+            "app2_p1": "A regressão é a base de muitos modelos preditivos.",
+            "app2_ex1": "Prever o preço de um imóvel com base em sua área, número de quartos, etc.",
+            "app2_ex2": "Estimar o tempo de entrega de um pedido com base na distância e hora do dia.",
+            "app2_ex3": "Prever a receita de vendas com base no investimento em marketing.",
+            "app3_title": "<i class=\"fas fa-chart-pie\"></i> Análise de Dados Exploratória (EDA)",
+            "app3_p1": "Gráficos de dispersão e coeficientes de correlação são ferramentas essenciais na EDA para descobrir padrões e relações ocultas nos dados.",
+            "app3_p2": "Isso ajuda a formular hipóteses e a guiar os próximos passos da análise ou modelagem.",
+            "quiz_title": "🧠 Teste Rápido!", "quiz_next_button": "Próxima Pergunta",
+            "quiz_q1_m18": "O que a correlação mede principalmente?",
+            "quiz_q1_m18_opt1": "A causa de uma variável sobre a outra.",
+            "quiz_q1_m18_opt2": "A força e a direção da associação linear entre duas variáveis.",
+            "quiz_q1_m18_opt3": "A média das duas variáveis.",
+            "quiz_q1_m18_opt4": "A diferença entre os valores máximos e mínimos.",
+            "quiz_q2_m18": "Um coeficiente de correlação de Pearson (r) de -0.85 indica:",
+            "quiz_q2_m18_opt1": "Uma correlação linear negativa forte.",
+            "quiz_q2_m18_opt2": "Uma correlação linear positiva forte.",
+            "quiz_q2_m18_opt3": "Uma correlação linear fraca.",
+            "quiz_q2_m18_opt4": "Ausência de correlação linear.",
+            "quiz_q3_m18": "Qual o principal objetivo da regressão linear simples?",
+            "quiz_q3_m18_opt1": "Calcular a média e o desvio padrão dos dados.",
+            "quiz_q3_m18_opt2": "Apenas visualizar a relação entre duas variáveis.",
+            "quiz_q3_m18_opt3": "Modelar a relação linear para prever o valor de uma variável com base na outra.",
+            "quiz_q3_m18_opt4": "Provar que uma variável causa a outra.",
+             "quiz_q4_m18": "Se duas variáveis têm um coeficiente de correlação r = 0.1, o que podemos concluir?",
+             "quiz_q4_m18_opt1": "Há uma forte relação linear negativa.",
+             "quiz_q4_m18_opt2": "Há uma forte relação linear positiva.",
+             "quiz_q4_m18_opt3": "Há uma relação linear muito fraca ou inexistente.",
+             "quiz_q4_m18_opt4": "Uma variável causa a outra.",
+            "quiz_feedback_correct": "Correto! 🎉", "quiz_feedback_incorrect": "Não foi bem assim! A resposta correta era: {correctAnswerText}",
+            "quiz_final_score_title": "Teste Rápido Completo!",
+            "quiz_final_score_summary": "Você respondeu {score} de {total} perguntas corretamente.",
+            "quiz_final_score_perfect": "Excelente! Você compreendeu bem os conceitos de correlação e regressão.",
+            "quiz_final_score_good": "Bom trabalho! Continue praticando a interpretação desses conceitos.",
+            "completion_theory_title_m18": "Teoria do Módulo 18 Completa!",
+            "completion_theory_desc_m18": "Excelente! Você agora compreende os conceitos fundamentais de correlação e regressão linear simples. Aprendeu a interpretar gráficos de dispersão, o significado do coeficiente de Pearson (r) e o propósito da regressão para modelagem e previsão. Lembre-se sempre da diferença crucial entre correlação e causalidade. <br>Pronto para aplicar esses conhecimentos?",
+            "footer_copyright": "© 2024 Matemática para IA. Todos os direitos reservados."
+        }
+    };
+
+    // --- Global Variables ---
+    let currentQuestionIndex = 0;
+    let score = 0;
+    const lang = 'pt'; // Hardcoded language
+
+    // --- DOM Elements (Get them once) ---
+    const navToggleButton = document.getElementById('minimal-nav-toggle');
+    const navPanel = document.getElementById('minimal-nav-panel');
+    const body = document.body;
+    const quizArea = document.getElementById('quiz-area');
+    const feedbackArea = document.getElementById('quiz-feedback');
+    const nextButton = document.getElementById('next-question-btn');
+    // Removed elements specific to the old example (textDemoBox, codeOutputArea)
+
+    // --- Functions ---
+
+    function getTranslation(key, replacements = {}) {
+         let text = translations[lang]?.[key] ?? `[${key}]`;
+         for (const placeholder in replacements) {
+             const regex = new RegExp(`\\{${placeholder}\\}`, 'g');
+             text = text.replace(regex, replacements[placeholder]);
+         }
+         // Basic HTML sanitization or allow specific tags
+         // For this case, allowing span, strong, code, i, b, br
+         const allowedTagsRegex = /<\/?(span|strong|code|i|b|br|ul|li)[^>]*>/gi;
+         const potentiallyUnsafe = text.replace(allowedTagsRegex, ''); // Remove allowed tags
+         if (/<[^>]+>/gi.test(potentiallyUnsafe)) { // Check if any other tags remain
+             console.warn(`Potentially unsafe HTML removed from translation key "${key}". Original: ${text}`);
+             // Basic escape for remaining tags
+             text = text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+         }
+         return text;
+    }
+
+    function translatePage() {
+         document.querySelectorAll('[data-translate]').forEach(el => {
+             const key = el.getAttribute('data-translate');
+             let translation = getTranslation(key);
+
+              if (el.tagName === 'TITLE') { document.title = translation; }
+              else if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') { /* Skip input/textarea value */ }
+               else if (el.classList.contains('placeholder-image')) { // Keep placeholder text simple
+                 el.textContent = translation;
+               }
+              else {
+                    // Use innerHTML cautiously, relying on getTranslation's basic sanitization
+                    el.innerHTML = translation;
+              }
+         });
+         // Tooltips are not used in this module's example
+    }
+
+    // --- Quiz Data & Functions (Module 18) ---
+    const quizData = [
+         { questionKey: "quiz_q1_m18", optionKeys: ["quiz_q1_m18_opt1", "quiz_q1_m18_opt2", "quiz_q1_m18_opt3", "quiz_q1_m18_opt4"], correctAnswer: 1 },
+         { questionKey: "quiz_q2_m18", optionKeys: ["quiz_q2_m18_opt1", "quiz_q2_m18_opt2", "quiz_q2_m18_opt3", "quiz_q2_m18_opt4"], correctAnswer: 0 },
+         { questionKey: "quiz_q3_m18", optionKeys: ["quiz_q3_m18_opt1", "quiz_q3_m18_opt2", "quiz_q3_m18_opt3", "quiz_q3_m18_opt4"], correctAnswer: 2 },
+         { questionKey: "quiz_q4_m18", optionKeys: ["quiz_q4_m18_opt1", "quiz_q4_m18_opt2", "quiz_q4_m18_opt3", "quiz_q4_m18_opt4"], correctAnswer: 2 }
+    ];
+
+    function loadQuestion() {
+          if (!quizArea) return; // Ensure quizArea exists
+
+          // If we reached the end, show score
+          if (currentQuestionIndex >= quizData.length) {
+              if (!quizArea.querySelector('[data-translate="quiz_final_score_title"]')) { // Avoid re-rendering score
+                 showFinalScore();
+              }
+              return;
+          }
+
+          const currentQuiz = quizData[currentQuestionIndex];
+          const questionText = getTranslation(currentQuiz.questionKey);
+          // Generate HTML for question and options
+          quizArea.innerHTML = `
+              <div class="quiz-question">${currentQuestionIndex + 1}. ${questionText.replace(/`(.*?)`/g, '<code>$1</code>')}</div>
+              <div class="quiz-options">
+                  ${currentQuiz.optionKeys.map((optionKey, index) => `
+                      <button class="quiz-option-btn" data-index="${index}">${getTranslation(optionKey).replace(/`(.*?)`/g, '<code>$1</code>')}</button>
+                  `).join('')}
+              </div>
+          `;
+
+          // Reset feedback and next button
+          if (feedbackArea) {
+            feedbackArea.classList.remove('visible', 'correct', 'incorrect');
+            feedbackArea.textContent = '';
+            feedbackArea.style.height = '0'; // Reset height
+            feedbackArea.style.marginBottom = '0'; // Reset margin
+          }
+          if (nextButton) {
+            nextButton.classList.remove('visible');
+            nextButton.disabled = true;
+          }
+
+          // Add event listeners to the new buttons
+          quizArea.querySelectorAll('.quiz-option-btn').forEach(button => {
+              button.addEventListener('click', handleAnswer);
+          });
+    }
+
+    function handleAnswer(event) {
+         const selectedButton = event.target;
+         const selectedIndex = parseInt(selectedButton.dataset.index);
+         const correctIndex = quizData[currentQuestionIndex].correctAnswer;
+         const correctOptionKey = quizData[currentQuestionIndex].optionKeys[correctIndex];
+
+         // Disable all options
+         quizArea.querySelectorAll('.quiz-option-btn').forEach(btn => {
+            btn.disabled = true;
+            btn.classList.remove('shake'); // Remove shake if present from previous incorrect
+         });
+
+         if (!feedbackArea || !nextButton) return; // Ensure elements exist
+
+         feedbackArea.classList.add('visible');
+
+         if (selectedIndex === correctIndex) {
+             selectedButton.classList.add('correct');
+             feedbackArea.innerHTML = getTranslation('quiz_feedback_correct');
+             feedbackArea.classList.add('correct');
+             feedbackArea.classList.remove('incorrect');
+             score++;
+             selectedButton.classList.add('tada-anim');
+         } else {
+             selectedButton.classList.add('incorrect');
+             const formattedCorrectAnswer = getTranslation(correctOptionKey).replace(/`(.*?)`/g, '<code>$1</code>');
+             // Use innerHTML here because formattedCorrectAnswer might contain <code>
+             feedbackArea.innerHTML = getTranslation('quiz_feedback_incorrect', { correctAnswerText: `<strong>${formattedCorrectAnswer}</strong>` });
+             feedbackArea.classList.add('incorrect');
+             feedbackArea.classList.remove('correct');
+             // Highlight the correct button as well
+             const correctButton = quizArea.querySelector(`.quiz-option-btn[data-index="${correctIndex}"]`);
+             if(correctButton) correctButton.classList.add('correct');
+             selectedButton.classList.add('shake');
+         }
+
+         // Remove animation classes after they finish
+          selectedButton.addEventListener('animationend', () => {
+               selectedButton.classList.remove('tada-anim', 'shake');
+          }, { once: true });
+
+         // Make feedback area adjust height and margin smoothly
+         feedbackArea.style.height = feedbackArea.scrollHeight + 'px';
+         feedbackArea.style.marginBottom = '1rem';
+
+
+         // Show and enable next button
+         nextButton.classList.add('visible');
+         nextButton.disabled = false;
+     }
+
+     function showFinalScore() {
+            if (!quizArea) return;
+            const totalQuestions = quizData.length;
+            // Determine message based on score percentage
+            let resultMessageKey = (score / totalQuestions) >= 0.75 ? 'quiz_final_score_perfect' : 'quiz_final_score_good'; // 75% threshold
+
+            quizArea.innerHTML = `
+               <div class="quiz-question text-center" data-translate="quiz_final_score_title" style="font-size: 1.5rem;">${getTranslation('quiz_final_score_title')}</div>
+               <p class="text-center" style="font-size: 1.2rem; margin-bottom: 1rem;">${getTranslation('quiz_final_score_summary', { score: score, total: totalQuestions })}</p>
+               <p class="text-center" style="color: ${score === totalQuestions ? 'var(--success-color)' : 'var(--primary-color)'}; font-weight: bold;">${getTranslation(resultMessageKey)}</p>
+            `;
+            if (feedbackArea) feedbackArea.classList.remove('visible'); // Hide feedback area
+            if (nextButton) nextButton.style.display = 'none'; // Hide next button
+            quizArea.scrollIntoView({ behavior: 'smooth', block: 'center' }); // Scroll score into view
+     }
+
+
+    // --- Intersection Observer Setup ---
+    function setupObservers() {
+        const observerOptions = {
+            root: null, // relative to viewport
+            rootMargin: '0px',
+            threshold: 0.1 // Trigger when 10% of the element is visible
+        };
+
+        const observerCallback = (entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    // Optional: Unobserve after it becomes visible to save resources
+                    // observer.unobserve(entry.target);
+                }
+                // Optional: Remove 'visible' if it scrolls out of view
+                // else {
+                //     entry.target.classList.remove('visible');
+                // }
+            });
+        };
+
+        const animationObserver = new IntersectionObserver(observerCallback, observerOptions);
+
+        // Observe elements with the fade-in class
+        document.querySelectorAll('.fade-in-on-scroll').forEach(el => {
+            animationObserver.observe(el);
+        });
+
+        // No specific code output simulation for this module in the example style
+    }
+
+    // --- Event Listeners Setup ---
+    function setupEventListeners() {
+        // Navbar Toggle
+        if (navToggleButton && navPanel) {
+            navToggleButton.addEventListener('click', (event) => {
+                event.stopPropagation();
+                body.classList.toggle('nav-active');
+                navToggleButton.setAttribute('aria-expanded', body.classList.contains('nav-active'));
+            });
+
+            // Close nav if clicking outside
+            document.addEventListener('click', (event) => {
+                if (body.classList.contains('nav-active') && !navPanel.contains(event.target) && event.target !== navToggleButton && !navToggleButton.contains(event.target)) {
+                    body.classList.remove('nav-active');
+                    navToggleButton.setAttribute('aria-expanded', 'false');
+                }
+            });
+
+            // Close nav on link click
+            navPanel.querySelectorAll('a').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    // Check if it's an internal link
+                    if (link.getAttribute('href').startsWith('#')) {
+                         // Allow default scroll behavior
+                        // Close panel slightly delayed
+                        setTimeout(() => {
+                            body.classList.remove('nav-active');
+                            navToggleButton.setAttribute('aria-expanded', 'false');
+                        }, 150);
+                    }
+                    // External links will navigate away anyway
+                });
+            });
+
+            // Close nav on Escape key
+            document.addEventListener('keydown', (event) => {
+                 if (event.key === 'Escape' && body.classList.contains('nav-active')) {
+                     body.classList.remove('nav-active');
+                     navToggleButton.setAttribute('aria-expanded', 'false');
+                 }
+             });
+        }
+
+        // Quiz Next Button
+        if (nextButton) {
+            nextButton.addEventListener('click', () => {
+                if (!nextButton.disabled) {
+                    currentQuestionIndex++;
+                    loadQuestion(); // Load the next question
+                }
+            });
+        } else {
+            console.error("Elemento #next-question-btn não encontrado.");
+        }
+    }
+
+    // --- Initialization ---
+    document.addEventListener('DOMContentLoaded', () => {
+        // Check if elements needed for quiz exist before proceeding
+        if (!quizArea) console.error("Elemento #quiz-area não encontrado.");
+        if (!feedbackArea) console.error("Elemento #quiz-feedback não encontrado.");
+
+        translatePage();        // Apply translations first
+        setupEventListeners();  // Set up interactive elements
+        setupObservers();       // Set up animations
+
+        if (quizArea) {
+            loadQuestion();     // Load the first quiz question if container exists
+        }
+    });
+
+    </script>
+
+</body>
+</html>

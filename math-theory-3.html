@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<!-- Language set to Portuguese BR -->
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Title set by JS -->
+    <title data-translate="page_title">Módulo 3: Métodos de Amostragem</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* --- Reset & Base Styles --- */
+        :root {
+            --primary-color: #007bff; /* Azul primário */
+            --secondary-color: #6c757d; /* Cinza secundário */
+            --background-light: #f8f9fa; /* Fundo claro */
+            --background-dark: #343a40; /* Fundo escuro */
+            --text-light: #f8f9fa; /* Texto claro */
+            --text-dark: #212529; /* Texto escuro */
+            --accent-color: #ffc107; /* Cor de destaque (amarelo) */
+            --success-color: #28a745; /* Verde sucesso */
+            --error-color: #dc3545; /* Vermelho erro */
+            --info-color: #17a2b8; /* Azul informação */
+            --sampling-random: #007bff; /* Azul para Aleatória Simples */
+            --sampling-stratified: #6f42c1; /* Roxo para Estratificada */
+            --sampling-systematic: #fd7e14; /* Laranja para Sistemática */
+            --border-radius: 8px;
+            --transition-speed: 0.3s;
+            --animation-speed: 0.6s; /* Control fade-in speed */
+            --font-body: 'Roboto', sans-serif;
+            --font-title: 'Orbitron', sans-serif;
+            --nav-primary: #6e48aa;
+            --nav-success: #4cc9f0;
+            --nav-dark: #1a1a2e;
+            --footer-border-color: #495057;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; font-size: 16px; }
+        body {
+            font-family: var(--font-body); line-height: 1.7;
+            background-color: var(--background-light); color: var(--text-dark);
+            overflow-x: hidden; display: flex; flex-direction: column; min-height: 100vh;
+        }
+        main { flex-grow: 1; }
+
+        /* --- Utility Classes --- */
+        .container { max-width: 960px; margin: 0 auto; padding: 0 15px; }
+        .text-center { text-align: center; }
+        .highlight { color: var(--primary-color); font-weight: bold; }
+        .code-like { font-family: 'Courier New', Courier, monospace; background-color: #e9ecef; padding: 0.2em 0.4em; border-radius: 4px; color: #333; font-size: 0.95em;}
+
+        /* Elements to be animated by observer */
+        .fade-in-on-scroll {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+        }
+        .fade-in-on-scroll.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        /* Add delays for staggering */
+        .delay-1.visible { transition-delay: 0.1s; }
+        .delay-2.visible { transition-delay: 0.2s; }
+        .delay-3.visible { transition-delay: 0.3s; }
+        .delay-4.visible { transition-delay: 0.4s; }
+        .delay-5.visible { transition-delay: 0.5s; }
+        .delay-6.visible { transition-delay: 0.6s; }
+        .delay-7.visible { transition-delay: 0.7s; }
+
+
+        .button-group { margin-top: 2rem; display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; }
+        .action-button {
+             display: inline-flex; align-items: center; justify-content: center; gap: 0.5em;
+             padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold;
+             color: var(--text-light); background-color: var(--primary-color); border: none;
+             border-radius: var(--border-radius); cursor: pointer;
+             transition: background-color var(--transition-speed), transform var(--transition-speed), filter var(--transition-speed), box-shadow var(--transition-speed), opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out; /* Add animation transition */
+             margin-top: 1rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+             text-decoration: none; line-height: 1.2;
+             opacity: 0; /* Start hidden if animated */
+             transform: translateY(20px); /* Start offset if animated */
+        }
+        .action-button.visible { /* Make visible via observer */
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .action-button i.fas {}
+        .action-button:hover:not(:disabled) { background-color: #0056b3; transform: translateY(-2px) !important; box-shadow: 0 4px 8px rgba(0,0,0,0.15); } /* Use !important to override initial transform */
+        .action-button:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none !important; box-shadow: none; opacity: 0.7; }
+        .action-button.success { background-color: var(--success-color); }
+        .action-button.success:hover:not(:disabled) { background-color: #218838; }
+        .action-button.secondary { background-color: var(--secondary-color); }
+        .action-button.secondary:hover:not(:disabled) { background-color: #5a6268; }
+        .action-button:active:not(:disabled) { transform: translateY(1px) scale(0.98) !important; filter: brightness(0.95); }
+
+        /* --- Animations --- */
+        @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); } 50% { transform: scale(1.03); box-shadow: 0 0 15px rgba(0, 123, 255, 0.6); } 100% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); } }
+        @keyframes tada { from { transform: scale3d(1, 1, 1); } 10%, 20% { transform: scale3d(.9, .9, .9) rotate3d(0, 0, 1, -3deg); } 30%, 50%, 70%, 90% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, 3deg); } 40%, 60%, 80% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, -3deg); } to { transform: scale3d(1, 1, 1); } }
+        .tada-anim { animation: tada 1s ease; }
+        @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
+        @keyframes iconAppearCorrect { 0% { transform: scale(0.5) rotate(-15deg); opacity: 0; } 60% { transform: scale(1.2) rotate(5deg); opacity: 1; } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
+
+        /* --- Minimal Retractable Nav --- */
+        .minimal-nav-button { position: fixed; top: 15px; right: 15px; z-index: 1001; background-color: rgba(52, 58, 64, 0.75); color: var(--text-light); border: none; border-radius: var(--border-radius); padding: 8px 12px; cursor: pointer; transition: background-color var(--transition-speed), opacity var(--transition-speed), transform var(--transition-speed); font-size: 1.1rem; opacity: 0.6; box-shadow: 0 2px 5px rgba(0,0,0,0.2); line-height: 1; }
+        .minimal-nav-button:hover { background-color: rgba(52, 58, 64, 0.95); opacity: 1; transform: scale(1.05); }
+        .minimal-nav { position: fixed; top: 60px; right: 15px; z-index: 1000; background-color: var(--background-dark); border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.3); padding: 0.8rem; opacity: 0; transform: translateY(-15px) scale(0.95); transform-origin: top right; pointer-events: none; transition: opacity var(--transition-speed) ease, transform var(--transition-speed) ease; min-width: 220px; /* Adjusted width for longer text */ }
+        body.nav-active .minimal-nav { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+        .minimal-nav ul { list-style: none; margin: 0; padding: 0; }
+        .minimal-nav ul li { margin-bottom: 5px; }
+        .minimal-nav ul li:last-child { margin-bottom: 0; }
+        .minimal-nav ul li a { display: flex; align-items: center; color: var(--text-light); text-decoration: none; padding: 0.6rem 1rem; border-radius: 4px; transition: background-color var(--transition-speed), color var(--transition-speed); white-space: nowrap; font-weight: 400; font-size: 0.95rem; }
+        .minimal-nav ul li a i.fas { margin-right: 10px; width: 1.2em; text-align: center; opacity: 0.8; transition: opacity var(--transition-speed); }
+        .minimal-nav ul li a:hover { background-color: var(--primary-color); color: var(--text-light); }
+        .minimal-nav ul li a:hover i.fas { opacity: 1; }
+
+        /* --- Header --- */
+        .main-header { background: linear-gradient(135deg, var(--primary-color), #0056b3); color: var(--text-light); padding: 4rem 0 6rem; text-align: center; position: relative; overflow: hidden; }
+        .main-header .container { /* Start visible */ }
+        .main-header h1 { font-family: var(--font-title); font-size: 2.8rem; /* Slightly smaller for longer title */ margin-bottom: 0.5rem; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); }
+        .main-header p { font-size: 1.2rem; font-weight: 300; opacity: 0.9; max-width: 700px; margin: 0 auto; }
+        .header-shape { position: absolute; border-radius: 50%; background-color: rgba(255, 255, 255, 0.1); animation: pulse 5s infinite ease-in-out alternate; }
+        .shape1 { width: 150px; height: 150px; bottom: -50px; left: 10%; animation-duration: 6s; }
+        .shape2 { width: 80px; height: 80px; top: 50px; right: 15%; animation-duration: 4s; }
+        .shape3 { width: 50px; height: 50px; bottom: 20px; right: 30%; animation-duration: 7s; }
+
+        /* --- Section Styling --- */
+        section { padding: 4rem 0; border-bottom: 1px solid #eee; }
+        main section:last-of-type { border-bottom: none; padding-bottom: 0;}
+        section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); margin-bottom: 2rem; text-align: center; position: relative; padding-bottom: 10px; }
+        section h2::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 60px; height: 4px; background-color: var(--accent-color); border-radius: 2px; }
+        section h3 { font-family: var(--font-body); font-weight: 700; font-size: 1.5rem; margin-top: 2.5rem; margin-bottom: 1rem; color: var(--text-dark); border-left: 4px solid var(--primary-color); padding-left: 10px; }
+
+        /* --- Welcome Section --- */
+        #welcome p { font-size: 1.1rem; max-width: 750px; margin: 0 auto 1rem; text-align: left; } /* Adjusted alignment */
+        #welcome .intro-box { background-color: #e9ecef; padding: 1.5rem; border-radius: var(--border-radius); margin-top: 1.5rem; border-left: 5px solid var(--info-color); }
+
+        /* --- Sampling Methods Section --- */
+        #sampling-methods .method-card {
+            background-color: #fff; padding: 2rem; border-radius: var(--border-radius);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08); margin-top: 2.5rem;
+            border-top: 5px solid; /* Color set dynamically */
+            opacity: 0; transform: translateY(20px); /* Start state */
+            transition: opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out, box-shadow var(--transition-speed) ease;
+        }
+        #sampling-methods .method-card.visible { opacity: 1; transform: translateY(0); }
+        #sampling-methods .method-card:hover { box-shadow: 0 8px 25px rgba(0,0,0,0.12); transform: translateY(-3px) !important; }
+
+        #random-sampling .method-card { border-top-color: var(--sampling-random); }
+        #random-sampling h3 { border-left-color: var(--sampling-random); color: var(--sampling-random); }
+
+        #stratified-sampling .method-card { border-top-color: var(--sampling-stratified); }
+        #stratified-sampling h3 { border-left-color: var(--sampling-stratified); color: var(--sampling-stratified); }
+
+        #systematic-sampling .method-card { border-top-color: var(--sampling-systematic); }
+        #systematic-sampling h3 { border-left-color: var(--sampling-systematic); color: var(--sampling-systematic); }
+
+        .method-card h3 { margin-top: 0; border-left: none; padding-left: 0; display: flex; align-items: center; gap: 10px; }
+        .method-card h3 i.fas { font-size: 1.8rem; }
+        .method-card h4 { font-size: 1.2rem; margin-top: 1.5rem; margin-bottom: 0.5rem; color: var(--secondary-color); }
+        .method-card ul { list-style: none; padding-left: 0; margin-top: 1rem; }
+        .method-card ul li { position: relative; padding-left: 25px; margin-bottom: 0.8rem; }
+        .method-card ul li::before {
+            content: ''; /* Using Font Awesome icons */
+            font-family: "Font Awesome 5 Free";
+            font-weight: 900;
+            position: absolute; left: 0; top: 4px;
+            font-size: 0.9em;
+        }
+        .method-card ul.pros li::before { content: "\f00c"; color: var(--success-color); } /* Check mark */
+        .method-card ul.cons li::before { content: "\f00d"; color: var(--error-color); } /* Times mark */
+        .method-card .example { background-color: #f8f9fa; border: 1px solid #eee; padding: 1rem; border-radius: 4px; margin-top: 1rem; font-size: 0.95rem; }
+        .method-card .example strong { color: var(--primary-color); }
+
+        /* --- Comparison Section --- */
+        #comparison { background-color: #e9ecef; }
+        #comparison table {
+            width: 100%; margin-top: 2rem; border-collapse: collapse;
+            background-color: #fff; box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+        }
+        #comparison th, #comparison td {
+            border: 1px solid #ddd; padding: 12px 15px; text-align: left;
+            vertical-align: top;
+        }
+        #comparison th {
+            background-color: var(--background-dark); color: var(--text-light); font-weight: bold;
+            font-family: var(--font-body);
+        }
+        #comparison td:first-child { font-weight: bold; color: var(--primary-color); }
+        #comparison ul { list-style: disc; padding-left: 20px; margin-top: 0.5rem; }
+        #comparison li { margin-bottom: 0.5rem; }
+        #comparison .fade-in-on-scroll { transition-delay: 0.2s; } /* Apply base delay */
+
+        /* --- Knowledge Check Section --- */
+        /* Styles inherited from template - may need minor adjustments if quiz content differs significantly */
+        #knowledge-check { background-color: var(--background-light); } /* Adjusted background */
+        .quiz-container { /* Animated by observer */
+             background-color: #fff; padding: 2rem; border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.1); max-width: 700px; margin: 2rem auto 0;
+             opacity: 0; transition: opacity var(--animation-speed) ease-out; /* Only fade opacity */
+             border: 1px solid #eee;
+        }
+        .quiz-container.visible { opacity: 1; }
+        .quiz-question { font-size: 1.2rem; font-weight: bold; margin-bottom: 1.5rem; color: var(--text-dark); }
+        .quiz-options button { display: block; width: 100%; padding: 1rem; margin-bottom: 1rem; text-align: left; font-size: 1rem; background-color: #f8f9fa; border: 1px solid #ced4da; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), border-color var(--transition-speed), transform var(--transition-speed); }
+        .quiz-options button:not(:disabled):hover { background-color: #e2e6ea; border-color: #adb5bd; transform: translateX(5px); }
+        .quiz-options button:disabled { cursor: default; opacity: 0.7; }
+        .quiz-options button.correct { background-color: #d4edda; border-color: var(--success-color); color: #155724; font-weight: bold; }
+        .quiz-options button.incorrect { background-color: #f8d7da; border-color: var(--error-color); color: #721c24; font-weight: bold; }
+        .quiz-options button.incorrect.shake { animation: shake 0.5s ease; }
+        .quiz-feedback { margin-top: 1.5rem; padding: 1rem; border-radius: var(--border-radius); font-weight: bold; text-align: center; opacity: 0; transition: opacity 0.5s ease, height 0.5s ease, margin-bottom 0.5s ease; height: 0; overflow: hidden; margin-bottom: 0;}
+        .quiz-feedback.visible { opacity: 1; height: auto; margin-bottom: 1rem; }
+        .quiz-feedback.correct { background-color: #d4edda; color: #155724; }
+        .quiz-feedback.incorrect { background-color: #f8d7da; color: #721c24; }
+        #next-question-btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5em; margin: 1.5rem auto 0; padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold; color: var(--text-light); background-color: var(--primary-color); border: none; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), transform var(--transition-speed), opacity 0.3s, visibility 0.3s; opacity: 0; visibility: hidden; }
+        #next-question-btn:hover:not(:disabled) { background-color: #0056b3; transform: scale(1.05); }
+        #next-question-btn.visible { opacity: 1; visibility: visible; }
+        #next-question-btn:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none; opacity: 0.7; }
+
+
+        /* --- Completion Section Styling --- */
+        .completion-section { padding: 4rem 0; text-align: center; background-color: var(--background-light); }
+        .completion-section .icon { font-size: 4rem; color: var(--success-color); margin-bottom: 1rem; display: inline-block; animation: iconAppearCorrect 1s ease-out 0.5s forwards; opacity: 0; /* Initial state for animation */}
+        /* Ensure completion elements are targeted by observer */
+        .completion-section h2, .completion-section p {
+            opacity: 0; transform: translateY(20px);
+            transition: opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+        }
+        .completion-section h2.visible, .completion-section p.visible {
+            opacity: 1; transform: translateY(0);
+        }
+        .completion-section .button-group { margin-top: 2.5rem; }
+        .completion-section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); margin-bottom: 1rem; }
+        .completion-section h2::after { display: none; }
+        .completion-section p { font-size: 1.1rem; margin-top: 1rem; color: var(--secondary-color); max-width: 700px; margin-left: auto; margin-right: auto; line-height: 1.8; }
+
+
+        /* --- Footer Styling --- */
+        .main-footer {
+            background-color: var(--background-light);
+            color: var(--text-light);
+            text-align: center;
+            padding: 2rem 0;
+            font-size: 0.9rem;
+            margin-top: auto;
+            border-top: 1px solid var(--background-light);
+            opacity: 0.85;
+        }
+        .main-footer p { margin: 0; line-height: 1.5; }
+
+        /* --- Responsive Design --- */
+        @media (max-width: 768px) {
+            html { font-size: 15px; }
+            .main-header h1 { font-size: 2.3rem; } .main-header p { font-size: 1.1rem; }
+            section h2 { font-size: 1.8rem; }
+            section h3 { font-size: 1.4rem; }
+            #comparison table { font-size: 0.9rem; }
+            #comparison th, #comparison td { padding: 10px 8px; }
+            .minimal-nav { min-width: 200px; } .minimal-nav ul li a { padding: 0.6rem 0.8rem; }
+            .completion-section h2 { font-size: 2rem; }
+            .completion-section .button-group { flex-direction: column; align-items: center; gap: 0.8rem; }
+            .completion-section .action-button { width: 80%; max-width: 350px; margin-top: 0; }
+            .main-footer { padding: 1.5rem 0; }
+            #welcome p { text-align: center;}
+        }
+        @media (max-width: 480px) {
+            html { font-size: 14px; }
+            .main-header h1 { font-size: 2rem; } .main-header p { font-size: 1rem; }
+            section h2 { font-size: 1.6rem; }
+            section h3 { font-size: 1.3rem; }
+            .method-card { padding: 1.5rem; }
+            .quiz-options button { padding: 0.8rem; font-size: 0.95rem; }
+            #comparison table { display: block; overflow-x: auto; white-space: nowrap; } /* Allow table scroll on small screens */
+            #comparison th, #comparison td { padding: 8px 6px; }
+            .minimal-nav-button { top: 10px; right: 10px; padding: 6px 10px; font-size: 1rem; }
+            .minimal-nav { top: 48px; right: 10px; min-width: 180px; }
+            .minimal-nav ul li a { padding: 0.5rem 0.7rem; font-size: 0.9rem;}
+            .minimal-nav ul li a i.fas { margin-right: 8px; }
+            .completion-section .icon { font-size: 3.5rem; }
+            .completion-section h2 { font-size: 1.8rem; } .completion-section p { font-size: 1rem; }
+            .completion-section .action-button { width: 90%; max-width: 300px; }
+            .main-footer { padding: 1rem 0; font-size: 0.85rem; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- ========= Minimal Nav Handle ========= -->
+    <button id="minimal-nav-toggle" class="minimal-nav-button" aria-label="Alternar Menu de Navegação" aria-expanded="false">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- ========= Minimal Nav Panel ========= -->
+    <nav id="minimal-nav-panel" class="minimal-nav">
+        <ul>
+            <!-- IMPORTANT: Updated hrefs to math-* and module number 3 -->
+            <li><a href="math-practice-3.html"><i class="fas fa-pencil-alt fa-fw"></i> <span data-translate="nav_practice">Iniciar Prática</span></a></li>
+            <li><a href="math-advanced-3.html"><i class="fas fa-flask fa-fw"></i> <span data-translate="nav_advanced">Prática Avançada</span></a></li>
+            <li><a href="math-dashboard.html"><i class="fas fa-list fa-fw"></i> <span data-translate="nav_menu">Menu do Curso</span></a></li>
+             <hr style="border: none; border-top: 1px solid var(--secondary-color); margin: 8px 0;">
+             <!-- Module specific nav links -->
+             <li><a href="#welcome"><i class="fas fa-door-open fa-fw"></i> <span data-translate="nav_welcome_m3">Boas-vindas M3</span></a></li>
+             <li><a href="#random-sampling"><i class="fas fa-random fa-fw"></i> <span data-translate="nav_random_sampling">Amostragem Aleatória</span></a></li>
+             <li><a href="#stratified-sampling"><i class="fas fa-layer-group fa-fw"></i> <span data-translate="nav_stratified_sampling">Amostragem Estratificada</span></a></li>
+             <li><a href="#systematic-sampling"><i class="fas fa-stream fa-fw"></i> <span data-translate="nav_systematic_sampling">Amostragem Sistemática</span></a></li>
+             <li><a href="#comparison"><i class="fas fa-balance-scale fa-fw"></i> <span data-translate="nav_comparison">Comparando Métodos</span></a></li>
+             <li><a href="#knowledge-check"><i class="fas fa-check-double fa-fw"></i> <span data-translate="nav_quiz">Teste Rápido</span></a></li>
+             <li><a href="#completion"><i class="fas fa-flag-checkered fa-fw"></i> <span data-translate="completion_theory_title_m3">Conclusão</span></a></li>
+        </ul>
+    </nav>
+
+    <header class="main-header">
+        <div class="header-shape shape1"></div>
+        <div class="header-shape shape2"></div>
+        <div class="header-shape shape3"></div>
+        <div class="container"> <!-- Start visible -->
+            <h1 data-translate="header_title_m3">Módulo 3: Métodos de Amostragem</h1>
+            <p data-translate="header_subtitle_m3">Aprendendo a selecionar subconjuntos representativos de dados para análise eficiente e precisa.</p>
+        </div>
+    </header>
+
+    <main>
+        <!-- ========= Welcome Section ========= -->
+        <section id="welcome">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="welcome_title_m3">🎯 Por Que Amostrar?</h2>
+                <p class="fade-in-on-scroll delay-1" data-translate="welcome_p1_m3">
+                    Bem-vindo ao Módulo 3! Em muitos cenários de ciência de dados e Inteligência Artificial, lidar com a <span class="highlight">totalidade</span> dos dados disponíveis (a <span class="highlight">população</span>) é impraticável ou impossível. Imagine analisar *todos* os tweets já publicados ou *todas* as imagens na internet!
+                </p>
+                <p class="fade-in-on-scroll delay-2" data-translate="welcome_p2_m3">
+                    A <span class="highlight">amostragem</span> é a técnica estatística de selecionar um <span class="highlight">subconjunto representativo</span> (a <span class="highlight">amostra</span>) de uma população maior. O objetivo é obter insights sobre a população inteira estudando apenas uma fração dela, economizando tempo, recursos computacionais e custos.
+                </p>
+                <div class="intro-box fade-in-on-scroll delay-3">
+                    <p data-translate="welcome_p3_m3">
+                        <strong>Relevância em IA:</strong> Métodos de amostragem são cruciais para:
+                    </p>
+                    <ul>
+                        <li data-translate="welcome_ai_1">Treinar modelos de Machine Learning com grandes datasets.</li>
+                        <li data-translate="welcome_ai_2">Avaliar o desempenho de modelos de forma eficiente.</li>
+                        <li data-translate="welcome_ai_3">Realizar Análise Exploratória de Dados (EDA) em Big Data.</li>
+                        <li data-translate="welcome_ai_4">Balancear datasets desiguais (e.g., detecção de fraudes, onde fraudes são raras).</li>
+                    </ul>
+                </div>
+                 <p class="fade-in-on-scroll delay-4" data-translate="welcome_p4_m3" style="margin-top: 1.5rem;">
+                    Neste módulo, exploraremos as principais técnicas para coletar amostras que reflitam fielmente as características da população original. Vamos começar!
+                </p>
+            </div>
+        </section>
+
+        <!-- ========= Sampling Methods Section ========= -->
+        <section id="sampling-methods">
+            <div class="container">
+                 <h2 class="fade-in-on-scroll" data-translate="sampling_methods_title">🔍 Técnicas de Amostragem</h2>
+                 <p class="text-center fade-in-on-scroll delay-1" data-translate="sampling_methods_subtitle">Explorando diferentes formas de selecionar amostras de uma população.</p>
+
+                 <!-- Random Sampling -->
+                 <div id="random-sampling">
+                     <div class="method-card fade-in-on-scroll delay-2">
+                         <h3><i class="fas fa-random" style="color: var(--sampling-random);"></i> <span data-translate="random_title">Amostragem Aleatória Simples (AAS)</span></h3>
+                         <p data-translate="random_desc">É o método mais básico, onde cada membro da população tem uma chance igual e independente de ser selecionado para a amostra.</p>
+                         <h4><i class="fas fa-cogs"></i> <span data-translate="how_it_works">Como Funciona:</span></h4>
+                         <p data-translate="random_how">Imagine colocar o nome de todos em um chapéu e sortear. Computacionalmente, usamos geradores de números aleatórios para selecionar índices ou identificadores únicos da população.</p>
+                         <div class="example">
+                             <strong data-translate="example_tag">Exemplo Computacional:</strong> <span data-translate="random_example">Dado um dataset de 10.000 usuários, selecionar aleatoriamente 100 IDs únicos usando uma função como <code class="code-like">random.sample(population_ids, 100)</code> em Python.</span>
+                         </div>
+                         <h4><i class="fas fa-thumbs-up"></i> <span data-translate="pros_tag">Vantagens:</span></h4>
+                         <ul class="pros">
+                             <li data-translate="random_pros_1">Simples de implementar e entender.</li>
+                             <li data-translate="random_pros_2">Se a população for homogênea, tende a produzir amostras representativas.</li>
+                             <li data-translate="random_pros_3">Base para muitas teorias estatísticas.</li>
+                         </ul>
+                         <h4><i class="fas fa-thumbs-down"></i> <span data-translate="cons_tag">Desvantagens:</span></h4>
+                         <ul class="cons">
+                             <li data-translate="random_cons_1">Pode não representar bem subgrupos pequenos da população (podem ser sorteados poucos ou nenhum membro).</li>
+                             <li data-translate="random_cons_2">Requer uma lista completa e atualizada de todos os membros da população (nem sempre disponível).</li>
+                             <li data-translate="random_cons_3">Pode ser logisticamente difícil para populações muito grandes ou dispersas geograficamente.</li>
+                         </ul>
+                     </div>
+                 </div>
+
+                 <!-- Stratified Sampling -->
+                 <div id="stratified-sampling">
+                     <div class="method-card fade-in-on-scroll delay-3">
+                         <h3><i class="fas fa-layer-group" style="color: var(--sampling-stratified);"></i> <span data-translate="stratified_title">Amostragem Estratificada</span></h3>
+                         <p data-translate="stratified_desc">A população é dividida em subgrupos homogêneos chamados <span class="highlight">estratos</span> (baseados em características relevantes, como idade, sexo, localização, tipo de cliente). Em seguida, uma Amostragem Aleatória Simples é realizada dentro de <span class="highlight">cada</span> estrato.</p>
+                         <h4><i class="fas fa-cogs"></i> <span data-translate="how_it_works">Como Funciona:</span></h4>
+                         <p data-translate="stratified_how">1. Identificar os estratos relevantes. 2. Determinar o tamanho da amostra para cada estrato (proporcional ao tamanho do estrato na população ou não). 3. Selecionar aleatoriamente o número desejado de membros de cada estrato.</p>
+                         <div class="example">
+                             <strong data-translate="example_tag">Exemplo IA:</strong> <span data-translate="stratified_example">Ao treinar um modelo de reconhecimento de imagens de animais, garantir que a amostra de treinamento tenha uma proporção representativa de cães, gatos, pássaros, etc., dividindo o dataset por tipo de animal (estratos) e amostrando dentro de cada tipo. Isso evita que o modelo fique bom apenas em reconhecer o animal mais comum no dataset original.</span>
+                         </div>
+                         <h4><i class="fas fa-thumbs-up"></i> <span data-translate="pros_tag">Vantagens:</span></h4>
+                         <ul class="pros">
+                             <li data-translate="stratified_pros_1">Garante a representatividade de todos os subgrupos importantes.</li>
+                             <li data-translate="stratified_pros_2">Pode fornecer estimativas mais precisas (menor erro amostral) do que a AAS, especialmente se os estratos forem bem diferentes entre si.</li>
+                             <li data-translate="stratified_pros_3">Permite análises separadas para cada estrato.</li>
+                         </ul>
+                         <h4><i class="fas fa-thumbs-down"></i> <span data-translate="cons_tag">Desvantagens:</span></h4>
+                         <ul class="cons">
+                             <li data-translate="stratified_cons_1">Requer conhecimento prévio sobre a população para definir os estratos.</li>
+                             <li data-translate="stratified_cons_2">Mais complexa de planejar e executar do que a AAS.</li>
+                             <li data-translate="stratified_cons_3">Pode ser difícil classificar cada membro da população em um único estrato.</li>
+                         </ul>
+                     </div>
+                 </div>
+
+                 <!-- Systematic Sampling -->
+                 <div id="systematic-sampling">
+                     <div class="method-card fade-in-on-scroll delay-4">
+                         <h3><i class="fas fa-stream" style="color: var(--sampling-systematic);"></i> <span data-translate="systematic_title">Amostragem Sistemática</span></h3>
+                         <p data-translate="systematic_desc">Seleciona-se um ponto de partida aleatório e, em seguida, escolhe-se cada <code class="code-like">k</code>-ésimo membro da população. O intervalo <code class="code-like">k</code> é calculado dividindo o tamanho da população (N) pelo tamanho desejado da amostra (n): <code class="code-like">k = N / n</code>.</p>
+                         <h4><i class="fas fa-cogs"></i> <span data-translate="how_it_works">Como Funciona:</span></h4>
+                         <p data-translate="systematic_how">1. Garantir que a lista da população não tenha um padrão oculto que coincida com o intervalo de amostragem. 2. Calcular <code class="code-like">k</code>. 3. Escolher um número aleatório <code class="code-like">r</code> entre 1 e <code class="code-like">k</code> (ponto de partida). 4. Selecionar os membros <code class="code-like">r</code>, <code class="code-like">r + k</code>, <code class="code-like">r + 2k</code>, e assim por diante, até atingir o tamanho da amostra.</p>
+                         <div class="example">
+                             <strong data-translate="example_tag">Exemplo Computacional:</strong> <span data-translate="systematic_example">Analisar a qualidade de produtos em uma linha de produção. Se a produção é de 1000 itens/dia e queremos testar 50, calculamos <code class="code-like">k = 1000 / 50 = 20</code>. Escolhemos um número aleatório entre 1 e 20 (e.g., 7). Selecionamos o 7º, 27º, 47º... 987º item produzido.</span>
+                         </div>
+                         <h4><i class="fas fa-thumbs-up"></i> <span data-translate="pros_tag">Vantagens:</span></h4>
+                         <ul class="pros">
+                             <li data-translate="systematic_pros_1">Mais fácil e rápida de executar do que a AAS, especialmente com listas longas.</li>
+                             <li data-translate="systematic_pros_2">Garante uma boa dispersão da amostra pela população.</li>
+                             <li data-translate="systematic_pros_3">Pode ser mais eficiente que a AAS se a lista estiver ordenada aleatoriamente.</li>
+                         </ul>
+                         <h4><i class="fas fa-thumbs-down"></i> <span data-translate="cons_tag">Desvantagens:</span></h4>
+                         <ul class="cons">
+                             <li data-translate="systematic_cons_1">Risco de viés (<span class="highlight">bias</span>) se houver um padrão ou ciclo oculto na lista da população que coincida com o intervalo <code class="code-like">k</code> (periodicidade).</li>
+                             <li data-translate="systematic_cons_2">Requer uma lista ordenada ou um fluxo sequencial da população.</li>
+                             <li data-translate="systematic_cons_3">Nem todos os subconjuntos possíveis têm chance de serem selecionados (diferente da AAS).</li>
+                         </ul>
+                     </div>
+                 </div>
+            </div>
+        </section>
+
+        <!-- ========= Comparison Section ========= -->
+        <section id="comparison">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="comparison_title">⚖️ Qual Método Escolher?</h2>
+                <p class="text-center fade-in-on-scroll delay-1" data-translate="comparison_subtitle">Uma comparação rápida para ajudar na decisão.</p>
+
+                <div class="table-responsive fade-in-on-scroll delay-2"> <!-- Added for responsiveness -->
+                    <table>
+                        <thead>
+                            <tr>
+                                <th data-translate="comparison_header_feature">Característica</th>
+                                <th data-translate="comparison_header_srs">AAS</th>
+                                <th data-translate="comparison_header_strat">Estratificada</th>
+                                <th data-translate="comparison_header_sys">Sistemática</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td data-translate="comparison_row_rep">Representatividade</td>
+                                <td data-translate="comparison_srs_rep">Boa em populações homogêneas; pode falhar em subgrupos.</td>
+                                <td data-translate="comparison_strat_rep">Excelente para garantir representatividade de subgrupos (estratos).</td>
+                                <td data-translate="comparison_sys_rep">Boa dispersão; vulnerável a padrões na lista.</td>
+                            </tr>
+                            <tr>
+                                <td data-translate="comparison_row_complex">Complexidade</td>
+                                <td data-translate="comparison_srs_complex">Baixa.</td>
+                                <td data-translate="comparison_strat_complex">Alta (requer definição e amostragem de estratos).</td>
+                                <td data-translate="comparison_sys_complex">Média (cálculo de k, ponto de partida aleatório).</td>
+                            </tr>
+                            <tr>
+                                <td data-translate="comparison_row_pop_need">Necessidade da População</td>
+                                <td data-translate="comparison_srs_pop_need">Lista completa necessária.</td>
+                                <td data-translate="comparison_strat_pop_need">Lista completa e informação para estratificação.</td>
+                                <td data-translate="comparison_sys_pop_need">Lista ordenada ou fluxo sequencial.</td>
+                            </tr>
+                            <tr>
+                                <td data-translate="comparison_row_bias">Risco de Viés</td>
+                                <td data-translate="comparison_srs_bias">Baixo (se implementada corretamente).</td>
+                                <td data-translate="comparison_strat_bias">Baixo (se estratos bem definidos).</td>
+                                <td data-translate="comparison_sys_bias">Potencialmente alto se houver periodicidade na lista.</td>
+                            </tr>
+                            <tr>
+                                <td data-translate="comparison_row_use_case">Caso de Uso Ideal</td>
+                                <td data-translate="comparison_srs_use_case">Populações pequenas e homogêneas, base para outros métodos.</td>
+                                <td data-translate="comparison_strat_use_case">Populações heterogêneas com subgrupos importantes a serem representados (e.g., balanceamento de classes em ML).</td>
+                                <td data-translate="comparison_sys_use_case">Populações grandes listadas ordenadamente, controle de qualidade, amostragem de fluxos.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                 <p class="text-center fade-in-on-scroll delay-3" data-translate="comparison_conclusion" style="margin-top: 2rem;">A escolha do método depende dos objetivos da pesquisa, das características da população, dos recursos disponíveis e dos potenciais riscos de viés.</p>
+            </div>
+        </section>
+
+
+        <!-- ========= Knowledge Check Section ========= -->
+        <section id="knowledge-check">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="quiz_title">🧠 Teste Rápido!</h2>
+                <div class="quiz-container fade-in-on-scroll delay-1"> <!-- Observe container -->
+                    <div id="quiz-area">
+                         <p style="text-align: center; padding: 2rem 0;">Carregando quiz...</p>
+                    </div>
+                    <div id="quiz-feedback" class="quiz-feedback"></div>
+                    <button id="next-question-btn" data-translate="quiz_next_button">Próxima Pergunta</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========= Completion Section ========= -->
+        <section id="completion" class="completion-section"> <!-- Added ID for nav link -->
+            <div class="container">
+                 <div class="icon">
+                     <!-- Changed icons to be more relevant -->
+                     <i class="fas fa-clipboard-check"></i>
+                     <i class="fas fa-project-diagram"></i> <!-- Represents structure/sampling -->
+                     <i class="fas fa-star"></i>
+                 </div>
+                <h2 class="fade-in-on-scroll delay-1" data-translate="completion_theory_title_m3">Teoria do Módulo 3 Completa!</h2>
+                <p class="fade-in-on-scroll delay-2" data-translate="completion_theory_desc_m3">
+                    Excelente! Você aprendeu sobre os métodos fundamentais de amostragem: Aleatória Simples, Estratificada e Sistemática. Entender como e quando usar cada um é vital para coletar dados representativos e realizar análises confiáveis, especialmente em IA.
+                    <br>Hora de aplicar esses conceitos!
+                </p>
+                <div class="button-group">
+                    <!-- Buttons observed - IMPORTANT: Updated hrefs to math-* and module number 3 -->
+                    <a href="math-dashboard.html" class="action-button secondary fade-in-on-scroll delay-3"><i class="fas fa-list"></i> <span data-translate="nav_menu">Menu do Curso</span></a>
+                    <a href="math-practice-3.html" class="action-button success fade-in-on-scroll delay-4"><i class="fas fa-pencil-alt"></i> <span data-translate="nav_practice">Iniciar Prática</span></a>
+                    <a href="math-advanced-3.html" class="action-button secondary fade-in-on-scroll delay-5"><i class="fas fa-flask"></i> <span data-translate="nav_advanced">Prática Avançada</span></a>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="main-footer">
+        <div class="container">
+            <p data-translate="footer_copyright"></p>
+        </div>
+    </footer>
+
+    <script>
+    // --- Translations Object (Portuguese Only - Module 3 Content) ---
+    const translations = {
+        pt: {
+            "page_title": "Módulo 3: Métodos de Amostragem",
+            // Nav
+            "nav_practice": "Iniciar Prática",
+            "nav_advanced": "Prática Avançada",
+            "nav_menu": "Menu do Curso",
+            "nav_welcome_m3": "Boas-vindas M3",
+            "nav_random_sampling": "Amostragem Aleatória",
+            "nav_stratified_sampling": "Amostragem Estratificada",
+            "nav_systematic_sampling": "Amostragem Sistemática",
+            "nav_comparison": "Comparando Métodos",
+            "nav_quiz": "Teste Rápido",
+            // Header
+            "header_title_m3": "Módulo 3: Métodos de Amostragem",
+            "header_subtitle_m3": "Aprendendo a selecionar subconjuntos representativos de dados para análise eficiente e precisa.",
+            // Welcome Section
+            "welcome_title_m3": "🎯 Por Que Amostrar?",
+            "welcome_p1_m3": "Bem-vindo ao Módulo 3! Em muitos cenários de ciência de dados e Inteligência Artificial, lidar com a <span class=\"highlight\">totalidade</span> dos dados disponíveis (a <span class=\"highlight\">população</span>) é impraticável ou impossível. Imagine analisar *todos* os tweets já publicados ou *todas* as imagens na internet!",
+            "welcome_p2_m3": "A <span class=\"highlight\">amostragem</span> é a técnica estatística de selecionar um <span class=\"highlight\">subconjunto representativo</span> (a <span class=\"highlight\">amostra</span>) de uma população maior. O objetivo é obter insights sobre a população inteira estudando apenas uma fração dela, economizando tempo, recursos computacionais e custos.",
+            "welcome_p3_m3": "<strong>Relevância em IA:</strong> Métodos de amostragem são cruciais para:",
+            "welcome_ai_1": "Treinar modelos de Machine Learning com grandes datasets.",
+            "welcome_ai_2": "Avaliar o desempenho de modelos de forma eficiente.",
+            "welcome_ai_3": "Realizar Análise Exploratória de Dados (EDA) em Big Data.",
+            "welcome_ai_4": "Balancear datasets desiguais (e.g., detecção de fraudes, onde fraudes são raras).",
+            "welcome_p4_m3": "Neste módulo, exploraremos as principais técnicas para coletar amostras que reflitam fielmente as características da população original. Vamos começar!",
+            // Sampling Methods Section
+            "sampling_methods_title": "🔍 Técnicas de Amostragem",
+            "sampling_methods_subtitle": "Explorando diferentes formas de selecionar amostras de uma população.",
+            "how_it_works": "Como Funciona:",
+            "example_tag": "Exemplo:",
+            "pros_tag": "Vantagens:",
+            "cons_tag": "Desvantagens:",
+            // Random Sampling
+            "random_title": "Amostragem Aleatória Simples (AAS)",
+            "random_desc": "É o método mais básico, onde cada membro da população tem uma chance igual e independente de ser selecionado para a amostra.",
+            "random_how": "Imagine colocar o nome de todos em um chapéu e sortear. Computacionalmente, usamos geradores de números aleatórios para selecionar índices ou identificadores únicos da população.",
+            "random_example": "Dado um dataset de 10.000 usuários, selecionar aleatoriamente 100 IDs únicos usando uma função como <code class='code-like'>random.sample(population_ids, 100)</code> em Python.",
+            "random_pros_1": "Simples de implementar e entender.",
+            "random_pros_2": "Se a população for homogênea, tende a produzir amostras representativas.",
+            "random_pros_3": "Base para muitas teorias estatísticas.",
+            "random_cons_1": "Pode não representar bem subgrupos pequenos da população (podem ser sorteados poucos ou nenhum membro).",
+            "random_cons_2": "Requer uma lista completa e atualizada de todos os membros da população (nem sempre disponível).",
+            "random_cons_3": "Pode ser logisticamente difícil para populações muito grandes ou dispersas geograficamente.",
+            // Stratified Sampling
+            "stratified_title": "Amostragem Estratificada",
+            "stratified_desc": "A população é dividida em subgrupos homogêneos chamados <span class=\"highlight\">estratos</span> (baseados em características relevantes, como idade, sexo, localização, tipo de cliente). Em seguida, uma Amostragem Aleatória Simples é realizada dentro de <span class=\"highlight\">cada</span> estrato.",
+            "stratified_how": "1. Identificar os estratos relevantes. 2. Determinar o tamanho da amostra para cada estrato (proporcional ao tamanho do estrato na população ou não). 3. Selecionar aleatoriamente o número desejado de membros de cada estrato.",
+            "stratified_example": "Ao treinar um modelo de reconhecimento de imagens de animais, garantir que a amostra de treinamento tenha uma proporção representativa de cães, gatos, pássaros, etc., dividindo o dataset por tipo de animal (estratos) e amostrando dentro de cada tipo. Isso evita que o modelo fique bom apenas em reconhecer o animal mais comum no dataset original.",
+            "stratified_pros_1": "Garante a representatividade de todos os subgrupos importantes.",
+            "stratified_pros_2": "Pode fornecer estimativas mais precisas (menor erro amostral) do que a AAS, especialmente se os estratos forem bem diferentes entre si.",
+            "stratified_pros_3": "Permite análises separadas para cada estrato.",
+            "stratified_cons_1": "Requer conhecimento prévio sobre a população para definir os estratos.",
+            "stratified_cons_2": "Mais complexa de planejar e executar do que a AAS.",
+            "stratified_cons_3": "Pode ser difícil classificar cada membro da população em um único estrato.",
+            // Systematic Sampling
+            "systematic_title": "Amostragem Sistemática",
+            "systematic_desc": "Seleciona-se um ponto de partida aleatório e, em seguida, escolhe-se cada <code class=\"code-like\">k</code>-ésimo membro da população. O intervalo <code class=\"code-like\">k</code> é calculado dividindo o tamanho da população (N) pelo tamanho desejado da amostra (n): <code class=\"code-like\">k = N / n</code>.",
+            "systematic_how": "1. Garantir que a lista da população não tenha um padrão oculto que coincida com o intervalo de amostragem. 2. Calcular <code class=\"code-like\">k</code>. 3. Escolher um número aleatório <code class=\"code-like\">r</code> entre 1 e <code class=\"code-like\">k</code> (ponto de partida). 4. Selecionar os membros <code class=\"code-like\">r</code>, <code class=\"code-like\">r + k</code>, <code class=\"code-like\">r + 2k</code>, e assim por diante, até atingir o tamanho da amostra.",
+            "systematic_example": "Analisar a qualidade de produtos em uma linha de produção. Se a produção é de 1000 itens/dia e queremos testar 50, calculamos <code class=\"code-like\">k = 1000 / 50 = 20</code>. Escolhemos um número aleatório entre 1 e 20 (e.g., 7). Selecionamos o 7º, 27º, 47º... 987º item produzido.",
+            "systematic_pros_1": "Mais fácil e rápida de executar do que a AAS, especialmente com listas longas.",
+            "systematic_pros_2": "Garante uma boa dispersão da amostra pela população.",
+            "systematic_pros_3": "Pode ser mais eficiente que a AAS se a lista estiver ordenada aleatoriamente.",
+            "systematic_cons_1": "Risco de viés (<span class=\"highlight\">bias</span>) se houver um padrão ou ciclo oculto na lista da população que coincida com o intervalo <code class=\"code-like\">k</code> (periodicidade).",
+            "systematic_cons_2": "Requer uma lista ordenada ou um fluxo sequencial da população.",
+            "systematic_cons_3": "Nem todos os subconjuntos possíveis têm chance de serem selecionados (diferente da AAS).",
+            // Comparison Section
+            "comparison_title": "⚖️ Qual Método Escolher?",
+            "comparison_subtitle": "Uma comparação rápida para ajudar na decisão.",
+            "comparison_header_feature": "Característica",
+            "comparison_header_srs": "AAS",
+            "comparison_header_strat": "Estratificada",
+            "comparison_header_sys": "Sistemática",
+            "comparison_row_rep": "Representatividade",
+            "comparison_srs_rep": "Boa em populações homogêneas; pode falhar em subgrupos.",
+            "comparison_strat_rep": "Excelente para garantir representatividade de subgrupos (estratos).",
+            "comparison_sys_rep": "Boa dispersão; vulnerável a padrões na lista.",
+            "comparison_row_complex": "Complexidade",
+            "comparison_srs_complex": "Baixa.",
+            "comparison_strat_complex": "Alta (requer definição e amostragem de estratos).",
+            "comparison_sys_complex": "Média (cálculo de k, ponto de partida aleatório).",
+            "comparison_row_pop_need": "Necessidade da População",
+            "comparison_srs_pop_need": "Lista completa necessária.",
+            "comparison_strat_pop_need": "Lista completa e informação para estratificação.",
+            "comparison_sys_pop_need": "Lista ordenada ou fluxo sequencial.",
+            "comparison_row_bias": "Risco de Viés",
+            "comparison_srs_bias": "Baixo (se implementada corretamente).",
+            "comparison_strat_bias": "Baixo (se estratos bem definidos).",
+            "comparison_sys_bias": "Potencialmente alto se houver periodicidade na lista.",
+            "comparison_row_use_case": "Caso de Uso Ideal",
+            "comparison_srs_use_case": "Populações pequenas e homogêneas, base para outros métodos.",
+            "comparison_strat_use_case": "Populações heterogêneas com subgrupos importantes a serem representados (e.g., balanceamento de classes em ML).",
+            "comparison_sys_use_case": "Populações grandes listadas ordenadamente, controle de qualidade, amostragem de fluxos.",
+            "comparison_conclusion": "A escolha do método depende dos objetivos da pesquisa, das características da população, dos recursos disponíveis e dos potenciais riscos de viés.",
+            // Quiz Section
+            "quiz_title": "🧠 Teste Rápido!",
+            "quiz_next_button": "Próxima Pergunta",
+            "quiz_q1_m3": "Qual método de amostragem garante que subgrupos específicos da população sejam representados na amostra na proporção correta?",
+            "quiz_q1_m3_opt1": "Amostragem Aleatória Simples",
+            "quiz_q1_m3_opt2": "Amostragem Sistemática",
+            "quiz_q1_m3_opt3": "Amostragem Estratificada", // Correct
+            "quiz_q1_m3_opt4": "Amostragem por Conveniência",
+            "quiz_q2_m3": "Você precisa selecionar uma amostra de 50 funcionários de uma lista ordenada de 500 funcionários. Você escolhe aleatoriamente o 7º funcionário e depois seleciona cada 10º funcionário (17º, 27º, ...). Que método você usou?",
+            "quiz_q2_m3_opt1": "Amostragem Aleatória Simples",
+            "quiz_q2_m3_opt2": "Amostragem Estratificada",
+            "quiz_q2_m3_opt3": "Amostragem por Conglomerados",
+            "quiz_q2_m3_opt4": "Amostragem Sistemática", // Correct
+            "quiz_q3_m3": "Qual é a principal desvantagem da Amostragem Aleatória Simples?",
+            "quiz_q3_m3_opt1": "É muito complexa de implementar.",
+            "quiz_q3_m3_opt2": "Pode não representar adequadamente subgrupos minoritários.", // Correct
+            "quiz_q3_m3_opt3": "Garante a representação de todos os subgrupos.",
+            "quiz_q3_m3_opt4": "Sempre introduz viés na seleção.",
+            "quiz_q4_m3": "A amostragem sistemática pode ser problemática se...",
+            "quiz_q4_m3_opt1": "A população for muito grande.",
+            "quiz_q4_m3_opt2": "Houver um padrão cíclico na lista da população que coincide com o intervalo de amostragem (k).", // Correct
+            "quiz_q4_m3_opt3": "A amostra desejada for pequena.",
+            "quiz_q4_m3_opt4": "Não houver uma lista completa da população.",
+            "quiz_feedback_correct": "Correto! 🎉",
+            "quiz_feedback_incorrect": "Não foi bem assim! A resposta correta era: {correctAnswerText}",
+            "quiz_final_score_title": "Teste Rápido Completo!",
+            "quiz_final_score_summary": "Você respondeu {score} de {total} perguntas corretamente.",
+            "quiz_final_score_perfect": "Excelente! Você compreendeu bem os métodos de amostragem.",
+            "quiz_final_score_good": "Bom trabalho! Continue revisando as diferenças e aplicações de cada método.",
+            // Completion Section
+            "completion_theory_title_m3": "Teoria do Módulo 3 Completa!",
+            "completion_theory_desc_m3": "Excelente! Você aprendeu sobre os métodos fundamentais de amostragem: Aleatória Simples, Estratificada e Sistemática. Entender como e quando usar cada um é vital para coletar dados representativos e realizar análises confiáveis, especialmente em IA.<br>Hora de aplicar esses conceitos!",
+            // Footer
+            "footer_copyright": "© 2024 Matemática para IA. Todos os direitos reservados."
+        }
+    };
+
+    // --- Global Variables ---
+    let currentQuestionIndex = 0;
+    let score = 0;
+    const lang = 'pt'; // Hardcoded language
+
+    // --- DOM Elements (Get them once) ---
+    const navToggleButton = document.getElementById('minimal-nav-toggle');
+    const navPanel = document.getElementById('minimal-nav-panel');
+    const body = document.body;
+    const quizArea = document.getElementById('quiz-area');
+    const feedbackArea = document.getElementById('quiz-feedback');
+    const nextButton = document.getElementById('next-question-btn');
+    // Removed textDemoBox and codeOutputArea as they are not used in this module's structure
+
+    // --- Functions ---
+
+    function getTranslation(key, replacements = {}) {
+         let text = translations[lang]?.[key] ?? `[${key}]`; // Default to key if not found
+         for (const placeholder in replacements) {
+             // Use a more robust regex to avoid issues with special characters in replacements
+             const regex = new RegExp(String.raw`\{${placeholder}\}`, 'g');
+             text = text.replace(regex, replacements[placeholder]);
+         }
+         return text;
+    }
+
+
+    function translatePage() {
+        document.querySelectorAll('[data-translate]').forEach(el => {
+            const key = el.getAttribute('data-translate');
+            let translation = getTranslation(key);
+
+            if (el.tagName === 'TITLE') { document.title = translation; }
+            else if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'BUTTON' && !el.classList.contains('quiz-option-btn') && el.id !== 'next-question-btn' && el.id !== 'minimal-nav-toggle') {
+                 // Avoid translating button text directly if it has complex inner HTML maybe?
+                 // Let's try setting innerHTML for buttons too, but be careful.
+                 // For now, handle quiz buttons and next button separately.
+                 // Let's assume other buttons just need textContent updated if they don't have icons.
+                 if (!el.querySelector('i.fas')) { // Only update text if no icon inside?
+                    el.textContent = translation;
+                 } else {
+                     // If it has an icon, find the text part (e.g., in a span)
+                     const textSpan = el.querySelector('span');
+                     if(textSpan) textSpan.innerHTML = translation; // Use innerHTML here too for safety with spans
+                 }
+            } else {
+                // Safely set innerHTML for elements that are expected to contain HTML tags from the translation string
+                 const safeContainers = '.intro-box ul, .method-card p, .method-card li, .example, #comparison td, .quiz-question, .quiz-feedback, .completion-section p, .main-footer p, .main-header p';
+                 const safeInline = /<\/?(code|strong|span|br|i|b|em|strong|mark|small|sub|sup)>/gi; // Expanded safe tags slightly
+                 let containsSafeHtml = safeInline.test(translation);
+
+                 // Allow innerHTML if it contains only safe tags OR if it's in an allowed container
+                 if (containsSafeHtml || el.matches(safeContainers)) {
+                    el.innerHTML = translation;
+                 } else {
+                    el.textContent = translation; // Default to textContent for safety
+                 }
+            }
+        });
+
+        // Special handling for quiz buttons which need innerHTML
+        if (quizArea) {
+            quizArea.querySelectorAll('.quiz-option-btn').forEach(button => {
+                 // This might run before questions are loaded, but loadQuestion will handle its own buttons
+                 // We'll re-apply translation logic within loadQuestion too.
+            });
+        }
+        if (nextButton) {
+            const nextButtonSpan = nextButton.querySelector('span');
+            if (nextButtonSpan) {
+                nextButtonSpan.innerHTML = getTranslation('quiz_next_button');
+            } else {
+                nextButton.innerHTML = getTranslation('quiz_next_button'); // Fallback if no span
+            }
+        }
+
+        // Translate navigation links carefully, preserving icons
+        navPanel.querySelectorAll('li a span').forEach(span => {
+            const key = span.getAttribute('data-translate');
+            if (key) {
+                span.innerHTML = getTranslation(key);
+            }
+        });
+    }
+
+    // --- Quiz Data & Functions (Module 3) ---
+    const quizData = [
+         { questionKey: "quiz_q1_m3", optionKeys: ["quiz_q1_m3_opt1", "quiz_q1_m3_opt2", "quiz_q1_m3_opt3", "quiz_q1_m3_opt4"], correctAnswer: 2 }, // Estratificada
+         { questionKey: "quiz_q2_m3", optionKeys: ["quiz_q2_m3_opt1", "quiz_q2_m3_opt2", "quiz_q2_m3_opt3", "quiz_q2_m3_opt4"], correctAnswer: 3 }, // Sistemática
+         { questionKey: "quiz_q3_m3", optionKeys: ["quiz_q3_m3_opt1", "quiz_q3_m3_opt2", "quiz_q3_m3_opt3", "quiz_q3_m3_opt4"], correctAnswer: 1 }, // AAS não representa subgrupos
+         { questionKey: "quiz_q4_m3", optionKeys: ["quiz_q4_m3_opt1", "quiz_q4_m3_opt2", "quiz_q4_m3_opt3", "quiz_q4_m3_opt4"], correctAnswer: 1 }  // Sistemática e periodicidade
+    ];
+
+    function loadQuestion() {
+          if (!quizArea) return; // Ensure quizArea exists
+
+          // If we reached the end, show score
+          if (currentQuestionIndex >= quizData.length) {
+              if (!quizArea.querySelector('[data-translate="quiz_final_score_title"]')) { // Avoid re-rendering score
+                 showFinalScore();
+              }
+              return;
+          }
+
+          const currentQuiz = quizData[currentQuestionIndex];
+          const questionText = getTranslation(currentQuiz.questionKey);
+          // Generate HTML for question and options, using innerHTML for potential <code> tags etc.
+          quizArea.innerHTML = `
+              <div class="quiz-question">${currentQuestionIndex + 1}. ${questionText}</div>
+              <div class="quiz-options">
+                  ${currentQuiz.optionKeys.map((optionKey, index) => `
+                      <button class="quiz-option-btn" data-index="${index}">${getTranslation(optionKey)}</button>
+                  `).join('')}
+              </div>
+          `;
+
+          // Reset feedback and next button
+          if (feedbackArea) {
+            feedbackArea.classList.remove('visible', 'correct', 'incorrect');
+            feedbackArea.textContent = '';
+            feedbackArea.style.height = '0'; // Reset height
+            feedbackArea.style.marginBottom = '0'; // Reset margin
+          }
+          if (nextButton) {
+            nextButton.classList.remove('visible');
+            nextButton.disabled = true;
+          }
+
+          // Add event listeners to the new buttons
+          quizArea.querySelectorAll('.quiz-option-btn').forEach(button => {
+              button.addEventListener('click', handleAnswer);
+          });
+    }
+
+    function handleAnswer(event) {
+         const selectedButton = event.target.closest('.quiz-option-btn'); // Ensure we get the button itself
+         if (!selectedButton) return; // Exit if click wasn't on a button or descendant
+
+         const selectedIndex = parseInt(selectedButton.dataset.index);
+         const correctIndex = quizData[currentQuestionIndex].correctAnswer;
+         const correctOptionKey = quizData[currentQuestionIndex].optionKeys[correctIndex];
+
+         // Disable all options
+         quizArea.querySelectorAll('.quiz-option-btn').forEach(btn => {
+            btn.disabled = true;
+            btn.classList.remove('shake'); // Remove shake if present from previous incorrect
+         });
+
+         if (!feedbackArea || !nextButton) return; // Ensure elements exist
+
+         feedbackArea.classList.add('visible');
+
+         if (selectedIndex === correctIndex) {
+             selectedButton.classList.add('correct');
+             feedbackArea.innerHTML = getTranslation('quiz_feedback_correct'); // Use innerHTML for emojis etc.
+             feedbackArea.classList.add('correct');
+             feedbackArea.classList.remove('incorrect');
+             score++;
+             selectedButton.classList.add('tada-anim');
+         } else {
+             selectedButton.classList.add('incorrect');
+             const formattedCorrectAnswer = getTranslation(correctOptionKey); // Translate correct answer text
+             // Use innerHTML for feedback to allow potential formatting (like strong tags)
+             feedbackArea.innerHTML = getTranslation('quiz_feedback_incorrect', { correctAnswerText: `<strong>${formattedCorrectAnswer}</strong>` });
+             feedbackArea.classList.add('incorrect');
+             feedbackArea.classList.remove('correct');
+             // Highlight the correct button as well
+             const correctButton = quizArea.querySelector(`.quiz-option-btn[data-index="${correctIndex}"]`);
+             if(correctButton) correctButton.classList.add('correct'); // Visually indicate correct one
+             selectedButton.classList.add('shake');
+         }
+
+         // Remove animation classes after they finish
+         selectedButton.addEventListener('animationend', () => {
+              selectedButton.classList.remove('tada-anim', 'shake');
+         }, { once: true });
+
+         // Make feedback area adjust height and margin smoothly
+         // Ensure content is rendered before calculating scrollHeight
+         requestAnimationFrame(() => {
+            feedbackArea.style.height = feedbackArea.scrollHeight + 'px';
+            feedbackArea.style.marginBottom = '1rem';
+         });
+
+
+         // Show and enable next button
+         nextButton.classList.add('visible');
+         nextButton.disabled = false;
+     }
+
+     function showFinalScore() {
+            if (!quizArea) return;
+            const totalQuestions = quizData.length;
+            // Determine message based on score percentage
+            let resultMessageKey;
+             if (score === totalQuestions) {
+                 resultMessageKey = 'quiz_final_score_perfect';
+             } else {
+                 resultMessageKey = 'quiz_final_score_good'; // Simplified logic
+             }
+
+            quizArea.innerHTML = `
+               <div class="quiz-question text-center" data-translate="quiz_final_score_title" style="font-size: 1.5rem;">${getTranslation('quiz_final_score_title')}</div>
+               <p class="text-center" style="font-size: 1.2rem; margin-bottom: 1rem;">${getTranslation('quiz_final_score_summary', { score: score, total: totalQuestions })}</p>
+               <p class="text-center" style="color: ${score === totalQuestions ? 'var(--success-color)' : 'var(--primary-color)'}; font-weight: bold;">${getTranslation(resultMessageKey)}</p>
+            `;
+            if (feedbackArea) feedbackArea.classList.remove('visible'); // Hide feedback area
+            if (nextButton) nextButton.style.display = 'none'; // Hide next button
+            quizArea.scrollIntoView({ behavior: 'smooth', block: 'center' }); // Scroll score into view
+     }
+
+
+    // --- Intersection Observer Setup ---
+    function setupObservers() {
+        const observerOptions = {
+            root: null, // relative to viewport
+            rootMargin: '0px',
+            threshold: 0.1 // Trigger when 10% of the element is visible
+        };
+
+        const observerCallback = (entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    // Optional: Unobserve after it becomes visible to save resources
+                    // observer.unobserve(entry.target);
+                }
+                // Optional: Remove 'visible' if it scrolls out of view
+                // else {
+                //     entry.target.classList.remove('visible');
+                // }
+            });
+        };
+
+        const animationObserver = new IntersectionObserver(observerCallback, observerOptions);
+
+        // Observe elements with the fade-in class
+        document.querySelectorAll('.fade-in-on-scroll').forEach(el => {
+            animationObserver.observe(el);
+        });
+
+        // No complex code simulation observer needed for this module
+    }
+
+    // --- Event Listeners Setup ---
+    function setupEventListeners() {
+        // Navbar Toggle
+        if (navToggleButton && navPanel) {
+            navToggleButton.addEventListener('click', (event) => {
+                event.stopPropagation();
+                body.classList.toggle('nav-active');
+                navToggleButton.setAttribute('aria-expanded', body.classList.contains('nav-active'));
+            });
+
+            // Close nav if clicking outside
+            document.addEventListener('click', (event) => {
+                if (body.classList.contains('nav-active') && !navPanel.contains(event.target) && event.target !== navToggleButton && !navToggleButton.contains(event.target)) {
+                    body.classList.remove('nav-active');
+                    navToggleButton.setAttribute('aria-expanded', 'false');
+                }
+            });
+
+            // Close nav on link click
+            navPanel.querySelectorAll('a').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    // Check if it's an internal link
+                    if (link.getAttribute('href').startsWith('#')) {
+                         // Allow default scroll behavior
+                        // Close panel slightly delayed
+                        setTimeout(() => {
+                            body.classList.remove('nav-active');
+                            navToggleButton.setAttribute('aria-expanded', 'false');
+                        }, 150);
+                    }
+                    // External links will navigate away anyway, panel closes automatically
+                });
+            });
+
+            // Close nav on Escape key
+            document.addEventListener('keydown', (event) => {
+                 if (event.key === 'Escape' && body.classList.contains('nav-active')) {
+                     body.classList.remove('nav-active');
+                     navToggleButton.setAttribute('aria-expanded', 'false');
+                 }
+             });
+        }
+
+        // Quiz Next Button
+        if (nextButton) {
+            nextButton.addEventListener('click', () => {
+                if (!nextButton.disabled) {
+                    currentQuestionIndex++;
+                    loadQuestion(); // Load the next question
+                }
+            });
+        } else {
+            console.error("Elemento #next-question-btn não encontrado.");
+        }
+    }
+
+    // --- Initialization ---
+    document.addEventListener('DOMContentLoaded', () => {
+        // Check if elements needed for quiz exist before proceeding
+        if (!quizArea) console.error("Elemento #quiz-area não encontrado.");
+        if (!feedbackArea) console.error("Elemento #quiz-feedback não encontrado.");
+
+        translatePage();        // Apply translations first
+        setupEventListeners();  // Set up interactive elements
+        setupObservers();       // Set up animations
+
+        if (quizArea) {
+            loadQuestion();     // Load the first quiz question if container exists
+        } else {
+            console.log("Quiz area not found, skipping quiz load."); // Debug log
+        }
+    });
+
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<!-- Language set to Portuguese BR -->
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Title set by JS -->
+    <title data-translate="page_title">Módulo 28: Conjuntos e Banco de Dados (SQL)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* --- Reset & Base Styles --- */
+        :root {
+            --primary-color: #007bff; /* Keep same blue */
+            --secondary-color: #6c757d;
+            --background-light: #f8f9fa;
+            --background-dark: #343a40;
+            --text-light: #f8f9fa;
+            --text-dark: #212529;
+            --accent-color: #ffc107; /* Keep same yellow */
+            --success-color: #28a745; /* Keep same green */
+            --error-color: #dc3545; /* Keep same red */
+            --sql-union-color: #28a745; /* Green for UNION */
+            --sql-intersect-color: #ffc107; /* Yellow for INTERSECT */
+            --sql-except-color: #dc3545; /* Red for EXCEPT */
+            --sql-keyword-color: #569cd6; /* Light blue for keywords */
+            --sql-table-color: #9cdcfe; /* Lighter blue for table/column names */
+            --sql-string-color: #ce9178; /* Orange for strings */
+            --border-radius: 8px;
+            --transition-speed: 0.3s;
+            --animation-speed: 0.6s; /* Control fade-in speed */
+            --font-body: 'Roboto', sans-serif;
+            --font-title: 'Orbitron', sans-serif;
+            --nav-primary: #6e48aa;
+            --nav-success: #4cc9f0;
+            --nav-dark: #1a1a2e;
+            --footer-border-color: #495057;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; font-size: 16px; }
+        body {
+            font-family: var(--font-body); line-height: 1.7;
+            background-color: var(--background-light); color: var(--text-dark);
+            overflow-x: hidden; display: flex; flex-direction: column; min-height: 100vh;
+        }
+        main { flex-grow: 1; }
+
+        /* --- Utility Classes --- */
+        .container { max-width: 960px; margin: 0 auto; padding: 0 15px; }
+        .text-center { text-align: center; }
+        .highlight { color: var(--primary-color); font-weight: bold; }
+        .code-inline { font-family: 'Courier New', Courier, monospace; background-color: #e9ecef; padding: 0.2em 0.4em; border-radius: 3px; font-size: 0.9em;}
+
+        /* Elements to be animated by observer */
+        .fade-in-on-scroll {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+        }
+        .fade-in-on-scroll.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        /* Add delays for staggering */
+        .delay-1.visible { transition-delay: 0.1s; }
+        .delay-2.visible { transition-delay: 0.2s; }
+        .delay-3.visible { transition-delay: 0.3s; }
+        .delay-4.visible { transition-delay: 0.4s; }
+        .delay-5.visible { transition-delay: 0.5s; }
+        .delay-6.visible { transition-delay: 0.6s; }
+        .delay-7.visible { transition-delay: 0.7s; }
+
+
+        .button-group { margin-top: 2rem; display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; }
+        .action-button {
+             display: inline-flex; align-items: center; justify-content: center; gap: 0.5em;
+             padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold;
+             color: var(--text-light); background-color: var(--primary-color); border: none;
+             border-radius: var(--border-radius); cursor: pointer;
+             transition: background-color var(--transition-speed), transform var(--transition-speed), filter var(--transition-speed), box-shadow var(--transition-speed), opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out; /* Add animation transition */
+             margin-top: 1rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+             text-decoration: none; line-height: 1.2;
+             opacity: 0; /* Start hidden if animated */
+             transform: translateY(20px); /* Start offset if animated */
+        }
+        .action-button.visible { /* Make visible via observer */
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .action-button i.fas {}
+        .action-button:hover:not(:disabled) { background-color: #0056b3; transform: translateY(-2px) !important; box-shadow: 0 4px 8px rgba(0,0,0,0.15); } /* Use !important to override initial transform */
+        .action-button:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none !important; box-shadow: none; opacity: 0.7; }
+        .action-button.success { background-color: var(--success-color); }
+        .action-button.success:hover:not(:disabled) { background-color: #218838; }
+        .action-button.secondary { background-color: var(--secondary-color); }
+        .action-button.secondary:hover:not(:disabled) { background-color: #5a6268; }
+        .action-button:active:not(:disabled) { transform: translateY(1px) scale(0.98) !important; filter: brightness(0.95); }
+
+        /* --- Animations --- */
+        @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); } 50% { transform: scale(1.03); box-shadow: 0 0 15px rgba(0, 123, 255, 0.6); } 100% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); } }
+        @keyframes tada { from { transform: scale3d(1, 1, 1); } 10%, 20% { transform: scale3d(.9, .9, .9) rotate3d(0, 0, 1, -3deg); } 30%, 50%, 70%, 90% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, 3deg); } 40%, 60%, 80% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, -3deg); } to { transform: scale3d(1, 1, 1); } }
+        .tada-anim { animation: tada 1s ease; }
+        @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
+        @keyframes iconAppearCorrect { 0% { transform: scale(0.5) rotate(-15deg); opacity: 0; } 60% { transform: scale(1.2) rotate(5deg); opacity: 1; } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
+
+        /* --- Minimal Retractable Nav --- */
+        .minimal-nav-button { position: fixed; top: 15px; right: 15px; z-index: 1001; background-color: rgba(52, 58, 64, 0.75); color: var(--text-light); border: none; border-radius: var(--border-radius); padding: 8px 12px; cursor: pointer; transition: background-color var(--transition-speed), opacity var(--transition-speed), transform var(--transition-speed); font-size: 1.1rem; opacity: 0.6; box-shadow: 0 2px 5px rgba(0,0,0,0.2); line-height: 1; }
+        .minimal-nav-button:hover { background-color: rgba(52, 58, 64, 0.95); opacity: 1; transform: scale(1.05); }
+        .minimal-nav { position: fixed; top: 60px; right: 15px; z-index: 1000; background-color: var(--background-dark); border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.3); padding: 0.8rem; opacity: 0; transform: translateY(-15px) scale(0.95); transform-origin: top right; pointer-events: none; transition: opacity var(--transition-speed) ease, transform var(--transition-speed) ease; min-width: 200px; }
+        body.nav-active .minimal-nav { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+        .minimal-nav ul { list-style: none; margin: 0; padding: 0; }
+        .minimal-nav ul li { margin-bottom: 5px; }
+        .minimal-nav ul li:last-child { margin-bottom: 0; }
+        .minimal-nav ul li a { display: flex; align-items: center; color: var(--text-light); text-decoration: none; padding: 0.6rem 1rem; border-radius: 4px; transition: background-color var(--transition-speed), color var(--transition-speed); white-space: nowrap; font-weight: 400; font-size: 0.95rem; }
+        .minimal-nav ul li a i.fas { margin-right: 10px; width: 1.2em; text-align: center; opacity: 0.8; transition: opacity var(--transition-speed); }
+        .minimal-nav ul li a:hover { background-color: var(--primary-color); color: var(--text-light); }
+        .minimal-nav ul li a:hover i.fas { opacity: 1; }
+
+        /* --- Header --- */
+        .main-header { background: linear-gradient(135deg, var(--primary-color), #0056b3); color: var(--text-light); padding: 4rem 0 6rem; text-align: center; position: relative; overflow: hidden; }
+        .main-header .container { /* Start visible */ }
+        .main-header h1 { font-family: var(--font-title); font-size: 2.8rem; margin-bottom: 0.5rem; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); }
+        .main-header p { font-size: 1.2rem; font-weight: 300; opacity: 0.9; }
+        .header-shape { position: absolute; border-radius: 50%; background-color: rgba(255, 255, 255, 0.1); animation: pulse 5s infinite ease-in-out alternate; }
+        .shape1 { width: 150px; height: 150px; bottom: -50px; left: 10%; animation-duration: 6s; }
+        .shape2 { width: 80px; height: 80px; top: 50px; right: 15%; animation-duration: 4s; }
+        .shape3 { width: 50px; height: 50px; bottom: 20px; right: 30%; animation-duration: 7s; }
+
+        /* --- Section Styling --- */
+        section { padding: 4rem 0; border-bottom: 1px solid #eee; }
+        main section:last-of-type { border-bottom: none; padding-bottom: 0;}
+        section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); margin-bottom: 2rem; text-align: center; position: relative; padding-bottom: 10px; }
+        section h2::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 60px; height: 4px; background-color: var(--accent-color); border-radius: 2px; }
+
+        /* --- Welcome Section --- */
+        #welcome p { font-size: 1.1rem; max-width: 750px; margin: 0 auto 1rem; text-align: center; }
+
+        /* --- SQL Operations Section Styling --- */
+        .sql-op-analogy {
+            display: grid; /* Changed to grid */
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Responsive columns */
+            gap: 2rem; margin-top: 2rem;
+        }
+        .op-part { /* Re-using op-part style */
+            background-color: #fff; padding: 2rem; border-radius: var(--border-radius);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            text-align: center;
+            opacity: 0; transform: scale(0.9) translateY(10px); /* Start state */
+            transition: opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+            border-top: 5px solid transparent; /* Top border for color coding */
+        }
+        .op-part.visible { opacity: 1; transform: scale(1) translateY(0); }
+        /* Specific border colors for SQL ops */
+        .op-part.union { border-top-color: var(--sql-union-color); }
+        .op-part.intersect { border-top-color: var(--sql-intersect-color); }
+        .op-part.except { border-top-color: var(--sql-except-color); }
+
+        .op-icon {
+            font-size: 3rem; margin-bottom: 1rem;
+            display: inline-block; transition: transform var(--transition-speed) ease;
+        }
+        .op-part.union .op-icon { color: var(--sql-union-color); }
+        .op-part.intersect .op-icon { color: var(--sql-intersect-color); }
+        .op-part.except .op-icon { color: var(--sql-except-color); }
+        .op-part:hover .op-icon { transform: scale(1.15) rotate(5deg); }
+        .op-example {
+            font-family: 'Courier New', Courier, monospace; background-color: #e9ecef;
+            padding: 0.8rem 1rem; border-radius: 4px; margin-top: 1.5rem;
+            font-size: 0.95rem; color: var(--text-dark); display: block; /* Changed to block */
+            border: 1px solid #ced4da; text-align: left; /* Align code left */
+            white-space: pre-wrap; /* Allow wrapping */
+            word-break: break-all; /* Break long lines if needed */
+        }
+        .sql-keyword { color: var(--sql-keyword-color); font-weight: bold; }
+        .sql-table { color: var(--sql-table-color); }
+        .sql-string { color: var(--sql-string-color); }
+        .sql-comment { color: #6a9955; font-style: italic; }
+
+        /* --- Putting It Together Section --- (Reusing structure) */
+        #putting-it-together-m28 .explanation { display: flex; gap: 2rem; align-items: flex-start; margin-top: 2rem; flex-wrap: wrap; }
+        .text-demo { /* Animated by observer */
+            flex-basis: 55%; background-color: var(--background-dark); color: #eee;
+            padding: 1.5rem; border-radius: var(--border-radius); font-family: 'Courier New', Courier, monospace;
+            position: relative; /* Removed min-height */ box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            font-size: 0.9rem; line-height: 1.6;
+            opacity: 0; transition: opacity var(--animation-speed) ease-out; /* Only fade opacity */
+            white-space: pre-wrap; /* Allow wrapping of code */
+        }
+        .text-demo.visible { opacity: 1; }
+        .text-explanation { /* Animated by observer */
+            flex-basis: 40%; font-size: 1.05rem;
+             opacity: 0; transition: opacity var(--animation-speed) ease-out; /* Only fade opacity */
+        }
+        .text-explanation.visible { opacity: 1; }
+        .text-explanation p { margin-bottom: 1rem; }
+        .code-highlight { /* Reusing styling */
+            background-color: rgba(0, 123, 255, 0.1); color: #0056b3; padding: 0.2em 0.4em;
+            border-radius: 4px; font-family: 'Courier New', Courier, monospace; font-weight: bold;
+            cursor: default; /* No tooltip needed here for now */
+            display: inline-block; position: relative;
+        }
+        .sql-op-highlight.union { background-color: rgba(40, 167, 69, 0.15); color: #155724; }
+        .sql-op-highlight.intersect { background-color: rgba(255, 193, 7, 0.15); color: #856404; }
+        .sql-op-highlight.except { background-color: rgba(220, 53, 69, 0.1); color: #721c24; }
+
+        /* --- Knowledge Check Section --- */
+        #knowledge-check { background-color: #e9ecef; }
+        .quiz-container { /* Animated by observer */
+             background-color: #fff; padding: 2rem; border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.1); max-width: 700px; margin: 2rem auto 0;
+             opacity: 0; transition: opacity var(--animation-speed) ease-out; /* Only fade opacity */
+        }
+        .quiz-container.visible { opacity: 1; }
+        .quiz-question { font-size: 1.2rem; font-weight: bold; margin-bottom: 1.5rem; color: var(--text-dark); }
+        .quiz-options button { display: block; width: 100%; padding: 1rem; margin-bottom: 1rem; text-align: left; font-size: 1rem; background-color: #f8f9fa; border: 1px solid #ced4da; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), border-color var(--transition-speed), transform var(--transition-speed); }
+        .quiz-options button:not(:disabled):hover { background-color: #e2e6ea; border-color: #adb5bd; transform: translateX(5px); }
+        .quiz-options button:disabled { cursor: default; opacity: 0.7; }
+        .quiz-options button.correct { background-color: #d4edda; border-color: var(--success-color); color: #155724; font-weight: bold; }
+        .quiz-options button.incorrect { background-color: #f8d7da; border-color: var(--error-color); color: #721c24; font-weight: bold; }
+        .quiz-options button.incorrect.shake { animation: shake 0.5s ease; }
+        .quiz-feedback { margin-top: 1.5rem; padding: 1rem; border-radius: var(--border-radius); font-weight: bold; text-align: center; opacity: 0; transition: opacity 0.5s ease, height 0.5s ease, margin-bottom 0.5s ease; height: 0; overflow: hidden; margin-bottom: 0;}
+        .quiz-feedback.visible { opacity: 1; height: auto; margin-bottom: 1rem; }
+        .quiz-feedback.correct { background-color: #d4edda; color: #155724; }
+        .quiz-feedback.incorrect { background-color: #f8d7da; color: #721c24; }
+        #next-question-btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5em; margin: 1.5rem auto 0; padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold; color: var(--text-light); background-color: var(--primary-color); border: none; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), transform var(--transition-speed), opacity 0.3s, visibility 0.3s; opacity: 0; visibility: hidden; }
+        #next-question-btn:hover:not(:disabled) { background-color: #0056b3; transform: scale(1.05); }
+        #next-question-btn.visible { opacity: 1; visibility: visible; }
+        #next-question-btn:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none; opacity: 0.7; }
+
+
+        /* --- Completion Section Styling --- */
+        .completion-section { padding: 4rem 0; text-align: center; background-color: var(--background-light); }
+        .completion-section .icon { font-size: 4rem; color: var(--success-color); margin-bottom: 1rem; display: inline-block; animation: iconAppearCorrect 1s ease-out 0.5s forwards; opacity: 0; /* Initial state for animation */}
+        /* Ensure completion elements are targeted by observer */
+        .completion-section h2, .completion-section p {
+            opacity: 0; transform: translateY(20px);
+            transition: opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+        }
+        .completion-section h2.visible, .completion-section p.visible {
+            opacity: 1; transform: translateY(0);
+        }
+        .completion-section .button-group { margin-top: 2.5rem; }
+        .completion-section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); margin-bottom: 1rem; }
+        .completion-section h2::after { display: none; }
+        .completion-section p { font-size: 1.1rem; margin-top: 1rem; color: var(--secondary-color); max-width: 700px; margin-left: auto; margin-right: auto; line-height: 1.8; }
+
+
+        /* --- Footer Styling --- */
+        .main-footer {
+            background-color: var(--background-light);
+            color: var(--text-light);
+            text-align: center;
+            padding: 2rem 0;
+            font-size: 0.9rem;
+            margin-top: auto;
+            border-top: 1px solid var(--background-light);
+            opacity: 0.85;
+        }
+        .main-footer p { margin: 0; line-height: 1.5; }
+
+        /* --- Responsive Design --- */
+        @media (max-width: 768px) {
+            html { font-size: 15px; }
+            .main-header h1 { font-size: 2.5rem; } .main-header p { font-size: 1.1rem; }
+            section h2 { font-size: 1.8rem; }
+            .sql-op-analogy { grid-template-columns: 1fr; /* Stack on smaller screens */ gap: 1.5rem; }
+            #putting-it-together-m28 .explanation { flex-direction: column; }
+            .text-demo, .text-explanation { flex-basis: 100%; }
+            .minimal-nav { min-width: 180px; } .minimal-nav ul li a { padding: 0.6rem 0.8rem; }
+            .completion-section h2 { font-size: 2rem; }
+            .completion-section .button-group { flex-direction: column; align-items: center; gap: 0.8rem; }
+            .completion-section .action-button { width: 80%; max-width: 350px; margin-top: 0; }
+            .main-footer { padding: 1.5rem 0; }
+        }
+        @media (max-width: 480px) {
+            html { font-size: 14px; }
+            .main-header h1 { font-size: 2rem; } .main-header p { font-size: 1rem; }
+            section h2 { font-size: 1.6rem; }
+            .quiz-options button { padding: 0.8rem; font-size: 0.95rem; }
+            .minimal-nav-button { top: 10px; right: 10px; padding: 6px 10px; font-size: 1rem; }
+            .minimal-nav { top: 48px; right: 10px; min-width: 160px; }
+            .minimal-nav ul li a { padding: 0.5rem 0.7rem; font-size: 0.9rem;}
+            .minimal-nav ul li a i.fas { margin-right: 8px; }
+            .completion-section .icon { font-size: 3.5rem; }
+            .completion-section h2 { font-size: 1.8rem; } .completion-section p { font-size: 1rem; }
+            .completion-section .action-button { width: 90%; max-width: 300px; }
+             .text-demo { font-size: 0.85rem; }
+            .main-footer { padding: 1rem 0; font-size: 0.85rem; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- ========= Minimal Nav Handle ========= -->
+    <button id="minimal-nav-toggle" class="minimal-nav-button" aria-label="Alternar Menu de Navegação" aria-expanded="false">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- ========= Minimal Nav Panel ========= -->
+    <nav id="minimal-nav-panel" class="minimal-nav">
+        <ul>
+            <!-- **** IMPORTANT: Links updated for Module 28 and 'math-' prefix **** -->
+            <li><a href="math-practice-28.html"><i class="fas fa-pencil-alt fa-fw"></i> <span data-translate="nav_practice">Iniciar Prática</span></a></li>
+            <li><a href="math-advanced-28.html"><i class="fas fa-flask fa-fw"></i> <span data-translate="nav_advanced">Prática Avançada</span></a></li>
+            <li><a href="math-dashboard.html"><i class="fas fa-list fa-fw"></i> <span data-translate="nav_menu">Menu do Curso</span></a></li>
+             <hr style="border: none; border-top: 1px solid var(--secondary-color); margin: 8px 0;">
+             <li><a href="#welcome"><i class="fas fa-door-open fa-fw"></i> <span data-translate="nav_welcome_m28">Boas-vindas M28</span></a></li>
+             <li><a href="#sql-union"><i class="fas fa-code-branch fa-fw" style="color: var(--sql-union-color);"></i> <span data-translate="nav_sql_union">UNION / UNION ALL</span></a></li>
+             <li><a href="#sql-intersect"><i class="fas fa-compress-arrows-alt fa-fw" style="color: var(--sql-intersect-color);"></i> <span data-translate="nav_sql_intersect">INTERSECT</span></a></li>
+             <li><a href="#sql-except"><i class="fas fa-minus-circle fa-fw" style="color: var(--sql-except-color);"></i> <span data-translate="nav_sql_except">EXCEPT / MINUS</span></a></li>
+             <li><a href="#putting-it-together-m28"><i class="fas fa-database fa-fw"></i> <span data-translate="nav_putting_together">Em Ação (SQL)</span></a></li>
+             <li><a href="#knowledge-check"><i class="fas fa-check-double fa-fw"></i> <span data-translate="nav_quiz">Teste Rápido</span></a></li>
+             <li><a href="#completion"><i class="fas fa-flag-checkered fa-fw"></i> <span data-translate="completion_theory_title_m28">Conclusão</span></a></li>
+        </ul>
+    </nav>
+
+    <header class="main-header">
+        <div class="header-shape shape1"></div>
+        <div class="header-shape shape2"></div>
+        <div class="header-shape shape3"></div>
+        <div class="container"> <!-- Start visible -->
+            <!-- **** IMPORTANT: Title updated for Module 28 **** -->
+            <h1 data-translate="header_title_m28">Módulo 28: Conjuntos e Banco de Dados (SQL)</h1>
+            <p data-translate="header_subtitle_m28">Combinando e comparando resultados de consultas SQL com operações baseadas em conjuntos.</p>
+        </div>
+    </header>
+
+    <main>
+        <!-- ========= Welcome Section ========= -->
+        <section id="welcome">
+            <div class="container">
+                <!-- **** Content updated for Module 28 **** -->
+                <h2 class="fade-in-on-scroll" data-translate="welcome_title_m28">💾 Teoria dos Conjuntos no Mundo dos Dados</h2>
+                <p class="fade-in-on-scroll delay-1" data-translate="welcome_p1_m28">
+                    Bem-vindo ao Módulo 28! Você já aprendeu sobre a teoria dos conjuntos - uniões, interseções e diferenças. Esses conceitos não são apenas teóricos; eles têm aplicações diretas e poderosas em <span class="highlight">Bancos de Dados Relacionais</span> usando <span class="highlight">SQL (Structured Query Language)</span>.
+                </p>
+                <p class="fade-in-on-scroll delay-2" data-translate="welcome_p2_m28">
+                    Em IA Aplicada, frequentemente precisamos combinar ou comparar dados de diferentes fontes ou subconjuntos. SQL nos fornece operadores como <code class="code-inline">UNION</code>, <code class="code-inline">INTERSECT</code> e <code class="code-inline">EXCEPT</code> que se comportam de maneira muito semelhante às operações de conjuntos que estudamos.
+                </p>
+                 <p class="fade-in-on-scroll delay-3" data-translate="welcome_p3_m28">
+                    Neste módulo, vamos explorar como usar esses comandos SQL para manipular conjuntos de resultados de consultas, uma habilidade essencial para qualquer cientista de dados ou engenheiro de IA.
+                </p>
+            </div>
+        </section>
+
+        <!-- ========= SQL UNION Section ========= -->
+        <section id="sql-union">
+            <div class="container">
+                <!-- **** Content updated for Module 28: UNION **** -->
+                <h2 class="fade-in-on-scroll" data-translate="sql_union_title">🟢 UNION & UNION ALL: Combinando Resultados</h2>
+                <p class="text-center fade-in-on-scroll delay-1" data-translate="sql_union_subtitle">Juntando linhas de duas ou mais consultas <code class="code-inline">SELECT</code>.</p>
+
+                <div class="sql-op-analogy">
+                    <div class="op-part union fade-in-on-scroll delay-2">
+                        <span class="op-icon"><i class="fas fa-code-branch"></i></span>
+                        <h3 data-translate="op_union_title">UNION (União ∪)</h3>
+                        <p data-translate="op_union_text">Combina os resultados de duas consultas, <span class="highlight">removendo linhas duplicadas</span> automaticamente. As colunas nas consultas <code class="code-inline">SELECT</code> devem ser compatíveis (mesmo número e tipos de dados semelhantes).</p>
+                        <div class="op-example">
+<pre><code><span class="sql-comment">-- Lista de alunos de Matemática OU IA (sem duplicatas)</span>
+<span class="sql-keyword">SELECT</span> nome_aluno <span class="sql-keyword">FROM</span> <span class="sql-table">AlunosMatematica</span>
+<span class="sql-keyword union">UNION</span>
+<span class="sql-keyword">SELECT</span> nome_aluno <span class="sql-keyword">FROM</span> <span class="sql-table">AlunosIA</span>;</code></pre>
+                        </div>
+                    </div>
+                    <div class="op-part union fade-in-on-scroll delay-3">
+                        <span class="op-icon"><i class="fas fa-copy"></i></span>
+                        <h3 data-translate="op_union_all_title">UNION ALL</h3>
+                        <p data-translate="op_union_all_text">Combina os resultados de duas consultas, mas <span class="highlight">mantém todas as linhas</span>, incluindo duplicatas. Geralmente é mais rápido que <code class="code-inline">UNION</code> por não precisar verificar duplicatas.</p>
+                        <div class="op-example">
+<pre><code><span class="sql-comment">-- Lista completa de inscrições (pode ter alunos em ambos)</span>
+<span class="sql-keyword">SELECT</span> nome_aluno <span class="sql-keyword">FROM</span> <span class="sql-table">AlunosMatematica</span>
+<span class="sql-keyword union">UNION ALL</span>
+<span class="sql-keyword">SELECT</span> nome_aluno <span class="sql-keyword">FROM</span> <span class="sql-table">AlunosIA</span>;</code></pre>
+                        </div>
+                    </div>
+                </div>
+                 <p class="text-center fade-in-on-scroll delay-4" data-translate="sql_union_conclusion">Use <code class="code-inline">UNION</code> quando quiser uma lista única de itens de múltiplas fontes e <code class="code-inline">UNION ALL</code> quando precisar de todos os registros, mesmo os repetidos.</p>
+            </div>
+        </section>
+
+        <!-- ========= SQL INTERSECT Section ========= -->
+        <section id="sql-intersect">
+            <div class="container">
+                 <!-- **** Content updated for Module 28: INTERSECT **** -->
+                <h2 class="fade-in-on-scroll" data-translate="sql_intersect_title">🟡 INTERSECT: Encontrando o Comum</h2>
+                <p class="text-center fade-in-on-scroll delay-1" data-translate="sql_intersect_subtitle">Retornando apenas as linhas que aparecem em <span class="highlight">ambos</span> os resultados das consultas.</p>
+
+                <div class="sql-op-analogy">
+                     <div class="op-part intersect fade-in-on-scroll delay-2" style="grid-column: 1 / -1; max-width: 500px; margin: auto;"> <!-- Center single item -->
+                        <span class="op-icon"><i class="fas fa-compress-arrows-alt"></i></span>
+                        <h3 data-translate="op_intersect_title">INTERSECT (Interseção ∩)</h3>
+                        <p data-translate="op_intersect_text">Retorna apenas as linhas que são <span class="highlight">exatamente iguais</span> e presentes nos resultados de ambas as consultas <code class="code-inline">SELECT</code>. Remove duplicatas automaticamente.</p>
+                        <div class="op-example">
+<pre><code><span class="sql-comment">-- Alunos que estão matriculados EM AMBOS Matemática E IA</span>
+<span class="sql-keyword">SELECT</span> nome_aluno <span class="sql-keyword">FROM</span> <span class="sql-table">AlunosMatematica</span>
+<span class="sql-keyword intersect">INTERSECT</span>
+<span class="sql-keyword">SELECT</span> nome_aluno <span class="sql-keyword">FROM</span> <span class="sql-table">AlunosIA</span>;</code></pre>
+                        </div>
+                    </div>
+                 </div>
+                  <p class="text-center fade-in-on-scroll delay-3" data-translate="sql_intersect_conclusion">É perfeito para encontrar sobreposições ou elementos comuns entre diferentes conjuntos de dados.</p>
+            </div>
+        </section>
+
+         <!-- ========= SQL EXCEPT Section ========= -->
+        <section id="sql-except">
+            <div class="container">
+                 <!-- **** Content updated for Module 28: EXCEPT **** -->
+                <h2 class="fade-in-on-scroll" data-translate="sql_except_title">🔴 EXCEPT / MINUS: Encontrando a Diferença</h2>
+                <p class="text-center fade-in-on-scroll delay-1" data-translate="sql_except_subtitle">Retornando linhas da primeira consulta que <span class="highlight">não</span> existem na segunda.</p>
+
+                <div class="sql-op-analogy">
+                     <div class="op-part except fade-in-on-scroll delay-2" style="grid-column: 1 / -1; max-width: 500px; margin: auto;"> <!-- Center single item -->
+                        <span class="op-icon"><i class="fas fa-minus-circle"></i></span>
+                        <h3 data-translate="op_except_title">EXCEPT (Diferença \)</h3>
+                        <p data-translate="op_except_text">Retorna as linhas distintas que estão no resultado da <span class="highlight">primeira</span> consulta, mas <span class="highlight">não</span> no resultado da <span class="highlight">segunda</span> consulta. (Alguns bancos de dados usam <code class="code-inline">MINUS</code> em vez de <code class="code-inline">EXCEPT</code>).</p>
+                        <div class="op-example">
+<pre><code><span class="sql-comment">-- Alunos matriculados em Matemática, MAS NÃO em IA</span>
+<span class="sql-keyword">SELECT</span> nome_aluno <span class="sql-keyword">FROM</span> <span class="sql-table">AlunosMatematica</span>
+<span class="sql-keyword except">EXCEPT</span>
+<span class="sql-keyword">SELECT</span> nome_aluno <span class="sql-keyword">FROM</span> <span class="sql-table">AlunosIA</span>;</code></pre>
+                        </div>
+                     </div>
+                 </div>
+                  <p class="text-center fade-in-on-scroll delay-3" data-translate="sql_except_conclusion">Útil para identificar elementos exclusivos de um conjunto em comparação com outro.</p>
+            </div>
+        </section>
+
+        <!-- ========= Putting It Together Section ========= -->
+        <section id="putting-it-together-m28">
+             <div class="container">
+                  <!-- **** Content updated for Module 28 **** -->
+                 <h2 class="fade-in-on-scroll" data-translate="putting_together_title_m28">⚙️ Combinando Operações SQL</h2>
+                 <p class="text-center fade-in-on-scroll delay-1" data-translate="putting_together_subtitle_m28">Vamos ver um exemplo que usa essas operações para analisar dados de usuários.</p>
+
+                 <div class="explanation">
+                     <div class="text-demo fade-in-on-scroll delay-2"> <!-- Observe container -->
+<pre><code><span class="sql-comment">-- Tabelas Hipotéticas:
+-- UsuariosAtivos (id_usuario, nome)
+-- UsuariosPremium (id_usuario, nome)
+-- UsuariosBetaTesters (id_usuario, nome)</span>
+
+<span class="sql-comment">-- 1. Encontrar usuários que são Premium OU Beta Testers (lista única)</span>
+<span class="sql-keyword">SELECT</span> id_usuario, nome <span class="sql-keyword">FROM</span> <span class="sql-table">UsuariosPremium</span>
+<span class="sql-keyword union">UNION</span>
+<span class="sql-keyword">SELECT</span> id_usuario, nome <span class="sql-keyword">FROM</span> <span class="sql-table">UsuariosBetaTesters</span>;
+
+<span class="sql-comment">-- 2. Encontrar usuários que são Ativos E Premium</span>
+<span class="sql-keyword">SELECT</span> id_usuario, nome <span class="sql-keyword">FROM</span> <span class="sql-table">UsuariosAtivos</span>
+<span class="sql-keyword intersect">INTERSECT</span>
+<span class="sql-keyword">SELECT</span> id_usuario, nome <span class="sql-keyword">FROM</span> <span class="sql-table">UsuariosPremium</span>;
+
+<span class="sql-comment">-- 3. Encontrar usuários Ativos que NÃO são Beta Testers</span>
+<span class="sql-keyword">SELECT</span> id_usuario, nome <span class="sql-keyword">FROM</span> <span class="sql-table">UsuariosAtivos</span>
+<span class="sql-keyword except">EXCEPT</span>
+<span class="sql-keyword">SELECT</span> id_usuario, nome <span class="sql-keyword">FROM</span> <span class="sql-table">UsuariosBetaTesters</span>;
+</code></pre>
+                     </div>
+                     <div class="text-explanation fade-in-on-scroll delay-3"> <!-- Observe container -->
+                         <p data-translate="putting_together_p1_m28">Imagine que temos três tabelas: <code class="code-inline">UsuariosAtivos</code>, <code class="code-inline">UsuariosPremium</code> e <code class="code-inline">UsuariosBetaTesters</code>, cada uma contendo <code class="code-inline">id_usuario</code> e <code class="code-inline">nome</code>.</p>
+                         <p data-translate="putting_together_p2_m28">A primeira consulta usa <span class="code-highlight sql-op-highlight union">UNION</span> para obter uma lista combinada e sem duplicatas de todos os usuários que são Premium ou Beta Testers (ou ambos).</p>
+                         <p data-translate="putting_together_p3_m28">A segunda consulta usa <span class="code-highlight sql-op-highlight intersect">INTERSECT</span> para identificar apenas os usuários que pertencem a ambos os grupos: Ativos e Premium.</p>
+                         <p data-translate="putting_together_p4_m28">A terceira consulta usa <span class="code-highlight sql-op-highlight except">EXCEPT</span> para encontrar os usuários que estão na lista de Ativos, mas *não* estão na lista de Beta Testers.</p>
+                          <p data-translate="putting_together_p5_m28">Essas operações são fundamentais para segmentar e analisar dados de usuários, uma tarefa comum em personalização e análise de comportamento em sistemas de IA.</p>
+                     </div>
+                 </div>
+             </div>
+        </section>
+
+        <!-- ========= Knowledge Check Section ========= -->
+        <section id="knowledge-check">
+            <div class="container">
+                <!-- **** Content updated for Module 28 **** -->
+                <h2 class="fade-in-on-scroll" data-translate="quiz_title_m28">🧠 Teste Rápido! (SQL & Conjuntos)</h2>
+                <div class="quiz-container fade-in-on-scroll delay-1"> <!-- Observe container -->
+                    <div id="quiz-area">
+                         <p style="text-align: center; padding: 2rem 0;">Carregando quiz...</p>
+                    </div>
+                    <div id="quiz-feedback" class="quiz-feedback"></div>
+                    <button id="next-question-btn" data-translate="quiz_next_button">Próxima Pergunta</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========= Completion Section ========= -->
+        <section id="completion" class="completion-section"> <!-- Added ID for nav link -->
+            <div class="container">
+                 <div class="icon">
+                     <!-- Updated icon relevant to Databases/SQL -->
+                    <i class="fas fa-database"></i>
+                    <i class="fas fa-check-double"></i>
+                    <i class="fas fa-star"></i>
+                </div>
+                 <!-- **** Content updated for Module 28 **** -->
+                <h2 class="fade-in-on-scroll delay-1" data-translate="completion_theory_title_m28">Teoria do Módulo 28 Completa!</h2>
+                <p class="fade-in-on-scroll delay-2" data-translate="completion_theory_desc_m28">
+                    Excelente! Você agora entende como os conceitos de teoria dos conjuntos se aplicam diretamente às operações SQL como <code class="code-inline">UNION</code>, <code class="code-inline">INTERSECT</code> e <code class="code-inline">EXCEPT</code>.
+                    Manipular conjuntos de dados dessa forma é crucial para preparar e analisar informações em projetos de IA. <br>
+                    Hora de praticar essas consultas SQL! Vá para a <strong>Zona de Prática</strong> ou a <strong>Prática Avançada</strong> do Módulo 28.
+                </p>
+                <div class="button-group">
+                    <!-- **** IMPORTANT: Links updated for Module 28 and 'math-' prefix **** -->
+                    <a href="math-dashboard.html" class="action-button secondary fade-in-on-scroll delay-3"><i class="fas fa-list"></i> <span data-translate="nav_menu">Menu do Curso</span></a>
+                    <a href="math-practice-28.html" class="action-button success fade-in-on-scroll delay-4"><i class="fas fa-pencil-alt"></i> <span data-translate="nav_practice">Iniciar Prática</span></a>
+                    <a href="math-advanced-28.html" class="action-button secondary fade-in-on-scroll delay-5"><i class="fas fa-flask"></i> <span data-translate="nav_advanced">Prática Avançada</span></a>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="main-footer">
+        <div class="container">
+             <!-- **** Updated Copyright/Source **** -->
+            <p data-translate="footer_copyright"></p>
+        </div>
+    </footer>
+
+    <script>
+    // --- Translations Object (Portuguese Only - Updated for M28) ---
+    const translations = {
+        pt: {
+            "page_title": "Módulo 28: Conjuntos e Banco de Dados (SQL)",
+            "nav_practice": "Iniciar Prática",
+            "nav_advanced": "Prática Avançada",
+            "nav_menu": "Menu do Curso",
+            "nav_welcome_m28": "Boas-vindas M28", "nav_sql_union": "UNION / UNION ALL", "nav_sql_intersect": "INTERSECT", "nav_sql_except": "EXCEPT / MINUS", "nav_putting_together": "Em Ação (SQL)", "nav_quiz": "Teste Rápido",
+            "lang_pt": "🇧🇷 Português",
+            "header_title_m28": "Módulo 28: Conjuntos e Banco de Dados (SQL)", "header_subtitle_m28": "Combinando e comparando resultados de consultas SQL com operações baseadas em conjuntos.",
+            "welcome_title_m28": "💾 Teoria dos Conjuntos no Mundo dos Dados",
+            "welcome_p1_m28": "Bem-vindo ao Módulo 28! Você já aprendeu sobre a teoria dos conjuntos - uniões, interseções e diferenças. Esses conceitos não são apenas teóricos; eles têm aplicações diretas e poderosas em Bancos de Dados Relacionais usando SQL (Structured Query Language).",
+            "welcome_p2_m28": "Em IA Aplicada, frequentemente precisamos combinar ou comparar dados de diferentes fontes ou subconjuntos. SQL nos fornece operadores como `UNION`, `INTERSECT` e `EXCEPT` que se comportam de maneira muito semelhante às operações de conjuntos que estudamos.",
+            "welcome_p3_m28": "Neste módulo, vamos explorar como usar esses comandos SQL para manipular conjuntos de resultados de consultas, uma habilidade essencial para qualquer cientista de dados ou engenheiro de IA.",
+            "sql_union_title": "🟢 UNION & UNION ALL: Combinando Resultados", "sql_union_subtitle": "Juntando linhas de duas ou mais consultas `SELECT`.",
+            "op_union_title": "UNION (União ∪)", "op_union_text": "Combina os resultados de duas consultas, removendo linhas duplicadas automaticamente. As colunas nas consultas `SELECT` devem ser compatíveis (mesmo número e tipos de dados semelhantes).",
+            "op_union_all_title": "UNION ALL", "op_union_all_text": "Combina os resultados de duas consultas, mas mantém todas as linhas, incluindo duplicatas. Geralmente é mais rápido que `UNION` por não precisar verificar duplicatas.",
+            "sql_union_conclusion": "Use `UNION` quando quiser uma lista única de itens de múltiplas fontes e `UNION ALL` quando precisar de todos os registros, mesmo os repetidos.",
+            "sql_intersect_title": "🟡 INTERSECT: Encontrando o Comum", "sql_intersect_subtitle": "Retornando apenas as linhas que aparecem em ambos os resultados das consultas.",
+            "op_intersect_title": "INTERSECT (Interseção ∩)", "op_intersect_text": "Retorna apenas as linhas que são exatamente iguais e presentes nos resultados de ambas as consultas `SELECT`. Remove duplicatas automaticamente.",
+            "sql_intersect_conclusion": "É perfeito para encontrar sobreposições ou elementos comuns entre diferentes conjuntos de dados.",
+             "sql_except_title": "🔴 EXCEPT / MINUS: Encontrando a Diferença", "sql_except_subtitle": "Retornando linhas da primeira consulta que não existem na segunda.",
+            "op_except_title": "EXCEPT (Diferença \\)", "op_except_text": "Retorna as linhas distintas que estão no resultado da primeira consulta, mas não no resultado da segunda consulta. (Alguns bancos de dados usam `MINUS` em vez de `EXCEPT`).",
+            "sql_except_conclusion": "Útil para identificar elementos exclusivos de um conjunto em comparação com outro.",
+            "putting_together_title_m28": "⚙️ Combinando Operações SQL", "putting_together_subtitle_m28": "Vamos ver um exemplo que usa essas operações para analisar dados de usuários.",
+            "putting_together_p1_m28": "Imagine que temos três tabelas: `UsuariosAtivos`, `UsuariosPremium` e `UsuariosBetaTesters`, cada uma contendo `id_usuario` e `nome`.",
+            "putting_together_p2_m28": "A primeira consulta usa `UNION` para obter uma lista combinada e sem duplicatas de todos os usuários que são Premium ou Beta Testers (ou ambos).",
+            "putting_together_p3_m28": "A segunda consulta usa `INTERSECT` para identificar apenas os usuários que pertencem a ambos os grupos: Ativos e Premium.",
+            "putting_together_p4_m28": "A terceira consulta usa `EXCEPT` para encontrar os usuários que estão na lista de Ativos, mas *não* estão na lista de Beta Testers.",
+            "putting_together_p5_m28": "Essas operações são fundamentais para segmentar e analisar dados de usuários, uma tarefa comum em personalização e análise de comportamento em sistemas de IA.",
+            "quiz_title_m28": "🧠 Teste Rápido! (SQL & Conjuntos)", "quiz_next_button": "Próxima Pergunta",
+            // Quiz Questions M28
+            "quiz_q1_m28": "Qual operador SQL combina resultados de duas consultas, removendo duplicatas?",
+            "quiz_q1_m28_opt1": "`UNION`", "quiz_q1_m28_opt2": "`UNION ALL`", "quiz_q1_m28_opt3": "`INTERSECT`", "quiz_q1_m28_opt4": "`JOIN`",
+            "quiz_q2_m28": "Se você quer todos os alunos que estão matriculados em 'IA' e TAMBÉM em 'Robótica', qual operador você usaria entre as duas consultas SELECT?",
+            "quiz_q2_m28_opt1": "`UNION`", "quiz_q2_m28_opt2": "`UNION ALL`", "quiz_q2_m28_opt3": "`INTERSECT`", "quiz_q2_m28_opt4": "`EXCEPT`",
+            "quiz_q3_m28": "Qual a principal diferença entre `UNION` e `UNION ALL`?",
+            "quiz_q3_m28_opt1": "`UNION ALL` remove duplicatas, `UNION` não.", "quiz_q3_m28_opt2": "`UNION` remove duplicatas, `UNION ALL` não.", "quiz_q3_m28_opt3": "`UNION` só funciona com duas tabelas.", "quiz_q3_m28_opt4": "Não há diferença funcional.",
+            "quiz_q4_m28": "A consulta `SELECT id FROM TabelaA EXCEPT SELECT id FROM TabelaB` retorna:",
+            "quiz_q4_m28_opt1": "Todos os IDs de TabelaA e TabelaB.", "quiz_q4_m28_opt2": "IDs que estão em TabelaA e também em TabelaB.", "quiz_q4_m28_opt3": "IDs que estão em TabelaA, mas NÃO estão em TabelaB.", "quiz_q4_m28_opt4": "IDs que estão em TabelaB, mas NÃO estão em TabelaA.",
+            // Shared Quiz Feedback
+            "quiz_feedback_correct": "Correto! 🎉", "quiz_feedback_incorrect": "Não foi bem assim! A resposta correta era: {correctAnswerText}",
+            "quiz_final_score_title": "Teste Rápido Completo!",
+            "quiz_final_score_summary": "Você respondeu {score} de {total} perguntas corretamente.",
+            "quiz_final_score_perfect": "Excelente! Você compreendeu bem as operações de conjunto em SQL.",
+            "quiz_final_score_good": "Bom trabalho! Continue praticando essas consultas SQL.",
+            // Completion M28
+            "completion_theory_title_m28": "Teoria do Módulo 28 Completa!",
+            "completion_theory_desc_m28": "Excelente! Você agora entende como os conceitos de teoria dos conjuntos se aplicam diretamente às operações SQL como `UNION`, `INTERSECT` e `EXCEPT`. Manipular conjuntos de dados dessa forma é crucial para preparar e analisar informações em projetos de IA. <br> Hora de praticar essas consultas SQL! Vá para a <strong>Zona de Prática</strong> ou a <strong>Prática Avançada</strong> do Módulo 28.",
+            "footer_copyright": "© 2024 Universidade da Inteligência Artificial. Todos os direitos reservados."
+        }
+    };
+
+    // --- Global Variables ---
+    let currentQuestionIndex = 0;
+    let score = 0;
+    const lang = 'pt'; // Hardcoded language
+
+    // --- DOM Elements (Get them once) ---
+    const navToggleButton = document.getElementById('minimal-nav-toggle');
+    const navPanel = document.getElementById('minimal-nav-panel');
+    const body = document.body;
+    const quizArea = document.getElementById('quiz-area');
+    const feedbackArea = document.getElementById('quiz-feedback');
+    const nextButton = document.getElementById('next-question-btn');
+    // No specific demo output area needed for this module example
+
+    // --- Functions ---
+
+    function getTranslation(key, replacements = {}) {
+         let text = translations[lang]?.[key] ?? `[${key}]`;
+         for (const placeholder in replacements) {
+             const regex = new RegExp(`\\{${placeholder}\\}`, 'g');
+             text = text.replace(regex, replacements[placeholder]);
+         }
+         // Basic handling for `code` tags within translations
+         text = text.replace(/`([^`]+)`/g, '<code class="code-inline">$1</code>');
+         return text;
+    }
+
+    function translatePage() {
+         document.querySelectorAll('[data-translate]').forEach(el => {
+             const key = el.getAttribute('data-translate');
+             let translation = getTranslation(key);
+
+              if (el.tagName === 'TITLE') { document.title = translation; }
+              else if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') { /* Skip */ }
+              else {
+                   // Allow specific HTML tags safely
+                   const safeHtmlRegex = /<\/?(code|strong|span|br|i|b|em|strong)>/gi;
+                   let containsSafeHtml = safeHtmlRegex.test(translation);
+
+                   // Allow innerHTML if it contains only safe tags OR if it's in an allowed container
+                   if (containsSafeHtml || el.closest('.op-example, .info-details, .text-explanation, .footer p, .quiz-question, .quiz-options button, .quiz-feedback, .completion-section p')) {
+                      el.innerHTML = translation;
+                   } else {
+                      el.textContent = translation;
+                   }
+              }
+         });
+          // Tooltips are not used in this module example
+    }
+
+    // --- Quiz Data & Functions (Updated for M28) ---
+    const quizData = [
+         { questionKey: "quiz_q1_m28", optionKeys: ["quiz_q1_m28_opt1", "quiz_q1_m28_opt2", "quiz_q1_m28_opt3", "quiz_q1_m28_opt4"], correctAnswer: 0 }, // UNION
+         { questionKey: "quiz_q2_m28", optionKeys: ["quiz_q2_m28_opt1", "quiz_q2_m28_opt2", "quiz_q2_m28_opt3", "quiz_q2_m28_opt4"], correctAnswer: 2 }, // INTERSECT
+         { questionKey: "quiz_q3_m28", optionKeys: ["quiz_q3_m28_opt1", "quiz_q3_m28_opt2", "quiz_q3_m28_opt3", "quiz_q3_m28_opt4"], correctAnswer: 1 }, // UNION vs UNION ALL difference
+         { questionKey: "quiz_q4_m28", optionKeys: ["quiz_q4_m28_opt1", "quiz_q4_m28_opt2", "quiz_q4_m28_opt3", "quiz_q4_m28_opt4"], correctAnswer: 2 }  // EXCEPT meaning
+    ];
+
+    function loadQuestion() {
+          if (!quizArea) return; // Ensure quizArea exists
+
+          // If we reached the end, show score
+          if (currentQuestionIndex >= quizData.length) {
+              if (!quizArea.querySelector('[data-translate="quiz_final_score_title"]')) { // Avoid re-rendering score
+                 showFinalScore();
+              }
+              return;
+          }
+
+          const currentQuiz = quizData[currentQuestionIndex];
+          const questionText = getTranslation(currentQuiz.questionKey);
+          // Generate HTML for question and options
+          quizArea.innerHTML = `
+              <div class="quiz-question">${currentQuestionIndex + 1}. ${questionText}</div>
+              <div class="quiz-options">
+                  ${currentQuiz.optionKeys.map((optionKey, index) => `
+                      <button class="quiz-option-btn" data-index="${index}">${getTranslation(optionKey)}</button>
+                  `).join('')}
+              </div>
+          `;
+
+          // Reset feedback and next button
+          if (feedbackArea) {
+            feedbackArea.classList.remove('visible', 'correct', 'incorrect');
+            feedbackArea.textContent = '';
+            feedbackArea.style.height = '0'; // Reset height
+            feedbackArea.style.marginBottom = '0'; // Reset margin
+          }
+          if (nextButton) {
+            nextButton.classList.remove('visible');
+            nextButton.disabled = true;
+          }
+
+          // Add event listeners to the new buttons
+          quizArea.querySelectorAll('.quiz-option-btn').forEach(button => {
+              button.addEventListener('click', handleAnswer);
+          });
+    }
+
+    function handleAnswer(event) {
+         const selectedButton = event.target;
+         const selectedIndex = parseInt(selectedButton.dataset.index);
+         const correctIndex = quizData[currentQuestionIndex].correctAnswer;
+         const correctOptionKey = quizData[currentQuestionIndex].optionKeys[correctIndex];
+
+         // Disable all options
+         quizArea.querySelectorAll('.quiz-option-btn').forEach(btn => {
+            btn.disabled = true;
+            btn.classList.remove('shake'); // Remove shake if present from previous incorrect
+         });
+
+         if (!feedbackArea || !nextButton) return; // Ensure elements exist
+
+         feedbackArea.classList.add('visible');
+
+         if (selectedIndex === correctIndex) {
+             selectedButton.classList.add('correct');
+             feedbackArea.innerHTML = getTranslation('quiz_feedback_correct');
+             feedbackArea.classList.add('correct');
+             feedbackArea.classList.remove('incorrect');
+             score++;
+             selectedButton.classList.add('tada-anim');
+         } else {
+             selectedButton.classList.add('incorrect');
+             // Use innerHTML because the correct answer text might contain <code> tags
+             const formattedCorrectAnswer = getTranslation(correctOptionKey);
+             feedbackArea.innerHTML = getTranslation('quiz_feedback_incorrect', { correctAnswerText: `<strong>${formattedCorrectAnswer}</strong>` });
+             feedbackArea.classList.add('incorrect');
+             feedbackArea.classList.remove('correct');
+             // Highlight the correct button as well
+             const correctButton = quizArea.querySelector(`.quiz-option-btn[data-index="${correctIndex}"]`);
+             if(correctButton) correctButton.classList.add('correct');
+             selectedButton.classList.add('shake');
+         }
+
+         // Remove animation classes after they finish
+          selectedButton.addEventListener('animationend', () => {
+               selectedButton.classList.remove('tada-anim', 'shake');
+          }, { once: true });
+
+         // Make feedback area adjust height and margin smoothly
+         feedbackArea.style.height = feedbackArea.scrollHeight + 'px';
+         feedbackArea.style.marginBottom = '1rem';
+
+
+         // Show and enable next button
+         nextButton.classList.add('visible');
+         nextButton.disabled = false;
+     }
+
+     function showFinalScore() {
+            if (!quizArea) return;
+            const totalQuestions = quizData.length;
+            // Determine message based on score percentage
+            let resultMessageKey = (score / totalQuestions) >= 0.75 ? 'quiz_final_score_perfect' : 'quiz_final_score_good'; // 75% threshold
+
+            quizArea.innerHTML = `
+               <div class="quiz-question text-center" data-translate="quiz_final_score_title" style="font-size: 1.5rem;">${getTranslation('quiz_final_score_title')}</div>
+               <p class="text-center" style="font-size: 1.2rem; margin-bottom: 1rem;">${getTranslation('quiz_final_score_summary', { score: score, total: totalQuestions })}</p>
+               <p class="text-center" style="color: ${score === totalQuestions ? 'var(--success-color)' : 'var(--primary-color)'}; font-weight: bold;">${getTranslation(resultMessageKey)}</p>
+            `;
+            if (feedbackArea) feedbackArea.classList.remove('visible'); // Hide feedback area
+            if (nextButton) nextButton.style.display = 'none'; // Hide next button
+            quizArea.scrollIntoView({ behavior: 'smooth', block: 'center' }); // Scroll score into view
+     }
+
+
+    // --- Intersection Observer Setup ---
+    function setupObservers() {
+        const observerOptions = {
+            root: null, // relative to viewport
+            rootMargin: '0px',
+            threshold: 0.1 // Trigger when 10% of the element is visible
+        };
+
+        const observerCallback = (entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    // Optional: Unobserve after it becomes visible to save resources
+                    // observer.unobserve(entry.target);
+                }
+                // Optional: Remove 'visible' if it scrolls out of view
+                // else {
+                //     entry.target.classList.remove('visible');
+                // }
+            });
+        };
+
+        const animationObserver = new IntersectionObserver(observerCallback, observerOptions);
+
+        // Observe elements with the fade-in class
+        document.querySelectorAll('.fade-in-on-scroll').forEach(el => {
+            animationObserver.observe(el);
+        });
+
+        // No specific code output simulation needed for this module's structure
+    }
+
+    // --- Event Listeners Setup ---
+    function setupEventListeners() {
+        // Navbar Toggle
+        if (navToggleButton && navPanel) {
+            navToggleButton.addEventListener('click', (event) => {
+                event.stopPropagation();
+                body.classList.toggle('nav-active');
+                navToggleButton.setAttribute('aria-expanded', body.classList.contains('nav-active'));
+            });
+
+            // Close nav if clicking outside
+            document.addEventListener('click', (event) => {
+                if (body.classList.contains('nav-active') && !navPanel.contains(event.target) && event.target !== navToggleButton && !navToggleButton.contains(event.target)) {
+                    body.classList.remove('nav-active');
+                    navToggleButton.setAttribute('aria-expanded', 'false');
+                }
+            });
+
+            // Close nav on link click
+            navPanel.querySelectorAll('a').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    // Check if it's an internal link
+                    if (link.getAttribute('href').startsWith('#')) {
+                         // Allow default scroll behavior
+                        // Close panel slightly delayed
+                        setTimeout(() => {
+                            body.classList.remove('nav-active');
+                            navToggleButton.setAttribute('aria-expanded', 'false');
+                        }, 150);
+                    }
+                    // External links will navigate away anyway
+                });
+            });
+
+            // Close nav on Escape key
+            document.addEventListener('keydown', (event) => {
+                 if (event.key === 'Escape' && body.classList.contains('nav-active')) {
+                     body.classList.remove('nav-active');
+                     navToggleButton.setAttribute('aria-expanded', 'false');
+                 }
+             });
+        }
+
+        // Quiz Next Button
+        if (nextButton) {
+            nextButton.addEventListener('click', () => {
+                if (!nextButton.disabled) {
+                    currentQuestionIndex++;
+                    loadQuestion(); // Load the next question
+                }
+            });
+        } else {
+            console.error("Elemento #next-question-btn não encontrado.");
+        }
+    }
+
+    // --- Initialization ---
+    document.addEventListener('DOMContentLoaded', () => {
+        // Check if elements needed for quiz exist before proceeding
+        if (!quizArea) console.error("Elemento #quiz-area não encontrado.");
+        if (!feedbackArea) console.error("Elemento #quiz-feedback não encontrado.");
+
+        translatePage();        // Apply translations first
+        setupEventListeners();  // Set up interactive elements
+        setupObservers();       // Set up animations
+
+        if (quizArea) {
+            loadQuestion();     // Load the first quiz question if container exists
+        }
+    });
+
+    </script>
+
+</body>
+</html>

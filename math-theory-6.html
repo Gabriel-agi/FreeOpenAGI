@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<!-- Language set to Portuguese BR -->
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Title set by JS -->
+    <title data-translate="page_title">Módulo 6: Gráficos Estatísticos (Parte 2)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* --- Reset & Base Styles --- */
+        :root {
+            --primary-color: #007bff; /* Azul primário */
+            --secondary-color: #6c757d; /* Cinza secundário */
+            --background-light: #f8f9fa; /* Fundo claro */
+            --background-dark: #343a40; /* Fundo escuro */
+            --text-light: #f8f9fa; /* Texto claro */
+            --text-dark: #212529; /* Texto escuro */
+            --accent-color: #ffc107; /* Amarelo para destaque */
+            --success-color: #28a745; /* Verde para sucesso */
+            --error-color: #dc3545; /* Vermelho para erro */
+            --info-color: #17a2b8;  /* Azul-petróleo para informação */
+            --boxplot-color: #9b59b6; /* Roxo para Boxplot */
+            --scatterplot-color: #e74c3c; /* Vermelho/Laranja para Scatter Plot */
+            --border-radius: 8px;
+            --transition-speed: 0.3s;
+            --animation-speed: 0.6s; /* Control fade-in speed */
+            --font-body: 'Roboto', sans-serif;
+            --font-title: 'Orbitron', sans-serif;
+            --nav-primary: #6e48aa;
+            --nav-success: #4cc9f0;
+            --nav-dark: #1a1a2e;
+            --footer-border-color: #495057;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; font-size: 16px; }
+        body {
+            font-family: var(--font-body); line-height: 1.7;
+            background-color: var(--background-light); color: var(--text-dark);
+            overflow-x: hidden; display: flex; flex-direction: column; min-height: 100vh;
+        }
+        main { flex-grow: 1; }
+
+        /* --- Utility Classes --- */
+        .container { max-width: 960px; margin: 0 auto; padding: 0 15px; }
+        .text-center { text-align: center; }
+        .highlight { color: var(--primary-color); font-weight: bold; }
+
+        /* Elements to be animated by observer */
+        .fade-in-on-scroll {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+        }
+        .fade-in-on-scroll.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        /* Add delays for staggering */
+        .delay-1.visible { transition-delay: 0.1s; }
+        .delay-2.visible { transition-delay: 0.2s; }
+        .delay-3.visible { transition-delay: 0.3s; }
+        .delay-4.visible { transition-delay: 0.4s; }
+        .delay-5.visible { transition-delay: 0.5s; }
+        .delay-6.visible { transition-delay: 0.6s; }
+        .delay-7.visible { transition-delay: 0.7s; }
+
+
+        .button-group { margin-top: 2rem; display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; }
+        .action-button {
+             display: inline-flex; align-items: center; justify-content: center; gap: 0.5em;
+             padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold;
+             color: var(--text-light); background-color: var(--primary-color); border: none;
+             border-radius: var(--border-radius); cursor: pointer;
+             transition: background-color var(--transition-speed), transform var(--transition-speed), filter var(--transition-speed), box-shadow var(--transition-speed), opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out; /* Add animation transition */
+             margin-top: 1rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+             text-decoration: none; line-height: 1.2;
+             opacity: 0; /* Start hidden if animated */
+             transform: translateY(20px); /* Start offset if animated */
+        }
+        .action-button.visible { /* Make visible via observer */
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .action-button i.fas {}
+        .action-button:hover:not(:disabled) { background-color: #0056b3; transform: translateY(-2px) !important; box-shadow: 0 4px 8px rgba(0,0,0,0.15); } /* Use !important to override initial transform */
+        .action-button:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none !important; box-shadow: none; opacity: 0.7; }
+        .action-button.success { background-color: var(--success-color); }
+        .action-button.success:hover:not(:disabled) { background-color: #218838; }
+        .action-button.secondary { background-color: var(--secondary-color); }
+        .action-button.secondary:hover:not(:disabled) { background-color: #5a6268; }
+        .action-button:active:not(:disabled) { transform: translateY(1px) scale(0.98) !important; filter: brightness(0.95); }
+
+        /* --- Animations --- */
+        @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); } 50% { transform: scale(1.03); box-shadow: 0 0 15px rgba(0, 123, 255, 0.6); } 100% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); } }
+        @keyframes tada { from { transform: scale3d(1, 1, 1); } 10%, 20% { transform: scale3d(.9, .9, .9) rotate3d(0, 0, 1, -3deg); } 30%, 50%, 70%, 90% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, 3deg); } 40%, 60%, 80% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, -3deg); } to { transform: scale3d(1, 1, 1); } }
+        .tada-anim { animation: tada 1s ease; }
+        @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
+        @keyframes iconAppearCorrect { 0% { transform: scale(0.5) rotate(-15deg); opacity: 0; } 60% { transform: scale(1.2) rotate(5deg); opacity: 1; } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
+
+        /* --- Minimal Retractable Nav --- */
+        .minimal-nav-button { position: fixed; top: 15px; right: 15px; z-index: 1001; background-color: rgba(52, 58, 64, 0.75); color: var(--text-light); border: none; border-radius: var(--border-radius); padding: 8px 12px; cursor: pointer; transition: background-color var(--transition-speed), opacity var(--transition-speed), transform var(--transition-speed); font-size: 1.1rem; opacity: 0.6; box-shadow: 0 2px 5px rgba(0,0,0,0.2); line-height: 1; }
+        .minimal-nav-button:hover { background-color: rgba(52, 58, 64, 0.95); opacity: 1; transform: scale(1.05); }
+        .minimal-nav { position: fixed; top: 60px; right: 15px; z-index: 1000; background-color: var(--background-dark); border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.3); padding: 0.8rem; opacity: 0; transform: translateY(-15px) scale(0.95); transform-origin: top right; pointer-events: none; transition: opacity var(--transition-speed) ease, transform var(--transition-speed) ease; min-width: 200px; }
+        body.nav-active .minimal-nav { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+        .minimal-nav ul { list-style: none; margin: 0; padding: 0; }
+        .minimal-nav ul li { margin-bottom: 5px; }
+        .minimal-nav ul li:last-child { margin-bottom: 0; }
+        .minimal-nav ul li a { display: flex; align-items: center; color: var(--text-light); text-decoration: none; padding: 0.6rem 1rem; border-radius: 4px; transition: background-color var(--transition-speed), color var(--transition-speed); white-space: nowrap; font-weight: 400; font-size: 0.95rem; }
+        .minimal-nav ul li a i.fas { margin-right: 10px; width: 1.2em; text-align: center; opacity: 0.8; transition: opacity var(--transition-speed); }
+        .minimal-nav ul li a:hover { background-color: var(--primary-color); color: var(--text-light); }
+        .minimal-nav ul li a:hover i.fas { opacity: 1; }
+
+        /* --- Header --- */
+        .main-header { background: linear-gradient(135deg, var(--primary-color), #0056b3); color: var(--text-light); padding: 4rem 0 6rem; text-align: center; position: relative; overflow: hidden; }
+        .main-header .container { /* Start visible */ }
+        .main-header h1 { font-family: var(--font-title); font-size: 2.8rem; /* Adjusted for longer title */ margin-bottom: 0.5rem; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); }
+        .main-header p { font-size: 1.2rem; font-weight: 300; opacity: 0.9; }
+        .header-shape { position: absolute; border-radius: 50%; background-color: rgba(255, 255, 255, 0.1); animation: pulse 5s infinite ease-in-out alternate; }
+        .shape1 { width: 150px; height: 150px; bottom: -50px; left: 10%; animation-duration: 6s; }
+        .shape2 { width: 80px; height: 80px; top: 50px; right: 15%; animation-duration: 4s; }
+        .shape3 { width: 50px; height: 50px; bottom: 20px; right: 30%; animation-duration: 7s; }
+
+        /* --- Section Styling --- */
+        section { padding: 4rem 0; border-bottom: 1px solid #eee; }
+        main section:last-of-type { border-bottom: none; padding-bottom: 0;}
+        section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); margin-bottom: 2rem; text-align: center; position: relative; padding-bottom: 10px; }
+        section h2::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 60px; height: 4px; background-color: var(--accent-color); border-radius: 2px; }
+
+        /* --- Welcome Section --- */
+        #welcome p { font-size: 1.1rem; max-width: 750px; margin: 0 auto 1rem; text-align: center; }
+
+        /* --- Boxplot & Scatter Plot Sections --- */
+        .plot-section-content {
+            display: flex; flex-wrap: wrap; gap: 2rem; align-items: flex-start;
+            margin-top: 2rem;
+        }
+        .plot-description { flex: 1; min-width: 300px; }
+        .plot-visual { flex: 1; min-width: 300px; text-align: center; }
+        .placeholder-image {
+            background-color: #e9ecef; border: 1px dashed var(--secondary-color);
+            padding: 3rem 1rem; border-radius: var(--border-radius);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            min-height: 250px; font-style: italic; color: var(--secondary-color);
+            box-shadow: 0 3px 8px rgba(0,0,0,0.05);
+            opacity: 0; /* Start hidden */
+            transition: opacity var(--animation-speed) ease-out;
+        }
+        .placeholder-image.visible { opacity: 1; } /* Fade in */
+        .placeholder-image i { font-size: 2.5rem; margin-bottom: 1rem; }
+        .plot-description h3 { font-size: 1.4rem; margin-bottom: 1rem; color: var(--text-dark); }
+        .plot-description ul { list-style: none; padding-left: 0; margin-top: 1rem; }
+        .plot-description ul li { position: relative; padding-left: 1.5em; margin-bottom: 0.8em; }
+        .plot-description ul li::before {
+            content: '\f00c'; /* Font Awesome check icon */
+            font-family: 'Font Awesome 6 Free'; font-weight: 900;
+            position: absolute; left: 0; top: 1px;
+            color: var(--success-color); font-size: 1em;
+        }
+        #boxplot-intro .plot-description ul li::before { color: var(--boxplot-color); content: '\f058'; } /* Check Circle */
+        #scatterplot-intro .plot-description ul li::before { color: var(--scatterplot-color); content: '\f1ce'; } /* Circle Dot */
+
+        .code-snippet {
+            font-family: 'Courier New', Courier, monospace; background-color: var(--background-dark); color: var(--text-light);
+            padding: 1rem; border-radius: var(--border-radius); margin-top: 1.5rem;
+            font-size: 0.95rem; white-space: pre-wrap; word-wrap: break-word;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            opacity: 0; /* Start hidden */
+            transition: opacity var(--animation-speed) ease-out 0.2s; /* Fade in slightly delayed */
+        }
+        .code-snippet.visible { opacity: 1; }
+        .code-comment { color: #6a9955; font-style: italic;}
+
+        /* --- Applications in AI Section --- */
+        #applications-ai .ai-examples {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem; margin-top: 2rem;
+        }
+        .ai-example-card { /* Animated by observer */
+            background-color: #fff; padding: 1.5rem; border-radius: var(--border-radius);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.07);
+            transition: transform var(--transition-speed) ease, box-shadow var(--transition-speed) ease, opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+            opacity: 0; transform: translateY(20px); /* Start state */
+            border-top: 4px solid transparent;
+        }
+        .ai-example-card.visible { opacity: 1; transform: translateY(0); }
+        .ai-example-card:hover { transform: translateY(-5px) scale(1.02) !important; box-shadow: 0 8px 20px rgba(0,0,0,0.12); }
+        .ai-example-card h3 { font-family: var(--font-body); font-weight: 700; font-size: 1.3rem; margin-bottom: 0.8rem; color: var(--text-dark); display: flex; align-items: center; gap: 0.5em;}
+        .ai-example-card h3 i { font-size: 1.1em; }
+        .ai-example-card:nth-child(1) { border-top-color: var(--boxplot-color); }
+        .ai-example-card:nth-child(1) h3 i { color: var(--boxplot-color); }
+        .ai-example-card:nth-child(2) { border-top-color: var(--scatterplot-color); }
+        .ai-example-card:nth-child(2) h3 i { color: var(--scatterplot-color); }
+        .ai-example-card p { font-size: 1rem; color: var(--secondary-color); margin-top: 1rem; line-height: 1.6; }
+        .ai-example-card strong { color: var(--text-dark); }
+
+
+        /* --- Knowledge Check Section --- */
+        #knowledge-check { background-color: #e9ecef; }
+        .quiz-container { /* Animated by observer */
+             background-color: #fff; padding: 2rem; border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.1); max-width: 700px; margin: 2rem auto 0;
+             opacity: 0; transition: opacity var(--animation-speed) ease-out; /* Only fade opacity */
+        }
+        .quiz-container.visible { opacity: 1; }
+        .quiz-question { font-size: 1.2rem; font-weight: bold; margin-bottom: 1.5rem; color: var(--text-dark); }
+        .quiz-options button { display: block; width: 100%; padding: 1rem; margin-bottom: 1rem; text-align: left; font-size: 1rem; background-color: #f8f9fa; border: 1px solid #ced4da; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), border-color var(--transition-speed), transform var(--transition-speed); }
+        .quiz-options button:not(:disabled):hover { background-color: #e2e6ea; border-color: #adb5bd; transform: translateX(5px); }
+        .quiz-options button:disabled { cursor: default; opacity: 0.7; }
+        .quiz-options button.correct { background-color: #d4edda; border-color: var(--success-color); color: #155724; font-weight: bold; }
+        .quiz-options button.incorrect { background-color: #f8d7da; border-color: var(--error-color); color: #721c24; font-weight: bold; }
+        .quiz-options button.incorrect.shake { animation: shake 0.5s ease; }
+        .quiz-feedback { margin-top: 1.5rem; padding: 1rem; border-radius: var(--border-radius); font-weight: bold; text-align: center; opacity: 0; transition: opacity 0.5s ease, height 0.5s ease, margin-bottom 0.5s ease; height: 0; overflow: hidden; margin-bottom: 0;}
+        .quiz-feedback.visible { opacity: 1; height: auto; margin-bottom: 1rem; }
+        .quiz-feedback.correct { background-color: #d4edda; color: #155724; }
+        .quiz-feedback.incorrect { background-color: #f8d7da; color: #721c24; }
+        #next-question-btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5em; margin: 1.5rem auto 0; padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold; color: var(--text-light); background-color: var(--primary-color); border: none; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), transform var(--transition-speed), opacity 0.3s, visibility 0.3s; opacity: 0; visibility: hidden; }
+        #next-question-btn:hover:not(:disabled) { background-color: #0056b3; transform: scale(1.05); }
+        #next-question-btn.visible { opacity: 1; visibility: visible; }
+        #next-question-btn:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none; opacity: 0.7; }
+
+
+        /* --- Completion Section Styling --- */
+        .completion-section { padding: 4rem 0; text-align: center; background-color: var(--background-light); }
+        .completion-section .icon { font-size: 4rem; color: var(--success-color); margin-bottom: 1rem; display: inline-block; animation: iconAppearCorrect 1s ease-out 0.5s forwards; opacity: 0; /* Initial state for animation */}
+        /* Ensure completion elements are targeted by observer */
+        .completion-section h2, .completion-section p {
+            opacity: 0; transform: translateY(20px);
+            transition: opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+        }
+        .completion-section h2.visible, .completion-section p.visible {
+            opacity: 1; transform: translateY(0);
+        }
+        .completion-section .button-group { margin-top: 2.5rem; }
+        .completion-section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); margin-bottom: 1rem; }
+        .completion-section h2::after { display: none; }
+        .completion-section p { font-size: 1.1rem; margin-top: 1rem; color: var(--secondary-color); max-width: 700px; margin-left: auto; margin-right: auto; line-height: 1.8; }
+
+
+        /* --- Footer Styling --- */
+        .main-footer {
+            background-color: var(--background-light);
+            color: var(--text-light);
+            text-align: center;
+            padding: 2rem 0;
+            font-size: 0.9rem;
+            margin-top: auto;
+            border-top: 1px solid var(--background-light);
+            opacity: 0.85;
+        }
+        .main-footer p { margin: 0; line-height: 1.5; }
+
+        /* --- Responsive Design --- */
+        @media (max-width: 768px) {
+            html { font-size: 15px; }
+            .main-header h1 { font-size: 2.3rem; } .main-header p { font-size: 1.1rem; }
+            section h2 { font-size: 1.8rem; }
+            .plot-section-content { flex-direction: column; gap: 1.5rem; align-items: stretch; }
+            .plot-visual { margin-top: 1rem; }
+             #applications-ai .ai-examples { grid-template-columns: 1fr; }
+            .minimal-nav { min-width: 180px; } .minimal-nav ul li a { padding: 0.6rem 0.8rem; }
+            .completion-section h2 { font-size: 2rem; }
+            .completion-section .button-group { flex-direction: column; align-items: center; gap: 0.8rem; }
+            .completion-section .action-button { width: 80%; max-width: 350px; margin-top: 0; }
+            .main-footer { padding: 1.5rem 0; }
+        }
+        @media (max-width: 480px) {
+            html { font-size: 14px; }
+            .main-header h1 { font-size: 1.9rem; } .main-header p { font-size: 1rem; }
+            section h2 { font-size: 1.6rem; }
+            .quiz-options button { padding: 0.8rem; font-size: 0.95rem; }
+            .placeholder-image { padding: 2rem 1rem; min-height: 200px; }
+            .ai-example-card { padding: 1.2rem; }
+            .ai-example-card h3 { font-size: 1.2rem; }
+            .minimal-nav-button { top: 10px; right: 10px; padding: 6px 10px; font-size: 1rem; }
+            .minimal-nav { top: 48px; right: 10px; min-width: 160px; }
+            .minimal-nav ul li a { padding: 0.5rem 0.7rem; font-size: 0.9rem;}
+            .minimal-nav ul li a i.fas { margin-right: 8px; }
+            .completion-section .icon { font-size: 3.5rem; }
+            .completion-section h2 { font-size: 1.8rem; } .completion-section p { font-size: 1rem; }
+            .completion-section .action-button { width: 90%; max-width: 300px; }
+            .main-footer { padding: 1rem 0; font-size: 0.85rem; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- ========= Minimal Nav Handle ========= -->
+    <button id="minimal-nav-toggle" class="minimal-nav-button" aria-label="Alternar Menu de Navegação" aria-expanded="false">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- ========= Minimal Nav Panel ========= -->
+    <nav id="minimal-nav-panel" class="minimal-nav">
+        <ul>
+            <!-- IMPORTANT: Links updated to math-practice-6 and math-dashboard -->
+            <li><a href="math-practice-6.html"><i class="fas fa-pencil-alt fa-fw"></i> <span data-translate="nav_practice">Iniciar Prática</span></a></li>
+            <li><a href="math-advanced-6.html"><i class="fas fa-flask fa-fw"></i> <span data-translate="nav_advanced">Prática Avançada</span></a></li>
+            <li><a href="math-dashboard.html"><i class="fas fa-list fa-fw"></i> <span data-translate="nav_menu">Menu do Curso</span></a></li>
+             <hr style="border: none; border-top: 1px solid var(--secondary-color); margin: 8px 0;">
+             <!-- Updated section links for Module 6 -->
+             <li><a href="#welcome"><i class="fas fa-door-open fa-fw"></i> <span data-translate="nav_welcome_m6">Boas-vindas M6</span></a></li>
+             <li><a href="#boxplot-intro"><i class="fas fa-box-open fa-fw"></i> <span data-translate="nav_boxplot">Boxplot</span></a></li>
+             <li><a href="#scatterplot-intro"><i class="fas fa-braille fa-fw"></i> <span data-translate="nav_scatterplot">Gráfico de Dispersão</span></a></li>
+             <li><a href="#applications-ai"><i class="fas fa-cogs fa-fw"></i> <span data-translate="nav_applications">Aplicações em IA</span></a></li>
+             <li><a href="#knowledge-check"><i class="fas fa-check-double fa-fw"></i> <span data-translate="nav_quiz">Teste Rápido</span></a></li>
+             <li><a href="#completion"><i class="fas fa-flag-checkered fa-fw"></i> <span data-translate="completion_theory_title_m6">Conclusão</span></a></li>
+        </ul>
+    </nav>
+
+    <header class="main-header">
+        <div class="header-shape shape1"></div>
+        <div class="header-shape shape2"></div>
+        <div class="header-shape shape3"></div>
+        <div class="container"> <!-- Start visible -->
+             <!-- Updated Header for Module 6 -->
+            <h1 data-translate="header_title_m6">Módulo 6: Gráficos Estatísticos (Parte 2)</h1>
+            <p data-translate="header_subtitle_m6">Visualizando distribuições com Boxplots e relações com Gráficos de Dispersão.</p>
+        </div>
+    </header>
+
+    <main>
+        <!-- ========= Welcome Section ========= -->
+        <section id="welcome">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="welcome_title_m6">📊 Visualizações Avançadas</h2>
+                <p class="fade-in-on-scroll delay-1" data-translate="welcome_p1_m6">
+                    Bem-vindo ao Módulo 6! No módulo anterior, vimos gráficos básicos como histogramas e barras. Agora, vamos explorar duas ferramentas visuais <span class="highlight">poderosas</span> e amplamente utilizadas na análise de dados e IA: o <span class="highlight">Boxplot</span> (Diagrama de Caixa) e o <span class="highlight">Gráfico de Dispersão</span> (Scatter Plot).
+                </p>
+                <p class="fade-in-on-scroll delay-2" data-translate="welcome_p2_m6">
+                    Esses gráficos nos ajudam a entender a <span class="highlight">distribuição</span> de dados de forma concisa (Boxplot) e a identificar <span class="highlight">relações</span> entre variáveis (Gráfico de Dispersão), passos cruciais na Análise Exploratória de Dados (EDA) para projetos de IA.
+                </p>
+            </div>
+        </section>
+
+        <!-- ========= Boxplot Section ========= -->
+        <section id="boxplot-intro">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="boxplot_title">📦 O Boxplot: Um Resumo Visual</h2>
+                <p class="text-center fade-in-on-scroll delay-1" data-translate="boxplot_subtitle">Entendendo a distribuição, tendência central e dispersão rapidamente.</p>
+
+                <div class="plot-section-content">
+                    <div class="plot-description fade-in-on-scroll delay-2">
+                        <h3 data-translate="boxplot_what_it_shows">O que ele Mostra?</h3>
+                        <p data-translate="boxplot_desc1">
+                            O Boxplot (ou Diagrama de Caixa) é uma representação gráfica padronizada que descreve a distribuição de um conjunto de dados quantitativos através dos seus quartis. Ele é excelente para comparar distribuições entre diferentes grupos.
+                        </p>
+                        <h3 data-translate="boxplot_components_title" style="margin-top: 1.5rem;">Componentes Principais:</h3>
+                        <ul>
+                            <li data-translate="boxplot_comp_median"><strong>Linha Central (Mediana):</strong> Marca o valor central dos dados (50º percentil).</li>
+                            <li data-translate="boxplot_comp_box"><strong>Caixa (Box):</strong> Representa o Intervalo Interquartil (IQR), contendo os 50% centrais dos dados (entre o 1º quartil - Q1 - e o 3º quartil - Q3).</li>
+                            <li data-translate="boxplot_comp_whiskers"><strong>Bigodes (Whiskers):</strong> Linhas que se estendem da caixa até os valores mínimo e máximo dentro de um limite esperado (geralmente Q1 - 1.5*IQR e Q3 + 1.5*IQR).</li>
+                            <li data-translate="boxplot_comp_outliers"><strong>Outliers:</strong> Pontos individuais plotados fora dos limites dos bigodes, indicando valores atípicos.</li>
+                        </ul>
+                        <p data-translate="boxplot_interpretation" style="margin-top: 1rem;">
+                            Analisando a posição da mediana na caixa, o tamanho da caixa e dos bigodes, podemos inferir sobre a <span class="highlight">simetria</span>, <span class="highlight">dispersão</span> e presença de <span class="highlight">outliers</span> nos dados.
+                        </p>
+                    </div>
+                    <div class="plot-visual fade-in-on-scroll delay-3">
+                        <div class="placeholder-image visible"> <!-- Start visible for simplicity or use observer -->
+                            <i class="fas fa-chart-bar" style="color: var(--boxplot-color);"></i>
+                            <span data-translate="boxplot_placeholder">Diagrama de um Boxplot Explicativo Aqui</span>
+                            <small data-translate="boxplot_placeholder_detail">(Mostrando Mediana, Q1, Q3, Bigodes e Outliers)</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="code-snippet fade-in-on-scroll delay-4 visible">
+                    <span class="code-comment" data-translate="boxplot_code_comment"># Em Python (com bibliotecas como Matplotlib/Seaborn):</span><br>
+                    <code>import seaborn as sns</code><br>
+                    <code>import matplotlib.pyplot as plt</code><br><br>
+                    <code data-translate="boxplot_code_example"># Supondo 'dados' como uma lista ou Series do Pandas</code><br>
+                    <code>sns.boxplot(data=dados)</code><br>
+                    <code>plt.title('Boxplot dos Dados')</code><br>
+                    <code>plt.show()</code>
+                </div>
+                 <p class="text-center fade-in-on-scroll delay-5" data-translate="boxplot_relevance_ai" style="margin-top: 2rem;">
+                     <strong>Relevância em IA:</strong> Boxplots são úteis para comparar distribuições de features entre classes (ex: idade de clientes que cancelaram vs. não cancelaram), identificar a necessidade de normalização e detectar outliers que podem impactar o treinamento de modelos.
+                 </p>
+            </div>
+        </section>
+
+        <!-- ========= Scatter Plot Section ========= -->
+        <section id="scatterplot-intro">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="scatterplot_title">↔️ Gráfico de Dispersão: Revelando Relações</h2>
+                <p class="text-center fade-in-on-scroll delay-1" data-translate="scatterplot_subtitle">Visualizando a interação entre duas variáveis quantitativas.</p>
+
+                <div class="plot-section-content">
+                    <div class="plot-description fade-in-on-scroll delay-2">
+                        <h3 data-translate="scatterplot_what_it_shows">O que ele Mostra?</h3>
+                        <p data-translate="scatterplot_desc1">
+                            O Gráfico de Dispersão (Scatter Plot) usa pontos para representar os valores de duas variáveis numéricas diferentes. A posição de cada ponto no eixo horizontal (X) e vertical (Y) indica os valores para um registro individual de dados.
+                        </p>
+                        <h3 data-translate="scatterplot_interpretation_title" style="margin-top: 1.5rem;">Interpretação:</h3>
+                        <ul>
+                            <li data-translate="scatterplot_interp_correlation"><strong>Correlação:</strong> Observa-se a tendência geral dos pontos. Se sobem da esquerda para a direita (<span style="color:var(--success-color)">positiva</span>), descem (<span style="color:var(--error-color)">negativa</span>) ou não mostram padrão claro (<span style="color:var(--secondary-color)">nula</span>).</li>
+                            <li data-translate="scatterplot_interp_strength"><strong>Força:</strong> Quão próximos os pontos estão de formar uma linha reta indica a força da relação (forte vs. fraca).</li>
+                            <li data-translate="scatterplot_interp_linearity"><strong>Linearidade:</strong> Verifica se a relação parece seguir uma linha reta ou uma curva.</li>
+                            <li data-translate="scatterplot_interp_outliers"><strong>Outliers:</strong> Pontos que se afastam significativamente do padrão geral podem ser outliers.</li>
+                        </ul>
+                         <p data-translate="scatterplot_caution" style="margin-top: 1rem;">
+                             <strong>Cuidado:</strong> Correlação não implica causalidade! O gráfico mostra associação, não que uma variável causa a outra.
+                         </p>
+                    </div>
+                    <div class="plot-visual fade-in-on-scroll delay-3">
+                        <div class="placeholder-image visible">
+                             <i class="fas fa-project-diagram" style="color: var(--scatterplot-color);"></i>
+                            <span data-translate="scatterplot_placeholder">Diagrama de um Gráfico de Dispersão Explicativo Aqui</span>
+                             <small data-translate="scatterplot_placeholder_detail">(Mostrando Correlação Positiva, Negativa e Nula)</small>
+                        </div>
+                    </div>
+                </div>
+                 <div class="code-snippet fade-in-on-scroll delay-4 visible">
+                    <span class="code-comment" data-translate="scatterplot_code_comment"># Em Python (com bibliotecas como Matplotlib/Seaborn):</span><br>
+                    <code>import seaborn as sns</code><br>
+                    <code>import matplotlib.pyplot as plt</code><br><br>
+                    <code data-translate="scatterplot_code_example"># Supondo 'var_x' e 'var_y' como listas ou Series do Pandas</code><br>
+                    <code>sns.scatterplot(x=var_x, y=var_y)</code><br>
+                    <code>plt.title('Gráfico de Dispersão entre Var X e Var Y')</code><br>
+                    <code>plt.xlabel('Variável X')</code><br>
+                    <code>plt.ylabel('Variável Y')</code><br>
+                    <code>plt.show()</code>
+                </div>
+                 <p class="text-center fade-in-on-scroll delay-5" data-translate="scatterplot_relevance_ai" style="margin-top: 2rem;">
+                    <strong>Relevância em IA:</strong> Essenciais para entender relações entre features (ex: área da casa vs. preço), identificar multicolinearidade (features muito correlacionadas), visualizar clusters de dados e avaliar visualmente a adequação de modelos de regressão linear.
+                </p>
+            </div>
+        </section>
+
+        <!-- ========= Applications in AI Section ========= -->
+        <section id="applications-ai">
+             <div class="container">
+                 <h2 class="fade-in-on-scroll" data-translate="applications_title">🤖 Aplicações em Inteligência Artificial</h2>
+                 <p class="text-center fade-in-on-scroll delay-1" data-translate="applications_subtitle">Como Boxplots e Gráficos de Dispersão auxiliam na análise de dados para IA.</p>
+
+                 <div class="ai-examples">
+                     <div class="ai-example-card fade-in-on-scroll delay-2">
+                          <h3><i class="fas fa-box-open"></i> <span data-translate="app_boxplot_title">Análise de Features com Boxplot</span></h3>
+                          <p data-translate="app_boxplot_desc">
+                              Imagine um problema de <span class="highlight">classificação</span> para prever churn (cancelamento) de clientes. Podemos usar boxplots para comparar a distribuição da feature 'tempo de contrato' para clientes que <span style="color:var(--error-color)">cancelaram</span> versus os que <span style="color:var(--success-color)">permaneceram</span>.
+                          </p>
+                          <p data-translate="app_boxplot_insight">
+                              <strong>Insight Possível:</strong> Se o boxplot dos que cancelaram mostra uma mediana e quartis mais baixos, indica que clientes com contratos mais curtos tendem a cancelar mais. Isso ajuda na <span class="highlight">seleção de features</span> ou engenharia de features. A identificação de outliers também pode sinalizar clientes atípicos.
+                          </p>
+                     </div>
+                     <div class="ai-example-card fade-in-on-scroll delay-3">
+                         <h3><i class="fas fa-project-diagram"></i> <span data-translate="app_scatterplot_title">Explorando Relações com Scatter Plot</span></h3>
+                         <p data-translate="app_scatterplot_desc">
+                            Em um modelo de <span class="highlight">regressão</span> para prever o preço de imóveis, um gráfico de dispersão entre 'área construída' (eixo X) e 'preço' (eixo Y) é fundamental.
+                         </p>
+                         <p data-translate="app_scatterplot_insight">
+                            <strong>Insight Possível:</strong> Se os pontos mostram uma tendência clara de subida (correlação positiva forte), confirma que a área é um bom preditor linear do preço. Se a relação parece não linear (curva), talvez um modelo mais complexo ou transformação da feature seja necessário. Pontos muito distantes podem ser <span class="highlight">outliers</span> (mansões, terrenos vazios) a serem investigados.
+                         </p>
+                     </div>
+                 </div>
+             </div>
+        </section>
+
+        <!-- ========= Knowledge Check Section ========= -->
+        <section id="knowledge-check">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="quiz_title">🧠 Teste Rápido!</h2>
+                <div class="quiz-container fade-in-on-scroll delay-1"> <!-- Observe container -->
+                    <div id="quiz-area">
+                         <p style="text-align: center; padding: 2rem 0;">Carregando quiz...</p>
+                    </div>
+                    <div id="quiz-feedback" class="quiz-feedback"></div>
+                    <button id="next-question-btn" data-translate="quiz_next_button">Próxima Pergunta</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========= Completion Section ========= -->
+        <section id="completion" class="completion-section"> <!-- Added ID for nav link -->
+            <div class="container">
+                 <div class="icon">
+                    <i class="fas fa-chart-line"></i> <!-- Changed icon -->
+                    <i class="fas fa-star"></i>
+                </div>
+                <h2 class="fade-in-on-scroll delay-1" data-translate="completion_theory_title_m6">Teoria do Módulo 6 Completa!</h2>
+                <p class="fade-in-on-scroll delay-2" data-translate="completion_theory_desc_m6">
+                    Excelente! Você aprendeu sobre Boxplots e Gráficos de Dispersão, ferramentas visuais essenciais para a Análise Exploratória de Dados (EDA) em qualquer projeto de IA. Compreender distribuições e relações é fundamental antes de construir modelos.
+                    <br>Pronto para aplicar esse conhecimento?
+                </p>
+                <div class="button-group">
+                    <!-- Buttons observed - IMPORTANT: Links updated -->
+                    <a href="math-dashboard.html" class="action-button secondary fade-in-on-scroll delay-3"><i class="fas fa-list"></i> <span data-translate="nav_menu">Menu do Curso</span></a>
+                    <a href="math-practice-6.html" class="action-button success fade-in-on-scroll delay-4"><i class="fas fa-pencil-alt"></i> <span data-translate="nav_practice">Iniciar Prática</span></a>
+                    <a href="math-advanced-6.html" class="action-button secondary fade-in-on-scroll delay-5"><i class="fas fa-flask"></i> <span data-translate="nav_advanced">Prática Avançada</span></a>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="main-footer">
+        <div class="container">
+            <p data-translate="footer_copyright"></p>
+        </div>
+    </footer>
+
+    <script>
+    // --- Translations Object (Portuguese Only for Module 6) ---
+    const translations = {
+        pt: {
+            "page_title": "Módulo 6: Gráficos Estatísticos (Parte 2)",
+            "nav_practice": "Iniciar Prática",
+            "nav_advanced": "Prática Avançada",
+            "nav_menu": "Menu do Curso",
+            "nav_welcome_m6": "Boas-vindas M6",
+            "nav_boxplot": "Boxplot",
+            "nav_scatterplot": "Gráfico de Dispersão",
+            "nav_applications": "Aplicações em IA",
+            "nav_quiz": "Teste Rápido",
+            "header_title_m6": "Módulo 6: Gráficos Estatísticos (Parte 2)",
+            "header_subtitle_m6": "Visualizando distribuições com Boxplots e relações com Gráficos de Dispersão.",
+            "welcome_title_m6": "📊 Visualizações Avançadas",
+            "welcome_p1_m6": "Bem-vindo ao Módulo 6! No módulo anterior, vimos gráficos básicos como histogramas e barras. Agora, vamos explorar duas ferramentas visuais <span class=\"highlight\">poderosas</span> e amplamente utilizadas na análise de dados e IA: o <span class=\"highlight\">Boxplot</span> (Diagrama de Caixa) e o <span class=\"highlight\">Gráfico de Dispersão</span> (Scatter Plot).",
+            "welcome_p2_m6": "Esses gráficos nos ajudam a entender a <span class=\"highlight\">distribuição</span> de dados de forma concisa (Boxplot) e a identificar <span class=\"highlight\">relações</span> entre variáveis (Gráfico de Dispersão), passos cruciais na Análise Exploratória de Dados (EDA) para projetos de IA.",
+            "boxplot_title": "📦 O Boxplot: Um Resumo Visual",
+            "boxplot_subtitle": "Entendendo a distribuição, tendência central e dispersão rapidamente.",
+            "boxplot_what_it_shows": "O que ele Mostra?",
+            "boxplot_desc1": "O Boxplot (ou Diagrama de Caixa) é uma representação gráfica padronizada que descreve a distribuição de um conjunto de dados quantitativos através dos seus quartis. Ele é excelente para comparar distribuições entre diferentes grupos.",
+            "boxplot_components_title": "Componentes Principais:",
+            "boxplot_comp_median": "<strong>Linha Central (Mediana):</strong> Marca o valor central dos dados (50º percentil).",
+            "boxplot_comp_box": "<strong>Caixa (Box):</strong> Representa o Intervalo Interquartil (IQR), contendo os 50% centrais dos dados (entre o 1º quartil - Q1 - e o 3º quartil - Q3).",
+            "boxplot_comp_whiskers": "<strong>Bigodes (Whiskers):</strong> Linhas que se estendem da caixa até os valores mínimo e máximo dentro de um limite esperado (geralmente Q1 - 1.5*IQR e Q3 + 1.5*IQR).",
+            "boxplot_comp_outliers": "<strong>Outliers:</strong> Pontos individuais plotados fora dos limites dos bigodes, indicando valores atípicos.",
+            "boxplot_interpretation": "Analisando a posição da mediana na caixa, o tamanho da caixa e dos bigodes, podemos inferir sobre a <span class=\"highlight\">simetria</span>, <span class=\"highlight\">dispersão</span> e presença de <span class=\"highlight\">outliers</span> nos dados.",
+            "boxplot_placeholder": "Diagrama de um Boxplot Explicativo Aqui",
+            "boxplot_placeholder_detail": "(Mostrando Mediana, Q1, Q3, Bigodes e Outliers)",
+            "boxplot_code_comment": "# Em Python (com bibliotecas como Matplotlib/Seaborn):",
+            "boxplot_code_example": "# Supondo 'dados' como uma lista ou Series do Pandas",
+            "boxplot_relevance_ai": "<strong>Relevância em IA:</strong> Boxplots são úteis para comparar distribuições de features entre classes (ex: idade de clientes que cancelaram vs. não cancelaram), identificar a necessidade de normalização e detectar outliers que podem impactar o treinamento de modelos.",
+            "scatterplot_title": "↔️ Gráfico de Dispersão: Revelando Relações",
+            "scatterplot_subtitle": "Visualizando a interação entre duas variáveis quantitativas.",
+            "scatterplot_what_it_shows": "O que ele Mostra?",
+            "scatterplot_desc1": "O Gráfico de Dispersão (Scatter Plot) usa pontos para representar os valores de duas variáveis numéricas diferentes. A posição de cada ponto no eixo horizontal (X) e vertical (Y) indica os valores para um registro individual de dados.",
+            "scatterplot_interpretation_title": "Interpretação:",
+            "scatterplot_interp_correlation": "<strong>Correlação:</strong> Observa-se a tendência geral dos pontos. Se sobem da esquerda para a direita (<span style=\"color:var(--success-color)\">positiva</span>), descem (<span style=\"color:var(--error-color)\">negativa</span>) ou não mostram padrão claro (<span style=\"color:var(--secondary-color)\">nula</span>).",
+            "scatterplot_interp_strength": "<strong>Força:</strong> Quão próximos os pontos estão de formar uma linha reta indica a força da relação (forte vs. fraca).",
+            "scatterplot_interp_linearity": "<strong>Linearidade:</strong> Verifica se a relação parece seguir uma linha reta ou uma curva.",
+            "scatterplot_interp_outliers": "<strong>Outliers:</strong> Pontos que se afastam significativamente do padrão geral podem ser outliers.",
+            "scatterplot_caution": "<strong>Cuidado:</strong> Correlação não implica causalidade! O gráfico mostra associação, não que uma variável causa a outra.",
+            "scatterplot_placeholder": "Diagrama de um Gráfico de Dispersão Explicativo Aqui",
+            "scatterplot_placeholder_detail": "(Mostrando Correlação Positiva, Negativa e Nula)",
+            "scatterplot_code_comment": "# Em Python (com bibliotecas como Matplotlib/Seaborn):",
+            "scatterplot_code_example": "# Supondo 'var_x' e 'var_y' como listas ou Series do Pandas",
+            "scatterplot_relevance_ai": "<strong>Relevância em IA:</strong> Essenciais para entender relações entre features (ex: área da casa vs. preço), identificar multicolinearidade (features muito correlacionadas), visualizar clusters de dados e avaliar visualmente a adequação de modelos de regressão linear.",
+            "applications_title": "🤖 Aplicações em Inteligência Artificial",
+            "applications_subtitle": "Como Boxplots e Gráficos de Dispersão auxiliam na análise de dados para IA.",
+            "app_boxplot_title": "Análise de Features com Boxplot",
+            "app_boxplot_desc": "Imagine um problema de <span class=\"highlight\">classificação</span> para prever churn (cancelamento) de clientes. Podemos usar boxplots para comparar a distribuição da feature 'tempo de contrato' para clientes que <span style=\"color:var(--error-color)\">cancelaram</span> versus os que <span style=\"color:var(--success-color)\">permaneceram</span>.",
+            "app_boxplot_insight": "<strong>Insight Possível:</strong> Se o boxplot dos que cancelaram mostra uma mediana e quartis mais baixos, indica que clientes com contratos mais curtos tendem a cancelar mais. Isso ajuda na <span class=\"highlight\">seleção de features</span> ou engenharia de features. A identificação de outliers também pode sinalizar clientes atípicos.",
+            "app_scatterplot_title": "Explorando Relações com Scatter Plot",
+            "app_scatterplot_desc": "Em um modelo de <span class=\"highlight\">regressão</span> para prever o preço de imóveis, um gráfico de dispersão entre 'área construída' (eixo X) e 'preço' (eixo Y) é fundamental.",
+            "app_scatterplot_insight": "<strong>Insight Possível:</strong> Se os pontos mostram uma tendência clara de subida (correlação positiva forte), confirma que a área é um bom preditor linear do preço. Se a relação parece não linear (curva), talvez um modelo mais complexo ou transformação da feature seja necessário. Pontos muito distantes podem ser <span class=\"highlight\">outliers</span> (mansões, terrenos vazios) a serem investigados.",
+            "quiz_title": "🧠 Teste Rápido!",
+            "quiz_next_button": "Próxima Pergunta",
+            // Quiz Questions M6
+            "quiz_q1_m6": "Em um Boxplot, qual linha dentro da caixa representa o 50º percentil dos dados?",
+            "quiz_q1_m6_opt1": "O 1º Quartil (Q1)", "quiz_q1_m6_opt2": "A Mediana", "quiz_q1_m6_opt3": "O 3º Quartil (Q3)", "quiz_q1_m6_opt4": "O bigode superior",
+            "quiz_q2_m6": "Observando um Gráfico de Dispersão, se os pontos tendem a descer da esquerda para a direita, qual tipo de correlação isso sugere?",
+            "quiz_q2_m6_opt1": "Correlação Positiva", "quiz_q2_m6_opt2": "Correlação Negativa", "quiz_q2_m6_opt3": "Sem Correlação", "quiz_q2_m6_opt4": "Correlação Causal",
+            "quiz_q3_m6": "Qual parte de um Boxplot é mais útil para identificar visualmente possíveis outliers?",
+            "quiz_q3_m6_opt1": "A largura da caixa (IQR)", "quiz_q3_m6_opt2": "A posição da mediana", "quiz_q3_m6_opt3": "Os pontos individuais fora dos bigodes", "quiz_q3_m6_opt4": "O comprimento dos bigodes",
+            "quiz_q4_m6": "Qual o principal propósito de um Gráfico de Dispersão na análise de dados?",
+            "quiz_q4_m6_opt1": "Comparar a distribuição de uma variável entre grupos", "quiz_q4_m6_opt2": "Mostrar a frequência de categorias", "quiz_q4_m6_opt3": "Visualizar a relação entre duas variáveis quantitativas", "quiz_q4_m6_opt4": "Resumir uma variável com média e desvio padrão",
+            // Feedback
+            "quiz_feedback_correct": "Correto! 🎉",
+            "quiz_feedback_incorrect": "Não foi bem assim! A resposta correta era: {correctAnswerText}",
+            "quiz_final_score_title": "Teste Rápido Completo!",
+            "quiz_final_score_summary": "Você respondeu {score} de {total} perguntas corretamente.",
+            "quiz_final_score_perfect": "Excelente! Você compreendeu bem Boxplots e Gráficos de Dispersão.",
+            "quiz_final_score_good": "Bom trabalho! Continue praticando a interpretação desses gráficos.",
+            "completion_theory_title_m6": "Teoria do Módulo 6 Completa!",
+            "completion_theory_desc_m6": "Excelente! Você aprendeu sobre Boxplots e Gráficos de Dispersão, ferramentas visuais essenciais para a Análise Exploratória de Dados (EDA) em qualquer projeto de IA. Compreender distribuições e relações é fundamental antes de construir modelos. <br>Pronto para aplicar esse conhecimento?",
+            "footer_copyright": "© 2024 Matemática para IA. Todos os direitos reservados."
+        }
+    };
+
+    // --- Global Variables ---
+    let currentQuestionIndex = 0;
+    let score = 0;
+    const lang = 'pt'; // Hardcoded language
+
+    // --- DOM Elements (Get them once) ---
+    const navToggleButton = document.getElementById('minimal-nav-toggle');
+    const navPanel = document.getElementById('minimal-nav-panel');
+    const body = document.body;
+    const quizArea = document.getElementById('quiz-area');
+    const feedbackArea = document.getElementById('quiz-feedback');
+    const nextButton = document.getElementById('next-question-btn');
+
+    // --- Functions ---
+
+    function getTranslation(key, replacements = {}) {
+         let text = translations[lang]?.[key] ?? `[${key}]`;
+         for (const placeholder in replacements) {
+             const regex = new RegExp(`\\{${placeholder}\\}`, 'g');
+             text = text.replace(regex, replacements[placeholder]);
+         }
+         return text;
+    }
+
+    function translatePage() {
+         document.querySelectorAll('[data-translate]').forEach(el => {
+             const key = el.getAttribute('data-translate');
+             let translation = getTranslation(key);
+
+              if (el.tagName === 'TITLE') { document.title = translation; }
+              else if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') { /* Skip */ }
+              else {
+                   // Allow specific HTML tags safely
+                   const safeHtmlRegex = /<\/?(code|strong|span|br|i|b|em|small)>/gi; // Added small
+                   let containsSafeHtml = safeHtmlRegex.test(translation);
+
+                   // Allow innerHTML if it contains only safe tags OR if it's in an allowed container
+                   const allowedContainers = '.plot-description ul li, .plot-description p, .ai-example-card p, .placeholder-image small, .code-snippet code, footer p';
+                   if (containsSafeHtml || el.closest(allowedContainers)) {
+                      el.innerHTML = translation;
+                   } else {
+                      // Fallback for elements where complex HTML isn't expected or safe
+                       const tempDiv = document.createElement('div');
+                       tempDiv.innerHTML = translation;
+                       // If the rendered text content is the same as the original (meaning no complex tags were stripped)
+                       // or if it only contains simple formatting tags allowed above, use innerHTML. Otherwise, textContent.
+                       if (tempDiv.textContent === translation || safeHtmlRegex.test(translation)) {
+                            el.innerHTML = translation;
+                       } else {
+                           console.warn(`Potential unsafe HTML stripped from key "${key}". Using textContent.`);
+                           el.textContent = translation; // Safer fallback
+                       }
+                   }
+              }
+         });
+
+        // Translate code comments specifically
+        document.querySelectorAll('.code-comment[data-translate]').forEach(commentSpan => {
+               const key = commentSpan.getAttribute('data-translate');
+               let translatedText = getTranslation(key);
+               // Ensure it starts with #
+               let commentContent = translatedText.startsWith('#') ? translatedText : '# ' + translatedText;
+               commentSpan.textContent = commentContent;
+           });
+    }
+
+
+    // --- Quiz Data & Functions (Module 6) ---
+    const quizData = [
+         { questionKey: "quiz_q1_m6", optionKeys: ["quiz_q1_m6_opt1", "quiz_q1_m6_opt2", "quiz_q1_m6_opt3", "quiz_q1_m6_opt4"], correctAnswer: 1 }, // Mediana
+         { questionKey: "quiz_q2_m6", optionKeys: ["quiz_q2_m6_opt1", "quiz_q2_m6_opt2", "quiz_q2_m6_opt3", "quiz_q2_m6_opt4"], correctAnswer: 1 }, // Correlação Negativa
+         { questionKey: "quiz_q3_m6", optionKeys: ["quiz_q3_m6_opt1", "quiz_q3_m6_opt2", "quiz_q3_m6_opt3", "quiz_q3_m6_opt4"], correctAnswer: 2 }, // Pontos fora dos bigodes
+         { questionKey: "quiz_q4_m6", optionKeys: ["quiz_q4_m6_opt1", "quiz_q4_m6_opt2", "quiz_q4_m6_opt3", "quiz_q4_m6_opt4"], correctAnswer: 2 }  // Relação entre duas variáveis quantitativas
+    ];
+
+    function loadQuestion() {
+          if (!quizArea) return; // Ensure quizArea exists
+
+          // If we reached the end, show score
+          if (currentQuestionIndex >= quizData.length) {
+              if (!quizArea.querySelector('[data-translate="quiz_final_score_title"]')) { // Avoid re-rendering score
+                 showFinalScore();
+              }
+              return;
+          }
+
+          const currentQuiz = quizData[currentQuestionIndex];
+          const questionText = getTranslation(currentQuiz.questionKey);
+          // Generate HTML for question and options
+          quizArea.innerHTML = `
+              <div class="quiz-question">${currentQuestionIndex + 1}. ${questionText.replace(/`(.*?)`/g, '<code>$1</code>')}</div>
+              <div class="quiz-options">
+                  ${currentQuiz.optionKeys.map((optionKey, index) => `
+                      <button class="quiz-option-btn" data-index="${index}">${getTranslation(optionKey).replace(/`(.*?)`/g, '<code>$1</code>')}</button>
+                  `).join('')}
+              </div>
+          `;
+
+          // Reset feedback and next button
+          if (feedbackArea) {
+            feedbackArea.classList.remove('visible', 'correct', 'incorrect');
+            feedbackArea.textContent = '';
+            feedbackArea.style.height = '0'; // Reset height
+            feedbackArea.style.marginBottom = '0'; // Reset margin
+          }
+          if (nextButton) {
+            nextButton.classList.remove('visible');
+            nextButton.disabled = true;
+          }
+
+          // Add event listeners to the new buttons
+          quizArea.querySelectorAll('.quiz-option-btn').forEach(button => {
+              button.addEventListener('click', handleAnswer);
+          });
+    }
+
+    function handleAnswer(event) {
+         const selectedButton = event.target;
+         const selectedIndex = parseInt(selectedButton.dataset.index);
+         const correctIndex = quizData[currentQuestionIndex].correctAnswer;
+         const correctOptionKey = quizData[currentQuestionIndex].optionKeys[correctIndex];
+
+         // Disable all options
+         quizArea.querySelectorAll('.quiz-option-btn').forEach(btn => {
+            btn.disabled = true;
+            btn.classList.remove('shake'); // Remove shake if present from previous incorrect
+         });
+
+         if (!feedbackArea || !nextButton) return; // Ensure elements exist
+
+         feedbackArea.classList.add('visible');
+
+         if (selectedIndex === correctIndex) {
+             selectedButton.classList.add('correct');
+             feedbackArea.innerHTML = getTranslation('quiz_feedback_correct');
+             feedbackArea.classList.add('correct');
+             feedbackArea.classList.remove('incorrect');
+             score++;
+             selectedButton.classList.add('tada-anim');
+         } else {
+             selectedButton.classList.add('incorrect');
+             const formattedCorrectAnswer = getTranslation(correctOptionKey).replace(/`(.*?)`/g, '<code>$1</code>');
+             feedbackArea.innerHTML = getTranslation('quiz_feedback_incorrect', { correctAnswerText: `<strong>${formattedCorrectAnswer}</strong>` });
+             feedbackArea.classList.add('incorrect');
+             feedbackArea.classList.remove('correct');
+             // Highlight the correct button as well
+             const correctButton = quizArea.querySelector(`.quiz-option-btn[data-index="${correctIndex}"]`);
+             if(correctButton) correctButton.classList.add('correct');
+             selectedButton.classList.add('shake');
+         }
+
+         // Remove animation classes after they finish
+          selectedButton.addEventListener('animationend', () => {
+               selectedButton.classList.remove('tada-anim', 'shake');
+          }, { once: true });
+
+         // Make feedback area adjust height and margin smoothly
+         feedbackArea.style.height = feedbackArea.scrollHeight + 'px';
+         feedbackArea.style.marginBottom = '1rem';
+
+
+         // Show and enable next button
+         nextButton.classList.add('visible');
+         nextButton.disabled = false;
+     }
+
+     function showFinalScore() {
+            if (!quizArea) return;
+            const totalQuestions = quizData.length;
+            // Determine message based on score percentage
+            let resultMessageKey = (score / totalQuestions) >= 0.75 ? 'quiz_final_score_perfect' : 'quiz_final_score_good'; // 75% threshold
+
+            quizArea.innerHTML = `
+               <div class="quiz-question text-center" data-translate="quiz_final_score_title" style="font-size: 1.5rem;">${getTranslation('quiz_final_score_title')}</div>
+               <p class="text-center" style="font-size: 1.2rem; margin-bottom: 1rem;">${getTranslation('quiz_final_score_summary', { score: score, total: totalQuestions })}</p>
+               <p class="text-center" style="color: ${score === totalQuestions ? 'var(--success-color)' : 'var(--primary-color)'}; font-weight: bold;">${getTranslation(resultMessageKey)}</p>
+            `;
+            if (feedbackArea) feedbackArea.classList.remove('visible'); // Hide feedback area
+            if (nextButton) nextButton.style.display = 'none'; // Hide next button
+            quizArea.scrollIntoView({ behavior: 'smooth', block: 'center' }); // Scroll score into view
+     }
+
+
+    // --- Intersection Observer Setup ---
+    function setupObservers() {
+        const observerOptions = {
+            root: null, // relative to viewport
+            rootMargin: '0px',
+            threshold: 0.1 // Trigger when 10% of the element is visible
+        };
+
+        const observerCallback = (entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    // Optional: Unobserve after it becomes visible to save resources
+                    // observer.unobserve(entry.target);
+                }
+                // Optional: Remove 'visible' if it scrolls out of view
+                // else {
+                //     entry.target.classList.remove('visible');
+                // }
+            });
+        };
+
+        const animationObserver = new IntersectionObserver(observerCallback, observerOptions);
+
+        // Observe elements with the fade-in class
+        document.querySelectorAll('.fade-in-on-scroll').forEach(el => {
+            animationObserver.observe(el);
+        });
+         // Also observe placeholder images and code snippets directly if they don't have the main fade class
+        document.querySelectorAll('.placeholder-image, .code-snippet').forEach(el => {
+            // Check if it ALREADY has the fade-in-on-scroll class, if so, it's handled above
+            if (!el.classList.contains('fade-in-on-scroll')) {
+                animationObserver.observe(el);
+            }
+        });
+    }
+
+    // --- Event Listeners Setup ---
+    function setupEventListeners() {
+        // Navbar Toggle
+        if (navToggleButton && navPanel) {
+            navToggleButton.addEventListener('click', (event) => {
+                event.stopPropagation();
+                body.classList.toggle('nav-active');
+                navToggleButton.setAttribute('aria-expanded', body.classList.contains('nav-active'));
+            });
+
+            // Close nav if clicking outside
+            document.addEventListener('click', (event) => {
+                if (body.classList.contains('nav-active') && !navPanel.contains(event.target) && event.target !== navToggleButton && !navToggleButton.contains(event.target)) {
+                    body.classList.remove('nav-active');
+                    navToggleButton.setAttribute('aria-expanded', 'false');
+                }
+            });
+
+            // Close nav on link click
+            navPanel.querySelectorAll('a').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    // Check if it's an internal link
+                    if (link.getAttribute('href').startsWith('#')) {
+                         // Allow default scroll behavior
+                        // Close panel slightly delayed
+                        setTimeout(() => {
+                            body.classList.remove('nav-active');
+                            navToggleButton.setAttribute('aria-expanded', 'false');
+                        }, 150);
+                    }
+                    // External links will navigate away anyway, closing the nav isn't strictly necessary
+                     else {
+                         // Optional: force close for external links too, though less critical
+                        body.classList.remove('nav-active');
+                        navToggleButton.setAttribute('aria-expanded', 'false');
+                    }
+                });
+            });
+
+
+            // Close nav on Escape key
+            document.addEventListener('keydown', (event) => {
+                 if (event.key === 'Escape' && body.classList.contains('nav-active')) {
+                     body.classList.remove('nav-active');
+                     navToggleButton.setAttribute('aria-expanded', 'false');
+                 }
+             });
+        }
+
+        // Quiz Next Button
+        if (nextButton) {
+            nextButton.addEventListener('click', () => {
+                if (!nextButton.disabled) {
+                    currentQuestionIndex++;
+                    loadQuestion(); // Load the next question
+                }
+            });
+        } else {
+            console.error("Elemento #next-question-btn não encontrado.");
+        }
+    }
+
+    // --- Initialization ---
+    document.addEventListener('DOMContentLoaded', () => {
+        // Check if elements needed for quiz exist before proceeding
+        if (!quizArea) console.error("Elemento #quiz-area não encontrado.");
+        if (!feedbackArea) console.error("Elemento #quiz-feedback não encontrado.");
+
+        translatePage();        // Apply translations first
+        setupEventListeners();  // Set up interactive elements
+        setupObservers();       // Set up animations
+
+        if (quizArea) {
+            loadQuestion();     // Load the first quiz question if container exists
+        }
+    });
+
+    </script>
+
+</body>
+</html>

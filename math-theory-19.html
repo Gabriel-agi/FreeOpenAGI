@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<!-- Language set to Portuguese BR -->
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Title set by JS -->
+    <title data-translate="page_title_m19">Módulo 19: Aplicações em Tomada de Decisão</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* --- Reset & Base Styles --- */
+        :root {
+            --primary-color: #007bff; /* Blue */
+            --secondary-color: #6c757d; /* Gray */
+            --background-light: #f8f9fa;
+            --background-dark: #343a40;
+            --text-light: #f8f9fa;
+            --text-dark: #212529;
+            --accent-color: #ffc107; /* Yellow */
+            --success-color: #28a745; /* Green */
+            --error-color: #dc3545; /* Red */
+            --info-color: #17a2b8; /* Teal */
+            --decision-node-color: #007bff; /* Blue */
+            --chance-node-color: #ffc107; /* Yellow */
+            --terminal-node-color: #28a745; /* Green */
+            --bayes-color: #6f42c1; /* Purple */
+            --border-radius: 8px;
+            --transition-speed: 0.3s;
+            --animation-speed: 0.6s; /* Control fade-in speed */
+            --font-body: 'Roboto', sans-serif;
+            --font-title: 'Orbitron', sans-serif;
+            --nav-primary: #6e48aa;
+            --nav-success: #4cc9f0;
+            --nav-dark: #1a1a2e;
+            --footer-border-color: #495057;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; font-size: 16px; }
+        body {
+            font-family: var(--font-body); line-height: 1.7;
+            background-color: var(--background-light); color: var(--text-dark);
+            overflow-x: hidden; display: flex; flex-direction: column; min-height: 100vh;
+        }
+        main { flex-grow: 1; }
+
+        /* --- Utility Classes --- */
+        .container { max-width: 960px; margin: 0 auto; padding: 0 15px; }
+        .text-center { text-align: center; }
+        .highlight { color: var(--primary-color); font-weight: bold; }
+        .code-style { font-family: 'Courier New', Courier, monospace; background-color: #e9ecef; padding: 0.2em 0.4em; border-radius: 4px; color: var(--text-dark); border: 1px solid #ced4da; }
+
+        /* Elements to be animated by observer */
+        .fade-in-on-scroll {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+        }
+        .fade-in-on-scroll.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        /* Add delays for staggering */
+        .delay-1.visible { transition-delay: 0.1s; }
+        .delay-2.visible { transition-delay: 0.2s; }
+        .delay-3.visible { transition-delay: 0.3s; }
+        .delay-4.visible { transition-delay: 0.4s; }
+        .delay-5.visible { transition-delay: 0.5s; }
+        .delay-6.visible { transition-delay: 0.6s; }
+        .delay-7.visible { transition-delay: 0.7s; }
+
+
+        .button-group { margin-top: 2rem; display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; }
+        .action-button {
+             display: inline-flex; align-items: center; justify-content: center; gap: 0.5em;
+             padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold;
+             color: var(--text-light); background-color: var(--primary-color); border: none;
+             border-radius: var(--border-radius); cursor: pointer;
+             transition: background-color var(--transition-speed), transform var(--transition-speed), filter var(--transition-speed), box-shadow var(--transition-speed), opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out; /* Add animation transition */
+             margin-top: 1rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+             text-decoration: none; line-height: 1.2;
+             opacity: 0; /* Start hidden if animated */
+             transform: translateY(20px); /* Start offset if animated */
+        }
+        .action-button.visible { /* Make visible via observer */
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .action-button i.fas {}
+        .action-button:hover:not(:disabled) { background-color: #0056b3; transform: translateY(-2px) !important; box-shadow: 0 4px 8px rgba(0,0,0,0.15); } /* Use !important to override initial transform */
+        .action-button:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none !important; box-shadow: none; opacity: 0.7; }
+        .action-button.success { background-color: var(--success-color); }
+        .action-button.success:hover:not(:disabled) { background-color: #218838; }
+        .action-button.secondary { background-color: var(--secondary-color); }
+        .action-button.secondary:hover:not(:disabled) { background-color: #5a6268; }
+        .action-button:active:not(:disabled) { transform: translateY(1px) scale(0.98) !important; filter: brightness(0.95); }
+
+        /* --- Animations --- */
+        @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); } 50% { transform: scale(1.03); box-shadow: 0 0 15px rgba(0, 123, 255, 0.6); } 100% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); } }
+        @keyframes tada { from { transform: scale3d(1, 1, 1); } 10%, 20% { transform: scale3d(.9, .9, .9) rotate3d(0, 0, 1, -3deg); } 30%, 50%, 70%, 90% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, 3deg); } 40%, 60%, 80% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, -3deg); } to { transform: scale3d(1, 1, 1); } }
+        .tada-anim { animation: tada 1s ease; }
+        @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
+        @keyframes iconAppearCorrect { 0% { transform: scale(0.5) rotate(-15deg); opacity: 0; } 60% { transform: scale(1.2) rotate(5deg); opacity: 1; } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
+
+        /* --- Minimal Retractable Nav --- */
+        .minimal-nav-button { position: fixed; top: 15px; right: 15px; z-index: 1001; background-color: rgba(52, 58, 64, 0.75); color: var(--text-light); border: none; border-radius: var(--border-radius); padding: 8px 12px; cursor: pointer; transition: background-color var(--transition-speed), opacity var(--transition-speed), transform var(--transition-speed); font-size: 1.1rem; opacity: 0.6; box-shadow: 0 2px 5px rgba(0,0,0,0.2); line-height: 1; }
+        .minimal-nav-button:hover { background-color: rgba(52, 58, 64, 0.95); opacity: 1; transform: scale(1.05); }
+        .minimal-nav { position: fixed; top: 60px; right: 15px; z-index: 1000; background-color: var(--background-dark); border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.3); padding: 0.8rem; opacity: 0; transform: translateY(-15px) scale(0.95); transform-origin: top right; pointer-events: none; transition: opacity var(--transition-speed) ease, transform var(--transition-speed) ease; min-width: 200px; }
+        body.nav-active .minimal-nav { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+        .minimal-nav ul { list-style: none; margin: 0; padding: 0; }
+        .minimal-nav ul li { margin-bottom: 5px; }
+        .minimal-nav ul li:last-child { margin-bottom: 0; }
+        .minimal-nav ul li a { display: flex; align-items: center; color: var(--text-light); text-decoration: none; padding: 0.6rem 1rem; border-radius: 4px; transition: background-color var(--transition-speed), color var(--transition-speed); white-space: nowrap; font-weight: 400; font-size: 0.95rem; }
+        .minimal-nav ul li a i.fas { margin-right: 10px; width: 1.2em; text-align: center; opacity: 0.8; transition: opacity var(--transition-speed); }
+        .minimal-nav ul li a:hover { background-color: var(--primary-color); color: var(--text-light); }
+        .minimal-nav ul li a:hover i.fas { opacity: 1; }
+
+        /* --- Header --- */
+        .main-header { background: linear-gradient(135deg, var(--primary-color), #0056b3); color: var(--text-light); padding: 4rem 0 6rem; text-align: center; position: relative; overflow: hidden; }
+        .main-header .container { /* Start visible */ }
+        .main-header h1 { font-family: var(--font-title); font-size: 2.8rem; margin-bottom: 0.5rem; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); } /* Adjusted font size */
+        .main-header p { font-size: 1.1rem; font-weight: 300; opacity: 0.9; max-width: 800px; margin: 0 auto; } /* Adjusted font size and max-width */
+        .header-shape { position: absolute; border-radius: 50%; background-color: rgba(255, 255, 255, 0.1); animation: pulse 5s infinite ease-in-out alternate; }
+        .shape1 { width: 150px; height: 150px; bottom: -50px; left: 10%; animation-duration: 6s; }
+        .shape2 { width: 80px; height: 80px; top: 50px; right: 15%; animation-duration: 4s; }
+        .shape3 { width: 50px; height: 50px; bottom: 20px; right: 30%; animation-duration: 7s; }
+
+        /* --- Section Styling --- */
+        section { padding: 4rem 0; border-bottom: 1px solid #eee; }
+        main section:last-of-type { border-bottom: none; padding-bottom: 0;}
+        section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); margin-bottom: 2rem; text-align: center; position: relative; padding-bottom: 10px; }
+        section h2::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 60px; height: 4px; background-color: var(--accent-color); border-radius: 2px; }
+        section h3 { font-family: var(--font-body); font-weight: 700; font-size: 1.5rem; margin-top: 2rem; margin-bottom: 1rem; color: var(--text-dark); }
+        section h4 { font-family: var(--font-body); font-weight: 700; font-size: 1.2rem; margin-top: 1.5rem; margin-bottom: 0.8rem; color: var(--secondary-color); }
+
+        /* --- Placeholder Image --- */
+        .placeholder-image {
+            background-color: #e9ecef; border: 1px dashed var(--secondary-color);
+            padding: 2rem; text-align: center; color: var(--secondary-color);
+            font-style: italic; border-radius: var(--border-radius); margin: 2rem auto;
+            max-width: 600px;
+        }
+
+        /* --- Welcome Section --- */
+        #welcome p { font-size: 1.1rem; max-width: 750px; margin: 0 auto 1rem; text-align: center; }
+
+        /* --- Decision Uncertainty Section --- */
+        #decision-uncertainty .content-box {
+            background-color: #fff; padding: 2rem; border-radius: var(--border-radius);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08); margin-top: 2rem;
+        }
+        #decision-uncertainty .icon { font-size: 3rem; color: var(--info-color); margin-bottom: 1rem; display: block; text-align: center; }
+
+        /* --- Decision Criteria Section (Expected Value) --- */
+        #decision-criteria .info-cards {
+            display: grid; grid-template-columns: 1fr; /* Single column layout */
+            gap: 2rem; margin-top: 2rem;
+        }
+        .info-card { /* Reusing info-card style */
+            background-color: #fff; padding: 1.5rem; border-radius: var(--border-radius);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.07); text-align: left; /* Align text left */
+            transition: transform var(--transition-speed) ease, box-shadow var(--transition-speed) ease, opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+            opacity: 0; transform: translateY(20px); /* Start state */
+            border-top: 4px solid var(--accent-color);
+        }
+        .info-card.visible { opacity: 1; transform: translateY(0); }
+        .info-card:hover { transform: translateY(-5px) scale(1.01) !important; box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
+        .info-icon { font-size: 2.5rem; margin-bottom: 1rem; color: var(--accent-color); float: left; margin-right: 1rem; }
+        .info-card h3 { font-family: var(--font-body); font-weight: 700; font-size: 1.4rem; margin-bottom: 0.8rem; color: var(--text-dark); margin-top: 0; }
+        .info-details { font-size: 1rem; color: var(--secondary-color); margin-top: 0.5rem; line-height: 1.6; }
+        .formula-box {
+            font-family: 'Courier New', Courier, monospace; background-color: #e9ecef;
+            padding: 1rem; border-radius: 4px; margin-top: 1rem;
+            font-size: 1.1rem; color: var(--text-dark); display: block;
+            border: 1px solid #ced4da; text-align: center;
+        }
+        .example-box {
+            background-color: #f8f9fa; border: 1px solid #ced4da;
+            padding: 1rem; margin-top: 1rem; border-radius: var(--border-radius);
+        }
+
+        /* --- Decision Trees & Bayes Section --- */
+        #decision-trees-intro .explanation { display: flex; gap: 2rem; align-items: flex-start; margin-top: 2rem; flex-wrap: wrap; }
+        .tree-visualization { /* Replaces text-demo */
+            flex-basis: 60%; background-color: var(--background-light); border: 1px solid #dee2e6;
+            padding: 1.5rem; border-radius: var(--border-radius);
+            position: relative; box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            min-height: 350px; /* Adjust height as needed */
+            opacity: 0; transition: opacity var(--animation-speed) ease-out; /* Only fade opacity */
+        }
+        .tree-visualization.visible { opacity: 1; }
+        .tree-explanation { /* Replaces text-explanation */
+            flex-basis: 35%; font-size: 1.05rem;
+            opacity: 0; transition: opacity var(--animation-speed) ease-out; /* Only fade opacity */
+        }
+        .tree-explanation.visible { opacity: 1; }
+        .tree-explanation p { margin-bottom: 1rem; }
+        .tree-node {
+             border-radius: var(--border-radius); padding: 0.8rem 1.2rem; margin: 1rem 0;
+             text-align: center; font-weight: bold; color: var(--text-light);
+             box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+             opacity: 0; transform: scale(0.9); /* Start small */
+             transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+        .tree-node.visible { opacity: 1; transform: scale(1); } /* Animate appearance */
+        .decision-node { background-color: var(--decision-node-color); }
+        .chance-node { background-color: var(--chance-node-color); color: var(--text-dark); }
+        .terminal-node { background-color: var(--terminal-node-color); }
+        .node-label { font-size: 0.9rem; display: block; margin-top: 0.3rem; font-weight: normal; }
+        .bayes-highlight { background-color: rgba(111, 66, 193, 0.1); border-left: 4px solid var(--bayes-color); padding: 1rem; margin-top: 2rem; border-radius: 4px; }
+        .bayes-highlight h4 { margin-top: 0; color: var(--bayes-color); }
+
+        /* --- Knowledge Check Section --- */
+        #knowledge-check { background-color: #e9ecef; }
+        .quiz-container { /* Animated by observer */
+             background-color: #fff; padding: 2rem; border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.1); max-width: 700px; margin: 2rem auto 0;
+             opacity: 0; transition: opacity var(--animation-speed) ease-out; /* Only fade opacity */
+        }
+        .quiz-container.visible { opacity: 1; }
+        .quiz-question { font-size: 1.2rem; font-weight: bold; margin-bottom: 1.5rem; color: var(--text-dark); }
+        .quiz-options button { display: block; width: 100%; padding: 1rem; margin-bottom: 1rem; text-align: left; font-size: 1rem; background-color: #f8f9fa; border: 1px solid #ced4da; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), border-color var(--transition-speed), transform var(--transition-speed); }
+        .quiz-options button:not(:disabled):hover { background-color: #e2e6ea; border-color: #adb5bd; transform: translateX(5px); }
+        .quiz-options button:disabled { cursor: default; opacity: 0.7; }
+        .quiz-options button.correct { background-color: #d4edda; border-color: var(--success-color); color: #155724; font-weight: bold; }
+        .quiz-options button.incorrect { background-color: #f8d7da; border-color: var(--error-color); color: #721c24; font-weight: bold; }
+        .quiz-options button.incorrect.shake { animation: shake 0.5s ease; }
+        .quiz-feedback { margin-top: 1.5rem; padding: 1rem; border-radius: var(--border-radius); font-weight: bold; text-align: center; opacity: 0; transition: opacity 0.5s ease, height 0.5s ease, margin-bottom 0.5s ease; height: 0; overflow: hidden; margin-bottom: 0;}
+        .quiz-feedback.visible { opacity: 1; height: auto; margin-bottom: 1rem; }
+        .quiz-feedback.correct { background-color: #d4edda; color: #155724; }
+        .quiz-feedback.incorrect { background-color: #f8d7da; color: #721c24; }
+        #next-question-btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5em; margin: 1.5rem auto 0; padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold; color: var(--text-light); background-color: var(--primary-color); border: none; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), transform var(--transition-speed), opacity 0.3s, visibility 0.3s; opacity: 0; visibility: hidden; }
+        #next-question-btn:hover:not(:disabled) { background-color: #0056b3; transform: scale(1.05); }
+        #next-question-btn.visible { opacity: 1; visibility: visible; }
+        #next-question-btn:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none; opacity: 0.7; }
+
+
+        /* --- Completion Section Styling --- */
+        .completion-section { padding: 4rem 0; text-align: center; background-color: var(--background-light); }
+        .completion-section .icon { font-size: 4rem; color: var(--success-color); margin-bottom: 1rem; display: inline-block; animation: iconAppearCorrect 1s ease-out 0.5s forwards; opacity: 0; /* Initial state for animation */}
+        /* Ensure completion elements are targeted by observer */
+        .completion-section h2, .completion-section p {
+            opacity: 0; transform: translateY(20px);
+            transition: opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+        }
+        .completion-section h2.visible, .completion-section p.visible {
+            opacity: 1; transform: translateY(0);
+        }
+        .completion-section .button-group { margin-top: 2.5rem; }
+        .completion-section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); margin-bottom: 1rem; }
+        .completion-section h2::after { display: none; }
+        .completion-section p { font-size: 1.1rem; margin-top: 1rem; color: var(--secondary-color); max-width: 700px; margin-left: auto; margin-right: auto; line-height: 1.8; }
+
+
+        /* --- Footer Styling --- */
+        .main-footer {
+            background-color: var(--background-light);
+            color: var(--text-light);
+            text-align: center;
+            padding: 2rem 0;
+            font-size: 0.9rem;
+            margin-top: auto;
+            border-top: 1px solid var(--background-light);
+            opacity: 0.85;
+        }
+        .main-footer p { margin: 0; line-height: 1.5; }
+
+        /* --- Responsive Design --- */
+        @media (max-width: 768px) {
+            html { font-size: 15px; }
+            .main-header h1 { font-size: 2.2rem; } .main-header p { font-size: 1rem; }
+            section h2 { font-size: 1.8rem; }
+            #decision-trees-intro .explanation { flex-direction: column; }
+            .tree-visualization, .tree-explanation { flex-basis: 100%; }
+            .minimal-nav { min-width: 180px; } .minimal-nav ul li a { padding: 0.6rem 0.8rem; }
+            .completion-section h2 { font-size: 2rem; }
+            .completion-section .button-group { flex-direction: column; align-items: center; gap: 0.8rem; }
+            .completion-section .action-button { width: 80%; max-width: 350px; margin-top: 0; }
+            .main-footer { padding: 1.5rem 0; }
+            .formula-box { font-size: 1rem; }
+        }
+        @media (max-width: 480px) {
+            html { font-size: 14px; }
+            .main-header h1 { font-size: 1.9rem; } .main-header p { font-size: 0.95rem; }
+            section h2 { font-size: 1.6rem; }
+            section h3 { font-size: 1.3rem; }
+            .quiz-options button { padding: 0.8rem; font-size: 0.95rem; }
+            .minimal-nav-button { top: 10px; right: 10px; padding: 6px 10px; font-size: 1rem; }
+            .minimal-nav { top: 48px; right: 10px; min-width: 160px; }
+            .minimal-nav ul li a { padding: 0.5rem 0.7rem; font-size: 0.9rem;}
+            .minimal-nav ul li a i.fas { margin-right: 8px; }
+            .completion-section .icon { font-size: 3.5rem; }
+            .completion-section h2 { font-size: 1.8rem; } .completion-section p { font-size: 1rem; }
+            .completion-section .action-button { width: 90%; max-width: 300px; }
+            .formula-box { font-size: 0.9rem; padding: 0.8rem; }
+            .main-footer { padding: 1rem 0; font-size: 0.85rem; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- ========= Minimal Nav Handle ========= -->
+    <button id="minimal-nav-toggle" class="minimal-nav-button" aria-label="Alternar Menu de Navegação" aria-expanded="false">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- ========= Minimal Nav Panel ========= -->
+    <nav id="minimal-nav-panel" class="minimal-nav">
+        <ul>
+            <!-- IMPORTANT: Updated Links for Module 19 -->
+            <li><a href="math-practice-19.html"><i class="fas fa-pencil-alt fa-fw"></i> <span data-translate="nav_practice">Iniciar Prática</span></a></li>
+            <li><a href="math-exercise-19.html"><i class="fas fa-flask fa-fw"></i> <span data-translate="nav_exercise">Exercícios</span></a></li> <!-- Changed from Advanced to Exercise -->
+            <li><a href="math-dashboard.html"><i class="fas fa-list fa-fw"></i> <span data-translate="nav_menu">Menu do Curso</span></a></li>
+             <hr style="border: none; border-top: 1px solid var(--secondary-color); margin: 8px 0;">
+             <!-- Updated section links for Module 19 -->
+             <li><a href="#welcome"><i class="fas fa-door-open fa-fw"></i> <span data-translate="nav_welcome_m19">Boas-vindas M19</span></a></li>
+             <li><a href="#decision-uncertainty"><i class="fas fa-cloud-sun-rain fa-fw"></i> <span data-translate="nav_uncertainty">Decisão e Incerteza</span></a></li>
+             <li><a href="#decision-criteria"><i class="fas fa-balance-scale fa-fw"></i> <span data-translate="nav_criteria">Critérios de Decisão</span></a></li>
+             <li><a href="#decision-trees-intro"><i class="fas fa-sitemap fa-fw"></i> <span data-translate="nav_trees_bayes">Árvores e Bayes</span></a></li>
+             <li><a href="#knowledge-check"><i class="fas fa-check-double fa-fw"></i> <span data-translate="nav_quiz">Teste Rápido</span></a></li>
+             <li><a href="#completion"><i class="fas fa-flag-checkered fa-fw"></i> <span data-translate="completion_theory_title_m19">Conclusão</span></a></li>
+        </ul>
+    </nav>
+
+    <header class="main-header">
+        <div class="header-shape shape1"></div>
+        <div class="header-shape shape2"></div>
+        <div class="header-shape shape3"></div>
+        <div class="container"> <!-- Start visible -->
+            <h1 data-translate="header_title_m19">Módulo 19: Aplicações em Tomada de Decisão</h1>
+            <p data-translate="header_subtitle_m19">Utilizando modelos probabilísticos para tomar decisões informadas em sistemas de informação e IA.</p>
+        </div>
+    </header>
+
+    <main>
+        <!-- ========= Welcome Section ========= -->
+        <section id="welcome">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="welcome_title_m19">🤔 Tomando Decisões com Dados</h2>
+                <p class="fade-in-on-scroll delay-1" data-translate="welcome_p1_m19">
+                    Bem-vindo ao Módulo 19! Em Inteligência Artificial e Sistemas de Informação, frequentemente precisamos tomar decisões onde o resultado não é totalmente certo. Quer seja decidir se um e-mail é spam, qual tratamento médico recomendar, ou qual produto sugerir a um usuário, a <span class="highlight">incerteza</span> é uma constante.
+                </p>
+                <p class="fade-in-on-scroll delay-2" data-translate="welcome_p2_m19">
+                    A <span class="highlight">probabilidade</span> nos fornece a linguagem e as ferramentas para quantificar essa incerteza e construir modelos que ajudam a tomar as melhores decisões possíveis com base nas evidências disponíveis. Vamos explorar como aplicar conceitos probabilísticos em cenários práticos de tomada de decisão.
+                </p>
+            </div>
+        </section>
+
+        <!-- ========= Decision Uncertainty Section ========= -->
+        <section id="decision-uncertainty">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="uncertainty_title">🎲 Decisão Sob Incerteza</h2>
+                <p class="text-center fade-in-on-scroll delay-1" data-translate="uncertainty_p1">
+                    Tomar decisões é escolher entre diferentes ações ou alternativas. Em muitos problemas do mundo real, as consequências de cada ação não são determinísticas, mas sim probabilísticas.
+                </p>
+                <div class="content-box fade-in-on-scroll delay-2">
+                    <span class="icon"><i class="fas fa-question-circle"></i></span>
+                    <h3 class="text-center" data-translate="uncertainty_why_title">Por que a Incerteza Surge?</h3>
+                    <ul style="list-style-position: inside; max-width: 600px; margin: 1rem auto;">
+                        <li data-translate="uncertainty_reason1"><strong>Informação Incompleta:</strong> Não temos todos os dados relevantes.</li>
+                        <li data-translate="uncertainty_reason2"><strong>Aleatoriedade Intrínseca:</strong> Alguns processos são inerentemente aleatórios (ex: falha de hardware).</li>
+                        <li data-translate="uncertainty_reason3"><strong>Modelos Imperfeitos:</strong> Nossas representações do mundo são simplificações.</li>
+                        <li data-translate="uncertainty_reason4"><strong>Ruído nos Dados:</strong> Medições e observações podem conter erros.</li>
+                    </ul>
+                    <p class="text-center fade-in-on-scroll delay-3" data-translate="uncertainty_p2">
+                        A probabilidade permite modelar e raciocinar sobre essa incerteza, atribuindo <span class="highlight">graus de crença</span> ou <span class="highlight">frequências relativas</span> a diferentes resultados possíveis. Isso é fundamental para sistemas de IA que operam no mundo real.
+                    </p>
+                </div>
+                 <div class="placeholder-image fade-in-on-scroll delay-4" data-translate="uncertainty_diagram_placeholder">Diagrama: Incerteza afetando diferentes escolhas e seus resultados.</div>
+            </div>
+        </section>
+
+        <!-- ========= Decision Criteria Section (Expected Value) ========= -->
+        <section id="decision-criteria">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="criteria_title">⚖️ Critérios para Decidir: Valor Esperado</h2>
+                <p class="text-center fade-in-on-scroll delay-1" data-translate="criteria_subtitle">Como escolher a "melhor" ação quando os resultados são incertos?</p>
+
+                <div class="info-cards">
+                    <div class="info-card fade-in-on-scroll delay-2" id="card-ev">
+                        <span class="info-icon"><i class="fas fa-calculator"></i></span>
+                        <h3 data-translate="ev_title">Valor Esperado (Expected Value - EV)</h3>
+                        <div class="info-details">
+                            <p data-translate="ev_text">
+                                Um critério comum é maximizar o <span class="highlight">Valor Esperado</span>. Ele representa o valor médio que esperaríamos obter de uma ação se pudéssemos repeti-la muitas vezes. É calculado ponderando o valor (ou utilidade) de cada resultado possível pela sua probabilidade.
+                            </p>
+                            <div class="formula-box" data-translate="ev_formula">
+                                <code>E[Ação] = Σ [ Valor(Resultado<sub>i</sub>) * P(Resultado<sub>i</sub> | Ação) ]</code>
+                                <small style="display: block; margin-top: 5px;">(Soma sobre todos os resultados possíveis <i>i</i>)</small>
+                            </div>
+                             <div class="example-box fade-in-on-scroll delay-3">
+                                <h4 data-translate="ev_example_title">Exemplo Simples: Investimento</h4>
+                                <p data-translate="ev_example_text">
+                                    Considere investir R$1000. Há 70% de chance de ganhar R$500 (total R$1500) e 30% de chance de perder R$200 (total R$800).
+                                </p>
+                                <p>
+                                    Valor Esperado = (Valor do Ganho * Prob. Ganho) + (Valor da Perda * Prob. Perda) <br>
+                                    <i>Nota: Usamos o lucro/prejuízo relativo ao investimento inicial para simplificar.</i> <br>
+                                    EV = (500 * 0.70) + (-200 * 0.30) <br>
+                                    EV = 350 - 60 = R$290
+                                </p>
+                                <p data-translate="ev_example_conclusion">
+                                    O valor esperado deste investimento é um ganho de R$290. Se tivéssemos outra opção com EV maior, escolheríamos essa outra opção com base neste critério.
+                                </p>
+                             </div>
+                        </div>
+                    </div>
+                    <!-- Poderíamos adicionar outros critérios aqui (ex: Minimax, Maximin) mas focaremos no EV -->
+                </div>
+                 <p class="text-center fade-in-on-scroll delay-4" data-translate="criteria_conclusion">O Valor Esperado nos dá uma base racional para comparar ações com resultados incertos, sendo amplamente utilizado em IA e análise de decisão.</p>
+            </div>
+        </section>
+
+        <!-- ========= Decision Trees & Bayes Section ========= -->
+        <section id="decision-trees-intro">
+             <div class="container">
+                 <h2 class="fade-in-on-scroll" data-translate="trees_bayes_title">🌳 Modelando Decisões: Árvores e Atualização Bayesiana</h2>
+                 <p class="text-center fade-in-on-scroll delay-1" data-translate="trees_bayes_subtitle">Ferramentas visuais e conceituais para estruturar e refinar decisões.</p>
+
+                 <div class="explanation">
+                     <div class="tree-visualization fade-in-on-scroll delay-2"> <!-- Container for visualization -->
+                        <h4 class="text-center" data-translate="trees_viz_title">Visualizando uma Árvore de Decisão (Exemplo)</h4>
+                        <p class="text-center" style="font-size: 0.9rem; color: var(--secondary-color);" data-translate="trees_viz_desc">Decidir se lança um novo produto.</p>
+                        <!-- Simple visual representation using styled divs -->
+                        <div class="tree-node decision-node visible delay-3">
+                            <i class="fas fa-code-branch"></i> Lançar Produto?
+                            <span class="node-label" data-translate="trees_node_decision">Nó de Decisão</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-around; margin-top: -0.5rem; padding: 0 1rem;">
+                           <div style="width: 45%; text-align: center;">
+                               <span data-translate="trees_branch_yes">Ramo: Sim</span>
+                               <div class="tree-node chance-node visible delay-4">
+                                   <i class="fas fa-dice"></i> Demanda?
+                                   <span class="node-label" data-translate="trees_node_chance">Nó de Chance (P(Alta)=0.6, P(Baixa)=0.4)</span>
+                               </div>
+                               <div style="display: flex; justify-content: space-around; margin-top: -0.5rem;">
+                                   <div style="width: 45%; text-align: center;">
+                                       <span data-translate="trees_outcome_high">Alta</span>
+                                       <div class="tree-node terminal-node visible delay-5">
+                                            <i class="fas fa-dollar-sign"></i> Lucro: +R$50k
+                                            <span class="node-label" data-translate="trees_node_terminal">Nó Terminal</span>
+                                       </div>
+                                   </div>
+                                    <div style="width: 45%; text-align: center;">
+                                       <span data-translate="trees_outcome_low">Baixa</span>
+                                       <div class="tree-node terminal-node visible delay-5">
+                                            <i class="fas fa-dollar-sign"></i> Prejuízo: -R$20k
+                                            <span class="node-label" data-translate="trees_node_terminal">Nó Terminal</span>
+                                       </div>
+                                   </div>
+                               </div>
+                           </div>
+                            <div style="width: 45%; text-align: center;">
+                               <span data-translate="trees_branch_no">Ramo: Não</span>
+                               <div class="tree-node terminal-node visible delay-4">
+                                    <i class="fas fa-dollar-sign"></i> Lucro: R$0
+                                    <span class="node-label" data-translate="trees_node_terminal">Nó Terminal</span>
+                               </div>
+                           </div>
+                        </div>
+                         <!-- Calculation Area -->
+                         <div class="example-box fade-in-on-scroll delay-6" style="margin-top: 2rem;">
+                             <h5 data-translate="trees_calc_title">Cálculo do Valor Esperado (EV):</h5>
+                             <p data-translate="trees_calc_ev_yes">EV(Lançar) = (Lucro Alto * P(Alta)) + (Prejuízo Baixo * P(Baixa))<br>
+                                EV(Lançar) = (50000 * 0.6) + (-20000 * 0.4) = 30000 - 8000 = R$22.000</p>
+                             <p data-translate="trees_calc_ev_no">EV(Não Lançar) = R$0</p>
+                             <p><strong data-translate="trees_calc_conclusion">Conclusão:</strong> Como EV(Lançar) > EV(Não Lançar), a decisão ótima (baseada em EV) é lançar o produto.</p>
+                         </div>
+                     </div>
+                     <div class="tree-explanation fade-in-on-scroll delay-3"> <!-- Container for explanation -->
+                         <h3 data-translate="trees_intro_title">Árvores de Decisão</h3>
+                         <p data-translate="trees_intro_p1">
+                             <span class="highlight">Árvores de Decisão</span> são uma forma intuitiva de mapear problemas de decisão sequenciais que envolvem incerteza. Elas ajudam a visualizar as alternativas, os eventos incertos e os resultados finais.
+                         </p>
+                         <h4 data-translate="trees_components_title">Componentes Principais:</h4>
+                         <ul>
+                             <li data-translate="trees_comp_decision"><strong style="color: var(--decision-node-color)">Nós de Decisão (Quadrados):</strong> Pontos onde o tomador de decisão escolhe uma ação.</li>
+                             <li data-translate="trees_comp_chance"><strong style="color: var(--chance-node-color)">Nós de Chance (Círculos):</strong> Pontos onde ocorrem eventos incertos, com probabilidades associadas a cada ramo.</li>
+                             <li data-translate="trees_comp_terminal"><strong style="color: var(--terminal-node-color)">Nós Terminais (Triângulos/Folhas):</strong> Representam os resultados finais, com seus valores ou utilidades.</li>
+                         </ul>
+                         <p data-translate="trees_intro_p2">
+                             Calculamos o valor esperado trabalhando de trás para frente na árvore (dos nós terminais para a raiz), aplicando o critério de Valor Esperado nos nós de chance e escolhendo a ação com maior EV nos nós de decisão.
+                         </p>
+
+                         <div class="bayes-highlight fade-in-on-scroll delay-4">
+                            <h4 data-translate="bayes_intro_title">Atualização Bayesiana de Crenças</h4>
+                            <p data-translate="bayes_intro_p1">
+                                Frequentemente, obtemos novas informações (evidências) que podem alterar nossas estimativas de probabilidade. A <span class="highlight">Inferência Bayesiana</span>, usando o Teorema de Bayes (lembra do <a href="#link-to-module-12" data-translate="bayes_link_m12">Módulo 12</a>?), fornece um método formal para atualizar nossas crenças (probabilidades) à luz de novas evidências.
+                            </p>
+                            <p data-translate="bayes_intro_p2">
+                                Em sistemas de IA, isso é crucial para aprender com dados e adaptar decisões. Por exemplo, um filtro de spam atualiza a probabilidade de um e-mail ser spam com base nas palavras que ele contém.
+                            </p>
+                         </div>
+                     </div>
+                 </div>
+                 <h3 class="text-center fade-in-on-scroll delay-5" style="margin-top: 3rem;" data-translate="applications_title">Aplicações Comuns em IA e SI</h3>
+                 <ul style="list-style-type: none; padding: 0; max-width: 700px; margin: 1rem auto;">
+                    <li class="fade-in-on-scroll delay-5" style="margin-bottom: 0.8rem; background: #fff; padding: 0.8rem; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.06);"><i class="fas fa-filter" style="color: var(--error-color); margin-right: 8px;"></i><strong data-translate="app_spam_title">Filtragem de Spam:</strong> Calcular a probabilidade de um e-mail ser spam com base em suas características (palavras, remetente) usando modelos Naive Bayes.</li>
+                    <li class="fade-in-on-scroll delay-6" style="margin-bottom: 0.8rem; background: #fff; padding: 0.8rem; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.06);"><i class="fas fa-stethoscope" style="color: var(--info-color); margin-right: 8px;"></i><strong data-translate="app_diagnosis_title">Diagnóstico Médico (Auxiliar):</strong> Estimar a probabilidade de um paciente ter uma doença com base em sintomas e resultados de exames (Redes Bayesianas).</li>
+                    <li class="fade-in-on-scroll delay-6" style="margin-bottom: 0.8rem; background: #fff; padding: 0.8rem; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.06);"><i class="fas fa-robot" style="color: var(--bayes-color); margin-right: 8px;"></i><strong data-translate="app_robotics_title">Robótica e Navegação:</strong> Estimar a localização de um robô (filtragem de partículas, filtro de Kalman) com base em leituras de sensores incertos.</li>
+                    <li class="fade-in-on-scroll delay-7" style="margin-bottom: 0.8rem; background: #fff; padding: 0.8rem; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.06);"><i class="fas fa-chart-line" style="color: var(--success-color); margin-right: 8px;"></i><strong data-translate="app_finance_title">Análise de Risco Financeiro:</strong> Modelar a probabilidade de inadimplência ou o retorno esperado de investimentos.</li>
+                    <li class="fade-in-on-scroll delay-7" style="margin-bottom: 0.8rem; background: #fff; padding: 0.8rem; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.06);"><i class="fas fa-thumbs-up" style="color: var(--accent-color); margin-right: 8px;"></i><strong data-translate="app_recsys_title">Sistemas de Recomendação:</strong> Prever a probabilidade de um usuário gostar de um item com base em seu histórico e no de usuários similares.</li>
+                 </ul>
+             </div>
+        </section>
+
+        <!-- ========= Knowledge Check Section ========= -->
+        <section id="knowledge-check">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="quiz_title">🧠 Teste Rápido!</h2>
+                <div class="quiz-container fade-in-on-scroll delay-1"> <!-- Observe container -->
+                    <div id="quiz-area">
+                         <p style="text-align: center; padding: 2rem 0;">Carregando quiz...</p>
+                    </div>
+                    <div id="quiz-feedback" class="quiz-feedback"></div>
+                    <button id="next-question-btn" data-translate="quiz_next_button">Próxima Pergunta</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========= Completion Section ========= -->
+        <section id="completion" class="completion-section"> <!-- Added ID for nav link -->
+            <div class="container">
+                 <div class="icon">
+                     <i class="fas fa-brain"></i>
+                     <i class="fas fa-lightbulb"></i>
+                     <i class="fas fa-star"></i>
+                 </div>
+                <h2 class="fade-in-on-scroll delay-1" data-translate="completion_theory_title_m19">Teoria do Módulo 19 Completa!</h2>
+                <p class="fade-in-on-scroll delay-2" data-translate="completion_theory_desc_m19">
+                    Excelente! Você explorou como a probabilidade é uma ferramenta poderosa para modelar a incerteza e guiar a tomada de decisão em sistemas de informação e IA. Conceitos como Valor Esperado, Árvores de Decisão e Inferência Bayesiana são fundamentais.<br>
+                    Continue aprimorando suas habilidades nos exercícios práticos!
+                </p>
+                <div class="button-group">
+                    <!-- Buttons observed - Updated Links for Module 19 -->
+                    <a href="math-dashboard.html" class="action-button secondary fade-in-on-scroll delay-3"><i class="fas fa-list"></i> <span data-translate="nav_menu">Menu do Curso</span></a>
+                    <a href="math-practice-19.html" class="action-button success fade-in-on-scroll delay-4"><i class="fas fa-pencil-alt"></i> <span data-translate="nav_practice">Iniciar Prática</span></a>
+                    <a href="math-exercise-19.html" class="action-button secondary fade-in-on-scroll delay-5"><i class="fas fa-flask"></i> <span data-translate="nav_exercise">Exercícios</span></a>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="main-footer">
+        <div class="container">
+            <p data-translate="footer_copyright"></p>
+        </div>
+    </footer>
+
+    <script>
+    // --- Translations Object (Portuguese Only - Module 19) ---
+    const translations = {
+        pt: {
+            "page_title_m19": "Módulo 19: Aplicações em Tomada de Decisão",
+            "nav_practice": "Iniciar Prática",
+            "nav_exercise": "Exercícios", // Changed from Advanced
+            "nav_menu": "Menu do Curso",
+            "nav_welcome_m19": "Boas-vindas M19",
+            "nav_uncertainty": "Decisão e Incerteza",
+            "nav_criteria": "Critérios de Decisão",
+            "nav_trees_bayes": "Árvores e Bayes",
+            "nav_quiz": "Teste Rápido",
+            "nav_completion_m19": "Conclusão M19", // Added for consistency, targets #completion
+            "header_title_m19": "Módulo 19: Aplicações em Tomada de Decisão",
+            "header_subtitle_m19": "Utilizando modelos probabilísticos para tomar decisões informadas em sistemas de informação e IA.",
+            "welcome_title_m19": "🤔 Tomando Decisões com Dados",
+            "welcome_p1_m19": "Bem-vindo ao Módulo 19! Em Inteligência Artificial e Sistemas de Informação, frequentemente precisamos tomar decisões onde o resultado não é totalmente certo. Quer seja decidir se um e-mail é spam, qual tratamento médico recomendar, ou qual produto sugerir a um usuário, a <span class=\"highlight\">incerteza</span> é uma constante.",
+            "welcome_p2_m19": "A <span class=\"highlight\">probabilidade</span> nos fornece a linguagem e as ferramentas para quantificar essa incerteza e construir modelos que ajudam a tomar as melhores decisões possíveis com base nas evidências disponíveis. Vamos explorar como aplicar conceitos probabilísticos em cenários práticos de tomada de decisão.",
+            "uncertainty_title": "🎲 Decisão Sob Incerteza",
+            "uncertainty_p1": "Tomar decisões é escolher entre diferentes ações ou alternativas. Em muitos problemas do mundo real, as consequências de cada ação não são determinísticas, mas sim probabilísticas.",
+            "uncertainty_why_title": "Por que a Incerteza Surge?",
+            "uncertainty_reason1": "<strong>Informação Incompleta:</strong> Não temos todos os dados relevantes.",
+            "uncertainty_reason2": "<strong>Aleatoriedade Intrínseca:</strong> Alguns processos são inerentemente aleatórios (ex: falha de hardware).",
+            "uncertainty_reason3": "<strong>Modelos Imperfeitos:</strong> Nossas representações do mundo são simplificações.",
+            "uncertainty_reason4": "<strong>Ruído nos Dados:</strong> Medições e observações podem conter erros.",
+            "uncertainty_p2": "A probabilidade permite modelar e raciocinar sobre essa incerteza, atribuindo <span class=\"highlight\">graus de crença</span> ou <span class=\"highlight\">frequências relativas</span> a diferentes resultados possíveis. Isso é fundamental para sistemas de IA que operam no mundo real.",
+            "uncertainty_diagram_placeholder": "Diagrama: Incerteza afetando diferentes escolhas e seus resultados.",
+            "criteria_title": "⚖️ Critérios para Decidir: Valor Esperado",
+            "criteria_subtitle": "Como escolher a \"melhor\" ação quando os resultados são incertos?",
+            "ev_title": "Valor Esperado (Expected Value - EV)",
+            "ev_text": "Um critério comum é maximizar o <span class=\"highlight\">Valor Esperado</span>. Ele representa o valor médio que esperaríamos obter de uma ação se pudéssemos repeti-la muitas vezes. É calculado ponderando o valor (ou utilidade) de cada resultado possível pela sua probabilidade.",
+            "ev_formula": "<code>E[Ação] = Σ [ Valor(Resultado<sub>i</sub>) * P(Resultado<sub>i</sub> | Ação) ]</code><small style=\"display: block; margin-top: 5px;\">(Soma sobre todos os resultados possíveis <i>i</i>)</small>",
+            "ev_example_title": "Exemplo Simples: Investimento",
+            "ev_example_text": "Considere investir R$1000. Há 70% de chance de ganhar R$500 (total R$1500) e 30% de chance de perder R$200 (total R$800).",
+             "ev_example_conclusion": "O valor esperado deste investimento é um ganho de R$290. Se tivéssemos outra opção com EV maior, escolheríamos essa outra opção com base neste critério.",
+            "criteria_conclusion": "O Valor Esperado nos dá uma base racional para comparar ações com resultados incertos, sendo amplamente utilizado em IA e análise de decisão.",
+            "trees_bayes_title": "🌳 Modelando Decisões: Árvores e Atualização Bayesiana",
+            "trees_bayes_subtitle": "Ferramentas visuais e conceituais para estruturar e refinar decisões.",
+            "trees_viz_title": "Visualizando uma Árvore de Decisão (Exemplo)",
+            "trees_viz_desc": "Decidir se lança um novo produto.",
+            "trees_node_decision": "Nó de Decisão",
+            "trees_branch_yes": "Ramo: Sim",
+            "trees_node_chance": "Nó de Chance (P(Alta)=0.6, P(Baixa)=0.4)",
+            "trees_outcome_high": "Alta",
+            "trees_node_terminal": "Nó Terminal",
+            "trees_outcome_low": "Baixa",
+            "trees_branch_no": "Ramo: Não",
+            "trees_calc_title": "Cálculo do Valor Esperado (EV):",
+            "trees_calc_ev_yes": "EV(Lançar) = (Lucro Alto * P(Alta)) + (Prejuízo Baixo * P(Baixa))<br> EV(Lançar) = (50000 * 0.6) + (-20000 * 0.4) = 30000 - 8000 = R$22.000",
+            "trees_calc_ev_no": "EV(Não Lançar) = R$0",
+            "trees_calc_conclusion": "Conclusão: Como EV(Lançar) > EV(Não Lançar), a decisão ótima (baseada em EV) é lançar o produto.",
+            "trees_intro_title": "Árvores de Decisão",
+            "trees_intro_p1": "<span class=\"highlight\">Árvores de Decisão</span> são uma forma intuitiva de mapear problemas de decisão sequenciais que envolvem incerteza. Elas ajudam a visualizar as alternativas, os eventos incertos e os resultados finais.",
+            "trees_components_title": "Componentes Principais:",
+            "trees_comp_decision": "<strong style=\"color: var(--decision-node-color)\">Nós de Decisão (Quadrados):</strong> Pontos onde o tomador de decisão escolhe uma ação.",
+            "trees_comp_chance": "<strong style=\"color: var(--chance-node-color)\">Nós de Chance (Círculos):</strong> Pontos onde ocorrem eventos incertos, com probabilidades associadas a cada ramo.",
+            "trees_comp_terminal": "<strong style=\"color: var(--terminal-node-color)\">Nós Terminais (Triângulos/Folhas):</strong> Representam os resultados finais, com seus valores ou utilidades.",
+            "trees_intro_p2": "Calculamos o valor esperado trabalhando de trás para frente na árvore (dos nós terminais para a raiz), aplicando o critério de Valor Esperado nos nós de chance e escolhendo a ação com maior EV nos nós de decisão.",
+            "bayes_intro_title": "Atualização Bayesiana de Crenças",
+            "bayes_intro_p1": "Frequentemente, obtemos novas informações (evidências) que podem alterar nossas estimativas de probabilidade. A <span class=\"highlight\">Inferência Bayesiana</span>, usando o Teorema de Bayes (lembra do <a href=\"#link-to-module-12\">Módulo 12</a>?), fornece um método formal para atualizar nossas crenças (probabilidades) à luz de novas evidências.",
+             "bayes_intro_p2": "Em sistemas de IA, isso é crucial para aprender com dados e adaptar decisões. Por exemplo, um filtro de spam atualiza a probabilidade de um e-mail ser spam com base nas palavras que ele contém.",
+            "bayes_link_m12": "Módulo 12",
+            "applications_title": "Aplicações Comuns em IA e SI",
+            "app_spam_title": "Filtragem de Spam:", "app_spam_desc": "Calcular a probabilidade de um e-mail ser spam com base em suas características (palavras, remetente) usando modelos Naive Bayes.",
+            "app_diagnosis_title": "Diagnóstico Médico (Auxiliar):", "app_diagnosis_desc": "Estimar a probabilidade de um paciente ter uma doença com base em sintomas e resultados de exames (Redes Bayesianas).",
+            "app_robotics_title": "Robótica e Navegação:", "app_robotics_desc": "Estimar a localização de um robô (filtragem de partículas, filtro de Kalman) com base em leituras de sensores incertos.",
+            "app_finance_title": "Análise de Risco Financeiro:", "app_finance_desc": "Modelar a probabilidade de inadimplência ou o retorno esperado de investimentos.",
+            "app_recsys_title": "Sistemas de Recomendação:", "app_recsys_desc": "Prever a probabilidade de um usuário gostar de um item com base em seu histórico e no de usuários similares.",
+            "quiz_title": "🧠 Teste Rápido!",
+            "quiz_next_button": "Próxima Pergunta",
+            "quiz_q1_m19": "Uma ação tem 2 resultados possíveis: Ganho de R$100 com probabilidade 0.8, e Perda de R$50 com probabilidade 0.2. Qual o Valor Esperado (EV) desta ação?",
+            "quiz_q1_m19_opt1": "R$ 70", "quiz_q1_m19_opt2": "R$ 80", "quiz_q1_m19_opt3": "R$ 50", "quiz_q1_m19_opt4": "R$ 90",
+            "quiz_q2_m19": "Em uma árvore de decisão, qual tipo de nó representa um ponto onde um evento externo incerto acontece?",
+            "quiz_q2_m19_opt1": "Nó Terminal", "quiz_q2_m19_opt2": "Nó de Decisão", "quiz_q2_m19_opt3": "Nó de Chance", "quiz_q2_m19_opt4": "Nó Raiz",
+            "quiz_q3_m19": "Qual conceito permite atualizar a probabilidade de uma hipótese (ex: 'este e-mail é spam') com base em novas evidências (ex: 'o e-mail contém a palavra V1agra')?",
+            "quiz_q3_m19_opt1": "Valor Esperado", "quiz_q3_m19_opt2": "Árvore de Decisão", "quiz_q3_m19_opt3": "Teorema de Bayes / Inferência Bayesiana", "quiz_q3_m19_opt4": "Amostragem Aleatória",
+            "quiz_q4_m19": "Qual das seguintes NÃO é uma aplicação típica de modelos probabilísticos em tomada de decisão?",
+            "quiz_q4_m19_opt1": "Filtragem de Spam", "quiz_q4_m19_opt2": "Ordenação alfabética de uma lista", "quiz_q4_m19_opt3": "Diagnóstico médico auxiliar", "quiz_q4_m19_opt4": "Sistemas de recomendação",
+            "quiz_feedback_correct": "Correto! 🎉",
+            "quiz_feedback_incorrect": "Não foi bem assim! A resposta correta era: {correctAnswerText}",
+            "quiz_final_score_title": "Teste Rápido Completo!",
+            "quiz_final_score_summary": "Você respondeu {score} de {total} perguntas corretamente.",
+            "quiz_final_score_perfect": "Excelente! Você compreendeu bem os conceitos de decisão probabilística.",
+            "quiz_final_score_good": "Bom trabalho! Continue praticando a aplicação desses modelos.",
+            "completion_theory_title_m19": "Teoria do Módulo 19 Completa!",
+            "completion_theory_desc_m19": "Excelente! Você explorou como a probabilidade é uma ferramenta poderosa para modelar a incerteza e guiar a tomada de decisão em sistemas de informação e IA. Conceitos como Valor Esperado, Árvores de Decisão e Inferência Bayesiana são fundamentais.<br> Continue aprimorando suas habilidades nos exercícios práticos!",
+            "footer_copyright": "© 2024 Matemática Computacional & IA. Todos os direitos reservados."
+        }
+    };
+
+    // --- Global Variables ---
+    let currentQuestionIndex = 0;
+    let score = 0;
+    const lang = 'pt'; // Hardcoded language
+
+    // --- DOM Elements (Get them once) ---
+    const navToggleButton = document.getElementById('minimal-nav-toggle');
+    const navPanel = document.getElementById('minimal-nav-panel');
+    const body = document.body;
+    const quizArea = document.getElementById('quiz-area');
+    const feedbackArea = document.getElementById('quiz-feedback');
+    const nextButton = document.getElementById('next-question-btn');
+    // Removed elements related to code demo output from M3
+
+    // --- Functions ---
+
+    function getTranslation(key, replacements = {}) {
+         let text = translations[lang]?.[key] ?? `[${key}]`; // Default to key if not found
+         for (const placeholder in replacements) {
+             const regex = new RegExp(`\\{${placeholder}\\}`, 'g');
+             text = text.replace(regex, replacements[placeholder]);
+         }
+         return text;
+    }
+
+    function translatePage() {
+         document.querySelectorAll('[data-translate]').forEach(el => {
+             const key = el.getAttribute('data-translate');
+             let translation = getTranslation(key);
+
+              if (el.tagName === 'TITLE') { document.title = translation; }
+              else if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') { /* Skip */ }
+              else {
+                  // Allow specific HTML tags safely within translations
+                   const safeHtmlRegex = /<\/?(code|strong|span|br|i|b|em|sub|sup|ul|li|a|small|div|h[1-6])(\s[^>]*)?>/gi; // Expanded safe tags slightly
+                   let containsSafeHtml = safeHtmlRegex.test(translation);
+
+                   // Allow innerHTML if it contains only safe tags OR if it's in an allowed container
+                   // Added more containers like info-details, example-box, tree-explanation, etc.
+                   if (containsSafeHtml || el.closest('.info-details, .formula-box, .example-box, .tree-explanation, .bayes-highlight, .completion-section p, .footer p, .quiz-question, .quiz-feedback, li')) {
+                      el.innerHTML = translation;
+                   } else {
+                      // Fallback to textContent for safety if complex HTML is not expected/allowed
+                      el.textContent = translation;
+                   }
+              }
+         });
+
+         // Tooltips are not used in this module, so no need to translate them.
+         // Code comments are not applicable in this module's format.
+    }
+
+    // --- Quiz Data & Functions (Module 19) ---
+    const quizData = [
+         { questionKey: "quiz_q1_m19", optionKeys: ["quiz_q1_m19_opt1", "quiz_q1_m19_opt2", "quiz_q1_m19_opt3", "quiz_q1_m19_opt4"], correctAnswer: 0 }, // EV = (100 * 0.8) + (-50 * 0.2) = 80 - 10 = 70
+         { questionKey: "quiz_q2_m19", optionKeys: ["quiz_q2_m19_opt1", "quiz_q2_m19_opt2", "quiz_q2_m19_opt3", "quiz_q2_m19_opt4"], correctAnswer: 2 }, // Nó de Chance
+         { questionKey: "quiz_q3_m19", optionKeys: ["quiz_q3_m19_opt1", "quiz_q3_m19_opt2", "quiz_q3_m19_opt3", "quiz_q3_m19_opt4"], correctAnswer: 2 }, // Teorema de Bayes
+         { questionKey: "quiz_q4_m19", optionKeys: ["quiz_q4_m19_opt1", "quiz_q4_m19_opt2", "quiz_q4_m19_opt3", "quiz_q4_m19_opt4"], correctAnswer: 1 }  // Ordenação alfabética é determinística
+    ];
+
+    function loadQuestion() {
+          if (!quizArea) return; // Ensure quizArea exists
+
+          if (currentQuestionIndex >= quizData.length) {
+              if (!quizArea.querySelector('[data-translate="quiz_final_score_title"]')) {
+                 showFinalScore();
+              }
+              return;
+          }
+
+          const currentQuiz = quizData[currentQuestionIndex];
+          const questionText = getTranslation(currentQuiz.questionKey);
+          quizArea.innerHTML = `
+              <div class="quiz-question">${currentQuestionIndex + 1}. ${questionText.replace(/`(.*?)`/g, '<code class="code-style">$1</code>')}</div>
+              <div class="quiz-options">
+                  ${currentQuiz.optionKeys.map((optionKey, index) => `
+                      <button class="quiz-option-btn" data-index="${index}">${getTranslation(optionKey).replace(/`(.*?)`/g, '<code class="code-style">$1</code>')}</button>
+                  `).join('')}
+              </div>
+          `;
+
+          if (feedbackArea) {
+            feedbackArea.classList.remove('visible', 'correct', 'incorrect');
+            feedbackArea.textContent = '';
+            feedbackArea.style.height = '0';
+            feedbackArea.style.marginBottom = '0';
+          }
+          if (nextButton) {
+            nextButton.classList.remove('visible');
+            nextButton.disabled = true;
+          }
+
+          quizArea.querySelectorAll('.quiz-option-btn').forEach(button => {
+              button.addEventListener('click', handleAnswer);
+          });
+    }
+
+    function handleAnswer(event) {
+         const selectedButton = event.target;
+         const selectedIndex = parseInt(selectedButton.dataset.index);
+         const correctIndex = quizData[currentQuestionIndex].correctAnswer;
+         const correctOptionKey = quizData[currentQuestionIndex].optionKeys[correctIndex];
+
+         quizArea.querySelectorAll('.quiz-option-btn').forEach(btn => {
+            btn.disabled = true;
+            btn.classList.remove('shake');
+         });
+
+         if (!feedbackArea || !nextButton) return;
+
+         feedbackArea.classList.add('visible');
+
+         if (selectedIndex === correctIndex) {
+             selectedButton.classList.add('correct');
+             feedbackArea.innerHTML = getTranslation('quiz_feedback_correct');
+             feedbackArea.classList.add('correct');
+             feedbackArea.classList.remove('incorrect');
+             score++;
+             selectedButton.classList.add('tada-anim');
+         } else {
+             selectedButton.classList.add('incorrect');
+             const formattedCorrectAnswer = getTranslation(correctOptionKey).replace(/`(.*?)`/g, '<code class="code-style">$1</code>');
+             feedbackArea.innerHTML = getTranslation('quiz_feedback_incorrect', { correctAnswerText: `<strong>${formattedCorrectAnswer}</strong>` });
+             feedbackArea.classList.add('incorrect');
+             feedbackArea.classList.remove('correct');
+             const correctButton = quizArea.querySelector(`.quiz-option-btn[data-index="${correctIndex}"]`);
+             if(correctButton) correctButton.classList.add('correct');
+             selectedButton.classList.add('shake');
+         }
+
+          selectedButton.addEventListener('animationend', () => {
+               selectedButton.classList.remove('tada-anim', 'shake');
+          }, { once: true });
+
+         feedbackArea.style.height = feedbackArea.scrollHeight + 'px';
+         feedbackArea.style.marginBottom = '1rem';
+
+         nextButton.classList.add('visible');
+         nextButton.disabled = false;
+     }
+
+     function showFinalScore() {
+            if (!quizArea) return;
+            const totalQuestions = quizData.length;
+            let resultMessageKey = (score / totalQuestions) >= 0.75 ? 'quiz_final_score_perfect' : 'quiz_final_score_good';
+
+            quizArea.innerHTML = `
+               <div class="quiz-question text-center" data-translate="quiz_final_score_title" style="font-size: 1.5rem;">${getTranslation('quiz_final_score_title')}</div>
+               <p class="text-center" style="font-size: 1.2rem; margin-bottom: 1rem;">${getTranslation('quiz_final_score_summary', { score: score, total: totalQuestions })}</p>
+               <p class="text-center" style="color: ${score === totalQuestions ? 'var(--success-color)' : 'var(--primary-color)'}; font-weight: bold;">${getTranslation(resultMessageKey)}</p>
+            `;
+            if (feedbackArea) feedbackArea.classList.remove('visible');
+            if (nextButton) nextButton.style.display = 'none';
+            quizArea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+     }
+
+
+    // --- Intersection Observer Setup ---
+    function setupObservers() {
+        const observerOptions = {
+            root: null,
+            rootMargin: '0px',
+            threshold: 0.1 // Trigger when 10% is visible
+        };
+
+        const observerCallback = (entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                     // Special handling for staggered tree nodes if needed
+                     if (entry.target.classList.contains('tree-node')) {
+                         // Could add delays based on data attributes if more complex staggering is needed
+                     }
+                    // Optional: Unobserve after animation
+                    // observer.unobserve(entry.target);
+                }
+                // Optional: Remove visibility on scroll out
+                // else { entry.target.classList.remove('visible'); }
+            });
+        };
+
+        const animationObserver = new IntersectionObserver(observerCallback, observerOptions);
+
+        document.querySelectorAll('.fade-in-on-scroll, .tree-node, .action-button, .info-card').forEach(el => {
+            animationObserver.observe(el);
+        });
+
+        // No complex code output simulation needed for M19's example
+    }
+
+    // --- Event Listeners Setup ---
+    function setupEventListeners() {
+        // Navbar Toggle (Same as template)
+        if (navToggleButton && navPanel) {
+            navToggleButton.addEventListener('click', (event) => {
+                event.stopPropagation();
+                body.classList.toggle('nav-active');
+                navToggleButton.setAttribute('aria-expanded', body.classList.contains('nav-active'));
+            });
+            document.addEventListener('click', (event) => {
+                if (body.classList.contains('nav-active') && !navPanel.contains(event.target) && event.target !== navToggleButton && !navToggleButton.contains(event.target)) {
+                    body.classList.remove('nav-active');
+                    navToggleButton.setAttribute('aria-expanded', 'false');
+                }
+            });
+            navPanel.querySelectorAll('a').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    if (link.getAttribute('href').startsWith('#')) {
+                        setTimeout(() => {
+                            body.classList.remove('nav-active');
+                            navToggleButton.setAttribute('aria-expanded', 'false');
+                        }, 150);
+                    }
+                });
+            });
+             document.addEventListener('keydown', (event) => {
+                 if (event.key === 'Escape' && body.classList.contains('nav-active')) {
+                     body.classList.remove('nav-active');
+                     navToggleButton.setAttribute('aria-expanded', 'false');
+                 }
+             });
+        }
+
+        // Quiz Next Button (Same as template)
+        if (nextButton) {
+            nextButton.addEventListener('click', () => {
+                if (!nextButton.disabled) {
+                    currentQuestionIndex++;
+                    loadQuestion();
+                }
+            });
+        } else {
+            console.error("Elemento #next-question-btn não encontrado.");
+        }
+    }
+
+    // --- Initialization ---
+    document.addEventListener('DOMContentLoaded', () => {
+        if (!quizArea) console.error("Elemento #quiz-area não encontrado.");
+        if (!feedbackArea) console.error("Elemento #quiz-feedback não encontrado.");
+
+        translatePage();        // Apply translations first
+        setupEventListeners();  // Set up interactive elements
+        setupObservers();       // Set up animations
+
+        if (quizArea) {
+            loadQuestion();     // Load the first quiz question
+        }
+    });
+
+    </script>
+
+</body>
+</html>

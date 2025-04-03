@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<!-- Language set to Portuguese BR -->
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Title set by JS -->
+    <title data-translate="page_title">Módulo 13: Variáveis Aleatórias</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* --- Reset & Base Styles --- */
+        :root {
+            --primary-color: #007bff; /* Blue */
+            --secondary-color: #6c757d; /* Gray */
+            --background-light: #f8f9fa;
+            --background-dark: #343a40;
+            --text-light: #f8f9fa;
+            --text-dark: #212529;
+            --accent-color: #ffc107; /* Yellow */
+            --success-color: #28a745; /* Green */
+            --error-color: #dc3545; /* Red */
+            --discrete-color: #17a2b8; /* Teal */
+            --continuous-color: #fd7e14; /* Orange */
+            --probability-color: #6f42c1; /* Indigo */
+            --border-radius: 8px;
+            --transition-speed: 0.3s;
+            --animation-speed: 0.6s; /* Control fade-in speed */
+            --font-body: 'Roboto', sans-serif;
+            --font-title: 'Orbitron', sans-serif;
+            --nav-primary: #007bff;
+            --nav-success: #28a745;
+            --nav-dark: #1a1a2e; /* Darker blue/purple */
+            --footer-border-color: #495057;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; font-size: 16px; }
+        body {
+            font-family: var(--font-body); line-height: 1.7;
+            background-color: var(--background-light); color: var(--text-dark);
+            overflow-x: hidden; display: flex; flex-direction: column; min-height: 100vh;
+        }
+        main { flex-grow: 1; }
+
+        /* --- Utility Classes --- */
+        .container { max-width: 960px; margin: 0 auto; padding: 0 15px; }
+        .text-center { text-align: center; }
+        .highlight { color: var(--primary-color); font-weight: bold; }
+        .code-math { font-family: 'Courier New', Courier, monospace; background-color: #e9ecef; padding: 0.1em 0.4em; border-radius: 4px; color: var(--probability-color); font-weight: bold; }
+
+        /* Elements to be animated by observer */
+        .fade-in-on-scroll {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+        }
+        .fade-in-on-scroll.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        /* Add delays for staggering */
+        .delay-1.visible { transition-delay: 0.1s; }
+        .delay-2.visible { transition-delay: 0.2s; }
+        .delay-3.visible { transition-delay: 0.3s; }
+        .delay-4.visible { transition-delay: 0.4s; }
+        .delay-5.visible { transition-delay: 0.5s; }
+        .delay-6.visible { transition-delay: 0.6s; }
+        .delay-7.visible { transition-delay: 0.7s; }
+
+
+        .button-group { margin-top: 2rem; display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; }
+        .action-button {
+             display: inline-flex; align-items: center; justify-content: center; gap: 0.5em;
+             padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold;
+             color: var(--text-light); background-color: var(--primary-color); border: none;
+             border-radius: var(--border-radius); cursor: pointer;
+             transition: background-color var(--transition-speed), transform var(--transition-speed), filter var(--transition-speed), box-shadow var(--transition-speed), opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out; /* Add animation transition */
+             margin-top: 1rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+             text-decoration: none; line-height: 1.2;
+             opacity: 0; /* Start hidden if animated */
+             transform: translateY(20px); /* Start offset if animated */
+        }
+        .action-button.visible { /* Make visible via observer */
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .action-button i.fas {}
+        .action-button:hover:not(:disabled) { background-color: #0056b3; transform: translateY(-2px) !important; box-shadow: 0 4px 8px rgba(0,0,0,0.15); } /* Use !important to override initial transform */
+        .action-button:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none !important; box-shadow: none; opacity: 0.7; }
+        .action-button.success { background-color: var(--success-color); }
+        .action-button.success:hover:not(:disabled) { background-color: #218838; }
+        .action-button.secondary { background-color: var(--secondary-color); }
+        .action-button.secondary:hover:not(:disabled) { background-color: #5a6268; }
+        .action-button:active:not(:disabled) { transform: translateY(1px) scale(0.98) !important; filter: brightness(0.95); }
+
+        /* --- Animations --- */
+        @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); } 50% { transform: scale(1.03); box-shadow: 0 0 15px rgba(0, 123, 255, 0.6); } 100% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); } }
+        @keyframes tada { from { transform: scale3d(1, 1, 1); } 10%, 20% { transform: scale3d(.9, .9, .9) rotate3d(0, 0, 1, -3deg); } 30%, 50%, 70%, 90% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, 3deg); } 40%, 60%, 80% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, -3deg); } to { transform: scale3d(1, 1, 1); } }
+        .tada-anim { animation: tada 1s ease; }
+        @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
+        @keyframes iconAppearCorrect { 0% { transform: scale(0.5) rotate(-15deg); opacity: 0; } 60% { transform: scale(1.2) rotate(5deg); opacity: 1; } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
+
+        /* --- Minimal Retractable Nav --- */
+        .minimal-nav-button { position: fixed; top: 15px; right: 15px; z-index: 1001; background-color: rgba(52, 58, 64, 0.75); color: var(--text-light); border: none; border-radius: var(--border-radius); padding: 8px 12px; cursor: pointer; transition: background-color var(--transition-speed), opacity var(--transition-speed), transform var(--transition-speed); font-size: 1.1rem; opacity: 0.6; box-shadow: 0 2px 5px rgba(0,0,0,0.2); line-height: 1; }
+        .minimal-nav-button:hover { background-color: rgba(52, 58, 64, 0.95); opacity: 1; transform: scale(1.05); }
+        .minimal-nav { position: fixed; top: 60px; right: 15px; z-index: 1000; background-color: var(--background-dark); border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.3); padding: 0.8rem; opacity: 0; transform: translateY(-15px) scale(0.95); transform-origin: top right; pointer-events: none; transition: opacity var(--transition-speed) ease, transform var(--transition-speed) ease; min-width: 200px; }
+        body.nav-active .minimal-nav { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+        .minimal-nav ul { list-style: none; margin: 0; padding: 0; }
+        .minimal-nav ul li { margin-bottom: 5px; }
+        .minimal-nav ul li:last-child { margin-bottom: 0; }
+        .minimal-nav ul li a { display: flex; align-items: center; color: var(--text-light); text-decoration: none; padding: 0.6rem 1rem; border-radius: 4px; transition: background-color var(--transition-speed), color var(--transition-speed); white-space: nowrap; font-weight: 400; font-size: 0.95rem; }
+        .minimal-nav ul li a i.fas { margin-right: 10px; width: 1.2em; text-align: center; opacity: 0.8; transition: opacity var(--transition-speed); }
+        .minimal-nav ul li a:hover { background-color: var(--primary-color); color: var(--text-light); }
+        .minimal-nav ul li a:hover i.fas { opacity: 1; }
+
+        /* --- Header --- */
+        .main-header { background: linear-gradient(135deg, var(--primary-color), #0056b3); color: var(--text-light); padding: 4rem 0 6rem; text-align: center; position: relative; overflow: hidden; }
+        .main-header .container { /* Start visible */ }
+        .main-header h1 { font-family: var(--font-title); font-size: 3rem; margin-bottom: 0.5rem; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); }
+        .main-header p { font-size: 1.2rem; font-weight: 300; opacity: 0.9; }
+        .header-shape { position: absolute; border-radius: 50%; background-color: rgba(255, 255, 255, 0.1); animation: pulse 5s infinite ease-in-out alternate; }
+        .shape1 { width: 150px; height: 150px; bottom: -50px; left: 10%; animation-duration: 6s; }
+        .shape2 { width: 80px; height: 80px; top: 50px; right: 15%; animation-duration: 4s; }
+        .shape3 { width: 50px; height: 50px; bottom: 20px; right: 30%; animation-duration: 7s; }
+
+        /* --- Section Styling --- */
+        section { padding: 4rem 0; border-bottom: 1px solid #eee; }
+        main section:last-of-type { border-bottom: none; padding-bottom: 0;}
+        section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); margin-bottom: 2rem; text-align: center; position: relative; padding-bottom: 10px; }
+        section h2::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 60px; height: 4px; background-color: var(--accent-color); border-radius: 2px; }
+
+        /* --- Specific Section Styles for Module 13 --- */
+        .definition-box {
+            background-color: #eef7ff; /* Light blue background */
+            border-left: 5px solid var(--primary-color);
+            padding: 1.5rem; margin: 1.5rem 0; border-radius: var(--border-radius);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .definition-box strong { color: var(--primary-color); }
+
+        .variable-types {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem; margin-top: 2rem;
+        }
+        .variable-card { /* Animated by observer */
+            background-color: #fff; padding: 1.5rem; border-radius: var(--border-radius);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.07); text-align: center;
+            transition: transform var(--transition-speed) ease, box-shadow var(--transition-speed) ease, opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+            opacity: 0; transform: translateY(20px); /* Start state */
+            border-top: 4px solid transparent;
+        }
+        .variable-card.visible { opacity: 1; transform: translateY(0); }
+        .variable-card:hover { transform: translateY(-5px) scale(1.02) !important; box-shadow: 0 8px 20px rgba(0,0,0,0.12); }
+        .variable-card.discrete { border-top-color: var(--discrete-color); }
+        .variable-card.continuous { border-top-color: var(--continuous-color); }
+        .var-icon { font-size: 2.5rem; margin-bottom: 1rem; }
+        .var-icon.discrete { color: var(--discrete-color); }
+        .var-icon.continuous { color: var(--continuous-color); }
+        .variable-card h3 { font-family: var(--font-body); font-weight: 700; font-size: 1.3rem; margin-bottom: 0.8rem; color: var(--text-dark); }
+        .var-examples ul { list-style: none; padding-left: 0; margin-top: 1rem; text-align: left; }
+        .var-examples ul li { margin-bottom: 0.5rem; font-size: 0.95rem; color: var(--secondary-color); }
+        .var-examples ul li i { margin-right: 8px; color: var(--accent-color); }
+
+        .probability-functions {
+            display: flex; flex-wrap: wrap; gap: 2rem; margin-top: 2rem; align-items: flex-start;
+        }
+        .function-card { /* Animated by observer */
+            background-color: #fdf7e3; /* Light yellow background */
+            padding: 1.5rem; border-radius: var(--border-radius);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08); flex: 1; min-width: 250px;
+            opacity: 0; transform: scale(0.95) translateY(15px);
+            transition: opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+        }
+        .function-card.visible { opacity: 1; transform: scale(1) translateY(0); }
+        .function-card h3 { color: var(--probability-color); margin-bottom: 1rem; font-size: 1.4rem; text-align: center; }
+        .function-card p { margin-bottom: 1rem; font-size: 1rem; }
+        .function-formula {
+            font-family: 'Courier New', Courier, monospace; background-color: #fff;
+            padding: 0.8rem 1rem; border-radius: 4px; margin-top: 1rem;
+            font-size: 1rem; color: var(--text-dark); display: block;
+            border: 1px solid #eee; text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .function-formula .var { color: var(--discrete-color); }
+        .function-formula .func { color: var(--probability-color); font-weight: bold; }
+        .function-formula .val { color: var(--primary-color); }
+        .function-formula .cont { color: var(--continuous-color); }
+        .placeholder-image {
+            background-color: #e9ecef; border: 1px dashed var(--secondary-color);
+            color: var(--secondary-color); text-align: center; padding: 2rem;
+            margin-top: 1.5rem; border-radius: var(--border-radius); font-style: italic;
+        }
+
+
+        /* --- Knowledge Check Section --- */
+        #knowledge-check { background-color: #e9ecef; }
+        .quiz-container { /* Animated by observer */
+             background-color: #fff; padding: 2rem; border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.1); max-width: 700px; margin: 2rem auto 0;
+             opacity: 0; transition: opacity var(--animation-speed) ease-out; /* Only fade opacity */
+        }
+        .quiz-container.visible { opacity: 1; }
+        .quiz-question { font-size: 1.2rem; font-weight: bold; margin-bottom: 1.5rem; color: var(--text-dark); }
+        .quiz-options button { display: block; width: 100%; padding: 1rem; margin-bottom: 1rem; text-align: left; font-size: 1rem; background-color: #f8f9fa; border: 1px solid #ced4da; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), border-color var(--transition-speed), transform var(--transition-speed); }
+        .quiz-options button:not(:disabled):hover { background-color: #e2e6ea; border-color: #adb5bd; transform: translateX(5px); }
+        .quiz-options button:disabled { cursor: default; opacity: 0.7; }
+        .quiz-options button.correct { background-color: #d4edda; border-color: var(--success-color); color: #155724; font-weight: bold; }
+        .quiz-options button.incorrect { background-color: #f8d7da; border-color: var(--error-color); color: #721c24; font-weight: bold; }
+        .quiz-options button.incorrect.shake { animation: shake 0.5s ease; }
+        .quiz-feedback { margin-top: 1.5rem; padding: 1rem; border-radius: var(--border-radius); font-weight: bold; text-align: center; opacity: 0; transition: opacity 0.5s ease, height 0.5s ease, margin-bottom 0.5s ease; height: 0; overflow: hidden; margin-bottom: 0;}
+        .quiz-feedback.visible { opacity: 1; height: auto; margin-bottom: 1rem; }
+        .quiz-feedback.correct { background-color: #d4edda; color: #155724; }
+        .quiz-feedback.incorrect { background-color: #f8d7da; color: #721c24; }
+        #next-question-btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5em; margin: 1.5rem auto 0; padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold; color: var(--text-light); background-color: var(--primary-color); border: none; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), transform var(--transition-speed), opacity 0.3s, visibility 0.3s; opacity: 0; visibility: hidden; }
+        #next-question-btn:hover:not(:disabled) { background-color: #0056b3; transform: scale(1.05); }
+        #next-question-btn.visible { opacity: 1; visibility: visible; }
+        #next-question-btn:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none; opacity: 0.7; }
+
+
+        /* --- Completion Section Styling --- */
+        .completion-section { padding: 4rem 0; text-align: center; background-color: var(--background-light); }
+        .completion-section .icon { font-size: 4rem; color: var(--success-color); margin-bottom: 1rem; display: inline-block; animation: iconAppearCorrect 1s ease-out 0.5s forwards; opacity: 0; /* Initial state for animation */}
+        /* Ensure completion elements are targeted by observer */
+        .completion-section h2, .completion-section p {
+            opacity: 0; transform: translateY(20px);
+            transition: opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+        }
+        .completion-section h2.visible, .completion-section p.visible {
+            opacity: 1; transform: translateY(0);
+        }
+        .completion-section .button-group { margin-top: 2.5rem; }
+        .completion-section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); margin-bottom: 1rem; }
+        .completion-section h2::after { display: none; }
+        .completion-section p { font-size: 1.1rem; margin-top: 1rem; color: var(--secondary-color); max-width: 700px; margin-left: auto; margin-right: auto; line-height: 1.8; }
+
+
+        /* --- Footer Styling --- */
+        .main-footer {
+            background-color: var(--background-light);
+            color: var(--text-light);
+            text-align: center;
+            padding: 2rem 0;
+            font-size: 0.9rem;
+            margin-top: auto;
+            border-top: 1px solid var(--background-light);
+            opacity: 0.85;
+        }
+        .main-footer p { margin: 0; line-height: 1.5; }
+
+        /* --- Responsive Design --- */
+        @media (max-width: 768px) {
+            html { font-size: 15px; }
+            .main-header h1 { font-size: 2.5rem; } .main-header p { font-size: 1.1rem; }
+            section h2 { font-size: 1.8rem; }
+            .variable-types { grid-template-columns: 1fr; }
+            .probability-functions { flex-direction: column; }
+            .minimal-nav { min-width: 180px; } .minimal-nav ul li a { padding: 0.6rem 0.8rem; }
+            .completion-section h2 { font-size: 2rem; }
+            .completion-section .button-group { flex-direction: column; align-items: center; gap: 0.8rem; }
+            .completion-section .action-button { width: 80%; max-width: 350px; margin-top: 0; }
+            .main-footer { padding: 1.5rem 0; }
+        }
+        @media (max-width: 480px) {
+            html { font-size: 14px; }
+            .main-header h1 { font-size: 2rem; } .main-header p { font-size: 1rem; }
+            section h2 { font-size: 1.6rem; }
+            .quiz-options button { padding: 0.8rem; font-size: 0.95rem; }
+            .minimal-nav-button { top: 10px; right: 10px; padding: 6px 10px; font-size: 1rem; }
+            .minimal-nav { top: 48px; right: 10px; min-width: 160px; }
+            .minimal-nav ul li a { padding: 0.5rem 0.7rem; font-size: 0.9rem;}
+            .minimal-nav ul li a i.fas { margin-right: 8px; }
+            .completion-section .icon { font-size: 3.5rem; }
+            .completion-section h2 { font-size: 1.8rem; } .completion-section p { font-size: 1rem; }
+            .completion-section .action-button { width: 90%; max-width: 300px; }
+            .main-footer { padding: 1rem 0; font-size: 0.85rem; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- ========= Minimal Nav Handle ========= -->
+    <button id="minimal-nav-toggle" class="minimal-nav-button" aria-label="Alternar Menu de Navegação" aria-expanded="false">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- ========= Minimal Nav Panel ========= -->
+    <nav id="minimal-nav-panel" class="minimal-nav">
+        <ul>
+            <!-- IMPORTANT: Links updated for Module 13 and 'math' prefix -->
+            <li><a href="math-practice-13.html"><i class="fas fa-pencil-alt fa-fw"></i> <span data-translate="nav_practice">Iniciar Prática</span></a></li>
+            <li><a href="math-advanced-13.html"><i class="fas fa-flask fa-fw"></i> <span data-translate="nav_advanced">Prática Avançada</span></a></li>
+            <li><a href="math-dashboard.html"><i class="fas fa-list fa-fw"></i> <span data-translate="nav_menu">Menu do Curso</span></a></li>
+             <hr style="border: none; border-top: 1px solid var(--secondary-color); margin: 8px 0;">
+             <!-- Internal links updated for Module 13 sections -->
+             <li><a href="#welcome"><i class="fas fa-door-open fa-fw"></i> <span data-translate="nav_welcome_m13">Boas-vindas M13</span></a></li>
+             <li><a href="#random-variables-intro"><i class="fas fa-question-circle fa-fw"></i> <span data-translate="nav_rv_intro">O que é uma V.A.?</span></a></li>
+             <li><a href="#discrete-vs-continuous"><i class="fas fa-adjust fa-fw"></i> <span data-translate="nav_discrete_continuous">Discreta vs. Contínua</span></a></li>
+             <li><a href="#probability-functions"><i class="fas fa-chart-line fa-fw"></i> <span data-translate="nav_prob_functions">Funções de Prob.</span></a></li>
+             <li><a href="#examples-ai"><i class="fas fa-robot fa-fw"></i> <span data-translate="nav_examples_ai">Exemplos em IA</span></a></li>
+             <li><a href="#knowledge-check"><i class="fas fa-check-double fa-fw"></i> <span data-translate="nav_quiz">Teste Rápido</span></a></li>
+             <li><a href="#completion"><i class="fas fa-flag-checkered fa-fw"></i> <span data-translate="completion_theory_title_m13">Conclusão</span></a></li>
+        </ul>
+    </nav>
+
+    <header class="main-header">
+        <div class="header-shape shape1"></div>
+        <div class="header-shape shape2"></div>
+        <div class="header-shape shape3"></div>
+        <div class="container"> <!-- Start visible -->
+            <h1 data-translate="header_title_m13">Módulo 13: Variáveis Aleatórias</h1>
+            <p data-translate="header_subtitle_m13">Quantificando a incerteza: Discretas vs. Contínuas e suas funções de probabilidade.</p>
+        </div>
+    </header>
+
+    <main>
+        <!-- ========= Welcome Section ========= -->
+        <section id="welcome">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="welcome_title_m13">🎲 Entendendo a Incerteza Numérica</h2>
+                <p class="fade-in-on-scroll delay-1" data-translate="welcome_p1_m13">
+                    Bem-vindo ao Módulo 13! No mundo da IA, lidamos constantemente com resultados incertos. Qual a probabilidade de um usuário clicar em um anúncio? Qual o tempo esperado de processamento de uma imagem?
+                    As <span class="highlight">Variáveis Aleatórias (V.A.)</span> são a ferramenta matemática que usamos para mapear resultados de fenômenos aleatórios a números.
+                </p>
+                <p class="fade-in-on-scroll delay-2" data-translate="welcome_p2_m13">
+                    Neste módulo, vamos definir o que são variáveis aleatórias, diferenciar os tipos principais (discretas e contínuas) e introduzir as funções que descrevem suas probabilidades. Isso é fundamental para construir modelos probabilísticos em IA.
+                </p>
+            </div>
+        </section>
+
+        <!-- ========= Random Variables Intro Section ========= -->
+        <section id="random-variables-intro">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="rv_intro_title">❓ O que é uma Variável Aleatória?</h2>
+                <p class="text-center fade-in-on-scroll delay-1" data-translate="rv_intro_subtitle">Formalizando a conexão entre aleatoriedade e números.</p>
+
+                <div class="definition-box fade-in-on-scroll delay-2">
+                  <p data-translate="rv_definition">
+                    Uma <strong>Variável Aleatória (V.A.)</strong> é uma função que associa um valor numérico a cada resultado possível de um experimento aleatório. Em termos simples, é uma variável cujo valor é um resultado numérico de um fenômeno aleatório.
+                  </p>
+                </div>
+
+                <p class="fade-in-on-scroll delay-3" data-translate="rv_example_intro">
+                    Considere o experimento de lançar uma moeda duas vezes. O espaço amostral é <code class="code-math">Ω = {HH, HT, TH, TT}</code>. Podemos definir uma variável aleatória <code class="code-math">X</code> como o "número de caras (H) obtidas".
+                </p>
+                <ul class="fade-in-on-scroll delay-4" style="margin-left: 2rem; margin-top: 1rem;">
+                    <li data-translate="rv_example_map1">Se o resultado for <code class="code-math">HH</code>, então <code class="code-math">X = 2</code>.</li>
+                    <li data-translate="rv_example_map2">Se o resultado for <code class="code-math">HT</code> ou <code class="code-math">TH</code>, então <code class="code-math">X = 1</code>.</li>
+                    <li data-translate="rv_example_map3">Se o resultado for <code class="code-math">TT</code>, então <code class="code-math">X = 0</code>.</li>
+                </ul>
+                <p class="fade-in-on-scroll delay-5" data-translate="rv_conclusion">
+                    Note que <code class="code-math">X</code> não é o experimento em si, mas uma <span class="highlight">quantificação numérica</span> dos seus resultados. Isso nos permite usar ferramentas matemáticas para analisar a probabilidade de diferentes valores numéricos ocorrerem.
+                </p>
+            </div>
+        </section>
+
+        <!-- ========= Discrete vs Continuous Section ========= -->
+        <section id="discrete-vs-continuous">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="discrete_continuous_title">🔢 Discretas vs. Contínuas</h2>
+                <p class="text-center fade-in-on-scroll delay-1" data-translate="discrete_continuous_subtitle">Os dois principais tipos de variáveis aleatórias.</p>
+
+                <div class="variable-types">
+                    <div class="variable-card discrete fade-in-on-scroll delay-2">
+                        <span class="var-icon discrete"><i class="fas fa-dice"></i></span>
+                        <h3 data-translate="discrete_title">Variáveis Aleatórias Discretas</h3>
+                        <p data-translate="discrete_text">Assumem um número <span class="highlight">finito ou infinito contável</span> de valores. Geralmente resultam de processos de contagem.</p>
+                        <div class="var-examples">
+                            <p style="font-weight: bold; margin-bottom: 0.5rem;" data-translate="discrete_examples_title">Exemplos:</p>
+                            <ul>
+                                <li data-translate="discrete_ex1"><i class="fas fa-check-circle"></i> Número de caras em 5 lançamentos de moeda (0, 1, 2, 3, 4, 5).</li>
+                                <li data-translate="discrete_ex2"><i class="fas fa-check-circle"></i> Número de e-mails recebidos em uma hora (0, 1, 2, ...).</li>
+                                <li data-translate="discrete_ex3"><i class="fas fa-check-circle"></i> Número de falhas em um lote de produção (0, 1, ..., N).</li>
+                                <li data-translate="discrete_ex4"><i class="fas fa-check-circle"></i> Classificação de um cliente (1-Estrela, 2-Estrelas, ..., 5-Estrelas).</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="variable-card continuous fade-in-on-scroll delay-3">
+                        <span class="var-icon continuous"><i class="fas fa-ruler-combined"></i></span>
+                        <h3 data-translate="continuous_title">Variáveis Aleatórias Contínuas</h3>
+                        <p data-translate="continuous_text">Podem assumir <span class="highlight">qualquer valor dentro de um intervalo</span>. Geralmente resultam de processos de medição.</p>
+                        <div class="var-examples">
+                            <p style="font-weight: bold; margin-bottom: 0.5rem;" data-translate="continuous_examples_title">Exemplos:</p>
+                            <ul>
+                                <li data-translate="continuous_ex1"><i class="fas fa-thermometer-half"></i> Temperatura exata de uma sala (e.g., 21.345... °C).</li>
+                                <li data-translate="continuous_ex2"><i class="fas fa-weight-hanging"></i> Peso de um produto (e.g., 1.052... kg).</li>
+                                <li data-translate="continuous_ex3"><i class="fas fa-stopwatch"></i> Tempo de resposta de um servidor (e.g., 0.015... segundos).</li>
+                                <li data-translate="continuous_ex4"><i class="fas fa-arrows-alt-h"></i> Erro de medição em um sensor.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                 <p class="text-center fade-in-on-scroll delay-4" data-translate="discrete_continuous_conclusion" style="margin-top: 2rem;">A distinção entre discreta e contínua é crucial porque a forma como calculamos e interpretamos probabilidades difere entre elas.</p>
+            </div>
+        </section>
+
+        <!-- ========= Probability Functions Section ========= -->
+        <section id="probability-functions">
+             <div class="container">
+                 <h2 class="fade-in-on-scroll" data-translate="prob_functions_title">📊 Funções de Probabilidade</h2>
+                 <p class="text-center fade-in-on-scroll delay-1" data-translate="prob_functions_subtitle">Descrevendo a distribuição da probabilidade entre os possíveis valores da V.A.</p>
+
+                 <div class="probability-functions">
+                     <div class="function-card fade-in-on-scroll delay-2">
+                         <h3 data-translate="pmf_title">Função Massa de Probabilidade (PMF)</h3>
+                         <p data-translate="pmf_text">Usada para variáveis aleatórias <span style="color:var(--discrete-color); font-weight:bold;">discretas</span>. Atribui uma probabilidade a cada valor possível <code class="code-math">k</code> que a V.A. <code class="code-math">X</code> pode assumir.</p>
+                         <div class="function-formula">
+                            <span class="func">p(k)</span> = P(<span class="var">X</span> = <span class="val">k</span>)
+                         </div>
+                         <p style="margin-top: 1rem;" data-translate="pmf_conditions">Propriedades:</p>
+                         <ul style="font-size: 0.9rem; margin-left: 1rem;">
+                            <li data-translate="pmf_cond1"><code class="code-math">p(k) ≥ 0</code> para todo <code class="code-math">k</code>. (Probabilidades não negativas)</li>
+                            <li data-translate="pmf_cond2"><code class="code-math">Σ p(k) = 1</code> (Soma de todas as probabilidades é 1)</li>
+                         </ul>
+                         <div class="placeholder-image" data-translate="pmf_graph_placeholder">Gráfico PMF (Barras) Aqui</div>
+                     </div>
+                     <div class="function-card fade-in-on-scroll delay-3">
+                         <h3 data-translate="pdf_title">Função Densidade de Probabilidade (PDF)</h3>
+                         <p data-translate="pdf_text">Usada para variáveis aleatórias <span style="color:var(--continuous-color); font-weight:bold;">contínuas</span>. Não fornece a probabilidade em um ponto específico (que é zero), mas sim a <span class="highlight">densidade</span> de probabilidade em torno de um valor <code class="code-math">x</code>.</p>
+                          <div class="function-formula">
+                            <span class="func">f(x)</span>
+                          </div>
+                          <p style="margin-top: 1rem;" data-translate="pdf_conditions">Propriedades:</p>
+                         <ul style="font-size: 0.9rem; margin-left: 1rem;">
+                            <li data-translate="pdf_cond1"><code class="code-math">f(x) ≥ 0</code> para todo <code class="code-math">x</code>. (Densidade não negativa)</li>
+                            <li data-translate="pdf_cond2">A área total sob a curva <code class="code-math">f(x)</code> é 1. <code class="code-math">∫ f(x) dx = 1</code>.</li>
+                            <li data-translate="pdf_cond3">Probabilidade em um intervalo [a, b]: <code class="code-math">P(a ≤ <span class="cont">X</span> ≤ b) = ∫<sub>a</sub><sup>b</sup> f(x) dx</code> (Área sob a curva entre a e b).</li>
+                         </ul>
+                         <div class="placeholder-image" data-translate="pdf_graph_placeholder">Gráfico PDF (Curva) Aqui</div>
+                     </div>
+                 </div>
+                 <p class="text-center fade-in-on-scroll delay-4" data-translate="prob_functions_conclusion" style="margin-top: 2rem;">Compreender PMFs e PDFs é essencial para calcular probabilidades e tomar decisões baseadas em modelos que incorporam incerteza.</p>
+             </div>
+        </section>
+
+        <!-- ========= Examples in AI Section ========= -->
+        <section id="examples-ai">
+             <div class="container">
+                 <h2 class="fade-in-on-scroll" data-translate="examples_ai_title">🤖 Variáveis Aleatórias em IA</h2>
+                 <p class="text-center fade-in-on-scroll delay-1" data-translate="examples_ai_subtitle">Onde encontramos e utilizamos variáveis aleatórias em aplicações de IA.</p>
+
+                 <div style="margin-top: 2rem;">
+                     <div class="definition-box fade-in-on-scroll delay-2">
+                         <h4 style="color: var(--discrete-color); margin-bottom: 0.5rem;" data-translate="ex_ai_discrete_title"><i class="fas fa-hashtag"></i> Exemplos Discretos em IA:</h4>
+                         <ul>
+                             <li data-translate="ex_ai_discrete1"><strong>Classificação:</strong> A classe predita para uma imagem (e.g., 0=Gato, 1=Cachorro, 2=Pássaro). A V.A. é a classe resultante.</li>
+                             <li data-translate="ex_ai_discrete2"><strong>Processamento de Linguagem Natural (PLN):</strong> O número de vezes que uma palavra específica aparece em um documento.</li>
+                             <li data-translate="ex_ai_discrete3"><strong>Sistemas de Recomendação:</strong> O número de itens que um usuário irá comprar após uma recomendação.</li>
+                             <li data-translate="ex_ai_discrete4"><strong>Testes A/B:</strong> O número de conversões (e.g., cliques, cadastros) em cada versão de uma página.</li>
+                         </ul>
+                     </div>
+
+                     <div class="definition-box fade-in-on-scroll delay-3" style="border-left-color: var(--continuous-color);">
+                         <h4 style="color: var(--continuous-color); margin-bottom: 0.5rem;" data-translate="ex_ai_continuous_title"><i class="fas fa-wave-square"></i> Exemplos Contínuos em IA:</h4>
+                         <ul>
+                             <li data-translate="ex_ai_continuous1"><strong>Regressão:</strong> Previsão do preço de uma casa (pode ser qualquer valor em um intervalo).</li>
+                             <li data-translate="ex_ai_continuous2"><strong>Robótica/Sensores:</strong> A leitura de um sensor de distância, temperatura ou pressão (sujeita a ruído/erro).</li>
+                             <li data-translate="ex_ai_continuous3"><strong>Finanças Quantitativas:</strong> O retorno percentual de um ativo financeiro.</li>
+                             <li data-translate="ex_ai_continuous4"><strong>Otimização:</strong> O tempo necessário para um algoritmo de otimização convergir.</li>
+                         </ul>
+                     </div>
+                 </div>
+                  <p class="text-center fade-in-on-scroll delay-4" data-translate="examples_ai_conclusion" style="margin-top: 2rem;">Modelar essas quantidades como variáveis aleatórias permite que sistemas de IA raciocinem sobre a incerteza e tomem decisões mais robustas.</p>
+             </div>
+        </section>
+
+        <!-- ========= Knowledge Check Section ========= -->
+        <section id="knowledge-check">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="quiz_title">🧠 Teste Rápido!</h2>
+                <div class="quiz-container fade-in-on-scroll delay-1"> <!-- Observe container -->
+                    <div id="quiz-area">
+                         <p style="text-align: center; padding: 2rem 0;">Carregando quiz...</p>
+                    </div>
+                    <div id="quiz-feedback" class="quiz-feedback"></div>
+                    <button id="next-question-btn" data-translate="quiz_next_button">Próxima Pergunta</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========= Completion Section ========= -->
+        <section id="completion" class="completion-section"> <!-- Added ID for nav link -->
+            <div class="container">
+                 <div class="icon">
+                    <i class="fas fa-graduation-cap"></i>
+                    <i class="fas fa-lightbulb"></i>
+                    <i class="fas fa-star"></i>
+                </div>
+                <h2 class="fade-in-on-scroll delay-1" data-translate="completion_theory_title_m13">Teoria do Módulo 13 Completa!</h2>
+                <p class="fade-in-on-scroll delay-2" data-translate="completion_theory_desc_m13">
+                    Excelente! Você agora entende o conceito fundamental de Variáveis Aleatórias, a diferença entre discretas e contínuas, e o papel das funções de probabilidade (PMF e PDF). <br>
+                    Este conhecimento é a base para explorar distribuições de probabilidade específicas nos próximos módulos. Hora de solidificar o aprendizado na prática!
+                </p>
+                <div class="button-group">
+                    <!-- Buttons observed - IMPORTANT: Links updated for Module 13 and 'math' prefix -->
+                    <a href="math-dashboard.html" class="action-button secondary fade-in-on-scroll delay-3"><i class="fas fa-list"></i> <span data-translate="nav_menu">Menu do Curso</span></a>
+                    <a href="math-practice-13.html" class="action-button success fade-in-on-scroll delay-4"><i class="fas fa-pencil-alt"></i> <span data-translate="nav_practice">Iniciar Prática</span></a>
+                    <a href="math-advanced-13.html" class="action-button secondary fade-in-on-scroll delay-5"><i class="fas fa-flask"></i> <span data-translate="nav_advanced">Prática Avançada</span></a>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="main-footer">
+        <div class="container">
+            <p data-translate="footer_copyright"></p>
+        </div>
+    </footer>
+
+    <script>
+    // --- Translations Object (Portuguese Only for Module 13) ---
+    const translations = {
+        pt: {
+            // General & Nav
+            "page_title": "Módulo 13: Variáveis Aleatórias",
+            "nav_practice": "Iniciar Prática",
+            "nav_advanced": "Prática Avançada",
+            "nav_menu": "Menu do Curso",
+            "nav_welcome_m13": "Boas-vindas M13",
+            "nav_rv_intro": "O que é uma V.A.?",
+            "nav_discrete_continuous": "Discreta vs. Contínua",
+            "nav_prob_functions": "Funções de Prob.",
+            "nav_examples_ai": "Exemplos em IA",
+            "nav_quiz": "Teste Rápido",
+            "lang_pt": "🇧🇷 Português", // Kept for consistency, though no switcher here
+
+            // Header
+            "header_title_m13": "Módulo 13: Variáveis Aleatórias",
+            "header_subtitle_m13": "Quantificando a incerteza: Discretas vs. Contínuas e suas funções de probabilidade.",
+
+            // Welcome Section
+            "welcome_title_m13": "🎲 Entendendo a Incerteza Numérica",
+            "welcome_p1_m13": "Bem-vindo ao Módulo 13! No mundo da IA, lidamos constantemente com resultados incertos. Qual a probabilidade de um usuário clicar em um anúncio? Qual o tempo esperado de processamento de uma imagem? As Variáveis Aleatórias (V.A.) são a ferramenta matemática que usamos para mapear resultados de fenômenos aleatórios a números.",
+            "welcome_p2_m13": "Neste módulo, vamos definir o que são variáveis aleatórias, diferenciar os tipos principais (discretas e contínuas) e introduzir as funções que descrevem suas probabilidades. Isso é fundamental para construir modelos probabilísticos em IA.",
+
+            // Random Variables Intro Section
+            "rv_intro_title": "❓ O que é uma Variável Aleatória?",
+            "rv_intro_subtitle": "Formalizando a conexão entre aleatoriedade e números.",
+            "rv_definition": "Uma <strong>Variável Aleatória (V.A.)</strong> é uma função que associa um valor numérico a cada resultado possível de um experimento aleatório. Em termos simples, é uma variável cujo valor é um resultado numérico de um fenômeno aleatório.",
+            "rv_example_intro": "Considere o experimento de lançar uma moeda duas vezes. O espaço amostral é <code class=\"code-math\">Ω = {HH, HT, TH, TT}</code>. Podemos definir uma variável aleatória <code class=\"code-math\">X</code> como o \"número de caras (H) obtidas\".",
+            "rv_example_map1": "Se o resultado for <code class=\"code-math\">HH</code>, então <code class=\"code-math\">X = 2</code>.",
+            "rv_example_map2": "Se o resultado for <code class=\"code-math\">HT</code> ou <code class=\"code-math\">TH</code>, então <code class=\"code-math\">X = 1</code>.",
+            "rv_example_map3": "Se o resultado for <code class=\"code-math\">TT</code>, então <code class=\"code-math\">X = 0</code>.",
+            "rv_conclusion": "Note que <code class=\"code-math\">X</code> não é o experimento em si, mas uma quantificação numérica dos seus resultados. Isso nos permite usar ferramentas matemáticas para analisar a probabilidade de diferentes valores numéricos ocorrerem.",
+
+            // Discrete vs Continuous Section
+            "discrete_continuous_title": "🔢 Discretas vs. Contínuas",
+            "discrete_continuous_subtitle": "Os dois principais tipos de variáveis aleatórias.",
+            "discrete_title": "Variáveis Aleatórias Discretas",
+            "discrete_text": "Assumem um número finito ou infinito contável de valores. Geralmente resultam de processos de contagem.",
+            "discrete_examples_title": "Exemplos:",
+            "discrete_ex1": "<i class=\"fas fa-check-circle\"></i> Número de caras em 5 lançamentos de moeda (0, 1, 2, 3, 4, 5).",
+            "discrete_ex2": "<i class=\"fas fa-check-circle\"></i> Número de e-mails recebidos em uma hora (0, 1, 2, ...).",
+            "discrete_ex3": "<i class=\"fas fa-check-circle\"></i> Número de falhas em um lote de produção (0, 1, ..., N).",
+            "discrete_ex4": "<i class=\"fas fa-check-circle\"></i> Classificação de um cliente (1-Estrela, 2-Estrelas, ..., 5-Estrelas).",
+            "continuous_title": "Variáveis Aleatórias Contínuas",
+            "continuous_text": "Podem assumir qualquer valor dentro de um intervalo. Geralmente resultam de processos de medição.",
+            "continuous_examples_title": "Exemplos:",
+            "continuous_ex1": "<i class=\"fas fa-thermometer-half\"></i> Temperatura exata de uma sala (e.g., 21.345... °C).",
+            "continuous_ex2": "<i class=\"fas fa-weight-hanging\"></i> Peso de um produto (e.g., 1.052... kg).",
+            "continuous_ex3": "<i class=\"fas fa-stopwatch\"></i> Tempo de resposta de um servidor (e.g., 0.015... segundos).",
+            "continuous_ex4": "<i class=\"fas fa-arrows-alt-h\"></i> Erro de medição em um sensor.",
+            "discrete_continuous_conclusion": "A distinção entre discreta e contínua é crucial porque a forma como calculamos e interpretamos probabilidades difere entre elas.",
+
+             // Probability Functions Section
+            "prob_functions_title": "📊 Funções de Probabilidade",
+            "prob_functions_subtitle": "Descrevendo a distribuição da probabilidade entre os possíveis valores da V.A.",
+            "pmf_title": "Função Massa de Probabilidade (PMF)",
+            "pmf_text": "Usada para variáveis aleatórias discretas. Atribui uma probabilidade a cada valor possível <code class=\"code-math\">k</code> que a V.A. <code class=\"code-math\">X</code> pode assumir.",
+            "pmf_conditions": "Propriedades:",
+            "pmf_cond1": "<code class=\"code-math\">p(k) ≥ 0</code> para todo <code class=\"code-math\">k</code>. (Probabilidades não negativas)",
+            "pmf_cond2": "<code class=\"code-math\">Σ p(k) = 1</code> (Soma de todas as probabilidades é 1)",
+            "pmf_graph_placeholder": "Gráfico PMF (Barras) Aqui",
+            "pdf_title": "Função Densidade de Probabilidade (PDF)",
+            "pdf_text": "Usada para variáveis aleatórias contínuas. Não fornece a probabilidade em um ponto específico (que é zero), mas sim a densidade de probabilidade em torno de um valor <code class=\"code-math\">x</code>.",
+            "pdf_conditions": "Propriedades:",
+            "pdf_cond1": "<code class=\"code-math\">f(x) ≥ 0</code> para todo <code class=\"code-math\">x</code>. (Densidade não negativa)",
+            "pdf_cond2": "A área total sob a curva <code class=\"code-math\">f(x)</code> é 1. <code class=\"code-math\">∫ f(x) dx = 1</code>.",
+            "pdf_cond3": "Probabilidade em um intervalo [a, b]: <code class=\"code-math\">P(a ≤ X ≤ b) = ∫<sub>a</sub><sup>b</sup> f(x) dx</code> (Área sob a curva entre a e b).",
+            "pdf_graph_placeholder": "Gráfico PDF (Curva) Aqui",
+            "prob_functions_conclusion": "Compreender PMFs e PDFs é essencial para calcular probabilidades e tomar decisões baseadas em modelos que incorporam incerteza.",
+
+            // Examples in AI Section
+            "examples_ai_title": "🤖 Variáveis Aleatórias em IA",
+            "examples_ai_subtitle": "Onde encontramos e utilizamos variáveis aleatórias em aplicações de IA.",
+            "ex_ai_discrete_title": "<i class=\"fas fa-hashtag\"></i> Exemplos Discretos em IA:",
+            "ex_ai_discrete1": "<strong>Classificação:</strong> A classe predita para uma imagem (e.g., 0=Gato, 1=Cachorro, 2=Pássaro). A V.A. é a classe resultante.",
+            "ex_ai_discrete2": "<strong>Processamento de Linguagem Natural (PLN):</strong> O número de vezes que uma palavra específica aparece em um documento.",
+            "ex_ai_discrete3": "<strong>Sistemas de Recomendação:</strong> O número de itens que um usuário irá comprar após uma recomendação.",
+            "ex_ai_discrete4": "<strong>Testes A/B:</strong> O número de conversões (e.g., cliques, cadastros) em cada versão de uma página.",
+            "ex_ai_continuous_title": "<i class=\"fas fa-wave-square\"></i> Exemplos Contínuos em IA:",
+            "ex_ai_continuous1": "<strong>Regressão:</strong> Previsão do preço de uma casa (pode ser qualquer valor em um intervalo).",
+            "ex_ai_continuous2": "<strong>Robótica/Sensores:</strong> A leitura de um sensor de distância, temperatura ou pressão (sujeita a ruído/erro).",
+            "ex_ai_continuous3": "<strong>Finanças Quantitativas:</strong> O retorno percentual de um ativo financeiro.",
+            "ex_ai_continuous4": "<strong>Otimização:</strong> O tempo necessário para um algoritmo de otimização convergir.",
+            "examples_ai_conclusion": "Modelar essas quantidades como variáveis aleatórias permite que sistemas de IA raciocinem sobre a incerteza e tomem decisões mais robustas.",
+
+            // Quiz Section
+            "quiz_title": "🧠 Teste Rápido!", "quiz_next_button": "Próxima Pergunta",
+            "quiz_q1_m13": "Qual destas melhor descreve uma variável aleatória discreta?",
+            "quiz_q1_m13_opt1": "Pode assumir qualquer valor em um intervalo.",
+            "quiz_q1_m13_opt2": "Seus valores são contáveis (e.g., 0, 1, 2...).",
+            "quiz_q1_m13_opt3": "É sempre representada por uma curva suave.",
+            "quiz_q1_m13_opt4": "Sua probabilidade em um ponto específico é sempre zero.",
+            "quiz_q2_m13": "A altura de um estudante selecionado aleatoriamente é um exemplo de:",
+            "quiz_q2_m13_opt1": "Variável Aleatória Discreta",
+            "quiz_q2_m13_opt2": "Variável Aleatória Contínua",
+            "quiz_q2_m13_opt3": "Função Massa de Probabilidade (PMF)",
+            "quiz_q2_m13_opt4": "Espaço Amostral",
+            "quiz_q3_m13": "Qual função é usada para descrever a probabilidade de V.A. contínuas?",
+            "quiz_q3_m13_opt1": "Função Massa de Probabilidade (PMF)",
+            "quiz_q3_m13_opt2": "Função Densidade de Probabilidade (PDF)",
+            "quiz_q3_m13_opt3": "Função de Distribuição Acumulada (CDF)",
+            "quiz_q3_m13_opt4": "Variância",
+            "quiz_q4_m13": "Para uma V.A. discreta X, o que a PMF, p(k), representa?",
+            "quiz_q4_m13_opt1": "A probabilidade de X ser menor ou igual a k, P(X ≤ k).",
+            "quiz_q4_m13_opt2": "A probabilidade de X ser exatamente igual a k, P(X = k).",
+            "quiz_q4_m13_opt3": "A densidade de probabilidade no ponto k.",
+            "quiz_q4_m13_opt4": "O valor esperado de X.",
+            "quiz_feedback_correct": "Correto! 🎉",
+            "quiz_feedback_incorrect": "Não foi bem assim! A resposta correta era: {correctAnswerText}",
+            "quiz_final_score_title": "Teste Rápido Completo!",
+            "quiz_final_score_summary": "Você respondeu {score} de {total} perguntas corretamente.",
+            "quiz_final_score_perfect": "Excelente! Você compreendeu bem os conceitos de variáveis aleatórias.",
+            "quiz_final_score_good": "Bom trabalho! Continue revisando as diferenças entre discreta/contínua e PMF/PDF.",
+
+            // Completion Section
+            "completion_theory_title_m13": "Teoria do Módulo 13 Completa!",
+            "completion_theory_desc_m13": "Excelente! Você agora entende o conceito fundamental de Variáveis Aleatórias, a diferença entre discretas e contínuas, e o papel das funções de probabilidade (PMF e PDF). <br> Este conhecimento é a base para explorar distribuições de probabilidade específicas nos próximos módulos. Hora de solidificar o aprendizado na prática!",
+
+            // Footer
+            "footer_copyright": "© 2024 Matemática para IA. Todos os direitos reservados."
+        }
+    };
+
+    // --- Global Variables ---
+    let currentQuestionIndex = 0;
+    let score = 0;
+    const lang = 'pt'; // Hardcoded language
+
+    // --- DOM Elements (Get them once) ---
+    const navToggleButton = document.getElementById('minimal-nav-toggle');
+    const navPanel = document.getElementById('minimal-nav-panel');
+    const body = document.body;
+    const quizArea = document.getElementById('quiz-area');
+    const feedbackArea = document.getElementById('quiz-feedback');
+    const nextButton = document.getElementById('next-question-btn');
+
+    // --- Functions ---
+
+    function getTranslation(key, replacements = {}) {
+         let text = translations[lang]?.[key] ?? `[${key}]`;
+         for (const placeholder in replacements) {
+             const regex = new RegExp(`\\{${placeholder}\\}`, 'g');
+             text = text.replace(regex, replacements[placeholder]);
+         }
+         return text;
+    }
+
+    function translatePage() {
+         document.querySelectorAll('[data-translate]').forEach(el => {
+             const key = el.getAttribute('data-translate');
+             let translation = getTranslation(key);
+
+              if (el.tagName === 'TITLE') { document.title = translation; }
+              else if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') { /* Skip */ }
+              else {
+                   // Allow specific HTML tags safely within certain containers or if the key suggests HTML
+                   const safeHtmlRegex = /<\/?(code|strong|span|br|i|b|em|ul|li)>|(&[a-z]+;)/gi;
+                   let containsSafeHtml = safeHtmlRegex.test(translation);
+                   let isSafeContainer = el.closest('.definition-box, .var-examples ul, .function-card ul, .quiz-feedback, .text-center p, .completion-section p'); // Added more containers
+
+                   if (containsSafeHtml || isSafeContainer) {
+                      el.innerHTML = translation;
+                   } else {
+                      el.textContent = translation;
+                   }
+              }
+         });
+
+         // Tooltips are not used in this module, but keeping the structure
+          document.querySelectorAll('.code-highlight[data-translate-tooltip]').forEach(el => {
+              const tooltipKey = el.getAttribute('data-translate-tooltip');
+              const tooltipSpan = el.querySelector('.tooltip');
+              if(tooltipSpan && tooltipKey) {
+                 tooltipSpan.innerHTML = getTranslation(tooltipKey);
+              }
+          });
+
+           // Comments are not used in this module, but keeping the structure
+           document.querySelectorAll('.code-comment[data-translate]').forEach(commentSpan => {
+               const key = commentSpan.getAttribute('data-translate');
+               let translatedText = getTranslation(key);
+               let commentContent = translatedText.startsWith('#') ? translatedText.substring(1).trim() : translatedText;
+               commentSpan.textContent = '# ' + commentContent;
+           });
+    }
+
+    // --- Quiz Data & Functions (Updated for Module 13) ---
+    const quizData = [
+         { questionKey: "quiz_q1_m13", optionKeys: ["quiz_q1_m13_opt1", "quiz_q1_m13_opt2", "quiz_q1_m13_opt3", "quiz_q1_m13_opt4"], correctAnswer: 1 }, // Discreta = contável
+         { questionKey: "quiz_q2_m13", optionKeys: ["quiz_q2_m13_opt1", "quiz_q2_m13_opt2", "quiz_q2_m13_opt3", "quiz_q2_m13_opt4"], correctAnswer: 1 }, // Altura = contínua
+         { questionKey: "quiz_q3_m13", optionKeys: ["quiz_q3_m13_opt1", "quiz_q3_m13_opt2", "quiz_q3_m13_opt3", "quiz_q3_m13_opt4"], correctAnswer: 1 }, // Contínua = PDF
+         { questionKey: "quiz_q4_m13", optionKeys: ["quiz_q4_m13_opt1", "quiz_q4_m13_opt2", "quiz_q4_m13_opt3", "quiz_q4_m13_opt4"], correctAnswer: 1 }  // PMF = P(X=k)
+    ];
+
+    function loadQuestion() {
+          if (!quizArea) return; // Ensure quizArea exists
+
+          // If we reached the end, show score
+          if (currentQuestionIndex >= quizData.length) {
+              if (!quizArea.querySelector('[data-translate="quiz_final_score_title"]')) { // Avoid re-rendering score
+                 showFinalScore();
+              }
+              return;
+          }
+
+          const currentQuiz = quizData[currentQuestionIndex];
+          const questionText = getTranslation(currentQuiz.questionKey);
+          // Generate HTML for question and options
+          quizArea.innerHTML = `
+              <div class="quiz-question">${currentQuestionIndex + 1}. ${questionText.replace(/`(.*?)`/g, '<code>$1</code>')}</div>
+              <div class="quiz-options">
+                  ${currentQuiz.optionKeys.map((optionKey, index) => `
+                      <button class="quiz-option-btn" data-index="${index}">${getTranslation(optionKey).replace(/`(.*?)`/g, '<code>$1</code>')}</button>
+                  `).join('')}
+              </div>
+          `;
+
+          // Reset feedback and next button
+          if (feedbackArea) {
+            feedbackArea.classList.remove('visible', 'correct', 'incorrect');
+            feedbackArea.textContent = '';
+            feedbackArea.style.height = '0'; // Reset height
+            feedbackArea.style.marginBottom = '0'; // Reset margin
+          }
+          if (nextButton) {
+            nextButton.classList.remove('visible');
+            nextButton.disabled = true;
+          }
+
+          // Add event listeners to the new buttons
+          quizArea.querySelectorAll('.quiz-option-btn').forEach(button => {
+              button.addEventListener('click', handleAnswer);
+          });
+    }
+
+    function handleAnswer(event) {
+         const selectedButton = event.target;
+         const selectedIndex = parseInt(selectedButton.dataset.index);
+         const correctIndex = quizData[currentQuestionIndex].correctAnswer;
+         const correctOptionKey = quizData[currentQuestionIndex].optionKeys[correctIndex];
+
+         // Disable all options
+         quizArea.querySelectorAll('.quiz-option-btn').forEach(btn => {
+            btn.disabled = true;
+            btn.classList.remove('shake'); // Remove shake if present from previous incorrect
+         });
+
+         if (!feedbackArea || !nextButton) return; // Ensure elements exist
+
+         feedbackArea.classList.add('visible');
+
+         if (selectedIndex === correctIndex) {
+             selectedButton.classList.add('correct');
+             feedbackArea.innerHTML = getTranslation('quiz_feedback_correct'); // Use innerHTML for emoji
+             feedbackArea.classList.add('correct');
+             feedbackArea.classList.remove('incorrect');
+             score++;
+             selectedButton.classList.add('tada-anim');
+         } else {
+             selectedButton.classList.add('incorrect');
+             // Format the correct answer text, potentially including <code> tags safely
+             const correctAnswerHtml = getTranslation(correctOptionKey).replace(/`(.*?)`/g, '<code>$1</code>');
+             feedbackArea.innerHTML = getTranslation('quiz_feedback_incorrect', { correctAnswerText: `<strong>${correctAnswerHtml}</strong>` });
+             feedbackArea.classList.add('incorrect');
+             feedbackArea.classList.remove('correct');
+             // Highlight the correct button as well
+             const correctButton = quizArea.querySelector(`.quiz-option-btn[data-index="${correctIndex}"]`);
+             if(correctButton) correctButton.classList.add('correct');
+             selectedButton.classList.add('shake');
+         }
+
+         // Remove animation classes after they finish
+          selectedButton.addEventListener('animationend', () => {
+               selectedButton.classList.remove('tada-anim', 'shake');
+          }, { once: true });
+
+         // Make feedback area adjust height and margin smoothly
+         feedbackArea.style.height = feedbackArea.scrollHeight + 'px';
+         feedbackArea.style.marginBottom = '1rem';
+
+
+         // Show and enable next button
+         nextButton.classList.add('visible');
+         nextButton.disabled = false;
+     }
+
+     function showFinalScore() {
+            if (!quizArea) return;
+            const totalQuestions = quizData.length;
+            // Determine message based on score percentage
+            let resultMessageKey = (score / totalQuestions) >= 0.75 ? 'quiz_final_score_perfect' : 'quiz_final_score_good'; // 75% threshold
+
+            quizArea.innerHTML = `
+               <div class="quiz-question text-center" data-translate="quiz_final_score_title" style="font-size: 1.5rem;">${getTranslation('quiz_final_score_title')}</div>
+               <p class="text-center" style="font-size: 1.2rem; margin-bottom: 1rem;">${getTranslation('quiz_final_score_summary', { score: score, total: totalQuestions })}</p>
+               <p class="text-center" style="color: ${score / totalQuestions >= 0.75 ? 'var(--success-color)' : 'var(--primary-color)'}; font-weight: bold;">${getTranslation(resultMessageKey)}</p>
+            `; // Adjusted color logic slightly
+            if (feedbackArea) feedbackArea.classList.remove('visible'); // Hide feedback area
+            if (nextButton) nextButton.style.display = 'none'; // Hide next button
+            quizArea.scrollIntoView({ behavior: 'smooth', block: 'center' }); // Scroll score into view
+     }
+
+
+    // --- Intersection Observer Setup ---
+    function setupObservers() {
+        const observerOptions = {
+            root: null, // relative to viewport
+            rootMargin: '0px',
+            threshold: 0.1 // Trigger when 10% of the element is visible
+        };
+
+        const observerCallback = (entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    // Optional: Unobserve after it becomes visible to save resources
+                     observer.unobserve(entry.target); // Let's unobserve for performance
+                }
+                // Optional: Remove 'visible' if it scrolls out of view (not doing this now)
+            });
+        };
+
+        const animationObserver = new IntersectionObserver(observerCallback, observerOptions);
+
+        // Observe elements with the fade-in class
+        document.querySelectorAll('.fade-in-on-scroll').forEach(el => {
+            animationObserver.observe(el);
+        });
+
+        // No specific code output simulation needed for this module
+    }
+
+    // --- Event Listeners Setup ---
+    function setupEventListeners() {
+        // Navbar Toggle
+        if (navToggleButton && navPanel) {
+            navToggleButton.addEventListener('click', (event) => {
+                event.stopPropagation();
+                body.classList.toggle('nav-active');
+                navToggleButton.setAttribute('aria-expanded', body.classList.contains('nav-active'));
+            });
+
+            // Close nav if clicking outside
+            document.addEventListener('click', (event) => {
+                if (body.classList.contains('nav-active') && !navPanel.contains(event.target) && event.target !== navToggleButton && !navToggleButton.contains(event.target)) {
+                    body.classList.remove('nav-active');
+                    navToggleButton.setAttribute('aria-expanded', 'false');
+                }
+            });
+
+            // Close nav on link click
+            navPanel.querySelectorAll('a').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    // Check if it's an internal link
+                    if (link.getAttribute('href').startsWith('#')) {
+                         // Allow default scroll behavior
+                        // Close panel slightly delayed
+                        setTimeout(() => {
+                            body.classList.remove('nav-active');
+                            navToggleButton.setAttribute('aria-expanded', 'false');
+                        }, 150);
+                    }
+                    // External links will navigate away anyway
+                });
+            });
+
+            // Close nav on Escape key
+            document.addEventListener('keydown', (event) => {
+                 if (event.key === 'Escape' && body.classList.contains('nav-active')) {
+                     body.classList.remove('nav-active');
+                     navToggleButton.setAttribute('aria-expanded', 'false');
+                 }
+             });
+        }
+
+        // Quiz Next Button
+        if (nextButton) {
+            nextButton.addEventListener('click', () => {
+                if (!nextButton.disabled) {
+                    currentQuestionIndex++;
+                    loadQuestion(); // Load the next question
+                }
+            });
+        } else {
+            console.error("Elemento #next-question-btn não encontrado.");
+        }
+    }
+
+    // --- Initialization ---
+    document.addEventListener('DOMContentLoaded', () => {
+        // Check if elements needed for quiz exist before proceeding
+        if (!quizArea) console.error("Elemento #quiz-area não encontrado.");
+        if (!feedbackArea) console.error("Elemento #quiz-feedback não encontrado.");
+
+        translatePage();        // Apply translations first
+        setupEventListeners();  // Set up interactive elements
+        setupObservers();       // Set up animations
+
+        if (quizArea) {
+            loadQuestion();     // Load the first quiz question if container exists
+        }
+    });
+
+    </script>
+
+</body>
+</html>

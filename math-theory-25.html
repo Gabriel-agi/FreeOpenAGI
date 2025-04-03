@@ -1,0 +1,1070 @@
+<!DOCTYPE html>
+<!-- Language set to Portuguese BR -->
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Title set by JS -->
+    <title data-translate="page_title_m25">Módulo 25: Conjuntos Numéricos</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* --- Reset & Base Styles --- */
+        :root {
+            --primary-color: #007bff; /* Blue */
+            --secondary-color: #6c757d; /* Gray */
+            --background-light: #f8f9fa;
+            --background-dark: #343a40;
+            --text-light: #f8f9fa;
+            --text-dark: #212529;
+            --accent-color: #ffc107; /* Yellow */
+            --success-color: #28a745; /* Green */
+            --error-color: #dc3545; /* Red */
+            --set-n-color: #17a2b8; /* Teal for Naturals */
+            --set-z-color: #6610f2; /* Indigo for Integers */
+            --set-q-color: #fd7e14; /* Orange for Rationals */
+            --set-r-color: #e83e8c; /* Pink for Reals */
+            --border-radius: 8px;
+            --transition-speed: 0.3s;
+            --animation-speed: 0.6s; /* Control fade-in speed */
+            --font-body: 'Roboto', sans-serif;
+            --font-title: 'Orbitron', sans-serif;
+            --nav-primary: #6e48aa;
+            --nav-success: #4cc9f0;
+            --nav-dark: #1a1a2e;
+            --footer-border-color: #495057;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; font-size: 16px; }
+        body {
+            font-family: var(--font-body); line-height: 1.7;
+            background-color: var(--background-light); color: var(--text-dark);
+            overflow-x: hidden; display: flex; flex-direction: column; min-height: 100vh;
+        }
+        main { flex-grow: 1; }
+
+        /* --- Utility Classes --- */
+        .container { max-width: 960px; margin: 0 auto; padding: 0 15px; }
+        .text-center { text-align: center; }
+        .highlight { color: var(--primary-color); font-weight: bold; }
+        .code-math {
+             font-family: 'Courier New', Courier, monospace; background-color: #e9ecef;
+             padding: 0.2em 0.5em; border-radius: 4px;
+             font-size: 0.95em; color: #333;
+             border: 1px solid #ced4da; display: inline-block;
+        }
+        .math-symbol {
+            font-weight: bold; font-style: italic;
+            font-family: 'Times New Roman', Times, serif;
+        }
+        .symbol-N { color: var(--set-n-color); }
+        .symbol-Z { color: var(--set-z-color); }
+        .symbol-Q { color: var(--set-q-color); }
+        .symbol-R { color: var(--set-r-color); }
+
+
+        /* Elements to be animated by observer */
+        .fade-in-on-scroll {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+        }
+        .fade-in-on-scroll.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        /* Add delays for staggering */
+        .delay-1.visible { transition-delay: 0.1s; }
+        .delay-2.visible { transition-delay: 0.2s; }
+        .delay-3.visible { transition-delay: 0.3s; }
+        .delay-4.visible { transition-delay: 0.4s; }
+        .delay-5.visible { transition-delay: 0.5s; }
+        .delay-6.visible { transition-delay: 0.6s; }
+        .delay-7.visible { transition-delay: 0.7s; }
+
+
+        .button-group { margin-top: 2rem; display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; }
+        .action-button {
+             display: inline-flex; align-items: center; justify-content: center; gap: 0.5em;
+             padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold;
+             color: var(--text-light); background-color: var(--primary-color); border: none;
+             border-radius: var(--border-radius); cursor: pointer;
+             transition: background-color var(--transition-speed), transform var(--transition-speed), filter var(--transition-speed), box-shadow var(--transition-speed), opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out; /* Add animation transition */
+             margin-top: 1rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+             text-decoration: none; line-height: 1.2;
+             opacity: 0; /* Start hidden if animated */
+             transform: translateY(20px); /* Start offset if animated */
+        }
+        .action-button.visible { /* Make visible via observer */
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .action-button i.fas {}
+        .action-button:hover:not(:disabled) { background-color: #0056b3; transform: translateY(-2px) !important; box-shadow: 0 4px 8px rgba(0,0,0,0.15); } /* Use !important to override initial transform */
+        .action-button:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none !important; box-shadow: none; opacity: 0.7; }
+        .action-button.success { background-color: var(--success-color); }
+        .action-button.success:hover:not(:disabled) { background-color: #218838; }
+        .action-button.secondary { background-color: var(--secondary-color); }
+        .action-button.secondary:hover:not(:disabled) { background-color: #5a6268; }
+        .action-button:active:not(:disabled) { transform: translateY(1px) scale(0.98) !important; filter: brightness(0.95); }
+
+        /* --- Animations --- */
+        @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); } 50% { transform: scale(1.03); box-shadow: 0 0 15px rgba(0, 123, 255, 0.6); } 100% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); } }
+        @keyframes tada { from { transform: scale3d(1, 1, 1); } 10%, 20% { transform: scale3d(.9, .9, .9) rotate3d(0, 0, 1, -3deg); } 30%, 50%, 70%, 90% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, 3deg); } 40%, 60%, 80% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, -3deg); } to { transform: scale3d(1, 1, 1); } }
+        .tada-anim { animation: tada 1s ease; }
+        @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
+        @keyframes iconAppearCorrect { 0% { transform: scale(0.5) rotate(-15deg); opacity: 0; } 60% { transform: scale(1.2) rotate(5deg); opacity: 1; } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
+
+        /* --- Minimal Retractable Nav --- */
+        .minimal-nav-button { position: fixed; top: 15px; right: 15px; z-index: 1001; background-color: rgba(52, 58, 64, 0.75); color: var(--text-light); border: none; border-radius: var(--border-radius); padding: 8px 12px; cursor: pointer; transition: background-color var(--transition-speed), opacity var(--transition-speed), transform var(--transition-speed); font-size: 1.1rem; opacity: 0.6; box-shadow: 0 2px 5px rgba(0,0,0,0.2); line-height: 1; }
+        .minimal-nav-button:hover { background-color: rgba(52, 58, 64, 0.95); opacity: 1; transform: scale(1.05); }
+        .minimal-nav { position: fixed; top: 60px; right: 15px; z-index: 1000; background-color: var(--background-dark); border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.3); padding: 0.8rem; opacity: 0; transform: translateY(-15px) scale(0.95); transform-origin: top right; pointer-events: none; transition: opacity var(--transition-speed) ease, transform var(--transition-speed) ease; min-width: 200px; }
+        body.nav-active .minimal-nav { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+        .minimal-nav ul { list-style: none; margin: 0; padding: 0; }
+        .minimal-nav ul li { margin-bottom: 5px; }
+        .minimal-nav ul li:last-child { margin-bottom: 0; }
+        .minimal-nav ul li a { display: flex; align-items: center; color: var(--text-light); text-decoration: none; padding: 0.6rem 1rem; border-radius: 4px; transition: background-color var(--transition-speed), color var(--transition-speed); white-space: nowrap; font-weight: 400; font-size: 0.95rem; }
+        .minimal-nav ul li a i.fas { margin-right: 10px; width: 1.2em; text-align: center; opacity: 0.8; transition: opacity var(--transition-speed); }
+        .minimal-nav ul li a:hover { background-color: var(--primary-color); color: var(--text-light); }
+        .minimal-nav ul li a:hover i.fas { opacity: 1; }
+
+        /* --- Header --- */
+        .main-header { background: linear-gradient(135deg, var(--primary-color), #0056b3); color: var(--text-light); padding: 4rem 0 6rem; text-align: center; position: relative; overflow: hidden; }
+        .main-header .container { /* Start visible */ }
+        .main-header h1 { font-family: var(--font-title); font-size: 3rem; margin-bottom: 0.5rem; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); }
+        .main-header p { font-size: 1.2rem; font-weight: 300; opacity: 0.9; }
+        .header-shape { position: absolute; border-radius: 50%; background-color: rgba(255, 255, 255, 0.1); animation: pulse 5s infinite ease-in-out alternate; }
+        .shape1 { width: 150px; height: 150px; bottom: -50px; left: 10%; animation-duration: 6s; }
+        .shape2 { width: 80px; height: 80px; top: 50px; right: 15%; animation-duration: 4s; }
+        .shape3 { width: 50px; height: 50px; bottom: 20px; right: 30%; animation-duration: 7s; }
+
+        /* --- Section Styling --- */
+        section { padding: 4rem 0; border-bottom: 1px solid #eee; }
+        main section:last-of-type { border-bottom: none; padding-bottom: 0;}
+        section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); margin-bottom: 2rem; text-align: center; position: relative; padding-bottom: 10px; }
+        section h2::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 60px; height: 4px; background-color: var(--accent-color); border-radius: 2px; }
+
+        /* --- Number Set Section Styling --- */
+        .number-set-card {
+            background-color: #fff;
+            border-radius: var(--border-radius);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            margin-bottom: 2.5rem;
+            padding: 2rem;
+            border-left: 6px solid var(--secondary-color); /* Default */
+            transition: transform var(--transition-speed) ease, box-shadow var(--transition-speed) ease;
+        }
+        .number-set-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        }
+        .number-set-card h3 {
+            font-family: var(--font-title);
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+        }
+        .set-icon {
+            font-size: 1.5em;
+            margin-right: 12px;
+            font-weight: bold;
+            font-style: italic; /* Consistent with math symbols */
+            font-family: 'Times New Roman', Times, serif;
+        }
+        /* Specific styles for each set */
+        #naturais .number-set-card { border-left-color: var(--set-n-color); }
+        #naturais .set-icon { color: var(--set-n-color); }
+        #inteiros .number-set-card { border-left-color: var(--set-z-color); }
+        #inteiros .set-icon { color: var(--set-z-color); }
+        #racionais .number-set-card { border-left-color: var(--set-q-color); }
+        #racionais .set-icon { color: var(--set-q-color); }
+        #reais .number-set-card { border-left-color: var(--set-r-color); }
+        #reais .set-icon { color: var(--set-r-color); }
+
+        .set-definition {
+            font-style: italic;
+            color: var(--secondary-color);
+            margin-bottom: 1.5rem;
+            font-size: 1.1rem;
+        }
+        .set-properties ul, .set-computation ul {
+            list-style: none; /* Remove default bullets */
+            padding-left: 0;
+        }
+        .set-properties li, .set-computation li {
+            margin-bottom: 0.8rem;
+            padding-left: 1.8em; /* Space for custom icon */
+            position: relative;
+        }
+        .set-properties li::before, .set-computation li::before {
+            content: '\f058'; /* FontAwesome check-circle */
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            color: var(--success-color);
+            position: absolute;
+            left: 0;
+            top: 3px; /* Adjust vertical alignment */
+            font-size: 1.1em;
+        }
+        .set-computation li::before {
+            content: '\f101'; /* FontAwesome angle-right for computation relevance */
+            color: var(--primary-color);
+        }
+        .set-properties h4, .set-computation h4 {
+            font-size: 1.2rem;
+            color: var(--text-dark);
+            margin-bottom: 0.8rem;
+            margin-top: 1.5rem;
+            padding-bottom: 5px;
+            border-bottom: 2px solid #eee;
+        }
+
+        /* --- Relationships Section --- */
+         #relacoes-e-computacao .relationships-diagram {
+            background-color: #e9ecef;
+            padding: 2rem;
+            border-radius: var(--border-radius);
+            text-align: center;
+            margin: 2rem 0;
+            font-size: 1.4rem;
+            font-weight: bold;
+            border: 1px solid #ced4da;
+        }
+        .relationships-diagram .math-symbol {
+             font-size: 1.8rem; /* Make symbols larger */
+             margin: 0 0.5em;
+        }
+        #relacoes-e-computacao .computational-notes {
+            background-color: #fff;
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            border: 1px solid #ddd;
+            margin-top: 2rem;
+        }
+         #relacoes-e-computacao .computational-notes h3 {
+            font-family: var(--font-body); /* Different font for this heading */
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+            text-align: left;
+         }
+          #relacoes-e-computacao .computational-notes ul {
+            list-style: none; padding-left: 0;
+          }
+           #relacoes-e-computacao .computational-notes li {
+            margin-bottom: 0.8rem;
+            padding-left: 1.8em; /* Space for custom icon */
+            position: relative;
+           }
+          #relacoes-e-computacao .computational-notes li::before {
+             content: '\f05a'; /* FontAwesome info-circle */
+             font-family: 'Font Awesome 6 Free';
+             font-weight: 900;
+             color: var(--accent-color); /* Yellow accent */
+             position: absolute;
+             left: 0;
+             top: 3px; /* Adjust vertical alignment */
+             font-size: 1.1em;
+          }
+         .float-warning {
+            background-color: rgba(220, 53, 69, 0.1); /* Light red */
+            border-left: 4px solid var(--error-color);
+            padding: 0.8rem 1rem;
+            margin-top: 0.5rem;
+            border-radius: 4px;
+            font-size: 0.95rem;
+            color: #58151c;
+         }
+
+        /* --- Knowledge Check Section --- */
+        #knowledge-check { background-color: #e9ecef; }
+        .quiz-container { /* Animated by observer */
+             background-color: #fff; padding: 2rem; border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.1); max-width: 700px; margin: 2rem auto 0;
+             opacity: 0; transition: opacity var(--animation-speed) ease-out; /* Only fade opacity */
+        }
+        .quiz-container.visible { opacity: 1; }
+        .quiz-question { font-size: 1.2rem; font-weight: bold; margin-bottom: 1.5rem; color: var(--text-dark); }
+        .quiz-options button { display: block; width: 100%; padding: 1rem; margin-bottom: 1rem; text-align: left; font-size: 1rem; background-color: #f8f9fa; border: 1px solid #ced4da; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), border-color var(--transition-speed), transform var(--transition-speed); }
+        .quiz-options button:not(:disabled):hover { background-color: #e2e6ea; border-color: #adb5bd; transform: translateX(5px); }
+        .quiz-options button:disabled { cursor: default; opacity: 0.7; }
+        .quiz-options button.correct { background-color: #d4edda; border-color: var(--success-color); color: #155724; font-weight: bold; }
+        .quiz-options button.incorrect { background-color: #f8d7da; border-color: var(--error-color); color: #721c24; font-weight: bold; }
+        .quiz-options button.incorrect.shake { animation: shake 0.5s ease; }
+        .quiz-feedback { margin-top: 1.5rem; padding: 1rem; border-radius: var(--border-radius); font-weight: bold; text-align: center; opacity: 0; transition: opacity 0.5s ease, height 0.5s ease, margin-bottom 0.5s ease; height: 0; overflow: hidden; margin-bottom: 0;}
+        .quiz-feedback.visible { opacity: 1; height: auto; margin-bottom: 1rem; }
+        .quiz-feedback.correct { background-color: #d4edda; color: #155724; }
+        .quiz-feedback.incorrect { background-color: #f8d7da; color: #721c24; }
+        #next-question-btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5em; margin: 1.5rem auto 0; padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold; color: var(--text-light); background-color: var(--primary-color); border: none; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), transform var(--transition-speed), opacity 0.3s, visibility 0.3s; opacity: 0; visibility: hidden; }
+        #next-question-btn:hover:not(:disabled) { background-color: #0056b3; transform: scale(1.05); }
+        #next-question-btn.visible { opacity: 1; visibility: visible; }
+        #next-question-btn:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none; opacity: 0.7; }
+
+
+        /* --- Completion Section Styling --- */
+        .completion-section { padding: 4rem 0; text-align: center; background-color: var(--background-light); }
+        .completion-section .icon { font-size: 4rem; color: var(--success-color); margin-bottom: 1rem; display: inline-block; animation: iconAppearCorrect 1s ease-out 0.5s forwards; opacity: 0; /* Initial state for animation */}
+        /* Ensure completion elements are targeted by observer */
+        .completion-section h2, .completion-section p {
+            opacity: 0; transform: translateY(20px);
+            transition: opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+        }
+        .completion-section h2.visible, .completion-section p.visible {
+            opacity: 1; transform: translateY(0);
+        }
+        .completion-section .button-group { margin-top: 2.5rem; }
+        .completion-section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); margin-bottom: 1rem; }
+        .completion-section h2::after { display: none; }
+        .completion-section p { font-size: 1.1rem; margin-top: 1rem; color: var(--secondary-color); max-width: 700px; margin-left: auto; margin-right: auto; line-height: 1.8; }
+
+
+        /* --- Footer Styling --- */
+        .main-footer {
+            background-color: var(--background-light);
+            color: var(--text-light);
+            text-align: center;
+            padding: 2rem 0;
+            font-size: 0.9rem;
+            margin-top: auto;
+            border-top: 1px solid var(--background-light);
+            opacity: 0.85;
+        }
+        .main-footer p { margin: 0; line-height: 1.5; }
+
+        /* --- Responsive Design --- */
+        @media (max-width: 768px) {
+            html { font-size: 15px; }
+            .main-header h1 { font-size: 2.5rem; } .main-header p { font-size: 1.1rem; }
+            section h2 { font-size: 1.8rem; }
+            .number-set-card h3 { font-size: 1.6rem; }
+            .relationships-diagram { font-size: 1.2rem; }
+            .relationships-diagram .math-symbol { font-size: 1.5rem; }
+             #relacoes-e-computacao .computational-notes h3 { font-size: 1.4rem; }
+            .minimal-nav { min-width: 180px; } .minimal-nav ul li a { padding: 0.6rem 0.8rem; }
+            .completion-section h2 { font-size: 2rem; }
+            .completion-section .button-group { flex-direction: column; align-items: center; gap: 0.8rem; }
+            .completion-section .action-button { width: 80%; max-width: 350px; margin-top: 0; }
+            .main-footer { padding: 1.5rem 0; }
+        }
+        @media (max-width: 480px) {
+            html { font-size: 14px; }
+            .main-header h1 { font-size: 2rem; } .main-header p { font-size: 1rem; }
+            section h2 { font-size: 1.6rem; }
+            .number-set-card { padding: 1.5rem; }
+            .number-set-card h3 { font-size: 1.4rem; }
+            .set-definition { font-size: 1rem; }
+            .set-properties h4, .set-computation h4 { font-size: 1.1rem; }
+            .relationships-diagram { font-size: 1rem; padding: 1.5rem; }
+            .relationships-diagram .math-symbol { font-size: 1.3rem; }
+             #relacoes-e-computacao .computational-notes h3 { font-size: 1.3rem; }
+             #relacoes-e-computacao .computational-notes { padding: 1rem; }
+            .quiz-options button { padding: 0.8rem; font-size: 0.95rem; }
+            .minimal-nav-button { top: 10px; right: 10px; padding: 6px 10px; font-size: 1rem; }
+            .minimal-nav { top: 48px; right: 10px; min-width: 160px; }
+            .minimal-nav ul li a { padding: 0.5rem 0.7rem; font-size: 0.9rem;}
+            .minimal-nav ul li a i.fas { margin-right: 8px; }
+            .completion-section .icon { font-size: 3.5rem; }
+            .completion-section h2 { font-size: 1.8rem; } .completion-section p { font-size: 1rem; }
+            .completion-section .action-button { width: 90%; max-width: 300px; }
+            .main-footer { padding: 1rem 0; font-size: 0.85rem; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- ========= Minimal Nav Handle ========= -->
+    <button id="minimal-nav-toggle" class="minimal-nav-button" aria-label="Alternar Menu de Navegação" aria-expanded="false">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- ========= Minimal Nav Panel ========= -->
+    <nav id="minimal-nav-panel" class="minimal-nav">
+        <ul>
+            <!-- IMPORTANT: Update these links -->
+            <li><a href="math-practice-25.html"><i class="fas fa-pencil-alt fa-fw"></i> <span data-translate="nav_practice">Iniciar Prática</span></a></li>
+            <li><a href="math-advanced-25.html"><i class="fas fa-flask fa-fw"></i> <span data-translate="nav_advanced">Prática Avançada</span></a></li>
+            <li><a href="math-dashboard.html"><i class="fas fa-list fa-fw"></i> <span data-translate="nav_menu">Menu do Curso</span></a></li>
+             <hr style="border: none; border-top: 1px solid var(--secondary-color); margin: 8px 0;">
+             <!-- Update internal links and translations -->
+             <li><a href="#introducao-conjuntos-numericos"><i class="fas fa-info-circle fa-fw"></i> <span data-translate="nav_intro_m25">Introdução</span></a></li>
+             <li><a href="#naturais"><i class="fas fa-seedling fa-fw symbol-N"></i> <span data-translate="nav_naturais">Naturais (N)</span></a></li>
+             <li><a href="#inteiros"><i class="fas fa-arrows-alt-h fa-fw symbol-Z"></i> <span data-translate="nav_inteiros">Inteiros (Z)</span></a></li>
+             <li><a href="#racionais"><i class="fas fa-divide fa-fw symbol-Q"></i> <span data-translate="nav_racionais">Racionais (Q)</span></a></li>
+             <li><a href="#reais"><i class="fas fa-infinity fa-fw symbol-R"></i> <span data-translate="nav_reais">Reais (R)</span></a></li>
+             <li><a href="#relacoes-e-computacao"><i class="fas fa-laptop-code fa-fw"></i> <span data-translate="nav_relacoes">Relações/Computação</span></a></li>
+             <li><a href="#knowledge-check"><i class="fas fa-check-double fa-fw"></i> <span data-translate="nav_quiz">Teste Rápido</span></a></li>
+             <li><a href="#completion"><i class="fas fa-flag-checkered fa-fw"></i> <span data-translate="completion_theory_title_m25">Conclusão</span></a></li>
+        </ul>
+    </nav>
+
+    <header class="main-header">
+        <div class="header-shape shape1"></div>
+        <div class="header-shape shape2"></div>
+        <div class="header-shape shape3"></div>
+        <div class="container"> <!-- Start visible -->
+            <!-- IMPORTANT: Update title and subtitle -->
+            <h1 data-translate="header_title_m25">Módulo 25: Conjuntos Numéricos</h1>
+            <p data-translate="header_subtitle_m25">Explorando os blocos de construção da matemática: Naturais, Inteiros, Racionais e Reais.</p>
+        </div>
+    </header>
+
+    <main>
+        <!-- ========= Introduction Section ========= -->
+        <section id="introducao-conjuntos-numericos">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="intro_title_m25">🔢 O Universo dos Números</h2>
+                <p class="fade-in-on-scroll delay-1" data-translate="intro_p1_m25">
+                    Bem-vindo ao Módulo 25! No coração da matemática e, consequentemente, da computação e IA, estão os números. Mas nem todos os números são iguais. Agrupamos números com características semelhantes em <span class="highlight">conjuntos numéricos</span>.
+                </p>
+                <p class="fade-in-on-scroll delay-2" data-translate="intro_p2_m25">
+                    Compreender esses conjuntos – Naturais (<span class="math-symbol symbol-N">N</span>), Inteiros (<span class="math-symbol symbol-Z">Z</span>), Racionais (<span class="math-symbol symbol-Q">Q</span>) e Reais (<span class="math-symbol symbol-R">R</span>) – é fundamental para entender como os computadores representam e manipulam dados, as limitações dessas representações e como escolher os tipos de dados corretos para nossos algoritmos de IA.
+                </p>
+                 <p class="text-center fade-in-on-scroll delay-3" data-translate="intro_p3_m25" style="margin-top: 1.5rem;">
+                    Vamos explorar cada um desses conjuntos fundamentais.
+                </p>
+            </div>
+        </section>
+
+        <!-- ========= Natural Numbers (N) Section ========= -->
+        <section id="naturais">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="naturais_title"><span class="math-symbol symbol-N">N</span> - Os Números Naturais</h2>
+                 <div class="number-set-card fade-in-on-scroll delay-1">
+                     <h3><span class="set-icon symbol-N">N</span> <span data-translate="naturais_card_title">Contagem e Ordem</span></h3>
+                     <p class="set-definition" data-translate="naturais_definition">
+                         O conjunto dos números usados para contar e ordenar. Existem duas convenções comuns: <code class="code-math">{0, 1, 2, 3, ...}</code> (incluindo zero, comum em ciência da computação) ou <code class="code-math">{1, 2, 3, ...}</code> (excluindo zero, mais tradicional em algumas áreas da matemática). Usaremos a convenção <span class="highlight">incluindo o zero</span> aqui.
+                     </p>
+                     <div class="set-properties">
+                         <h4 data-translate="properties_title">Propriedades Principais</h4>
+                         <ul>
+                             <li data-translate="naturais_prop1">Usados para <span class="highlight">contagem</span> de itens discretos.</li>
+                             <li data-translate="naturais_prop2">Permitem estabelecer uma <span class="highlight">ordem</span> (primeiro, segundo, terceiro...).</li>
+                             <li data-translate="naturais_prop3">Fechado sob adição e multiplicação (a soma/produto de dois naturais é sempre um natural).</li>
+                             <li data-translate="naturais_prop4">Não é fechado sob subtração (ex: <code class="code-math">3 - 5</code> não é natural) ou divisão (ex: <code class="code-math">3 / 2</code> não é natural).</li>
+                         </ul>
+                     </div>
+                     <div class="set-computation">
+                         <h4 data-translate="computation_title">Relevância Computacional</h4>
+                         <ul>
+                             <li data-translate="naturais_comp1">Representação de <span class="highlight">índices</span> de arrays e listas (começando em 0 na maioria das linguagens).</li>
+                             <li data-translate="naturais_comp2">Contadores em <span class="highlight">loops</span> (<code>for i in range(10): ...</code>).</li>
+                             <li data-translate="naturais_comp3">Tipos de dados como <code class="code-math">unsigned int</code> em C/C++ representam explicitamente números naturais (incluindo 0).</li>
+                             <li data-translate="naturais_comp4">Base para definir cardinalidade de conjuntos finitos.</li>
+                         </ul>
+                     </div>
+                 </div>
+            </div>
+        </section>
+
+        <!-- ========= Integer Numbers (Z) Section ========= -->
+        <section id="inteiros">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="inteiros_title"><span class="math-symbol symbol-Z">Z</span> - Os Números Inteiros</h2>
+                 <div class="number-set-card fade-in-on-scroll delay-1">
+                     <h3><span class="set-icon symbol-Z">Z</span> <span data-translate="inteiros_card_title">Incluindo os Negativos</span></h3>
+                     <p class="set-definition" data-translate="inteiros_definition">
+                         O conjunto que inclui todos os números naturais (<span class="math-symbol symbol-N">N</span>), seus opostos (negativos) e o zero. Representado por <code class="code-math">{..., -3, -2, -1, 0, 1, 2, 3, ...}</code>. A letra <span class="math-symbol symbol-Z">Z</span> vem do alemão "Zahlen" (números).
+                     </p>
+                     <div class="set-properties">
+                         <h4 data-translate="properties_title">Propriedades Principais</h4>
+                         <ul>
+                             <li data-translate="inteiros_prop1">Inclui todos os números naturais (<span class="math-symbol symbol-N">N ⊂ Z</span>).</li>
+                             <li data-translate="inteiros_prop2">Fechado sob <span class="highlight">adição, subtração</span> e <span class="highlight">multiplicação</span> (o resultado dessas operações entre inteiros é sempre um inteiro).</li>
+                             <li data-translate="inteiros_prop3">Não é fechado sob divisão (ex: <code class="code-math">5 / 2</code> não é inteiro).</li>
+                             <li data-translate="inteiros_prop4">Permite representar <span class="highlight">dívidas, temperaturas abaixo de zero, posições relativas</span>.</li>
+                         </ul>
+                     </div>
+                     <div class="set-computation">
+                         <h4 data-translate="computation_title">Relevância Computacional</h4>
+                         <ul>
+                             <li data-translate="inteiros_comp1">Tipo de dado fundamental na maioria das linguagens de programação (<code class="code-math">int</code> em Python, Java, C#, <code class="code-math">integer</code> em Pascal, etc.).</li>
+                             <li data-translate="inteiros_comp2">Representação de <span class="highlight">quantidades</span> que podem ser positivas ou negativas (saldo bancário, coordenadas).</li>
+                             <li data-translate="inteiros_comp3">Utilizados em cálculos de <span class="highlight">deslocamentos</span> (offsets) em memória ou arquivos.</li>
+                             <li data-translate="inteiros_comp4"><span class="highlight">Atenção:</span> Tipos <code class="code-math">int</code> computacionais têm limites (máximo e mínimo) devido à representação finita de bits, ao contrário do conjunto <span class="math-symbol symbol-Z</span> matemático que é infinito. Isso pode levar a erros de <span class="highlight">overflow</span>.</li>
+                         </ul>
+                     </div>
+                 </div>
+            </div>
+        </section>
+
+        <!-- ========= Rational Numbers (Q) Section ========= -->
+        <section id="racionais">
+            <div class="container">
+                 <h2 class="fade-in-on-scroll" data-translate="racionais_title"><span class="math-symbol symbol-Q">Q</span> - Os Números Racionais</h2>
+                 <div class="number-set-card fade-in-on-scroll delay-1">
+                      <h3><span class="set-icon symbol-Q">Q</span> <span data-translate="racionais_card_title">Frações e Razões</span></h3>
+                      <p class="set-definition" data-translate="racionais_definition">
+                          O conjunto de todos os números que podem ser expressos como uma <span class="highlight">fração</span> <code class="code-math">p/q</code>, onde <code class="code-math">p</code> e <code class="code-math">q</code> são inteiros e <code class="code-math">q ≠ 0</code>. A letra <span class="math-symbol symbol-Q">Q</span> vem de "Quociente". Inclui todos os inteiros (<span class="math-symbol symbol-Z ⊂ Q</span>), pois qualquer inteiro <code class="code-math">z</code> pode ser escrito como <code class="code-math">z/1</code>.
+                      </p>
+                      <div class="set-properties">
+                          <h4 data-translate="properties_title">Propriedades Principais</h4>
+                          <ul>
+                              <li data-translate="racionais_prop1">Inclui todos os números inteiros (<span class="math-symbol symbol-Z ⊂ Q</span>).</li>
+                              <li data-translate="racionais_prop2">Fechado sob <span class="highlight">adição, subtração, multiplicação</span> e <span class="highlight">divisão</span> (exceto divisão por zero).</li>
+                              <li data-translate="racionais_prop3">Podem ser representados como <span class="highlight">decimais finitos</span> (ex: <code class="code-math">1/2 = 0.5</code>) ou <span class="highlight">dízimas periódicas</span> (ex: <code class="code-math">1/3 = 0.333...</code>).</li>
+                              <li data-translate="racionais_prop4">Entre quaisquer dois números racionais distintos, existe sempre outro número racional (propriedade de <span class="highlight">densidade</span>).</li>
+                          </ul>
+                      </div>
+                      <div class="set-computation">
+                          <h4 data-translate="computation_title">Relevância Computacional</h4>
+                          <ul>
+                              <li data-translate="racionais_comp1">Representam <span class="highlight">proporções e taxas</span> exatas.</li>
+                              <li data-translate="racionais_comp2">Muitas linguagens não possuem um tipo nativo para racionais exatos, usando <span class="highlight">números de ponto flutuante</span> (<code class="code-math">float</code>, <code class="code-math">double</code>) como aproximação.</li>
+                              <li data-translate="racionais_comp3"><span class="highlight">Atenção:</span> Aproximações de ponto flutuante podem levar a <span class="highlight">erros de precisão</span> (ex: <code class="code-math">0.1 + 0.2</code> pode não ser exatamente <code class="code-math">0.3</code> em binário).</li>
+                              <li data-translate="racionais_comp4">Existem bibliotecas (como `fractions` em Python) que permitem trabalhar com <span class="highlight">racionais exatos</span>, úteis em cálculos financeiros ou científicos que exigem precisão total.</li>
+                          </ul>
+                      </div>
+                 </div>
+            </div>
+        </section>
+
+        <!-- ========= Real Numbers (R) Section ========= -->
+        <section id="reais">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="reais_title"><span class="math-symbol symbol-R">R</span> - Os Números Reais</h2>
+                 <div class="number-set-card fade-in-on-scroll delay-1">
+                     <h3><span class="set-icon symbol-R">R</span> <span data-translate="reais_card_title">A Reta Numérica Completa</span></h3>
+                     <p class="set-definition" data-translate="reais_definition">
+                         O conjunto de todos os números racionais (<span class="math-symbol symbol-Q</span>) <span class="highlight">e</span> os números <span class="highlight">irracionais</span> (aqueles que não podem ser expressos como fração p/q, como <code class="code-math">π</code>, <code class="code-math">√2</code>, <code class="code-math">e</code>). Os números reais preenchem completamente a reta numérica.
+                     </p>
+                     <div class="set-properties">
+                         <h4 data-translate="properties_title">Propriedades Principais</h4>
+                         <ul>
+                             <li data-translate="reais_prop1">Inclui todos os números racionais (<span class="math-symbol symbol-Q ⊂ R</span>).</li>
+                             <li data-translate="reais_prop2">Os números irracionais têm representação decimal <span class="highlight">infinita e não periódica</span>.</li>
+                             <li data-translate="reais_prop3">Fechado sob adição, subtração, multiplicação e divisão (exceto por zero).</li>
+                             <li data-translate="reais_prop4">Possui a propriedade da <span class="highlight">completude</span>: não há "buracos" na reta numérica real. Corresponde a todas as possíveis distâncias e medidas contínuas.</li>
+                         </ul>
+                     </div>
+                     <div class="set-computation">
+                         <h4 data-translate="computation_title">Relevância Computacional</h4>
+                         <ul>
+                             <li data-translate="reais_comp1">Usados para representar <span class="highlight">medidas contínuas</span> no mundo físico (distância, tempo, peso, etc.).</li>
+                             <li data-translate="reais_comp2">Fundamentais em <span class="highlight">cálculo, análise matemática, estatística</span> e muitas áreas da IA (ex: pesos em redes neurais, parâmetros de modelos).</li>
+                             <li data-translate="reais_comp3">Representados computacionalmente quase sempre por tipos de <span class="highlight">ponto flutuante</span> (<code class="code-math">float</code>, <code class="code-math">double</code>).</li>
+                             <li data-translate="reais_comp4"><span class="highlight">Extrema Atenção:</span> Ponto flutuante é uma <span class="highlight">APROXIMAÇÃO</span> dos números reais. A vasta maioria dos números reais (incluindo quase todos os irracionais e muitos racionais) <span class="highlight">não pode</span> ser representada exatamente. Isso é uma fonte crucial de erros em computação numérica e IA.
+                                 <div class="float-warning" data-translate="reais_float_warning"><strong>Cuidado:</strong> Erros de arredondamento e cancelamento em operações com floats podem se acumular e levar a resultados inesperados ou instabilidade em algoritmos.</div>
+                             </li>
+                             <li data-translate="reais_comp5">Bibliotecas de <span class="highlight">precisão arbitrária</span> (como `decimal` em Python ou GMP) podem ser usadas quando a precisão de float/double é insuficiente, mas com custo computacional maior.</li>
+                         </ul>
+                     </div>
+                 </div>
+            </div>
+        </section>
+
+        <!-- ========= Relationships and Computation Section ========= -->
+        <section id="relacoes-e-computacao">
+             <div class="container">
+                 <h2 class="fade-in-on-scroll" data-translate="relacoes_title">🔗 Relações e Representação Computacional</h2>
+                 <p class="text-center fade-in-on-scroll delay-1" data-translate="relacoes_subtitle">
+                     Esses conjuntos numéricos estão aninhados uns dentro dos outros, formando uma hierarquia.
+                 </p>
+
+                 <div class="relationships-diagram fade-in-on-scroll delay-2" data-translate="relacoes_diagram">
+                     <span class="math-symbol symbol-N">N</span> ⊂ <span class="math-symbol symbol-Z">Z</span> ⊂ <span class="math-symbol symbol-Q">Q</span> ⊂ <span class="math-symbol symbol-R">R</span>
+                 </div>
+                 <p class="text-center fade-in-on-scroll delay-3" data-translate="relacoes_diagram_meaning">
+                     (Naturais estão contidos nos Inteiros, que estão contidos nos Racionais, que estão contidos nos Reais)
+                 </p>
+
+                 <div class="computational-notes fade-in-on-scroll delay-4">
+                      <h3 data-translate="relacoes_comp_notes_title">Notas sobre Computação</h3>
+                      <ul>
+                          <li data-translate="relacoes_comp_note1">
+                              <strong class="highlight">Tipos de Dados:</strong> Linguagens de programação mapeiam esses conjuntos (de forma imperfeita) a tipos de dados:
+                              <ul>
+                                  <li><span class="math-symbol symbol-N">N</span>: Frequentemente parte de <code class="code-math">int</code>, ou tipos específicos como <code class="code-math">unsigned int</code>.</li>
+                                  <li><span class="math-symbol symbol-Z">Z</span>: Tipicamente <code class="code-math">int</code> ou <code class="code-math">integer</code> (com limites finitos!).</li>
+                                  <li><span class="math-symbol symbol-Q">Q</span>: Frequentemente aproximado por <code class="code-math">float</code>/ <code class="code-math">double</code>, ou bibliotecas específicas (<code class="code-math">Fraction</code>).</li>
+                                  <li><span class="math-symbol symbol-R">R</span>: Quase sempre aproximado por <code class="code-math">float</code>/ <code class="code-math">double</code>, ou bibliotecas de alta precisão (<code class="code-math">Decimal</code>).</li>
+                              </ul>
+                          </li>
+                          <li data-translate="relacoes_comp_note2">
+                              <strong class="highlight">Precisão vs. Eficiência:</strong> Há um trade-off. Tipos <code class="code-math">int</code> e <code class="code-math">float</code>/ <code class="code-math">double</code> nativos são rápidos, mas têm limitações de tamanho ou precisão. Bibliotecas de racionais exatos ou precisão arbitrária são precisas, mas mais lentas e consomem mais memória.
+                          </li>
+                          <li data-translate="relacoes_comp_note3">
+                              <strong class="highlight">Escolha Consciente em IA:</strong> A escolha do tipo numérico correto é crucial em IA. Usar <code class="code-math">float</code> é comum em redes neurais para eficiência, mas a consciência sobre erros de precisão é vital. Em sistemas onde a exatidão é crítica (ex: contagem, indexação), inteiros são necessários.
+                          </li>
+                          <li data-translate="relacoes_comp_note4">
+                              <strong class="highlight">Além dos Reais:</strong> A matemática continua com números <span class="highlight">Complexos</span> (<span class="math-symbol">C</span>), que adicionam a unidade imaginária <code class="code-math">i</code> (<code class="code-math">i² = -1</code>). Eles também têm representações computacionais e são importantes em áreas como processamento de sinais e física quântica, com algumas aplicações em IA.
+                          </li>
+                      </ul>
+                 </div>
+             </div>
+        </section>
+
+        <!-- ========= Knowledge Check Section ========= -->
+        <section id="knowledge-check">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="quiz_title">🧠 Teste Rápido!</h2>
+                <div class="quiz-container fade-in-on-scroll delay-1"> <!-- Observe container -->
+                    <div id="quiz-area">
+                         <p style="text-align: center; padding: 2rem 0;">Carregando quiz...</p>
+                    </div>
+                    <div id="quiz-feedback" class="quiz-feedback"></div>
+                    <button id="next-question-btn" data-translate="quiz_next_button">Próxima Pergunta</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========= Completion Section ========= -->
+        <section id="completion" class="completion-section"> <!-- Added ID for nav link -->
+            <div class="container">
+                 <div class="icon">
+                     <!-- Using number icons -->
+                     <i class="fas fa-infinity"></i>
+                     <i class="fas fa-divide"></i>
+                     <i class="fas fa-certificate"></i> <!-- Placeholder for N/Z -->
+                </div>
+                <!-- IMPORTANT: Update title, description and button links -->
+                <h2 class="fade-in-on-scroll delay-1" data-translate="completion_theory_title_m25">Teoria do Módulo 25 Completa!</h2>
+                <p class="fade-in-on-scroll delay-2" data-translate="completion_theory_desc_m25">
+                    Excelente! Você explorou os conjuntos numéricos fundamentais: Naturais, Inteiros, Racionais e Reais. Compreender suas definições, propriedades e como são (imperfeitamente) representados em computadores é essencial para a matemática aplicada à IA.
+                    <br>Lembre-se das implicações da precisão finita! Hora de solidificar esse conhecimento na prática.
+                </p>
+                <div class="button-group">
+                    <!-- Buttons observed -->
+                    <a href="math-dashboard.html" class="action-button secondary fade-in-on-scroll delay-3"><i class="fas fa-list"></i> <span data-translate="nav_menu">Menu do Curso</span></a>
+                    <a href="math-practice-25.html" class="action-button success fade-in-on-scroll delay-4"><i class="fas fa-pencil-alt"></i> <span data-translate="nav_practice">Iniciar Prática</span></a>
+                    <a href="math-advanced-25.html" class="action-button secondary fade-in-on-scroll delay-5"><i class="fas fa-flask"></i> <span data-translate="nav_advanced">Prática Avançada</span></a>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="main-footer">
+        <div class="container">
+            <p data-translate="footer_copyright"></p>
+        </div>
+    </footer>
+
+    <script>
+    // --- Translations Object (Portuguese Only) ---
+    const translations = {
+        pt: {
+            // Page Meta & Nav
+            "page_title_m25": "Módulo 25: Conjuntos Numéricos",
+            "nav_practice": "Iniciar Prática",
+            "nav_advanced": "Prática Avançada",
+            "nav_menu": "Menu do Curso",
+            "nav_intro_m25": "Introdução",
+            "nav_naturais": "Naturais (N)",
+            "nav_inteiros": "Inteiros (Z)",
+            "nav_racionais": "Racionais (Q)",
+            "nav_reais": "Reais (R)",
+            "nav_relacoes": "Relações/Computação",
+            "nav_quiz": "Teste Rápido",
+            // Header
+            "header_title_m25": "Módulo 25: Conjuntos Numéricos",
+            "header_subtitle_m25": "Explorando os blocos de construção da matemática: Naturais, Inteiros, Racionais e Reais.",
+            // Intro Section
+            "intro_title_m25": "🔢 O Universo dos Números",
+            "intro_p1_m25": "Bem-vindo ao Módulo 25! No coração da matemática e, consequentemente, da computação e IA, estão os números. Mas nem todos os números são iguais. Agrupamos números com características semelhantes em <span class=\"highlight\">conjuntos numéricos</span>.",
+            "intro_p2_m25": "Compreender esses conjuntos – Naturais (<span class=\"math-symbol symbol-N\">N</span>), Inteiros (<span class=\"math-symbol symbol-Z\">Z</span>), Racionais (<span class=\"math-symbol symbol-Q\">Q</span>) e Reais (<span class=\"math-symbol symbol-R\">R</span>) – é fundamental para entender como os computadores representam e manipulam dados, as limitações dessas representações e como escolher os tipos de dados corretos para nossos algoritmos de IA.",
+            "intro_p3_m25": "Vamos explorar cada um desses conjuntos fundamentais.",
+            // General Titles
+            "properties_title": "Propriedades Principais",
+            "computation_title": "Relevância Computacional",
+            // Naturals (N) Section
+            "naturais_title": "<span class=\"math-symbol symbol-N\">N</span> - Os Números Naturais",
+            "naturais_card_title": "Contagem e Ordem",
+            "naturais_definition": "O conjunto dos números usados para contar e ordenar. Existem duas convenções comuns: <code class=\"code-math\">{0, 1, 2, 3, ...}</code> (incluindo zero, comum em ciência da computação) ou <code class=\"code-math\">{1, 2, 3, ...}</code> (excluindo zero, mais tradicional em algumas áreas da matemática). Usaremos a convenção <span class=\"highlight\">incluindo o zero</span> aqui.",
+            "naturais_prop1": "Usados para <span class=\"highlight\">contagem</span> de itens discretos.",
+            "naturais_prop2": "Permitem estabelecer uma <span class=\"highlight\">ordem</span> (primeiro, segundo, terceiro...).",
+            "naturais_prop3": "Fechado sob adição e multiplicação (a soma/produto de dois naturais é sempre um natural).",
+            "naturais_prop4": "Não é fechado sob subtração (ex: <code class=\"code-math\">3 - 5</code> não é natural) ou divisão (ex: <code class=\"code-math\">3 / 2</code> não é natural).",
+            "naturais_comp1": "Representação de <span class=\"highlight\">índices</span> de arrays e listas (começando em 0 na maioria das linguagens).",
+            "naturais_comp2": "Contadores em <span class=\"highlight\">loops</span> (<code>for i in range(10): ...</code>).",
+            "naturais_comp3": "Tipos de dados como <code class=\"code-math\">unsigned int</code> em C/C++ representam explicitamente números naturais (incluindo 0).",
+            "naturais_comp4": "Base para definir cardinalidade de conjuntos finitos.",
+            // Integers (Z) Section
+            "inteiros_title": "<span class=\"math-symbol symbol-Z\">Z</span> - Os Números Inteiros",
+            "inteiros_card_title": "Incluindo os Negativos",
+            "inteiros_definition": "O conjunto que inclui todos os números naturais (<span class=\"math-symbol symbol-N\">N</span>), seus opostos (negativos) e o zero. Representado por <code class=\"code-math\">{..., -3, -2, -1, 0, 1, 2, 3, ...}</code>. A letra <span class=\"math-symbol symbol-Z\">Z</span> vem do alemão \"Zahlen\" (números).",
+            "inteiros_prop1": "Inclui todos os números naturais (<span class=\"math-symbol symbol-N\">N ⊂ Z</span>).",
+            "inteiros_prop2": "Fechado sob <span class=\"highlight\">adição, subtração</span> e <span class=\"highlight\">multiplicação</span> (o resultado dessas operações entre inteiros é sempre um inteiro).",
+            "inteiros_prop3": "Não é fechado sob divisão (ex: <code class=\"code-math\">5 / 2</code> não é inteiro).",
+            "inteiros_prop4": "Permite representar <span class=\"highlight\">dívidas, temperaturas abaixo de zero, posições relativas</span>.",
+            "inteiros_comp1": "Tipo de dado fundamental na maioria das linguagens de programação (<code class=\"code-math\">int</code> em Python, Java, C#, <code class=\"code-math\">integer</code> em Pascal, etc.).",
+            "inteiros_comp2": "Representação de <span class=\"highlight\">quantidades</span> que podem ser positivas ou negativas (saldo bancário, coordenadas).",
+            "inteiros_comp3": "Utilizados em cálculos de <span class=\"highlight\">deslocamentos</span> (offsets) em memória ou arquivos.",
+            "inteiros_comp4": "<span class=\"highlight\">Atenção:</span> Tipos <code class=\"code-math\">int</code> computacionais têm limites (máximo e mínimo) devido à representação finita de bits, ao contrário do conjunto <span class=\"math-symbol symbol-Z\">Z</span> matemático que é infinito. Isso pode levar a erros de <span class=\"highlight\">overflow</span>.",
+            // Rationals (Q) Section
+            "racionais_title": "<span class=\"math-symbol symbol-Q\">Q</span> - Os Números Racionais",
+            "racionais_card_title": "Frações e Razões",
+            "racionais_definition": "O conjunto de todos os números que podem ser expressos como uma <span class=\"highlight\">fração</span> <code class=\"code-math\">p/q</code>, onde <code class=\"code-math\">p</code> e <code class=\"code-math\">q</code> são inteiros e <code class=\"code-math\">q ≠ 0</code>. A letra <span class=\"math-symbol symbol-Q\">Q</span> vem de \"Quociente\". Inclui todos os inteiros (<span class=\"math-symbol symbol-Z ⊂ Q</span>), pois qualquer inteiro <code class=\"code-math\">z</code> pode ser escrito como <code class=\"code-math\">z/1</code>.",
+            "racionais_prop1": "Inclui todos os números inteiros (<span class=\"math-symbol symbol-Z ⊂ Q</span>).",
+            "racionais_prop2": "Fechado sob <span class=\"highlight\">adição, subtração, multiplicação</span> e <span class=\"highlight\">divisão</span> (exceto divisão por zero).",
+            "racionais_prop3": "Podem ser representados como <span class=\"highlight\">decimais finitos</span> (ex: <code class=\"code-math\">1/2 = 0.5</code>) ou <span class=\"highlight\">dízimas periódicas</span> (ex: <code class=\"code-math\">1/3 = 0.333...</code>).",
+            "racionais_prop4": "Entre quaisquer dois números racionais distintos, existe sempre outro número racional (propriedade de <span class=\"highlight\">densidade</span>).",
+            "racionais_comp1": "Representam <span class=\"highlight\">proporções e taxas</span> exatas.",
+            "racionais_comp2": "Muitas linguagens não possuem um tipo nativo para racionais exatos, usando <span class=\"highlight\">números de ponto flutuante</span> (<code class=\"code-math\">float</code>, <code class=\"code-math\">double</code>) como aproximação.",
+            "racionais_comp3": "<span class=\"highlight\">Atenção:</span> Aproximações de ponto flutuante podem levar a <span class=\"highlight\">erros de precisão</span> (ex: <code class=\"code-math\">0.1 + 0.2</code> pode não ser exatamente <code class=\"code-math\">0.3</code> em binário).",
+            "racionais_comp4": "Existem bibliotecas (como `fractions` em Python) que permitem trabalhar com <span class=\"highlight\">racionais exatos</span>, úteis em cálculos financeiros ou científicos que exigem precisão total.",
+            // Reals (R) Section
+            "reais_title": "<span class=\"math-symbol symbol-R\">R</span> - Os Números Reais",
+            "reais_card_title": "A Reta Numérica Completa",
+            "reais_definition": "O conjunto de todos os números racionais (<span class=\"math-symbol symbol-Q\">Q</span>) <span class=\"highlight\">e</span> os números <span class=\"highlight\">irracionais</span> (aqueles que não podem ser expressos como fração p/q, como <code class=\"code-math\">π</code>, <code class=\"code-math\">√2</code>, <code class=\"code-math\">e</code>). Os números reais preenchem completamente a reta numérica.",
+            "reais_prop1": "Inclui todos os números racionais (<span class=\"math-symbol symbol-Q ⊂ R</span>).",
+            "reais_prop2": "Os números irracionais têm representação decimal <span class=\"highlight\">infinita e não periódica</span>.",
+            "reais_prop3": "Fechado sob adição, subtração, multiplicação e divisão (exceto por zero).",
+            "reais_prop4": "Possui a propriedade da <span class=\"highlight\">completude</span>: não há \"buracos\" na reta numérica real. Corresponde a todas as possíveis distâncias e medidas contínuas.",
+            "reais_comp1": "Usados para representar <span class=\"highlight\">medidas contínuas</span> no mundo físico (distância, tempo, peso, etc.).",
+            "reais_comp2": "Fundamentais em <span class=\"highlight\">cálculo, análise matemática, estatística</span> e muitas áreas da IA (ex: pesos em redes neurais, parâmetros de modelos).",
+            "reais_comp3": "Representados computacionalmente quase sempre por tipos de <span class=\"highlight\">ponto flutuante</span> (<code class=\"code-math\">float</code>, <code class=\"code-math\">double</code>).",
+            "reais_comp4": "<span class=\"highlight\">Extrema Atenção:</span> Ponto flutuante é uma <span class=\"highlight\">APROXIMAÇÃO</span> dos números reais. A vasta maioria dos números reais (incluindo quase todos os irracionais e muitos racionais) <span class=\"highlight\">não pode</span> ser representada exatamente. Isso é uma fonte crucial de erros em computação numérica e IA.",
+             "reais_float_warning": "<strong>Cuidado:</strong> Erros de arredondamento e cancelamento em operações com floats podem se acumular e levar a resultados inesperados ou instabilidade em algoritmos.",
+            "reais_comp5": "Bibliotecas de <span class=\"highlight\">precisão arbitrária</span> (como `decimal` em Python ou GMP) podem ser usadas quando a precisão de float/double é insuficiente, mas com custo computacional maior.",
+             // Relationships and Computation Section
+            "relacoes_title": "🔗 Relações e Representação Computacional",
+            "relacoes_subtitle": "Esses conjuntos numéricos estão aninhados uns dentro dos outros, formando uma hierarquia.",
+            "relacoes_diagram": "<span class=\"math-symbol symbol-N\">N</span> ⊂ <span class=\"math-symbol symbol-Z\">Z</span> ⊂ <span class=\"math-symbol symbol-Q\">Q</span> ⊂ <span class=\"math-symbol symbol-R\">R</span>",
+             "relacoes_diagram_meaning": "(Naturais estão contidos nos Inteiros, que estão contidos nos Racionais, que estão contidos nos Reais)",
+             "relacoes_comp_notes_title": "Notas sobre Computação",
+             "relacoes_comp_note1": "<strong class=\"highlight\">Tipos de Dados:</strong> Linguagens de programação mapeiam esses conjuntos (de forma imperfeita) a tipos de dados: <ul><li><span class=\"math-symbol symbol-N\">N</span>: Frequentemente parte de <code class=\"code-math\">int</code>, ou tipos específicos como <code class=\"code-math\">unsigned int</code>.</li><li><span class=\"math-symbol symbol-Z\">Z</span>: Tipicamente <code class=\"code-math\">int</code> ou <code class=\"code-math\">integer</code> (com limites finitos!).</li><li><span class=\"math-symbol symbol-Q\">Q</span>: Frequentemente aproximado por <code class=\"code-math\">float</code>/ <code class=\"code-math\">double</code>, ou bibliotecas específicas (<code class=\"code-math\">Fraction</code>).</li><li><span class=\"math-symbol symbol-R\">R</span>: Quase sempre aproximado por <code class=\"code-math\">float</code>/ <code class=\"code-math\">double</code>, ou bibliotecas de alta precisão (<code class=\"code-math\">Decimal</code>).</li></ul>",
+            "relacoes_comp_note2": "<strong class=\"highlight\">Precisão vs. Eficiência:</strong> Há um trade-off. Tipos <code class=\"code-math\">int</code> e <code class=\"code-math\">float</code>/ <code class=\"code-math\">double</code> nativos são rápidos, mas têm limitações de tamanho ou precisão. Bibliotecas de racionais exatos ou precisão arbitrária são precisas, mas mais lentas e consomem mais memória.",
+            "relacoes_comp_note3": "<strong class=\"highlight\">Escolha Consciente em IA:</strong> A escolha do tipo numérico correto é crucial em IA. Usar <code class=\"code-math\">float</code> é comum em redes neurais para eficiência, mas a consciência sobre erros de precisão é vital. Em sistemas onde a exatidão é crítica (ex: contagem, indexação), inteiros são necessários.",
+            "relacoes_comp_note4": "<strong class=\"highlight\">Além dos Reais:</strong> A matemática continua com números <span class=\"highlight\">Complexos</span> (<span class=\"math-symbol\">C</span>), que adicionam a unidade imaginária <code class=\"code-math\">i</code> (<code class=\"code-math\">i² = -1</code>). Eles também têm representações computacionais e são importantes em áreas como processamento de sinais e física quântica, com algumas aplicações em IA.",
+            // Quiz Section
+            "quiz_title": "🧠 Teste Rápido!",
+            "quiz_next_button": "Próxima Pergunta",
+            "quiz_q1_m25": "Qual conjunto numérico inclui <code class=\"code-math\">-5</code> mas NÃO inclui <code class=\"code-math\">1/2</code>?",
+            "quiz_q1_m25_opt1": "Naturais (<span class=\"math-symbol symbol-N\">N</span>)",
+            "quiz_q1_m25_opt2": "Inteiros (<span class=\"math-symbol symbol-Z\">Z</span>)",
+            "quiz_q1_m25_opt3": "Racionais (<span class=\"math-symbol symbol-Q\">Q</span>)",
+            "quiz_q1_m25_opt4": "Reais (<span class=\"math-symbol symbol-R\">R</span>)",
+            "quiz_q2_m25": "O número <code class=\"code-math\">π</code> (Pi) pertence a qual destes conjuntos?",
+            "quiz_q2_m25_opt1": "Inteiros (<span class=\"math-symbol symbol-Z\">Z</span>)",
+            "quiz_q2_m25_opt2": "Racionais (<span class=\"math-symbol symbol-Q\">Q</span>)",
+            "quiz_q2_m25_opt3": "Reais (<span class=\"math-symbol symbol-R</span>) mas não Racionais (<span class=\"math-symbol symbol-Q</span>)",
+            "quiz_q2_m25_opt4": "Naturais (<span class=\"math-symbol symbol-N\">N</span>)",
+            "quiz_q3_m25": "Qual é a principal limitação ao representar números Reais (<span class=\"math-symbol symbol-R\">R</span>) usando tipos <code class=\"code-math\">float</code> ou <code class=\"code-math\">double</code> em um computador?",
+            "quiz_q3_m25_opt1": "Não podem representar números negativos.",
+            "quiz_q3_m25_opt2": "Não podem representar o zero.",
+            "quiz_q3_m25_opt3": "Têm limites de tamanho (overflow/underflow).",
+            "quiz_q3_m25_opt4": "São aproximações e podem ter erros de precisão.",
+            "quiz_q4_m25": "A qual conjunto pertence o resultado da operação <code class=\"code-math\">7 / 2</code>?",
+            "quiz_q4_m25_opt1": "Apenas Naturais (<span class=\"math-symbol symbol-N\">N</span>)",
+            "quiz_q4_m25_opt2": "Apenas Inteiros (<span class=\"math-symbol symbol-Z\">Z</span>)",
+            "quiz_q4_m25_opt3": "Racionais (<span class=\"math-symbol symbol-Q\">Q</span>) (e consequentemente Reais <span class=\"math-symbol symbol-R\">R</span>)",
+            "quiz_q4_m25_opt4": "Apenas Irracionais",
+             "quiz_q5_m25": "Qual relação de inclusão entre os conjuntos está CORRETA?",
+             "quiz_q5_m25_opt1": "<span class=\"math-symbol symbol-Q\">Q ⊂ Z</span>",
+             "quiz_q5_m25_opt2": "<span class=\"math-symbol symbol-R ⊂ Q</span>",
+             "quiz_q5_m25_opt3": "<span class=\"math-symbol symbol-N ⊂ Z ⊂ Q</span>",
+             "quiz_q5_m25_opt4": "<span class=\"math-symbol symbol-Z ⊂ N</span>",
+            "quiz_feedback_correct": "Correto! 🎉",
+            "quiz_feedback_incorrect": "Não foi bem assim! A resposta correta era: {correctAnswerText}",
+            "quiz_final_score_title": "Teste Rápido Completo!",
+            "quiz_final_score_summary": "Você respondeu {score} de {total} perguntas corretamente.",
+            "quiz_final_score_perfect": "Excelente! Você compreendeu bem os conjuntos numéricos.",
+            "quiz_final_score_good": "Bom trabalho! Revise os conceitos onde teve dúvida.",
+            // Completion Section
+            "completion_theory_title_m25": "Teoria do Módulo 25 Completa!",
+            "completion_theory_desc_m25": "Excelente! Você explorou os conjuntos numéricos fundamentais: Naturais, Inteiros, Racionais e Reais. Compreender suas definições, propriedades e como são (imperfeitamente) representados em computadores é essencial para a matemática aplicada à IA.<br>Lembre-se das implicações da precisão finita! Hora de solidificar esse conhecimento na prática.",
+            // Footer
+            "footer_copyright": "© 2024 Matemática para IA. Todos os direitos reservados."
+        }
+    };
+
+    // --- Global Variables ---
+    let currentQuestionIndex = 0;
+    let score = 0;
+    const lang = 'pt'; // Hardcoded language
+
+    // --- DOM Elements (Get them once) ---
+    const navToggleButton = document.getElementById('minimal-nav-toggle');
+    const navPanel = document.getElementById('minimal-nav-panel');
+    const body = document.body;
+    const quizArea = document.getElementById('quiz-area');
+    const feedbackArea = document.getElementById('quiz-feedback');
+    const nextButton = document.getElementById('next-question-btn');
+
+    // --- Functions ---
+
+    function getTranslation(key, replacements = {}) {
+         // Fallback for missing keys
+         let text = translations[lang]?.[key] ?? `[${key}]`;
+         for (const placeholder in replacements) {
+             // Use a more robust regex to avoid issues with special characters in replacements
+             const regex = new RegExp(`\\{${placeholder}\\}`, 'g');
+             text = text.replace(regex, replacements[placeholder]);
+         }
+         return text;
+    }
+
+    function translatePage() {
+         document.querySelectorAll('[data-translate]').forEach(el => {
+             const key = el.getAttribute('data-translate');
+             let translation = getTranslation(key);
+
+              if (el.tagName === 'TITLE') { document.title = translation; }
+              else if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') { /* Skip form inputs */ }
+              else {
+                   // More refined check for safe HTML elements
+                   const safeTags = /<\/?(code|strong|span|br|i|b|em|ul|li|div|p)>/gi;
+                   const containsSafeHtml = safeTags.test(translation);
+                   // More specific containers where HTML is expected
+                   const allowedContainers = '.set-definition, .set-properties li, .set-computation li, .computational-notes li, .relationships-diagram, .intro p, .completion-section p, footer p, .quiz-feedback, .quiz-question, .quiz-options button';
+
+                   if (containsSafeHtml || el.closest(allowedContainers)) {
+                        // Sanitize slightly - very basic, not foolproof security
+                        // translation = translation.replace(/<script.*?>.*?<\/script>/gi, ''); // Remove script tags
+                        el.innerHTML = translation; // Use innerHTML only when necessary
+                   } else {
+                      el.textContent = translation; // Default to textContent for safety
+                   }
+              }
+         });
+    }
+
+    // --- Quiz Data & Functions ---
+    // IMPORTANT: Update quiz data for Module 25
+    const quizData = [
+         { questionKey: "quiz_q1_m25", optionKeys: ["quiz_q1_m25_opt1", "quiz_q1_m25_opt2", "quiz_q1_m25_opt3", "quiz_q1_m25_opt4"], correctAnswer: 1 }, // Inteiros (Z)
+         { questionKey: "quiz_q2_m25", optionKeys: ["quiz_q2_m25_opt1", "quiz_q2_m25_opt2", "quiz_q2_m25_opt3", "quiz_q2_m25_opt4"], correctAnswer: 2 }, // Reais mas não Racionais (Irracional)
+         { questionKey: "quiz_q3_m25", optionKeys: ["quiz_q3_m25_opt1", "quiz_q3_m25_opt2", "quiz_q3_m25_opt3", "quiz_q3_m25_opt4"], correctAnswer: 3 }, // Erros de precisão
+         { questionKey: "quiz_q4_m25", optionKeys: ["quiz_q4_m25_opt1", "quiz_q4_m25_opt2", "quiz_q4_m25_opt3", "quiz_q4_m25_opt4"], correctAnswer: 2 }, // Racionais (Q)
+         { questionKey: "quiz_q5_m25", optionKeys: ["quiz_q5_m25_opt1", "quiz_q5_m25_opt2", "quiz_q5_m25_opt3", "quiz_q5_m25_opt4"], correctAnswer: 2 }  // N ⊂ Z ⊂ Q
+    ];
+
+    function loadQuestion() {
+          if (!quizArea) return; // Ensure quizArea exists
+
+          // If we reached the end, show score
+          if (currentQuestionIndex >= quizData.length) {
+              // Check if score is already displayed to prevent re-rendering
+              if (!quizArea.querySelector('[data-translate="quiz_final_score_title"]')) {
+                 showFinalScore();
+              }
+              return;
+          }
+
+          const currentQuiz = quizData[currentQuestionIndex];
+          const questionText = getTranslation(currentQuiz.questionKey);
+
+          // Generate HTML for question and options
+          quizArea.innerHTML = `
+              <div class="quiz-question">${currentQuestionIndex + 1}. ${questionText}</div>
+              <div class="quiz-options">
+                  ${currentQuiz.optionKeys.map((optionKey, index) => {
+                      // Get translated option text and allow HTML within it
+                      const optionText = getTranslation(optionKey);
+                      return `<button class="quiz-option-btn" data-index="${index}">${optionText}</button>`;
+                  }).join('')}
+              </div>
+          `;
+
+          // Reset feedback and next button
+          if (feedbackArea) {
+            feedbackArea.classList.remove('visible', 'correct', 'incorrect');
+            feedbackArea.textContent = '';
+             feedbackArea.style.height = '0'; // Collapse height
+             feedbackArea.style.marginBottom = '0'; // Remove margin
+          }
+          if (nextButton) {
+            nextButton.classList.remove('visible');
+            nextButton.disabled = true;
+          }
+
+          // Add event listeners to the new buttons
+          quizArea.querySelectorAll('.quiz-option-btn').forEach(button => {
+              button.addEventListener('click', handleAnswer);
+          });
+    }
+
+    function handleAnswer(event) {
+         const selectedButton = event.target.closest('.quiz-option-btn'); // Ensure we get the button itself
+         if (!selectedButton) return; // Exit if click wasn't on a button
+
+         const selectedIndex = parseInt(selectedButton.dataset.index);
+         const correctIndex = quizData[currentQuestionIndex].correctAnswer;
+         const correctOptionKey = quizData[currentQuestionIndex].optionKeys[correctIndex];
+
+         // Disable all options
+         quizArea.querySelectorAll('.quiz-option-btn').forEach(btn => {
+            btn.disabled = true;
+            btn.classList.remove('shake'); // Remove shake if present from previous incorrect
+         });
+
+         if (!feedbackArea || !nextButton) return; // Ensure elements exist
+
+         feedbackArea.classList.add('visible');
+
+         if (selectedIndex === correctIndex) {
+             selectedButton.classList.add('correct');
+             feedbackArea.innerHTML = getTranslation('quiz_feedback_correct'); // Use innerHTML for icon
+             feedbackArea.classList.add('correct');
+             feedbackArea.classList.remove('incorrect');
+             score++;
+             selectedButton.classList.add('tada-anim');
+         } else {
+             selectedButton.classList.add('incorrect');
+             // Get formatted correct answer text (allowing HTML)
+             const formattedCorrectAnswer = getTranslation(correctOptionKey);
+             feedbackArea.innerHTML = getTranslation('quiz_feedback_incorrect', { correctAnswerText: `<strong>${formattedCorrectAnswer}</strong>` });
+             feedbackArea.classList.add('incorrect');
+             feedbackArea.classList.remove('correct');
+             // Highlight the correct button as well
+             const correctButton = quizArea.querySelector(`.quiz-option-btn[data-index="${correctIndex}"]`);
+             if(correctButton) correctButton.classList.add('correct');
+             selectedButton.classList.add('shake');
+         }
+
+          // Remove animation classes after they finish
+          selectedButton.addEventListener('animationend', () => {
+               selectedButton.classList.remove('tada-anim', 'shake');
+          }, { once: true });
+
+         // Make feedback area adjust height and margin smoothly
+         // Need a small delay for browser to calculate scrollHeight after content change
+         setTimeout(() => {
+             feedbackArea.style.height = feedbackArea.scrollHeight + 'px';
+             feedbackArea.style.marginBottom = '1rem';
+         }, 50);
+
+
+         // Show and enable next button
+         nextButton.classList.add('visible');
+         nextButton.disabled = false;
+     }
+
+     function showFinalScore() {
+            if (!quizArea) return;
+            const totalQuestions = quizData.length;
+            // Determine message based on score percentage
+            let resultMessageKey;
+            const percentage = score / totalQuestions;
+            if (percentage === 1) {
+                resultMessageKey = 'quiz_final_score_perfect';
+            } else {
+                resultMessageKey = 'quiz_final_score_good';
+            }
+
+            quizArea.innerHTML = `
+               <div class="quiz-question text-center" data-translate="quiz_final_score_title" style="font-size: 1.5rem;">${getTranslation('quiz_final_score_title')}</div>
+               <p class="text-center" style="font-size: 1.2rem; margin-bottom: 1rem;">${getTranslation('quiz_final_score_summary', { score: score, total: totalQuestions })}</p>
+               <p class="text-center" style="color: ${score === totalQuestions ? 'var(--success-color)' : 'var(--primary-color)'}; font-weight: bold;">${getTranslation(resultMessageKey)}</p>
+            `;
+            if (feedbackArea) {
+                feedbackArea.classList.remove('visible'); // Hide feedback area
+                feedbackArea.style.height = '0';
+                feedbackArea.style.marginBottom = '0';
+            }
+            if (nextButton) nextButton.style.display = 'none'; // Hide next button
+            quizArea.scrollIntoView({ behavior: 'smooth', block: 'center' }); // Scroll score into view
+     }
+
+
+    // --- Intersection Observer Setup ---
+    function setupObservers() {
+        const observerOptions = {
+            root: null, // relative to viewport
+            rootMargin: '0px',
+            threshold: 0.1 // Trigger when 10% of the element is visible
+        };
+
+        const observerCallback = (entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    // Optional: Unobserve after it becomes visible to save resources
+                    // observer.unobserve(entry.target);
+                }
+                // Optional: Remove 'visible' if it scrolls out of view
+                // else {
+                //     entry.target.classList.remove('visible');
+                // }
+            });
+        };
+
+        const animationObserver = new IntersectionObserver(observerCallback, observerOptions);
+
+        // Observe elements with the fade-in class
+        document.querySelectorAll('.fade-in-on-scroll').forEach(el => {
+            animationObserver.observe(el);
+        });
+
+        // No specific code simulation observer needed for this module
+    }
+
+    // --- Event Listeners Setup ---
+    function setupEventListeners() {
+        // Navbar Toggle
+        if (navToggleButton && navPanel) {
+            navToggleButton.addEventListener('click', (event) => {
+                event.stopPropagation();
+                body.classList.toggle('nav-active');
+                navToggleButton.setAttribute('aria-expanded', body.classList.contains('nav-active'));
+            });
+
+            // Close nav if clicking outside
+            document.addEventListener('click', (event) => {
+                if (body.classList.contains('nav-active') && !navPanel.contains(event.target) && event.target !== navToggleButton && !navToggleButton.contains(event.target)) {
+                    body.classList.remove('nav-active');
+                    navToggleButton.setAttribute('aria-expanded', 'false');
+                }
+            });
+
+            // Close nav on link click (for internal # links)
+            navPanel.querySelectorAll('a').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    if (link.getAttribute('href').startsWith('#')) {
+                        // Close panel slightly delayed to allow scroll animation to start
+                        setTimeout(() => {
+                            body.classList.remove('nav-active');
+                            navToggleButton.setAttribute('aria-expanded', 'false');
+                        }, 150);
+                    }
+                    // External links will navigate away anyway
+                });
+            });
+
+            // Close nav on Escape key
+             document.addEventListener('keydown', (event) => {
+                 if (event.key === 'Escape' && body.classList.contains('nav-active')) {
+                     body.classList.remove('nav-active');
+                     navToggleButton.setAttribute('aria-expanded', 'false');
+                 }
+             });
+        }
+
+        // Quiz Next Button
+        if (nextButton) {
+            nextButton.addEventListener('click', () => {
+                if (!nextButton.disabled) {
+                    currentQuestionIndex++;
+                    loadQuestion(); // Load the next question
+                }
+            });
+        } else {
+            console.error("Elemento #next-question-btn não encontrado.");
+        }
+    }
+
+    // --- Initialization ---
+    document.addEventListener('DOMContentLoaded', () => {
+        // Check if elements needed for quiz exist before proceeding
+        if (!quizArea) console.error("Elemento #quiz-area não encontrado.");
+        if (!feedbackArea) console.error("Elemento #quiz-feedback não encontrado.");
+
+        translatePage();        // Apply translations first
+        setupEventListeners();  // Set up interactive elements
+        setupObservers();       // Set up animations
+
+        if (quizArea) {
+            loadQuestion();     // Load the first quiz question if container exists
+        }
+    });
+
+    </script>
+
+</body>
+</html>

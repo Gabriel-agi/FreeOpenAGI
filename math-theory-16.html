@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<!-- Language set to Portuguese BR -->
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Title set by JS -->
+    <title data-translate="page_title">Módulo 16: Distribuições Contínuas (Parte 1) - Normal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* --- Reset & Base Styles --- */
+        :root {
+            --primary-color: #007bff; /* Blue */
+            --secondary-color: #6c757d; /* Gray */
+            --background-light: #f8f9fa;
+            --background-dark: #343a40;
+            --text-light: #f8f9fa;
+            --text-dark: #212529;
+            --accent-color: #ffc107; /* Yellow */
+            --success-color: #28a745; /* Green */
+            --error-color: #dc3545; /* Red */
+            --info-color: #17a2b8;  /* Teal */
+            --dist-normal-color: #6610f2; /* Indigo */
+            --dist-z-color: #fd7e14; /* Orange */
+            --border-radius: 8px;
+            --transition-speed: 0.3s;
+            --animation-speed: 0.6s; /* Control fade-in speed */
+            --font-body: 'Roboto', sans-serif;
+            --font-title: 'Orbitron', sans-serif;
+            --nav-primary: #007bff; /* Changed from purple */
+            --nav-success: #28a745; /* Changed from teal */
+            --nav-dark: #1a1a2e;
+            --footer-border-color: #495057;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; font-size: 16px; }
+        body {
+            font-family: var(--font-body); line-height: 1.7;
+            background-color: var(--background-light); color: var(--text-dark);
+            overflow-x: hidden; display: flex; flex-direction: column; min-height: 100vh;
+        }
+        main { flex-grow: 1; }
+
+        /* --- Utility Classes --- */
+        .container { max-width: 960px; margin: 0 auto; padding: 0 15px; }
+        .text-center { text-align: center; }
+        .highlight { color: var(--primary-color); font-weight: bold; }
+        .formula {
+            font-family: 'Courier New', Courier, monospace; background-color: #e9ecef;
+            padding: 0.5rem 1rem; border-radius: 4px; margin: 1rem auto;
+            font-size: 1.1rem; color: var(--text-dark); display: inline-block;
+            border: 1px solid #ced4da; text-align: center;
+        }
+        .placeholder-image {
+            background-color: #e9ecef; border: 1px dashed var(--secondary-color);
+            padding: 3rem 1rem; margin: 2rem auto; text-align: center;
+            color: var(--secondary-color); font-style: italic;
+            border-radius: var(--border-radius); max-width: 70%;
+            font-size: 0.9rem;
+        }
+
+        /* Elements to be animated by observer */
+        .fade-in-on-scroll {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+        }
+        .fade-in-on-scroll.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        /* Add delays for staggering */
+        .delay-1.visible { transition-delay: 0.1s; }
+        .delay-2.visible { transition-delay: 0.2s; }
+        .delay-3.visible { transition-delay: 0.3s; }
+        .delay-4.visible { transition-delay: 0.4s; }
+        .delay-5.visible { transition-delay: 0.5s; }
+        .delay-6.visible { transition-delay: 0.6s; }
+        .delay-7.visible { transition-delay: 0.7s; }
+
+        .button-group { margin-top: 2rem; display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; }
+        .action-button {
+             display: inline-flex; align-items: center; justify-content: center; gap: 0.5em;
+             padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold;
+             color: var(--text-light); background-color: var(--primary-color); border: none;
+             border-radius: var(--border-radius); cursor: pointer;
+             transition: background-color var(--transition-speed), transform var(--transition-speed), filter var(--transition-speed), box-shadow var(--transition-speed), opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out; /* Add animation transition */
+             margin-top: 1rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+             text-decoration: none; line-height: 1.2;
+             opacity: 0; /* Start hidden if animated */
+             transform: translateY(20px); /* Start offset if animated */
+        }
+        .action-button.visible { /* Make visible via observer */
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .action-button i.fas {}
+        .action-button:hover:not(:disabled) { background-color: #0056b3; transform: translateY(-2px) !important; box-shadow: 0 4px 8px rgba(0,0,0,0.15); } /* Use !important to override initial transform */
+        .action-button:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none !important; box-shadow: none; opacity: 0.7; }
+        .action-button.success { background-color: var(--success-color); }
+        .action-button.success:hover:not(:disabled) { background-color: #218838; }
+        .action-button.secondary { background-color: var(--secondary-color); }
+        .action-button.secondary:hover:not(:disabled) { background-color: #5a6268; }
+        .action-button:active:not(:disabled) { transform: translateY(1px) scale(0.98) !important; filter: brightness(0.95); }
+
+        /* --- Animations --- */
+        @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); } 50% { transform: scale(1.03); box-shadow: 0 0 15px rgba(0, 123, 255, 0.6); } 100% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); } }
+        @keyframes tada { from { transform: scale3d(1, 1, 1); } 10%, 20% { transform: scale3d(.9, .9, .9) rotate3d(0, 0, 1, -3deg); } 30%, 50%, 70%, 90% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, 3deg); } 40%, 60%, 80% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, -3deg); } to { transform: scale3d(1, 1, 1); } }
+        .tada-anim { animation: tada 1s ease; }
+        @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
+        @keyframes iconAppearCorrect { 0% { transform: scale(0.5) rotate(-15deg); opacity: 0; } 60% { transform: scale(1.2) rotate(5deg); opacity: 1; } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
+
+        /* --- Minimal Retractable Nav --- */
+        .minimal-nav-button { position: fixed; top: 15px; right: 15px; z-index: 1001; background-color: rgba(52, 58, 64, 0.75); color: var(--text-light); border: none; border-radius: var(--border-radius); padding: 8px 12px; cursor: pointer; transition: background-color var(--transition-speed), opacity var(--transition-speed), transform var(--transition-speed); font-size: 1.1rem; opacity: 0.6; box-shadow: 0 2px 5px rgba(0,0,0,0.2); line-height: 1; }
+        .minimal-nav-button:hover { background-color: rgba(52, 58, 64, 0.95); opacity: 1; transform: scale(1.05); }
+        .minimal-nav { position: fixed; top: 60px; right: 15px; z-index: 1000; background-color: var(--background-dark); border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.3); padding: 0.8rem; opacity: 0; transform: translateY(-15px) scale(0.95); transform-origin: top right; pointer-events: none; transition: opacity var(--transition-speed) ease, transform var(--transition-speed) ease; min-width: 200px; }
+        body.nav-active .minimal-nav { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+        .minimal-nav ul { list-style: none; margin: 0; padding: 0; }
+        .minimal-nav ul li { margin-bottom: 5px; }
+        .minimal-nav ul li:last-child { margin-bottom: 0; }
+        .minimal-nav ul li a { display: flex; align-items: center; color: var(--text-light); text-decoration: none; padding: 0.6rem 1rem; border-radius: 4px; transition: background-color var(--transition-speed), color var(--transition-speed); white-space: nowrap; font-weight: 400; font-size: 0.95rem; }
+        .minimal-nav ul li a i.fas { margin-right: 10px; width: 1.2em; text-align: center; opacity: 0.8; transition: opacity var(--transition-speed); }
+        .minimal-nav ul li a:hover { background-color: var(--nav-primary); color: var(--text-light); } /* Updated hover color */
+        .minimal-nav ul li a:hover i.fas { opacity: 1; }
+
+        /* --- Header --- */
+        .main-header { background: linear-gradient(135deg, var(--primary-color), #0056b3); color: var(--text-light); padding: 4rem 0 6rem; text-align: center; position: relative; overflow: hidden; }
+        .main-header .container { /* Start visible */ }
+        .main-header h1 { font-family: var(--font-title); font-size: 2.8rem; margin-bottom: 0.5rem; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); }
+        .main-header p { font-size: 1.2rem; font-weight: 300; opacity: 0.9; }
+        .header-shape { position: absolute; border-radius: 50%; background-color: rgba(255, 255, 255, 0.1); animation: pulse 5s infinite ease-in-out alternate; }
+        .shape1 { width: 150px; height: 150px; bottom: -50px; left: 10%; animation-duration: 6s; }
+        .shape2 { width: 80px; height: 80px; top: 50px; right: 15%; animation-duration: 4s; }
+        .shape3 { width: 50px; height: 50px; bottom: 20px; right: 30%; animation-duration: 7s; }
+
+        /* --- Section Styling --- */
+        section { padding: 4rem 0; border-bottom: 1px solid #eee; }
+        main section:last-of-type { border-bottom: none; padding-bottom: 0;}
+        section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); margin-bottom: 2rem; text-align: center; position: relative; padding-bottom: 10px; }
+        section h2::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 60px; height: 4px; background-color: var(--accent-color); border-radius: 2px; }
+
+        /* --- Introduction Section --- */
+        #introducao-m16 p { font-size: 1.1rem; max-width: 750px; margin: 0 auto 1rem; text-align: left; }
+        #introducao-m16 .comparison { display: flex; gap: 2rem; margin-top: 2rem; flex-wrap: wrap; justify-content: center; }
+        .comparison-box { background-color: #fff; padding: 1.5rem; border-radius: var(--border-radius); box-shadow: 0 4px 10px rgba(0,0,0,0.07); flex-basis: 45%; border-top: 4px solid var(--info-color); text-align: center;}
+        .comparison-box h3 { color: var(--info-color); margin-bottom: 1rem; font-size: 1.3rem;}
+        .comparison-box ul { list-style: none; padding: 0; margin: 0 auto; max-width: 300px; text-align: left; }
+        .comparison-box li { margin-bottom: 0.5rem; padding-left: 1.2em; position: relative; }
+        .comparison-box li::before { content: '✓'; position: absolute; left: 0; color: var(--success-color); font-weight: bold; }
+
+        /* --- Normal Distribution Section --- */
+        #normal-distribution p { max-width: 750px; margin-left: auto; margin-right: auto; }
+        .parameters { display: flex; justify-content: space-around; gap: 2rem; margin-top: 2.5rem; flex-wrap: wrap; }
+        .param-card { /* Animated by observer */
+            background-color: #fff; padding: 1.5rem; border-radius: var(--border-radius);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.07); text-align: center;
+            transition: transform var(--transition-speed) ease, box-shadow var(--transition-speed) ease, opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+            opacity: 0; transform: translateY(20px); /* Start state */
+            border-top: 4px solid var(--dist-normal-color); flex-basis: 40%; min-width: 250px;
+        }
+        .param-card.visible { opacity: 1; transform: translateY(0); }
+        .param-card:hover { transform: translateY(-5px) scale(1.02) !important; box-shadow: 0 8px 20px rgba(0,0,0,0.12); }
+        .param-icon { font-size: 2.5rem; margin-bottom: 1rem; color: var(--dist-normal-color); }
+        .param-card h3 { font-family: var(--font-body); font-weight: 700; font-size: 1.3rem; margin-bottom: 0.8rem; color: var(--text-dark); }
+        .param-details { font-size: 1rem; color: var(--secondary-color); margin-top: 1rem; line-height: 1.6; }
+
+         /* --- Properties Section --- */
+        #propriedades-normal ul { list-style: none; padding-left: 0; max-width: 700px; margin: 1rem auto; }
+        #propriedades-normal li { background-color: #fff; margin-bottom: 1rem; padding: 1rem 1.5rem; border-radius: var(--border-radius); box-shadow: 0 2px 5px rgba(0,0,0,0.05); border-left: 5px solid var(--accent-color); }
+        #propriedades-normal li strong { color: var(--primary-color); }
+
+        /* --- Z-Score Section --- */
+        #z-score .formula-container { text-align: center; margin: 2rem 0; }
+        #z-score p { max-width: 750px; margin-left: auto; margin-right: auto; }
+        .z-score-explanation { background-color: rgba(253, 126, 20, 0.1); border: 1px solid rgba(253, 126, 20, 0.3); padding: 1.5rem; border-radius: var(--border-radius); margin-top: 2rem; }
+        .z-score-explanation strong { color: var(--dist-z-color); }
+
+        /* --- Applications Section --- */
+         #aplicacoes-ia ul { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-top: 2rem; }
+         #aplicacoes-ia li { /* Animated by observer */
+             background-color: #fff; padding: 1.5rem; border-radius: var(--border-radius); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+             border-left: 5px solid var(--success-color);
+             transition: transform var(--transition-speed), box-shadow var(--transition-speed), opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+             opacity: 0; transform: translateY(15px); /* Start state */
+         }
+         #aplicacoes-ia li.visible { opacity: 1; transform: translateY(0); }
+         #aplicacoes-ia li:hover { transform: scale(1.03); box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12); }
+         #aplicacoes-ia strong { color: var(--success-color); display: block; margin-bottom: 0.5rem; font-size: 1.1rem; }
+
+        /* --- Knowledge Check Section --- */
+        #knowledge-check { background-color: #e9ecef; }
+        .quiz-container { /* Animated by observer */
+             background-color: #fff; padding: 2rem; border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.1); max-width: 700px; margin: 2rem auto 0;
+             opacity: 0; transition: opacity var(--animation-speed) ease-out; /* Only fade opacity */
+        }
+        .quiz-container.visible { opacity: 1; }
+        .quiz-question { font-size: 1.2rem; font-weight: bold; margin-bottom: 1.5rem; color: var(--text-dark); }
+        .quiz-options button { display: block; width: 100%; padding: 1rem; margin-bottom: 1rem; text-align: left; font-size: 1rem; background-color: #f8f9fa; border: 1px solid #ced4da; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), border-color var(--transition-speed), transform var(--transition-speed); }
+        .quiz-options button:not(:disabled):hover { background-color: #e2e6ea; border-color: #adb5bd; transform: translateX(5px); }
+        .quiz-options button:disabled { cursor: default; opacity: 0.7; }
+        .quiz-options button.correct { background-color: #d4edda; border-color: var(--success-color); color: #155724; font-weight: bold; }
+        .quiz-options button.incorrect { background-color: #f8d7da; border-color: var(--error-color); color: #721c24; font-weight: bold; }
+        .quiz-options button.incorrect.shake { animation: shake 0.5s ease; }
+        .quiz-feedback { margin-top: 1.5rem; padding: 1rem; border-radius: var(--border-radius); font-weight: bold; text-align: center; opacity: 0; transition: opacity 0.5s ease, height 0.5s ease, margin-bottom 0.5s ease; height: 0; overflow: hidden; margin-bottom: 0;}
+        .quiz-feedback.visible { opacity: 1; height: auto; margin-bottom: 1rem; }
+        .quiz-feedback.correct { background-color: #d4edda; color: #155724; }
+        .quiz-feedback.incorrect { background-color: #f8d7da; color: #721c24; }
+        #next-question-btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5em; margin: 1.5rem auto 0; padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold; color: var(--text-light); background-color: var(--primary-color); border: none; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), transform var(--transition-speed), opacity 0.3s, visibility 0.3s; opacity: 0; visibility: hidden; }
+        #next-question-btn:hover:not(:disabled) { background-color: #0056b3; transform: scale(1.05); }
+        #next-question-btn.visible { opacity: 1; visibility: visible; }
+        #next-question-btn:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none; opacity: 0.7; }
+
+
+        /* --- Completion Section Styling --- */
+        .completion-section { padding: 4rem 0; text-align: center; background-color: var(--background-light); }
+        .completion-section .icon { font-size: 4rem; color: var(--success-color); margin-bottom: 1rem; display: inline-block; animation: iconAppearCorrect 1s ease-out 0.5s forwards; opacity: 0; /* Initial state for animation */}
+        /* Ensure completion elements are targeted by observer */
+        .completion-section h2, .completion-section p {
+            opacity: 0; transform: translateY(20px);
+            transition: opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+        }
+        .completion-section h2.visible, .completion-section p.visible {
+            opacity: 1; transform: translateY(0);
+        }
+        .completion-section .button-group { margin-top: 2.5rem; }
+        .completion-section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); margin-bottom: 1rem; }
+        .completion-section h2::after { display: none; }
+        .completion-section p { font-size: 1.1rem; margin-top: 1rem; color: var(--secondary-color); max-width: 700px; margin-left: auto; margin-right: auto; line-height: 1.8; }
+
+
+        /* --- Footer Styling --- */
+        .main-footer {
+            background-color: var(--background-light);
+            color: var(--text-light);
+            text-align: center;
+            padding: 2rem 0;
+            font-size: 0.9rem;
+            margin-top: auto;
+            border-top: 1px solid var(--background-light);
+            opacity: 0.85;
+        }
+        .main-footer p { margin: 0; line-height: 1.5; }
+
+        /* --- Responsive Design --- */
+        @media (max-width: 768px) {
+            html { font-size: 15px; }
+            .main-header h1 { font-size: 2.5rem; } .main-header p { font-size: 1.1rem; }
+            section h2 { font-size: 1.8rem; }
+            #introducao-m16 .comparison-box { flex-basis: 80%; }
+            .parameters { flex-direction: column; align-items: center; }
+            .param-card { flex-basis: 80%; }
+             #aplicacoes-ia ul { grid-template-columns: 1fr; }
+            .minimal-nav { min-width: 180px; } .minimal-nav ul li a { padding: 0.6rem 0.8rem; }
+            .completion-section h2 { font-size: 2rem; }
+            .completion-section .button-group { flex-direction: column; align-items: center; gap: 0.8rem; }
+            .completion-section .action-button { width: 80%; max-width: 350px; margin-top: 0; }
+            .main-footer { padding: 1.5rem 0; }
+            .placeholder-image { max-width: 90%; padding: 2rem 1rem;}
+        }
+        @media (max-width: 480px) {
+            html { font-size: 14px; }
+            .main-header h1 { font-size: 2rem; } .main-header p { font-size: 1rem; }
+            section h2 { font-size: 1.6rem; }
+            .quiz-options button { padding: 0.8rem; font-size: 0.95rem; }
+            .minimal-nav-button { top: 10px; right: 10px; padding: 6px 10px; font-size: 1rem; }
+            .minimal-nav { top: 48px; right: 10px; min-width: 160px; }
+            .minimal-nav ul li a { padding: 0.5rem 0.7rem; font-size: 0.9rem;}
+            .minimal-nav ul li a i.fas { margin-right: 8px; }
+            .completion-section .icon { font-size: 3.5rem; }
+            .completion-section h2 { font-size: 1.8rem; } .completion-section p { font-size: 1rem; }
+            .completion-section .action-button { width: 90%; max-width: 300px; }
+            .main-footer { padding: 1rem 0; font-size: 0.85rem; }
+             #introducao-m16 .comparison-box { flex-basis: 95%; }
+             .param-card { flex-basis: 95%; }
+             #aplicacoes-ia ul { gap: 1rem; }
+             #aplicacoes-ia li { padding: 1rem; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- ========= Minimal Nav Handle ========= -->
+    <button id="minimal-nav-toggle" class="minimal-nav-button" aria-label="Alternar Menu de Navegação" aria-expanded="false">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- ========= Minimal Nav Panel ========= -->
+    <nav id="minimal-nav-panel" class="minimal-nav">
+        <ul>
+            <!-- IMPORTANT: Changed ctp to math and module number -->
+            <li><a href="math-practice-16.html"><i class="fas fa-pencil-alt fa-fw"></i> <span data-translate="nav_practice">Iniciar Prática</span></a></li>
+            <li><a href="math-advanced-16.html"><i class="fas fa-flask fa-fw"></i> <span data-translate="nav_advanced">Prática Avançada</span></a></li>
+            <li><a href="math-dashboard.html"><i class="fas fa-list fa-fw"></i> <span data-translate="nav_menu">Menu do Curso</span></a></li>
+             <hr style="border: none; border-top: 1px solid var(--secondary-color); margin: 8px 0;">
+             <li><a href="#introducao-m16"><i class="fas fa-door-open fa-fw"></i> <span data-translate="nav_welcome_m16">Boas-vindas M16</span></a></li>
+             <li><a href="#normal-distribution"><i class="fas fa-bell fa-fw"></i> <span data-translate="nav_normal_dist">Dist. Normal</span></a></li>
+             <li><a href="#propriedades-normal"><i class="fas fa-list-ol fa-fw"></i> <span data-translate="nav_properties">Propriedades</span></a></li>
+             <li><a href="#z-score"><i class="fas fa-exchange-alt fa-fw"></i> <span data-translate="nav_zscore">Z-Score</span></a></li>
+             <li><a href="#aplicacoes-ia"><i class="fas fa-brain fa-fw"></i> <span data-translate="nav_applications">Aplicações</span></a></li>
+             <li><a href="#knowledge-check"><i class="fas fa-check-double fa-fw"></i> <span data-translate="nav_quiz">Teste Rápido</span></a></li>
+             <li><a href="#completion"><i class="fas fa-flag-checkered fa-fw"></i> <span data-translate="completion_theory_title_m16">Conclusão</span></a></li>
+        </ul>
+    </nav>
+
+    <header class="main-header">
+        <div class="header-shape shape1"></div>
+        <div class="header-shape shape2"></div>
+        <div class="header-shape shape3"></div>
+        <div class="container"> <!-- Start visible -->
+            <h1 data-translate="header_title_m16">Módulo 16: Distribuições Contínuas (Parte 1) - Normal</h1>
+            <p data-translate="header_subtitle_m16">Explorando a mais famosa das distribuições contínuas: a Curva Normal.</p>
+        </div>
+    </header>
+
+    <main>
+        <!-- ========= Introduction Section ========= -->
+        <section id="introducao-m16">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="intro_title_m16">📈 Do Discreto ao Contínuo: A Distribuição Normal</h2>
+                <p class="fade-in-on-scroll delay-1" data-translate="intro_p1_m16">
+                    Bem-vindo ao Módulo 16! Nos módulos anteriores, exploramos variáveis aleatórias <span class="highlight">discretas</span> (como o número de sucessos em tentativas Binomiais) e suas distribuições. Agora, entramos no mundo das variáveis aleatórias <span class="highlight">contínuas</span>.
+                </p>
+                <p class="fade-in-on-scroll delay-2" data-translate="intro_p2_m16">
+                    Variáveis contínuas podem assumir qualquer valor dentro de um intervalo (pense em altura, peso, temperatura, tempo de processamento de uma tarefa). Ao contrário das distribuições discretas, onde atribuímos probabilidade a pontos específicos, nas contínuas, falamos da probabilidade de um valor cair <span class="highlight">dentro de um intervalo</span>. Essa probabilidade é representada pela área sob uma curva de densidade de probabilidade (PDF).
+                </p>
+                 <div class="comparison fade-in-on-scroll delay-3">
+                    <div class="comparison-box">
+                        <h3 data-translate="intro_discrete_title">Variáveis Discretas (Recap)</h3>
+                        <ul>
+                            <li data-translate="intro_discrete_li1">Valores contáveis (ex: nº de caras, nº de falhas).</li>
+                            <li data-translate="intro_discrete_li2">Probabilidade em pontos específicos P(X=k).</li>
+                            <li data-translate="intro_discrete_li3">Função de Massa de Probabilidade (PMF).</li>
+                            <li data-translate="intro_discrete_li4">Exemplos: Binomial, Poisson.</li>
+                        </ul>
+                    </div>
+                    <div class="comparison-box">
+                         <h3 data-translate="intro_continuous_title">Variáveis Contínuas (Novo!)</h3>
+                        <ul>
+                            <li data-translate="intro_continuous_li1">Valores em um intervalo (ex: altura, tempo).</li>
+                            <li data-translate="intro_continuous_li2">Probabilidade em intervalos P(a &lt; X &lt; b).</li>
+                             <li data-translate="intro_continuous_li3">Função de Densidade de Probabilidade (PDF).</li>
+                            <li data-translate="intro_continuous_li4">Exemplos: Normal, Exponencial (próximo módulo).</li>
+                        </ul>
+                    </div>
+                </div>
+                <p class="fade-in-on-scroll delay-4" data-translate="intro_p3_m16" style="margin-top: 2rem;">
+                    Neste módulo, focaremos na distribuição contínua mais importante e onipresente: a <span class="highlight">Distribuição Normal</span>, também conhecida como Distribuição Gaussiana ou "curva do sino".
+                </p>
+            </div>
+        </section>
+
+        <!-- ========= Normal Distribution Section ========= -->
+        <section id="normal-distribution">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="normal_dist_title">🔔 A Curva Normal (Gaussiana)</h2>
+                <p class="text-center fade-in-on-scroll delay-1" data-translate="normal_dist_p1">
+                    A Distribuição Normal é uma distribuição de probabilidade contínua caracterizada por sua forma simétrica de sino. Muitos fenômenos naturais e processos em ciência e engenharia seguem aproximadamente esta distribuição (ex: alturas de pessoas, erros de medição, ruído em sinais).
+                </p>
+
+                 <div class="placeholder-image fade-in-on-scroll delay-2" data-translate="normal_dist_diagram">
+                    Diagrama da Curva Normal (Formato de Sino) Aqui
+                    <br>(Mostrar a forma simétrica centrada na média)
+                </div>
+
+                <p class="text-center fade-in-on-scroll delay-3" data-translate="normal_dist_p2">
+                    A forma exata da curva normal é definida por dois parâmetros:
+                </p>
+
+                <div class="parameters">
+                    <div class="param-card fade-in-on-scroll delay-4">
+                        <span class="param-icon"><i class="fas fa-arrows-alt-h"></i></span>
+                        <h3 data-translate="normal_param_mean_title">Média (μ)</h3>
+                        <div class="param-details">
+                            <p data-translate="normal_param_mean_text">Representa o centro da distribuição. É o pico da curva do sino. Alterar a média <span class="highlight">desloca</span> a curva inteira para a esquerda ou direita no eixo horizontal, sem mudar sua forma.</p>
+                        </div>
+                    </div>
+                    <div class="param-card fade-in-on-scroll delay-5">
+                         <span class="param-icon"><i class="fas fa-arrows-alt-v"></i></span>
+                        <h3 data-translate="normal_param_stddev_title">Desvio Padrão (σ)</h3>
+                        <div class="param-details">
+                            <p data-translate="normal_param_stddev_text">Mede a dispersão ou "achatamento" da curva. Um desvio padrão <span class="highlight">maior</span> resulta em uma curva mais baixa e larga (mais espalhada). Um desvio padrão <span class="highlight">menor</span> resulta em uma curva mais alta e estreita (mais concentrada em torno da média).</p>
+                        </div>
+                    </div>
+                </div>
+                 <p class="text-center fade-in-on-scroll delay-6" style="margin-top: 2rem;" data-translate="normal_dist_conclusion">Entender <code>μ</code> e <code>σ</code> é crucial para interpretar e utilizar a distribuição normal.</p>
+            </div>
+        </section>
+
+        <!-- ========= Properties Section ========= -->
+        <section id="propriedades-normal" style="background-color: #f0f8ff;"> <!-- Light blue background -->
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="properties_title">🔑 Propriedades Essenciais da Distribuição Normal</h2>
+                <p class="text-center fade-in-on-scroll delay-1" data-translate="properties_subtitle">Algumas características fundamentais que tornam a Normal tão útil.</p>
+
+                <ul class="fade-in-on-scroll delay-2">
+                    <li data-translate="properties_li1"><strong>Simetria:</strong> A curva é perfeitamente simétrica em torno da sua média (μ). Isso significa que a média, a mediana e a moda são todas iguais e localizadas no centro da distribuição.</li>
+                    <li data-translate="properties_li2"><strong>Área Total = 1:</strong> A área total sob a curva de densidade de probabilidade normal é sempre igual a 1 (ou 100%). Isso representa a totalidade das probabilidades.</li>
+                    <li data-translate="properties_li3"><strong>Regra Empírica (68-95-99.7):</strong> Para qualquer distribuição normal, aproximadamente:
+                        <ul>
+                            <li><span class="highlight">68%</span> dos dados estão a 1 desvio padrão da média (entre μ - σ e μ + σ).</li>
+                            <li><span class="highlight">95%</span> dos dados estão a 2 desvios padrão da média (entre μ - 2σ e μ + 2σ).</li>
+                            <li><span class="highlight">99.7%</span> dos dados estão a 3 desvios padrão da média (entre μ - 3σ e μ + 3σ).</li>
+                        </ul>
+                    </li>
+                     <li data-translate="properties_li4"><strong>Assíntotas:</strong> A curva se aproxima do eixo horizontal (assintoticamente) em ambas as direções, mas nunca o toca. Isso significa que, teoricamente, qualquer valor é possível, mas valores muito distantes da média são extremamente improváveis.</li>
+                </ul>
+
+                <div class="placeholder-image fade-in-on-scroll delay-3" data-translate="properties_diagram">
+                    Diagrama da Regra Empírica (68-95-99.7) Aqui
+                    <br>(Mostrar uma curva normal com as áreas marcadas para 1, 2 e 3 desvios padrão)
+                </div>
+
+                <p class="text-center fade-in-on-scroll delay-4" data-translate="properties_conclusion">Essas propriedades permitem fazer previsões e análises poderosas sobre dados que seguem essa distribuição.</p>
+            </div>
+        </section>
+
+        <!-- ========= Z-Score Section ========= -->
+        <section id="z-score">
+             <div class="container">
+                 <h2 class="fade-in-on-scroll" data-translate="zscore_title">📏 Padronização: O Z-Score</h2>
+                 <p class="text-center fade-in-on-scroll delay-1" data-translate="zscore_intro">
+                    Como comparar valores de diferentes distribuições normais (com diferentes μ e σ)? Ou como usar tabelas de probabilidade padronizadas? A resposta é o <span class="highlight">Z-score</span> (ou escore padrão).
+                 </p>
+                 <p class="fade-in-on-scroll delay-2" data-translate="zscore_def">
+                     O Z-score mede quantos desvios padrão um determinado valor (X) está acima ou abaixo da média (μ). Ele transforma qualquer distribuição normal em uma <span class="highlight">Distribuição Normal Padrão</span>, que tem sempre média <code>μ = 0</code> e desvio padrão <code>σ = 1</code>.
+                 </p>
+
+                <div class="formula-container fade-in-on-scroll delay-3">
+                    <div class="formula" data-translate="zscore_formula">
+                        <code>Z = (X - μ) / σ</code>
+                    </div>
+                 </div>
+                  <div class="z-score-explanation fade-in-on-scroll delay-4">
+                     <p data-translate="zscore_interpretation_p1"><strong>Interpretação do Z-score:</strong></p>
+                     <ul>
+                        <li data-translate="zscore_interpretation_li1">Um Z-score <span class="highlight">positivo</span> indica que o valor X está acima da média.</li>
+                        <li data-translate="zscore_interpretation_li2">Um Z-score <span class="highlight">negativo</span> indica que o valor X está abaixo da média.</li>
+                         <li data-translate="zscore_interpretation_li3">Um Z-score de <span class="highlight">0</span> indica que o valor X é igual à média.</li>
+                        <li data-translate="zscore_interpretation_li4">A <span class="highlight">magnitude</span> do Z-score indica a distância da média em unidades de desvio padrão. Z=2 significa 2 desvios padrão acima da média.</li>
+                     </ul>
+                 </div>
+
+                 <div class="placeholder-image fade-in-on-scroll delay-5" data-translate="zscore_diagram">
+                     Diagrama de Padronização (Z-score) Aqui
+                     <br>(Mostrar como diferentes curvas normais (com μ e σ variados) são mapeadas para a curva normal padrão com μ=0, σ=1 usando a transformação Z)
+                 </div>
+
+                 <p class="text-center fade-in-on-scroll delay-6" data-translate="zscore_conclusion">
+                    A padronização via Z-score é fundamental para calcular probabilidades usando tabelas Z ou software, e para comparar dados de escalas diferentes, uma tarefa comum em pré-processamento para Machine Learning.
+                 </p>
+             </div>
+        </section>
+
+        <!-- ========= Applications Section ========= -->
+        <section id="aplicacoes-ia" style="background-color: #f8f9fa;"> <!-- Back to light background -->
+             <div class="container">
+                 <h2 class="fade-in-on-scroll" data-translate="applications_title">🤖 Aplicações em IA e Computação</h2>
+                 <p class="text-center fade-in-on-scroll delay-1" data-translate="applications_intro">
+                     A Distribuição Normal e seus conceitos são extremamente relevantes em diversas áreas da Inteligência Artificial e Ciência da Computação:
+                 </p>
+                 <ul class="fade-in-on-scroll delay-2">
+                    <li class="fade-in-on-scroll delay-3">
+                        <strong data-translate="app_li1_title">Análise e Modelagem de Erros:</strong> Erros em medições ou previsões de modelos muitas vezes tendem a seguir uma distribuição normal. Entender isso ajuda a quantificar a incerteza.
+                    </li>
+                     <li class="fade-in-on-scroll delay-4">
+                        <strong data-translate="app_li2_title">Pré-processamento de Dados (Features):</strong> A padronização (usando Z-scores) é uma técnica comum para colocar features em uma escala comparável, o que pode melhorar o desempenho de algoritmos como Regressão, SVMs e Redes Neurais.
+                    </li>
+                     <li class="fade-in-on-scroll delay-5">
+                        <strong data-translate="app_li3_title">Detecção de Anomalias (Outliers):</strong> Valores com Z-scores muito altos (positivos ou negativos, ex: |Z| > 3) podem ser considerados outliers ou anomalias, pois são muito improváveis sob a suposição de normalidade (baseado na Regra Empírica).
+                    </li>
+                     <li class="fade-in-on-scroll delay-6">
+                        <strong data-translate="app_li4_title">Inicialização de Pesos em Redes Neurais:</strong> Algumas técnicas de inicialização de pesos em redes neurais (como Xavier/Glorot ou He initialization) utilizam distribuições normais (ou uniformes) com variâncias específicas para ajudar na convergência do treinamento.
+                    </li>
+                    <li class="fade-in-on-scroll delay-7">
+                        <strong data-translate="app_li5_title">Modelagem de Fenômenos Naturais:</strong> Em simulações ou sistemas que modelam o mundo real (robótica, visão computacional), a distribuição normal pode ser usada para representar variabilidade ou ruído inerente.
+                    </li>
+                     <li class="fade-in-on-scroll delay-7">
+                        <strong data-translate="app_li6_title">Algoritmos Gaussianos:</strong> Existem algoritmos baseados diretamente em suposições de normalidade, como o Naive Bayes Gaussiano para classificação ou Misturas Gaussianas (GMMs) para clustering.
+                    </li>
+                 </ul>
+             </div>
+        </section>
+
+        <!-- ========= Knowledge Check Section ========= -->
+        <section id="knowledge-check">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="quiz_title">🧠 Teste Rápido!</h2>
+                <div class="quiz-container fade-in-on-scroll delay-1"> <!-- Observe container -->
+                    <div id="quiz-area">
+                         <p style="text-align: center; padding: 2rem 0;">Carregando quiz...</p>
+                    </div>
+                    <div id="quiz-feedback" class="quiz-feedback"></div>
+                    <button id="next-question-btn" data-translate="quiz_next_button">Próxima Pergunta</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========= Completion Section ========= -->
+        <section id="completion" class="completion-section"> <!-- Added ID for nav link -->
+            <div class="container">
+                 <div class="icon">
+                    <i class="fas fa-bell"></i>
+                    <i class="fas fa-check"></i>
+                    <i class="fas fa-graduation-cap"></i>
+                </div>
+                <h2 class="fade-in-on-scroll delay-1" data-translate="completion_theory_title_m16">Teoria do Módulo 16 Completa!</h2>
+                <p class="fade-in-on-scroll delay-2" data-translate="completion_theory_desc_m16">
+                   Excelente! Você explorou a fundamental Distribuição Normal, seus parâmetros, propriedades e a importância da padronização com Z-scores. Vimos como esses conceitos se aplicam diretamente em IA e computação. <br>
+                   Continue sua jornada praticando esses conceitos ou avançando para a próxima distribuição contínua!
+                </p>
+                <div class="button-group">
+                    <!-- Buttons observed - IMPORTANT: Links updated -->
+                    <a href="math-dashboard.html" class="action-button secondary fade-in-on-scroll delay-3"><i class="fas fa-list"></i> <span data-translate="nav_menu">Menu do Curso</span></a>
+                    <a href="math-practice-16.html" class="action-button success fade-in-on-scroll delay-4"><i class="fas fa-pencil-alt"></i> <span data-translate="nav_practice">Iniciar Prática</span></a>
+                    <a href="math-advanced-16.html" class="action-button secondary fade-in-on-scroll delay-5"><i class="fas fa-flask"></i> <span data-translate="nav_advanced">Prática Avançada</span></a>
+                     <!-- Link to Next Module Theory -->
+                     <a href="math-module-17.html" class="action-button fade-in-on-scroll delay-6" style="background-color: var(--info-color);"><i class="fas fa-arrow-right"></i> <span data-translate="nav_next_module">Ir para Módulo 17</span></a>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="main-footer">
+        <div class="container">
+            <p data-translate="footer_copyright"></p>
+        </div>
+    </footer>
+
+    <script>
+    // --- Translations Object (Portuguese Only) ---
+    const translations = {
+        pt: {
+            "page_title": "Módulo 16: Distribuições Contínuas (Parte 1) - Normal",
+            "nav_practice": "Iniciar Prática",
+            "nav_advanced": "Prática Avançada",
+            "nav_menu": "Menu do Curso",
+            "nav_welcome_m16": "Boas-vindas M16", "nav_normal_dist": "Dist. Normal", "nav_properties": "Propriedades", "nav_zscore": "Z-Score", "nav_applications": "Aplicações", "nav_quiz": "Teste Rápido",
+            "nav_next_module": "Ir para Módulo 17", // Added for navigation
+            "header_title_m16": "Módulo 16: Distribuições Contínuas (Parte 1) - Normal", "header_subtitle_m16": "Explorando a mais famosa das distribuições contínuas: a Curva Normal.",
+            "intro_title_m16": "📈 Do Discreto ao Contínuo: A Distribuição Normal",
+            "intro_p1_m16": "Bem-vindo ao Módulo 16! Nos módulos anteriores, exploramos variáveis aleatórias <span class=\"highlight\">discretas</span> (como o número de sucessos em tentativas Binomiais) e suas distribuições. Agora, entramos no mundo das variáveis aleatórias <span class=\"highlight\">contínuas</span>.",
+            "intro_p2_m16": "Variáveis contínuas podem assumir qualquer valor dentro de um intervalo (pense em altura, peso, temperatura, tempo de processamento de uma tarefa). Ao contrário das distribuições discretas, onde atribuímos probabilidade a pontos específicos, nas contínuas, falamos da probabilidade de um valor cair <span class=\"highlight\">dentro de um intervalo</span>. Essa probabilidade é representada pela área sob uma curva de densidade de probabilidade (PDF).",
+            "intro_discrete_title": "Variáveis Discretas (Recap)",
+            "intro_discrete_li1": "Valores contáveis (ex: nº de caras, nº de falhas).", "intro_discrete_li2": "Probabilidade em pontos específicos P(X=k).", "intro_discrete_li3": "Função de Massa de Probabilidade (PMF).", "intro_discrete_li4": "Exemplos: Binomial, Poisson.",
+            "intro_continuous_title": "Variáveis Contínuas (Novo!)",
+            "intro_continuous_li1": "Valores em um intervalo (ex: altura, tempo).", "intro_continuous_li2": "Probabilidade em intervalos P(a < X < b).", "intro_continuous_li3": "Função de Densidade de Probabilidade (PDF).", "intro_continuous_li4": "Exemplos: Normal, Exponencial (próximo módulo).",
+            "intro_p3_m16": "Neste módulo, focaremos na distribuição contínua mais importante e onipresente: a <span class=\"highlight\">Distribuição Normal</span>, também conhecida como Distribuição Gaussiana ou \"curva do sino\".",
+
+            "normal_dist_title": "🔔 A Curva Normal (Gaussiana)",
+            "normal_dist_p1": "A Distribuição Normal é uma distribuição de probabilidade contínua caracterizada por sua forma simétrica de sino. Muitos fenômenos naturais e processos em ciência e engenharia seguem aproximadamente esta distribuição (ex: alturas de pessoas, erros de medição, ruído em sinais).",
+            "normal_dist_diagram": "Diagrama da Curva Normal (Formato de Sino) Aqui<br>(Mostrar a forma simétrica centrada na média)",
+            "normal_dist_p2": "A forma exata da curva normal é definida por dois parâmetros:",
+            "normal_param_mean_title": "Média (μ)",
+            "normal_param_mean_text": "Representa o centro da distribuição. É o pico da curva do sino. Alterar a média <span class=\"highlight\">desloca</span> a curva inteira para a esquerda ou direita no eixo horizontal, sem mudar sua forma.",
+            "normal_param_stddev_title": "Desvio Padrão (σ)",
+            "normal_param_stddev_text": "Mede a dispersão ou \"achatamento\" da curva. Um desvio padrão <span class=\"highlight\">maior</span> resulta em uma curva mais baixa e larga (mais espalhada). Um desvio padrão <span class=\"highlight\">menor</span> resulta em uma curva mais alta e estreita (mais concentrada em torno da média).",
+            "normal_dist_conclusion": "Entender <code>μ</code> e <code>σ</code> é crucial para interpretar e utilizar a distribuição normal.",
+
+            "properties_title": "🔑 Propriedades Essenciais da Distribuição Normal",
+            "properties_subtitle": "Algumas características fundamentais que tornam a Normal tão útil.",
+            "properties_li1": "<strong>Simetria:</strong> A curva é perfeitamente simétrica em torno da sua média (μ). Isso significa que a média, a mediana e a moda são todas iguais e localizadas no centro da distribuição.",
+            "properties_li2": "<strong>Área Total = 1:</strong> A área total sob a curva de densidade de probabilidade normal é sempre igual a 1 (ou 100%). Isso representa a totalidade das probabilidades.",
+            "properties_li3": "<strong>Regra Empírica (68-95-99.7):</strong> Para qualquer distribuição normal, aproximadamente:<ul><li><span class=\"highlight\">68%</span> dos dados estão a 1 desvio padrão da média (entre μ - σ e μ + σ).</li><li><span class=\"highlight\">95%</span> dos dados estão a 2 desvios padrão da média (entre μ - 2σ e μ + 2σ).</li><li><span class=\"highlight\">99.7%</span> dos dados estão a 3 desvios padrão da média (entre μ - 3σ e μ + 3σ).</li></ul>",
+             "properties_li4": "<strong>Assíntotas:</strong> A curva se aproxima do eixo horizontal (assintoticamente) em ambas as direções, mas nunca o toca. Isso significa que, teoricamente, qualquer valor é possível, mas valores muito distantes da média são extremamente improváveis.",
+            "properties_diagram": "Diagrama da Regra Empírica (68-95-99.7) Aqui<br>(Mostrar uma curva normal com as áreas marcadas para 1, 2 e 3 desvios padrão)",
+            "properties_conclusion": "Essas propriedades permitem fazer previsões e análises poderosas sobre dados que seguem essa distribuição.",
+
+            "zscore_title": "📏 Padronização: O Z-Score",
+            "zscore_intro": "Como comparar valores de diferentes distribuições normais (com diferentes μ e σ)? Ou como usar tabelas de probabilidade padronizadas? A resposta é o <span class=\"highlight\">Z-score</span> (ou escore padrão).",
+            "zscore_def": "O Z-score mede quantos desvios padrão um determinado valor (X) está acima ou abaixo da média (μ). Ele transforma qualquer distribuição normal em uma <span class=\"highlight\">Distribuição Normal Padrão</span>, que tem sempre média <code>μ = 0</code> e desvio padrão <code>σ = 1</code>.",
+            "zscore_formula": "<code>Z = (X - μ) / σ</code>",
+            "zscore_interpretation_p1": "<strong>Interpretação do Z-score:</strong>",
+            "zscore_interpretation_li1": "Um Z-score <span class=\"highlight\">positivo</span> indica que o valor X está acima da média.",
+            "zscore_interpretation_li2": "Um Z-score <span class=\"highlight\">negativo</span> indica que o valor X está abaixo da média.",
+            "zscore_interpretation_li3": "Um Z-score de <span class=\"highlight\">0</span> indica que o valor X é igual à média.",
+             "zscore_interpretation_li4": "A <span class=\"highlight\">magnitude</span> do Z-score indica a distância da média em unidades de desvio padrão. Z=2 significa 2 desvios padrão acima da média.",
+            "zscore_diagram": "Diagrama de Padronização (Z-score) Aqui<br>(Mostrar como diferentes curvas normais (com μ e σ variados) são mapeadas para a curva normal padrão com μ=0, σ=1 usando a transformação Z)",
+            "zscore_conclusion": "A padronização via Z-score é fundamental para calcular probabilidades usando tabelas Z ou software, e para comparar dados de escalas diferentes, uma tarefa comum em pré-processamento para Machine Learning.",
+
+            "applications_title": "🤖 Aplicações em IA e Computação",
+            "applications_intro": "A Distribuição Normal e seus conceitos são extremamente relevantes em diversas áreas da Inteligência Artificial e Ciência da Computação:",
+            "app_li1_title": "Análise e Modelagem de Erros:", "app_li2_title": "Pré-processamento de Dados (Features):", "app_li3_title": "Detecção de Anomalias (Outliers):", "app_li4_title": "Inicialização de Pesos em Redes Neurais:", "app_li5_title": "Modelagem de Fenômenos Naturais:", "app_li6_title": "Algoritmos Gaussianos:",
+
+            "quiz_title": "🧠 Teste Rápido!", "quiz_next_button": "Próxima Pergunta",
+            "quiz_q1_m16": "Qual forma característica descreve a Distribuição Normal?",
+            "quiz_q1_m16_opt1": "Retangular", "quiz_q1_m16_opt2": "Forma de Sino (Bell Shape)", "quiz_q1_m16_opt3": "Exponencial Decrescente", "quiz_q1_m16_opt4": "Assimétrica à Direita",
+            "quiz_q2_m16": "Quais são os dois parâmetros que definem completamente uma Distribuição Normal?",
+            "quiz_q2_m16_opt1": "Mínimo e Máximo", "quiz_q2_m16_opt2": "Mediana e Amplitude", "quiz_q2_m16_opt3": "Média (μ) e Desvio Padrão (σ)", "quiz_q2_m16_opt4": "Taxa (λ) e Tempo (t)",
+            "quiz_q3_m16": "Qual a área total sob qualquer curva de densidade de probabilidade Normal?",
+            "quiz_q3_m16_opt1": "0", "quiz_q3_m16_opt2": "1", "quiz_q3_m16_opt3": "Depende da média", "quiz_q3_m16_opt4": "Infinito",
+            "quiz_q4_m16": "O que um Z-score representa?",
+            "quiz_q4_m16_opt1": "A probabilidade de um evento ocorrer.", "quiz_q4_m16_opt2": "O valor máximo da distribuição.", "quiz_q4_m16_opt3": "Quantos desvios padrão um valor está da média.", "quiz_q4_m16_opt4": "A variância dos dados.",
+            "quiz_q5_m16": "De acordo com a Regra Empírica, qual porcentagem aproximada dos dados em uma distribuição normal cai dentro de ±1 desvio padrão da média?",
+            "quiz_q5_m16_opt1": "50%", "quiz_q5_m16_opt2": "68%", "quiz_q5_m16_opt3": "95%", "quiz_q5_m16_opt4": "99.7%",
+            "quiz_feedback_correct": "Correto! 🎉", "quiz_feedback_incorrect": "Não foi bem assim! A resposta correta era: {correctAnswerText}",
+            "quiz_final_score_title": "Teste Rápido Completo!",
+            "quiz_final_score_summary": "Você respondeu {score} de {total} perguntas corretamente.",
+            "quiz_final_score_perfect": "Excelente! Você compreendeu bem a Distribuição Normal.", "quiz_final_score_good": "Bom trabalho! Revise os conceitos chave da Normal e Z-scores.",
+
+            "completion_theory_title_m16": "Teoria do Módulo 16 Completa!",
+            "completion_theory_desc_m16": "Excelente! Você explorou a fundamental Distribuição Normal, seus parâmetros, propriedades e a importância da padronização com Z-scores. Vimos como esses conceitos se aplicam diretamente em IA e computação. <br> Continue sua jornada praticando esses conceitos ou avançando para a próxima distribuição contínua!",
+            "footer_copyright": "© 2024 Matemática para IA. Todos os direitos reservados."
+        }
+    };
+
+    // --- Global Variables ---
+    let currentQuestionIndex = 0;
+    let score = 0;
+    const lang = 'pt-BR'; // Hardcoded language for this specific page
+
+    // --- DOM Elements (Get them once) ---
+    const navToggleButton = document.getElementById('minimal-nav-toggle');
+    const navPanel = document.getElementById('minimal-nav-panel');
+    const body = document.body;
+    const quizArea = document.getElementById('quiz-area');
+    const feedbackArea = document.getElementById('quiz-feedback');
+    const nextButton = document.getElementById('next-question-btn');
+
+    // --- Functions ---
+
+    function getTranslation(key, replacements = {}) {
+         // Use 'pt' as the key in the translations object
+         let text = translations['pt']?.[key] ?? `[${key}]`;
+         for (const placeholder in replacements) {
+             const regex = new RegExp(`\\{${placeholder}\\}`, 'g');
+             text = text.replace(regex, replacements[placeholder]);
+         }
+         return text;
+    }
+
+    function translatePage() {
+         document.querySelectorAll('[data-translate]').forEach(el => {
+             const key = el.getAttribute('data-translate');
+             let translation = getTranslation(key);
+
+              if (el.tagName === 'TITLE') { document.title = translation; }
+              else if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') { /* Skip */ }
+              else {
+                   // Allow specific HTML tags safely within translations
+                   const safeHtmlRegex = /<\/?(code|strong|span|br|i|b|em|strong|ul|li)>/gi;
+                   let containsSafeHtml = safeHtmlRegex.test(translation);
+
+                   // Allow innerHTML if it contains only safe tags OR if it's in an allowed container
+                   const allowedContainers = '.param-details, .comparison-box ul, #propriedades-normal ul, .z-score-explanation, .quiz-feedback, #aplicacoes-ia li, p'; // Add more selectors if needed
+                   if (containsSafeHtml || el.matches(allowedContainers)) {
+                      el.innerHTML = translation;
+                   } else {
+                       // Fallback for elements where complex HTML isn't expected or needed
+                       // This prevents potential issues if complex HTML slips into simple elements
+                       // Create a temporary div to parse the translation and extract text content
+                       const tempDiv = document.createElement('div');
+                       tempDiv.innerHTML = translation;
+                       el.textContent = tempDiv.textContent || tempDiv.innerText || translation; // Extract text
+                   }
+              }
+         });
+    }
+
+
+    // --- Quiz Data & Functions ---
+    const quizData = [
+         { questionKey: "quiz_q1_m16", optionKeys: ["quiz_q1_m16_opt1", "quiz_q1_m16_opt2", "quiz_q1_m16_opt3", "quiz_q1_m16_opt4"], correctAnswer: 1 }, // Bell Shape
+         { questionKey: "quiz_q2_m16", optionKeys: ["quiz_q2_m16_opt1", "quiz_q2_m16_opt2", "quiz_q2_m16_opt3", "quiz_q2_m16_opt4"], correctAnswer: 2 }, // Mean (μ) and Standard Deviation (σ)
+         { questionKey: "quiz_q3_m16", optionKeys: ["quiz_q3_m16_opt1", "quiz_q3_m16_opt2", "quiz_q3_m16_opt3", "quiz_q3_m16_opt4"], correctAnswer: 1 }, // 1
+         { questionKey: "quiz_q4_m16", optionKeys: ["quiz_q4_m16_opt1", "quiz_q4_m16_opt2", "quiz_q4_m16_opt3", "quiz_q4_m16_opt4"], correctAnswer: 2 }, // How many std devs from mean
+         { questionKey: "quiz_q5_m16", optionKeys: ["quiz_q5_m16_opt1", "quiz_q5_m16_opt2", "quiz_q5_m16_opt3", "quiz_q5_m16_opt4"], correctAnswer: 1 }  // 68%
+    ];
+
+    function loadQuestion() {
+          if (!quizArea) return; // Ensure quizArea exists
+
+          if (currentQuestionIndex >= quizData.length) {
+              if (!quizArea.querySelector('[data-translate="quiz_final_score_title"]')) {
+                 showFinalScore();
+              }
+              return;
+          }
+
+          const currentQuiz = quizData[currentQuestionIndex];
+          const questionText = getTranslation(currentQuiz.questionKey);
+          quizArea.innerHTML = `
+              <div class="quiz-question">${currentQuestionIndex + 1}. ${questionText.replace(/`(.*?)`/g, '<code>$1</code>')}</div>
+              <div class="quiz-options">
+                  ${currentQuiz.optionKeys.map((optionKey, index) => `
+                      <button class="quiz-option-btn" data-index="${index}">${getTranslation(optionKey).replace(/`(.*?)`/g, '<code>$1</code>')}</button>
+                  `).join('')}
+              </div>
+          `;
+
+          if (feedbackArea) {
+            feedbackArea.classList.remove('visible', 'correct', 'incorrect');
+            feedbackArea.textContent = '';
+            feedbackArea.style.height = '0';
+            feedbackArea.style.marginBottom = '0';
+          }
+          if (nextButton) {
+            nextButton.classList.remove('visible');
+            nextButton.disabled = true;
+          }
+
+          quizArea.querySelectorAll('.quiz-option-btn').forEach(button => {
+              button.addEventListener('click', handleAnswer);
+          });
+    }
+
+    function handleAnswer(event) {
+         const selectedButton = event.target;
+         const selectedIndex = parseInt(selectedButton.dataset.index);
+         const correctIndex = quizData[currentQuestionIndex].correctAnswer;
+         const correctOptionKey = quizData[currentQuestionIndex].optionKeys[correctIndex];
+
+         quizArea.querySelectorAll('.quiz-option-btn').forEach(btn => {
+            btn.disabled = true;
+            btn.classList.remove('shake');
+         });
+
+         if (!feedbackArea || !nextButton) return;
+
+         feedbackArea.classList.add('visible');
+         let feedbackText = '';
+         let isCorrect = selectedIndex === correctIndex;
+
+         if (isCorrect) {
+             selectedButton.classList.add('correct');
+             feedbackText = getTranslation('quiz_feedback_correct');
+             feedbackArea.classList.add('correct');
+             feedbackArea.classList.remove('incorrect');
+             score++;
+             selectedButton.classList.add('tada-anim');
+         } else {
+             selectedButton.classList.add('incorrect');
+             const formattedCorrectAnswer = getTranslation(correctOptionKey).replace(/`(.*?)`/g, '<code>$1</code>');
+             feedbackText = getTranslation('quiz_feedback_incorrect', { correctAnswerText: `<strong>${formattedCorrectAnswer}</strong>` });
+             feedbackArea.classList.add('incorrect');
+             feedbackArea.classList.remove('correct');
+             const correctButton = quizArea.querySelector(`.quiz-option-btn[data-index="${correctIndex}"]`);
+             if(correctButton) correctButton.classList.add('correct');
+             selectedButton.classList.add('shake');
+         }
+
+         // Use innerHTML because feedback string can contain <strong>
+         feedbackArea.innerHTML = feedbackText;
+
+         selectedButton.addEventListener('animationend', () => {
+               selectedButton.classList.remove('tada-anim', 'shake');
+          }, { once: true });
+
+         feedbackArea.style.height = feedbackArea.scrollHeight + 'px';
+         feedbackArea.style.marginBottom = '1rem';
+
+         nextButton.classList.add('visible');
+         nextButton.disabled = false;
+     }
+
+     function showFinalScore() {
+            if (!quizArea) return;
+            const totalQuestions = quizData.length;
+            let resultMessageKey = (score / totalQuestions) >= 0.8 ? 'quiz_final_score_perfect' : 'quiz_final_score_good'; // 80% threshold
+
+            quizArea.innerHTML = `
+               <div class="quiz-question text-center" data-translate="quiz_final_score_title" style="font-size: 1.5rem;">${getTranslation('quiz_final_score_title')}</div>
+               <p class="text-center" style="font-size: 1.2rem; margin-bottom: 1rem;">${getTranslation('quiz_final_score_summary', { score: score, total: totalQuestions })}</p>
+               <p class="text-center" style="color: ${score === totalQuestions ? 'var(--success-color)' : 'var(--primary-color)'}; font-weight: bold;">${getTranslation(resultMessageKey)}</p>
+            `;
+            if (feedbackArea) feedbackArea.classList.remove('visible');
+            if (nextButton) nextButton.style.display = 'none';
+            quizArea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+     }
+
+    // --- Intersection Observer Setup ---
+    function setupObservers() {
+        const observerOptions = {
+            root: null, rootMargin: '0px', threshold: 0.1
+        };
+
+        const observerCallback = (entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    // observer.unobserve(entry.target); // Optional: unobserve after first animation
+                }
+                // Optional: Remove 'visible' if it scrolls out of view
+                // else { entry.target.classList.remove('visible'); }
+            });
+        };
+
+        const animationObserver = new IntersectionObserver(observerCallback, observerOptions);
+        document.querySelectorAll('.fade-in-on-scroll').forEach(el => {
+            animationObserver.observe(el);
+        });
+    }
+
+    // --- Event Listeners Setup ---
+    function setupEventListeners() {
+        if (navToggleButton && navPanel) {
+            navToggleButton.addEventListener('click', (event) => {
+                event.stopPropagation();
+                body.classList.toggle('nav-active');
+                navToggleButton.setAttribute('aria-expanded', body.classList.contains('nav-active'));
+            });
+            document.addEventListener('click', (event) => {
+                if (body.classList.contains('nav-active') && !navPanel.contains(event.target) && event.target !== navToggleButton && !navToggleButton.contains(event.target)) {
+                    body.classList.remove('nav-active');
+                    navToggleButton.setAttribute('aria-expanded', 'false');
+                }
+            });
+            navPanel.querySelectorAll('a').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    if (link.getAttribute('href').startsWith('#')) {
+                        setTimeout(() => {
+                            body.classList.remove('nav-active');
+                            navToggleButton.setAttribute('aria-expanded', 'false');
+                        }, 150);
+                    }
+                });
+            });
+            document.addEventListener('keydown', (event) => {
+                 if (event.key === 'Escape' && body.classList.contains('nav-active')) {
+                     body.classList.remove('nav-active');
+                     navToggleButton.setAttribute('aria-expanded', 'false');
+                 }
+             });
+        }
+
+        if (nextButton) {
+            nextButton.addEventListener('click', () => {
+                if (!nextButton.disabled) {
+                    currentQuestionIndex++;
+                    loadQuestion();
+                }
+            });
+        } else {
+            console.error("Elemento #next-question-btn não encontrado.");
+        }
+    }
+
+    // --- Initialization ---
+    document.addEventListener('DOMContentLoaded', () => {
+        if (!quizArea) console.error("Elemento #quiz-area não encontrado.");
+        if (!feedbackArea) console.error("Elemento #quiz-feedback não encontrado.");
+
+        translatePage();
+        setupEventListeners();
+        setupObservers();
+
+        if (quizArea) {
+            loadQuestion(); // Load the first quiz question
+        }
+    });
+
+    </script>
+
+</body>
+</html>

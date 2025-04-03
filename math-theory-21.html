@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<!-- Language set to Portuguese BR -->
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Title set by JS -->
+    <title data-translate="page_title">Módulo 21: Conceitos Fundamentais (Conjuntos)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* --- Reset & Base Styles --- */
+        :root {
+            --primary-color: #007bff; /* Azul primário */
+            --secondary-color: #6c757d; /* Cinza secundário */
+            --background-light: #f8f9fa; /* Fundo claro */
+            --background-dark: #343a40; /* Fundo escuro */
+            --text-light: #f8f9fa; /* Texto claro */
+            --text-dark: #212529; /* Texto escuro */
+            --accent-color: #ffc107; /* Cor de destaque (amarelo) */
+            --success-color: #28a745; /* Verde sucesso */
+            --error-color: #dc3545; /* Vermelho erro */
+            --set-notation-color: #6f42c1; /* Roxo para notação de conjuntos */
+            --membership-color: #fd7e14; /* Laranja para pertinência */
+            --equality-color: #20c997; /* Verde-azulado para igualdade */
+            --border-radius: 8px;
+            --transition-speed: 0.3s;
+            --animation-speed: 0.6s; /* Control fade-in speed */
+            --font-body: 'Roboto', sans-serif;
+            --font-title: 'Orbitron', sans-serif;
+            --nav-primary: #6e48aa;
+            --nav-success: #4cc9f0;
+            --nav-dark: #1a1a2e;
+            --footer-border-color: #495057;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; font-size: 16px; }
+        body {
+            font-family: var(--font-body); line-height: 1.7;
+            background-color: var(--background-light); color: var(--text-dark);
+            overflow-x: hidden; display: flex; flex-direction: column; min-height: 100vh;
+        }
+        main { flex-grow: 1; }
+
+        /* --- Utility Classes --- */
+        .container { max-width: 960px; margin: 0 auto; padding: 0 15px; }
+        .text-center { text-align: center; }
+        .highlight { color: var(--primary-color); font-weight: bold; }
+        .math-symbol { font-family: 'Times New Roman', Times, serif; font-size: 1.2em; font-weight: bold; color: var(--primary-color); margin: 0 0.2em; }
+        .set-example {
+            font-family: 'Courier New', Courier, monospace; background-color: #e9ecef;
+            padding: 0.5rem 0.8rem; border-radius: 4px; margin-top: 1rem;
+            font-size: 1rem; color: var(--text-dark); display: inline-block;
+            border: 1px solid #ced4da;
+        }
+        .definition-box {
+            background-color: #fff;
+            border-left: 5px solid var(--primary-color);
+            padding: 1.5rem;
+            margin: 2rem 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border-radius: 0 var(--border-radius) var(--border-radius) 0;
+        }
+        .definition-box strong { color: var(--primary-color); }
+
+        /* Elements to be animated by observer */
+        .fade-in-on-scroll {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+        }
+        .fade-in-on-scroll.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        /* Add delays for staggering */
+        .delay-1.visible { transition-delay: 0.1s; }
+        .delay-2.visible { transition-delay: 0.2s; }
+        .delay-3.visible { transition-delay: 0.3s; }
+        .delay-4.visible { transition-delay: 0.4s; }
+        .delay-5.visible { transition-delay: 0.5s; }
+        .delay-6.visible { transition-delay: 0.6s; }
+        .delay-7.visible { transition-delay: 0.7s; }
+
+
+        .button-group { margin-top: 2rem; display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; }
+        .action-button {
+             display: inline-flex; align-items: center; justify-content: center; gap: 0.5em;
+             padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold;
+             color: var(--text-light); background-color: var(--primary-color); border: none;
+             border-radius: var(--border-radius); cursor: pointer;
+             transition: background-color var(--transition-speed), transform var(--transition-speed), filter var(--transition-speed), box-shadow var(--transition-speed), opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out; /* Add animation transition */
+             margin-top: 1rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+             text-decoration: none; line-height: 1.2;
+             opacity: 0; /* Start hidden if animated */
+             transform: translateY(20px); /* Start offset if animated */
+        }
+        .action-button.visible { /* Make visible via observer */
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .action-button i.fas {}
+        .action-button:hover:not(:disabled) { background-color: #0056b3; transform: translateY(-2px) !important; box-shadow: 0 4px 8px rgba(0,0,0,0.15); } /* Use !important to override initial transform */
+        .action-button:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none !important; box-shadow: none; opacity: 0.7; }
+        .action-button.success { background-color: var(--success-color); }
+        .action-button.success:hover:not(:disabled) { background-color: #218838; }
+        .action-button.secondary { background-color: var(--secondary-color); }
+        .action-button.secondary:hover:not(:disabled) { background-color: #5a6268; }
+        .action-button:active:not(:disabled) { transform: translateY(1px) scale(0.98) !important; filter: brightness(0.95); }
+
+        /* --- Animations --- */
+        @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); } 50% { transform: scale(1.03); box-shadow: 0 0 15px rgba(0, 123, 255, 0.6); } 100% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); } }
+        @keyframes tada { from { transform: scale3d(1, 1, 1); } 10%, 20% { transform: scale3d(.9, .9, .9) rotate3d(0, 0, 1, -3deg); } 30%, 50%, 70%, 90% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, 3deg); } 40%, 60%, 80% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, -3deg); } to { transform: scale3d(1, 1, 1); } }
+        .tada-anim { animation: tada 1s ease; }
+        @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
+        @keyframes iconAppearCorrect { 0% { transform: scale(0.5) rotate(-15deg); opacity: 0; } 60% { transform: scale(1.2) rotate(5deg); opacity: 1; } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
+
+        /* --- Minimal Retractable Nav --- */
+        .minimal-nav-button { position: fixed; top: 15px; right: 15px; z-index: 1001; background-color: rgba(52, 58, 64, 0.75); color: var(--text-light); border: none; border-radius: var(--border-radius); padding: 8px 12px; cursor: pointer; transition: background-color var(--transition-speed), opacity var(--transition-speed), transform var(--transition-speed); font-size: 1.1rem; opacity: 0.6; box-shadow: 0 2px 5px rgba(0,0,0,0.2); line-height: 1; }
+        .minimal-nav-button:hover { background-color: rgba(52, 58, 64, 0.95); opacity: 1; transform: scale(1.05); }
+        .minimal-nav { position: fixed; top: 60px; right: 15px; z-index: 1000; background-color: var(--background-dark); border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.3); padding: 0.8rem; opacity: 0; transform: translateY(-15px) scale(0.95); transform-origin: top right; pointer-events: none; transition: opacity var(--transition-speed) ease, transform var(--transition-speed) ease; min-width: 200px; }
+        body.nav-active .minimal-nav { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+        .minimal-nav ul { list-style: none; margin: 0; padding: 0; }
+        .minimal-nav ul li { margin-bottom: 5px; }
+        .minimal-nav ul li:last-child { margin-bottom: 0; }
+        .minimal-nav ul li a { display: flex; align-items: center; color: var(--text-light); text-decoration: none; padding: 0.6rem 1rem; border-radius: 4px; transition: background-color var(--transition-speed), color var(--transition-speed); white-space: nowrap; font-weight: 400; font-size: 0.95rem; }
+        .minimal-nav ul li a i.fas { margin-right: 10px; width: 1.2em; text-align: center; opacity: 0.8; transition: opacity var(--transition-speed); }
+        .minimal-nav ul li a:hover { background-color: var(--primary-color); color: var(--text-light); }
+        .minimal-nav ul li a:hover i.fas { opacity: 1; }
+
+        /* --- Header --- */
+        .main-header { background: linear-gradient(135deg, var(--primary-color), #0056b3); color: var(--text-light); padding: 4rem 0 6rem; text-align: center; position: relative; overflow: hidden; }
+        .main-header .container { /* Start visible */ }
+        .main-header h1 { font-family: var(--font-title); font-size: 3rem; margin-bottom: 0.5rem; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); }
+        .main-header p { font-size: 1.2rem; font-weight: 300; opacity: 0.9; }
+        .header-shape { position: absolute; border-radius: 50%; background-color: rgba(255, 255, 255, 0.1); animation: pulse 5s infinite ease-in-out alternate; }
+        .shape1 { width: 150px; height: 150px; bottom: -50px; left: 10%; animation-duration: 6s; }
+        .shape2 { width: 80px; height: 80px; top: 50px; right: 15%; animation-duration: 4s; }
+        .shape3 { width: 50px; height: 50px; bottom: 20px; right: 30%; animation-duration: 7s; }
+
+        /* --- Section Styling --- */
+        section { padding: 4rem 0; border-bottom: 1px solid #eee; }
+        main section:last-of-type { border-bottom: none; padding-bottom: 0;}
+        section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); margin-bottom: 2rem; text-align: center; position: relative; padding-bottom: 10px; }
+        section h2::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 60px; height: 4px; background-color: var(--accent-color); border-radius: 2px; }
+
+        /* --- Welcome Section --- */
+        #welcome p { font-size: 1.1rem; max-width: 700px; margin: 0 auto 1rem; text-align: center; }
+
+        /* --- Set Definition Section --- */
+        #set-definition .definition-methods {
+            display: flex; align-items: flex-start; justify-content: space-around;
+            background-color: #fff; padding: 2rem; border-radius: var(--border-radius);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08); margin-top: 2rem; flex-wrap: wrap; gap: 2rem;
+        }
+        .method-part { /* Animated by observer */
+            text-align: center; max-width: 300px;
+            opacity: 0; transform: scale(0.9) translateY(10px); /* Start state */
+            transition: opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+        }
+        .method-part.visible { opacity: 1; transform: scale(1) translateY(0); }
+        .method-icon {
+            font-size: 3rem; margin-bottom: 1rem; color: var(--set-notation-color);
+            display: inline-block; transition: transform var(--transition-speed) ease;
+        }
+        .method-part:hover .method-icon { transform: scale(1.15); }
+        .method-example { margin-top: 1rem; }
+        #set-definition > .container > p:last-of-type { /* Conclusion para */
+            margin-top: 2rem; text-align: center;
+        }
+
+        /* --- Membership Section --- */
+        #membership .membership-cards {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem; margin-top: 2rem;
+        }
+        .membership-card { /* Animated by observer */
+            background-color: #fff; padding: 1.5rem; border-radius: var(--border-radius);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.07); text-align: center;
+            transition: transform var(--transition-speed) ease, box-shadow var(--transition-speed) ease, opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+            opacity: 0; transform: translateY(20px); /* Start state */
+            border-top: 4px solid var(--membership-color);
+        }
+        .membership-card.visible { opacity: 1; transform: translateY(0); }
+        .membership-card:hover { transform: translateY(-5px) scale(1.02) !important; box-shadow: 0 8px 20px rgba(0,0,0,0.12); }
+        .membership-icon { font-size: 2.5rem; margin-bottom: 1rem; color: var(--membership-color); }
+        .membership-card h3 { font-family: var(--font-body); font-weight: 700; font-size: 1.3rem; margin-bottom: 0.8rem; color: var(--text-dark); }
+        .membership-details {
+             font-size: 1rem; color: var(--secondary-color); margin-top: 1rem; line-height: 1.6;
+        }
+        .membership-example { margin-top: 1rem; }
+        .membership-example .set-example { display: block; margin: 0.5rem auto; max-width: 90%;}
+         #membership > .container > p:last-of-type { /* Conclusion para */
+             margin-top: 2rem; text-align: center;
+        }
+
+        /* --- Equality Section --- */
+        #set-equality .equality-explanation { display: flex; gap: 2rem; align-items: flex-start; margin-top: 2rem; flex-wrap: wrap; }
+        .equality-examples { /* Animated by observer */
+            flex-basis: 55%; background-color: var(--background-dark); color: #eee;
+            padding: 1.5rem; border-radius: var(--border-radius); font-family: 'Courier New', Courier, monospace;
+            position: relative; box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            font-size: 0.95rem; line-height: 1.8;
+            opacity: 0; transition: opacity var(--animation-speed) ease-out; /* Only fade opacity */
+        }
+        .equality-examples.visible { opacity: 1; }
+        .equality-examples .code-line { margin-bottom: 1rem; display: block; white-space: pre-wrap; /* Allow wrapping */ }
+        .equality-examples .code-comment { color: #6a9955; font-style: italic;}
+        .equality-examples .set-literal { color: var(--set-notation-color); }
+        .equality-examples .result-true { color: var(--success-color); font-weight: bold; }
+        .equality-examples .result-false { color: var(--error-color); font-weight: bold; }
+        .equality-text { /* Animated by observer */
+            flex-basis: 40%; font-size: 1.05rem;
+             opacity: 0; transition: opacity var(--animation-speed) ease-out; /* Only fade opacity */
+        }
+        .equality-text.visible { opacity: 1; }
+        .equality-text p { margin-bottom: 1rem; }
+        .code-highlight {
+            background-color: rgba(32, 201, 151, 0.15); color: #147a5a; padding: 0.2em 0.4em;
+            border-radius: 4px; font-family: 'Courier New', Courier, monospace; font-weight: bold;
+        }
+
+
+        /* --- Knowledge Check Section --- */
+        #knowledge-check { background-color: #e9ecef; }
+        .quiz-container { /* Animated by observer */
+             background-color: #fff; padding: 2rem; border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.1); max-width: 700px; margin: 2rem auto 0;
+             opacity: 0; transition: opacity var(--animation-speed) ease-out; /* Only fade opacity */
+        }
+        .quiz-container.visible { opacity: 1; }
+        .quiz-question { font-size: 1.2rem; font-weight: bold; margin-bottom: 1.5rem; color: var(--text-dark); }
+        .quiz-options button { display: block; width: 100%; padding: 1rem; margin-bottom: 1rem; text-align: left; font-size: 1rem; background-color: #f8f9fa; border: 1px solid #ced4da; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), border-color var(--transition-speed), transform var(--transition-speed); }
+        .quiz-options button code { background: transparent; padding: 0; border: none;} /* Style code inside buttons */
+        .quiz-options button:not(:disabled):hover { background-color: #e2e6ea; border-color: #adb5bd; transform: translateX(5px); }
+        .quiz-options button:disabled { cursor: default; opacity: 0.7; }
+        .quiz-options button.correct { background-color: #d4edda; border-color: var(--success-color); color: #155724; font-weight: bold; }
+        .quiz-options button.incorrect { background-color: #f8d7da; border-color: var(--error-color); color: #721c24; font-weight: bold; }
+        .quiz-options button.incorrect.shake { animation: shake 0.5s ease; }
+        .quiz-feedback { margin-top: 1.5rem; padding: 1rem; border-radius: var(--border-radius); font-weight: bold; text-align: center; opacity: 0; transition: opacity 0.5s ease, height 0.5s ease, margin-bottom 0.5s ease; height: 0; overflow: hidden; margin-bottom: 0;}
+        .quiz-feedback.visible { opacity: 1; height: auto; margin-bottom: 1rem; }
+        .quiz-feedback.correct { background-color: #d4edda; color: #155724; }
+        .quiz-feedback.incorrect { background-color: #f8d7da; color: #721c24; }
+        #next-question-btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5em; margin: 1.5rem auto 0; padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold; color: var(--text-light); background-color: var(--primary-color); border: none; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), transform var(--transition-speed), opacity 0.3s, visibility 0.3s; opacity: 0; visibility: hidden; }
+        #next-question-btn:hover:not(:disabled) { background-color: #0056b3; transform: scale(1.05); }
+        #next-question-btn.visible { opacity: 1; visibility: visible; }
+        #next-question-btn:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none; opacity: 0.7; }
+
+
+        /* --- Completion Section Styling --- */
+        .completion-section { padding: 4rem 0; text-align: center; background-color: var(--background-light); }
+        .completion-section .icon { font-size: 4rem; color: var(--success-color); margin-bottom: 1rem; display: inline-block; animation: iconAppearCorrect 1s ease-out 0.5s forwards; opacity: 0; /* Initial state for animation */}
+        /* Ensure completion elements are targeted by observer */
+        .completion-section h2, .completion-section p {
+            opacity: 0; transform: translateY(20px);
+            transition: opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+        }
+        .completion-section h2.visible, .completion-section p.visible {
+            opacity: 1; transform: translateY(0);
+        }
+        .completion-section .button-group { margin-top: 2.5rem; }
+        .completion-section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); margin-bottom: 1rem; }
+        .completion-section h2::after { display: none; }
+        .completion-section p { font-size: 1.1rem; margin-top: 1rem; color: var(--secondary-color); max-width: 700px; margin-left: auto; margin-right: auto; line-height: 1.8; }
+
+
+        /* --- Footer Styling --- */
+        .main-footer {
+            background-color: var(--background-light);
+            color: var(--text-light);
+            text-align: center;
+            padding: 2rem 0;
+            font-size: 0.9rem;
+            margin-top: auto;
+            border-top: 1px solid var(--background-light);
+            opacity: 0.85;
+        }
+        .main-footer p { margin: 0; line-height: 1.5; }
+
+        /* --- Responsive Design --- */
+        @media (max-width: 768px) {
+            html { font-size: 15px; }
+            .main-header h1 { font-size: 2.5rem; } .main-header p { font-size: 1.1rem; }
+            section h2 { font-size: 1.8rem; }
+            .definition-methods { flex-direction: column; gap: 1.5rem; align-items: center; }
+            #membership .membership-cards { grid-template-columns: 1fr; }
+            #set-equality .equality-explanation { flex-direction: column; }
+            .equality-examples, .equality-text { flex-basis: 100%; }
+            .minimal-nav { min-width: 180px; } .minimal-nav ul li a { padding: 0.6rem 0.8rem; }
+            .completion-section h2 { font-size: 2rem; }
+            .completion-section .button-group { flex-direction: column; align-items: center; gap: 0.8rem; }
+            .completion-section .action-button { width: 80%; max-width: 350px; margin-top: 0; }
+            .main-footer { padding: 1.5rem 0; }
+        }
+        @media (max-width: 480px) {
+            html { font-size: 14px; }
+            .main-header h1 { font-size: 2rem; } .main-header p { font-size: 1rem; }
+            section h2 { font-size: 1.6rem; }
+            .quiz-options button { padding: 0.8rem; font-size: 0.95rem; }
+            .minimal-nav-button { top: 10px; right: 10px; padding: 6px 10px; font-size: 1rem; }
+            .minimal-nav { top: 48px; right: 10px; min-width: 160px; }
+            .minimal-nav ul li a { padding: 0.5rem 0.7rem; font-size: 0.9rem;}
+            .minimal-nav ul li a i.fas { margin-right: 8px; }
+            .completion-section .icon { font-size: 3.5rem; }
+            .completion-section h2 { font-size: 1.8rem; } .completion-section p { font-size: 1rem; }
+            .completion-section .action-button { width: 90%; max-width: 300px; }
+             .equality-examples { font-size: 0.9rem; }
+            .main-footer { padding: 1rem 0; font-size: 0.85rem; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- ========= Minimal Nav Handle ========= -->
+    <button id="minimal-nav-toggle" class="minimal-nav-button" aria-label="Alternar Menu de Navegação" aria-expanded="false">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- ========= Minimal Nav Panel ========= -->
+    <nav id="minimal-nav-panel" class="minimal-nav">
+        <ul>
+             <!-- IMPORTANT: Links updated to 'math-' prefix and module number 21 -->
+            <li><a href="math-practice-21.html"><i class="fas fa-pencil-alt fa-fw"></i> <span data-translate="nav_practice">Iniciar Prática</span></a></li>
+            <li><a href="math-advanced-21.html"><i class="fas fa-flask fa-fw"></i> <span data-translate="nav_advanced">Prática Avançada</span></a></li>
+            <li><a href="math-dashboard.html"><i class="fas fa-list fa-fw"></i> <span data-translate="nav_menu">Menu do Curso</span></a></li>
+             <hr style="border: none; border-top: 1px solid var(--secondary-color); margin: 8px 0;">
+             <li><a href="#welcome"><i class="fas fa-door-open fa-fw"></i> <span data-translate="nav_welcome_m21">Boas-vindas M21</span></a></li>
+             <li><a href="#set-definition"><i class="fas fa-book-open fa-fw"></i> <span data-translate="nav_definition">Definição/Notação</span></a></li>
+             <li><a href="#membership"><i class="fas fa-check-circle fa-fw"></i> <span data-translate="nav_membership">Pertinência</span></a></li>
+             <li><a href="#set-equality"><i class="fas fa-equals fa-fw"></i> <span data-translate="nav_equality">Igualdade</span></a></li>
+             <li><a href="#knowledge-check"><i class="fas fa-check-double fa-fw"></i> <span data-translate="nav_quiz">Teste Rápido</span></a></li>
+             <li><a href="#completion"><i class="fas fa-flag-checkered fa-fw"></i> <span data-translate="completion_theory_title_m21">Conclusão</span></a></li>
+        </ul>
+    </nav>
+
+    <header class="main-header">
+        <div class="header-shape shape1"></div>
+        <div class="header-shape shape2"></div>
+        <div class="header-shape shape3"></div>
+        <div class="container"> <!-- Start visible -->
+             <!-- IMPORTANT: Title and subtitle updated for Module 21 -->
+            <h1 data-translate="header_title_m21">Módulo 21: Conceitos Fundamentais (Conjuntos)</h1>
+            <p data-translate="header_subtitle_m21">Definindo coleções, verificando pertinência e comparando conjuntos.</p>
+        </div>
+    </header>
+
+    <main>
+        <!-- ========= Welcome Section ========= -->
+        <section id="welcome">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="welcome_title_m21">🏛️ Introdução aos Conjuntos</h2>
+                <p class="fade-in-on-scroll delay-1" data-translate="welcome_p1_m21">
+                    Bem-vindo ao Módulo 21! Iniciamos nossa jornada pela Teoria dos Conjuntos, um pilar fundamental da matemática que tem aplicações vastas em Ciência da Computação e Inteligência Artificial. Pense em conjuntos como <span class="highlight">coleções organizadas de itens distintos</span>.
+                </p>
+                <p class="fade-in-on-scroll delay-2" data-translate="welcome_p2_m21">
+                    Usamos conjuntos para agrupar dados (por exemplo, o conjunto de todos os usuários de um sistema), definir regras lógicas e construir estruturas de dados eficientes. Neste módulo, aprenderemos a <span class="highlight">definir</span> conjuntos, verificar se um item <span class="highlight">pertence</span> a um conjunto e determinar se dois conjuntos são <span class="highlight">iguais</span>.
+                </p>
+                 <p class="fade-in-on-scroll delay-3" data-translate="welcome_p3_m21">
+                    Esses conceitos básicos são essenciais para entender operações mais complexas que veremos nos próximos módulos. Vamos começar!
+                </p>
+            </div>
+        </section>
+
+        <!-- ========= Set Definition Section ========= -->
+        <section id="set-definition">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="set_definition_title">📝 Definição e Notação de Conjuntos</h2>
+                <p class="text-center fade-in-on-scroll delay-1" data-translate="set_definition_subtitle">Como representar e descrever coleções de elementos.</p>
+
+                <div class="definition-box fade-in-on-scroll delay-2">
+                   <p data-translate="set_definition_what">
+                      Um <strong data-translate="set_definition_term">conjunto</strong> é uma coleção bem definida de objetos distintos, chamados <strong data-translate="set_definition_elements">elementos</strong> ou <strong data-translate="set_definition_members">membros</strong>. Duas características cruciais dos conjuntos são:
+                   </p>
+                   <ul>
+                       <li data-translate="set_definition_prop1">A <strong data-translate="set_definition_prop1_term">ordem</strong> dos elementos não importa.</li>
+                       <li data-translate="set_definition_prop2">Os elementos são <strong data-translate="set_definition_prop2_term">únicos</strong> (não há repetições).</li>
+                   </ul>
+                </div>
+
+
+                <div class="definition-methods">
+                    <div class="method-part fade-in-on-scroll delay-3">
+                        <span class="method-icon"><i class="fas fa-list-ol"></i></span>
+                        <h3 data-translate="method_listing_title">Listando Elementos (Extensão)</h3>
+                        <p data-translate="method_listing_text">A forma mais comum é listar os elementos entre chaves <code>{}</code>, separados por vírgulas.</p>
+                        <div class="method-example">
+                             <span class="set-example" data-translate="method_listing_example1"><code>A = {1, 2, 3, 4}</code></span><br>
+                             <span class="set-example" data-translate="method_listing_example2"><code>Vogais = {'a', 'e', 'i', 'o', 'u'}</code></span>
+                        </div>
+                        <p style="margin-top: 1em; font-size: 0.9em;" data-translate="method_listing_note">Note que <code>{1, 2, 3}</code> é o mesmo conjunto que <code>{3, 1, 2}</code>.</p>
+                    </div>
+                    <div class="method-part fade-in-on-scroll delay-4">
+                        <span class="method-icon"><i class="fas fa-search"></i></span>
+                        <h3 data-translate="method_property_title">Descrevendo Propriedades (Compreensão)</h3>
+                        <p data-translate="method_property_text">Podemos definir um conjunto descrevendo uma propriedade que seus elementos devem satisfazer. Usa-se a notação <code>{x | P(x)}</code> ou <code>{x : P(x)}</code>.</p>
+                        <div class="method-example">
+                             <span class="set-example" data-translate="method_property_example1"><code>B = {x | x é um número inteiro par e 0 < x < 10}</code></span><br>
+                             <p style="margin-top: 0.5em;" data-translate="method_property_example1_meaning">Lê-se: "B é o conjunto de todos os x tal que x é um inteiro par entre 0 e 10". (Ou seja, <code>B = {2, 4, 6, 8}</code>)</p>
+                        </div>
+                    </div>
+                </div>
+                 <p class="fade-in-on-scroll delay-5" data-translate="set_definition_conclusion">Essas notações nos permitem definir conjuntos de forma clara e concisa, essencial para a comunicação matemática e computacional.</p>
+            </div>
+        </section>
+
+        <!-- ========= Membership Section ========= -->
+        <section id="membership">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="membership_title">🔍 Relação de Pertinência (∈, ∉)</h2>
+                <p class="text-center fade-in-on-scroll delay-1" data-translate="membership_subtitle">Verificando se um elemento faz parte de um conjunto.</p>
+
+                <div class="membership-cards">
+                    <div class="membership-card fade-in-on-scroll delay-2" id="card-belongs">
+                        <span class="membership-icon"><span class="math-symbol">∈</span></span>
+                        <h3 data-translate="membership_belongs_title">Pertence a (∈)</h3>
+                        <div class="membership-details">
+                            <p data-translate="membership_belongs_text">O símbolo <code class="math-symbol">∈</code> indica que um elemento <span class="highlight">pertence</span> a um conjunto.</p>
+                            <div class="membership-example">
+                                <span class="set-example" data-translate="membership_belongs_example1_set"><code>A = {1, 3, 5, 7}</code></span>
+                                <span class="set-example" data-translate="membership_belongs_example1_check"><code>3 ∈ A</code> (Verdadeiro)</span>
+                                <span class="set-example" data-translate="membership_belongs_example2_check"><code>7 ∈ A</code> (Verdadeiro)</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="membership-card fade-in-on-scroll delay-3" id="card-not-belongs">
+                        <span class="membership-icon"><span class="math-symbol">∉</span></span>
+                        <h3 data-translate="membership_not_belongs_title">Não Pertence a (∉)</h3>
+                        <div class="membership-details">
+                            <p data-translate="membership_not_belongs_text">O símbolo <code class="math-symbol">∉</code> indica que um elemento <span class="highlight">não pertence</span> a um conjunto.</p>
+                             <div class="membership-example">
+                                <span class="set-example" data-translate="membership_not_belongs_example1_set"><code>A = {1, 3, 5, 7}</code></span>
+                                <span class="set-example" data-translate="membership_not_belongs_example1_check"><code>2 ∉ A</code> (Verdadeiro)</span>
+                                <span class="set-example" data-translate="membership_not_belongs_example2_check"><code>'a' ∉ A</code> (Verdadeiro)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                 <p class="fade-in-on-scroll delay-4" data-translate="membership_conclusion">A relação de pertinência é fundamental para testar condições e filtrar dados em algoritmos e estruturas baseadas em conjuntos.</p>
+            </div>
+        </section>
+
+        <!-- ========= Equality Section ========= -->
+        <section id="set-equality">
+             <div class="container">
+                 <h2 class="fade-in-on-scroll" data-translate="equality_title">⚖️ Igualdade entre Conjuntos (=)</h2>
+                 <p class="text-center fade-in-on-scroll delay-1" data-translate="equality_subtitle">Quando podemos dizer que dois conjuntos são, na verdade, o mesmo conjunto?</p>
+
+                 <div class="equality-explanation">
+                     <div class="equality-examples fade-in-on-scroll delay-2"> <!-- Observe container -->
+                        <span class="code-line"><span class="code-comment" data-translate="equality_comment1"># Definindo alguns conjuntos</span></span>
+                        <span class="code-line"><code>A = <span class="set-literal">{1, 2, 3}</span></code></span>
+                        <span class="code-line"><code>B = <span class="set-literal">{3, 1, 2}</span></code></span>
+                        <span class="code-line"><code>C = <span class="set-literal">{1, 2, 3, 4}</span></code></span>
+                        <span class="code-line"><code>D = <span class="set-literal">{1, 1, 2, 3, 3, 3}</span></code></span>
+                        <span class="code-line"><code>E = {x | x é um número natural menor que 4}</code> (<span class="set-literal">{1, 2, 3}</span>) </span>
+
+                        <span class="code-line" style="margin-top: 1.5rem;"><span class="code-comment" data-translate="equality_comment2"># Verificando igualdades</span></span>
+                        <span class="code-line"><code>A = B</code> <span class="result-true" data-translate="equality_result_true">▶ Verdadeiro</span> <span class="code-comment" data-translate="equality_reason1">(mesmos elementos, ordem diferente)</span></span>
+                        <span class="code-line"><code>A = C</code> <span class="result-false" data-translate="equality_result_false">▶ Falso</span> <span class="code-comment" data-translate="equality_reason2">(C tem o elemento 4, A não tem)</span></span>
+                        <span class="code-line"><code>A = D</code> <span class="result-true" data-translate="equality_result_true">▶ Verdadeiro</span> <span class="code-comment" data-translate="equality_reason3">(repetições na definição são ignoradas)</span></span>
+                        <span class="code-line"><code>A = E</code> <span class="result-true" data-translate="equality_result_true">▶ Verdadeiro</span> <span class="code-comment" data-translate="equality_reason4">(definidos de formas diferentes, mas mesmos elementos)</span></span>
+                     </div>
+                     <div class="equality-text fade-in-on-scroll delay-3"> <!-- Observe container -->
+                         <p data-translate="equality_def_p1">
+                            Dois conjuntos, <code class="set-literal">X</code> e <code class="set-literal">Y</code>, são considerados <strong data-translate="equality_def_term">iguais</strong> (denotado por <code class="math-symbol">=</code>) se, e somente se, eles contêm <span class="highlight">exatamente os mesmos elementos</span>.
+                         </p>
+                         <p data-translate="equality_def_p2">
+                            Isso significa que todo elemento de <code class="set-literal">X</code> deve pertencer a <code class="set-literal">Y</code>, e todo elemento de <code class="set-literal">Y</code> deve pertencer a <code class="set-literal">X</code>.
+                         </p>
+                         <p data-translate="equality_def_p3">
+                            Como vimos nos exemplos, a <span class="code-highlight" data-translate="equality_highlight_order">ordem</span> em que os elementos são listados e a <span class="code-highlight" data-translate="equality_highlight_repetition">repetição</span> na definição não afetam a igualdade dos conjuntos. O que importa é a coleção final de elementos únicos.
+                         </p>
+                          <p data-translate="equality_def_p4">
+                            Verificar a igualdade de conjuntos é útil em testes de software, comparação de resultados de algoritmos e validação de dados.
+                         </p>
+                     </div>
+                 </div>
+             </div>
+        </section>
+
+        <!-- ========= Knowledge Check Section ========= -->
+        <section id="knowledge-check">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="quiz_title">🧠 Teste Rápido!</h2>
+                <div class="quiz-container fade-in-on-scroll delay-1"> <!-- Observe container -->
+                    <div id="quiz-area">
+                         <p style="text-align: center; padding: 2rem 0;">Carregando quiz...</p>
+                    </div>
+                    <div id="quiz-feedback" class="quiz-feedback"></div>
+                    <button id="next-question-btn" data-translate="quiz_next_button">Próxima Pergunta</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========= Completion Section ========= -->
+        <section id="completion" class="completion-section"> <!-- Added ID for nav link -->
+            <div class="container">
+                 <div class="icon">
+                    <i class="fas fa-check-double"></i>
+                    <i class="fas fa-shapes"></i> {/* Icon for sets/shapes */}
+                    <i class="fas fa-star"></i>
+                </div>
+                 <!-- IMPORTANT: Title and description updated for Module 21 -->
+                <h2 class="fade-in-on-scroll delay-1" data-translate="completion_theory_title_m21">Teoria do Módulo 21 Completa!</h2>
+                <p class="fade-in-on-scroll delay-2" data-translate="completion_theory_desc_m21">
+                    Parabéns! Você aprendeu os conceitos fundamentais da Teoria dos Conjuntos: o que são, como representá-los, como verificar a pertinência de elementos e como determinar se dois conjuntos são iguais.
+                    <br>Esta base é crucial para as operações e aplicações que veremos a seguir. Hora de solidificar seu conhecimento na prática!
+                </p>
+                <div class="button-group">
+                    <!-- Buttons observed -->
+                     <!-- IMPORTANT: Links updated to 'math-' prefix and module number 21 -->
+                    <a href="math-dashboard.html" class="action-button secondary fade-in-on-scroll delay-3"><i class="fas fa-list"></i> <span data-translate="nav_menu">Menu do Curso</span></a>
+                    <a href="math-practice-21.html" class="action-button success fade-in-on-scroll delay-4"><i class="fas fa-pencil-alt"></i> <span data-translate="nav_practice">Iniciar Prática</span></a>
+                    <a href="math-advanced-21.html" class="action-button secondary fade-in-on-scroll delay-5"><i class="fas fa-flask"></i> <span data-translate="nav_advanced">Prática Avançada</span></a>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="main-footer">
+        <div class="container">
+            <p data-translate="footer_copyright"></p>
+        </div>
+    </footer>
+
+    <script>
+    // --- Translations Object (Portuguese Only - Module 21) ---
+    const translations = {
+        pt: {
+            // General & Nav
+            "page_title": "Módulo 21: Conceitos Fundamentais (Conjuntos)",
+            "nav_practice": "Iniciar Prática",
+            "nav_advanced": "Prática Avançada",
+            "nav_menu": "Menu do Curso",
+            "nav_welcome_m21": "Boas-vindas M21",
+            "nav_definition": "Definição/Notação",
+            "nav_membership": "Pertinência",
+            "nav_equality": "Igualdade",
+            "nav_quiz": "Teste Rápido",
+            "lang_pt": "🇧🇷 Português",
+            "footer_copyright": "© 2024 Matemática para IA. Todos os direitos reservados.",
+
+            // Header M21
+            "header_title_m21": "Módulo 21: Conceitos Fundamentais (Conjuntos)",
+            "header_subtitle_m21": "Definindo coleções, verificando pertinência e comparando conjuntos.",
+
+            // Welcome M21
+            "welcome_title_m21": "🏛️ Introdução aos Conjuntos",
+            "welcome_p1_m21": "Bem-vindo ao Módulo 21! Iniciamos nossa jornada pela Teoria dos Conjuntos, um pilar fundamental da matemática que tem aplicações vastas em Ciência da Computação e Inteligência Artificial. Pense em conjuntos como <span class=\"highlight\">coleções organizadas de itens distintos</span>.",
+            "welcome_p2_m21": "Usamos conjuntos para agrupar dados (por exemplo, o conjunto de todos os usuários de um sistema), definir regras lógicas e construir estruturas de dados eficientes. Neste módulo, aprenderemos a <span class=\"highlight\">definir</span> conjuntos, verificar se um item <span class=\"highlight\">pertence</span> a um conjunto e determinar se dois conjuntos são <span class=\"highlight\">iguais</span>.",
+             "welcome_p3_m21": "Esses conceitos básicos são essenciais para entender operações mais complexas que veremos nos próximos módulos. Vamos começar!",
+
+            // Set Definition Section
+            "set_definition_title": "📝 Definição e Notação de Conjuntos",
+            "set_definition_subtitle": "Como representar e descrever coleções de elementos.",
+            "set_definition_what": "Um <strong data-translate=\"set_definition_term\">conjunto</strong> é uma coleção bem definida de objetos distintos, chamados <strong data-translate=\"set_definition_elements\">elementos</strong> ou <strong data-translate=\"set_definition_members\">membros</strong>. Duas características cruciais dos conjuntos são:",
+            "set_definition_term": "conjunto",
+            "set_definition_elements": "elementos",
+            "set_definition_members": "membros",
+            "set_definition_prop1": "A <strong data-translate=\"set_definition_prop1_term\">ordem</strong> dos elementos não importa.",
+            "set_definition_prop1_term": "ordem",
+            "set_definition_prop2": "Os elementos são <strong data-translate=\"set_definition_prop2_term\">únicos</strong> (não há repetições).",
+            "set_definition_prop2_term": "únicos",
+            "method_listing_title": "Listando Elementos (Extensão)",
+            "method_listing_text": "A forma mais comum é listar os elementos entre chaves <code>{}</code>, separados por vírgulas.",
+            "method_listing_example1": "<code>A = {1, 2, 3, 4}</code>",
+            "method_listing_example2": "<code>Vogais = {'a', 'e', 'i', 'o', 'u'}</code>",
+            "method_listing_note": "Note que <code>{1, 2, 3}</code> é o mesmo conjunto que <code>{3, 1, 2}</code>.",
+            "method_property_title": "Descrevendo Propriedades (Compreensão)",
+            "method_property_text": "Podemos definir um conjunto descrevendo uma propriedade que seus elementos devem satisfazer. Usa-se a notação <code>{x | P(x)}</code> ou <code>{x : P(x)}</code>.",
+            "method_property_example1": "<code>B = {x | x é um número inteiro par e 0 < x < 10}</code>",
+            "method_property_example1_meaning": "Lê-se: \"B é o conjunto de todos os x tal que x é um inteiro par entre 0 e 10\". (Ou seja, <code>B = {2, 4, 6, 8}</code>)",
+            "set_definition_conclusion": "Essas notações nos permitem definir conjuntos de forma clara e concisa, essencial para a comunicação matemática e computacional.",
+
+             // Membership Section
+            "membership_title": "🔍 Relação de Pertinência (∈, ∉)",
+            "membership_subtitle": "Verificando se um elemento faz parte de um conjunto.",
+            "membership_belongs_title": "Pertence a (∈)",
+            "membership_belongs_text": "O símbolo <code class=\"math-symbol\">∈</code> indica que um elemento <span class=\"highlight\">pertence</span> a um conjunto.",
+            "membership_belongs_example1_set": "<code>A = {1, 3, 5, 7}</code>",
+            "membership_belongs_example1_check": "<code>3 ∈ A</code> (Verdadeiro)",
+            "membership_belongs_example2_check": "<code>7 ∈ A</code> (Verdadeiro)",
+            "membership_not_belongs_title": "Não Pertence a (∉)",
+            "membership_not_belongs_text": "O símbolo <code class=\"math-symbol\">∉</code> indica que um elemento <span class=\"highlight\">não pertence</span> a um conjunto.",
+            "membership_not_belongs_example1_set": "<code>A = {1, 3, 5, 7}</code>",
+            "membership_not_belongs_example1_check": "<code>2 ∉ A</code> (Verdadeiro)",
+            "membership_not_belongs_example2_check": "<code>'a' ∉ A</code> (Verdadeiro)",
+            "membership_conclusion": "A relação de pertinência é fundamental para testar condições e filtrar dados em algoritmos e estruturas baseadas em conjuntos.",
+
+            // Equality Section
+            "equality_title": "⚖️ Igualdade entre Conjuntos (=)",
+            "equality_subtitle": "Quando podemos dizer que dois conjuntos são, na verdade, o mesmo conjunto?",
+            "equality_comment1": "# Definindo alguns conjuntos",
+            "equality_comment2": "# Verificando igualdades",
+            "equality_result_true": "▶ Verdadeiro",
+            "equality_result_false": "▶ Falso",
+            "equality_reason1": "(mesmos elementos, ordem diferente)",
+            "equality_reason2": "(C tem o elemento 4, A não tem)",
+            "equality_reason3": "(repetições na definição são ignoradas)",
+            "equality_reason4": "(definidos de formas diferentes, mas mesmos elementos)",
+            "equality_def_p1": "Dois conjuntos, <code class=\"set-literal\">X</code> e <code class=\"set-literal\">Y</code>, são considerados <strong data-translate=\"equality_def_term\">iguais</strong> (denotado por <code class=\"math-symbol\">=</code>) se, e somente se, eles contêm <span class=\"highlight\">exatamente os mesmos elementos</span>.",
+            "equality_def_term": "iguais",
+            "equality_def_p2": "Isso significa que todo elemento de <code class=\"set-literal\">X</code> deve pertencer a <code class=\"set-literal\">Y</code>, e todo elemento de <code class=\"set-literal\">Y</code> deve pertencer a <code class=\"set-literal\">X</code>.",
+            "equality_def_p3": "Como vimos nos exemplos, a <span class=\"code-highlight\" data-translate=\"equality_highlight_order\">ordem</span> em que os elementos são listados e a <span class=\"code-highlight\" data-translate=\"equality_highlight_repetition\">repetição</span> na definição não afetam a igualdade dos conjuntos. O que importa é a coleção final de elementos únicos.",
+             "equality_highlight_order": "ordem",
+             "equality_highlight_repetition": "repetição",
+            "equality_def_p4": "Verificar a igualdade de conjuntos é útil em testes de software, comparação de resultados de algoritmos e validação de dados.",
+
+            // Knowledge Check Section
+            "quiz_title": "🧠 Teste Rápido!",
+            "quiz_next_button": "Próxima Pergunta",
+            "quiz_q1_m21": "Qual das seguintes opções representa corretamente o conjunto dos números ímpares entre 0 e 6?",
+            "quiz_q1_m21_opt1": "<code>{1, 3, 5}</code>",
+            "quiz_q1_m21_opt2": "<code>(1, 3, 5)</code>", // Parentheses are for tuples/sequences
+            "quiz_q1_m21_opt3": "<code>{1, 2, 3, 4, 5}</code>",
+            "quiz_q1_m21_opt4": "<code>{0, 1, 3, 5}</code>",
+            "quiz_q2_m21": "Dado o conjunto <code>C = {'a', 'b', 'c'}</code>, qual afirmação é VERDADEIRA?",
+            "quiz_q2_m21_opt1": "<code>'a' ∉ C</code>",
+            "quiz_q2_m21_opt2": "<code>'d' ∈ C</code>",
+            "quiz_q2_m21_opt3": "<code>'b' ∈ C</code>",
+            "quiz_q2_m21_opt4": "<code>C = {'b', 'a'}</code>",
+            "quiz_q3_m21": "Considere os conjuntos <code>A = {10, 20}</code> e <code>B = {20, 10}</code>. Qual afirmação é VERDADEIRA?",
+            "quiz_q3_m21_opt1": "<code>A ≠ B</code> (A é diferente de B)",
+            "quiz_q3_m21_opt2": "<code>A = B</code> (A é igual a B)",
+            "quiz_q3_m21_opt3": "<code>10 ∉ B</code>",
+            "quiz_q3_m21_opt4": "<code>30 ∈ A</code>",
+             "quiz_q4_m21": "Qual conjunto é igual a <code>{x | x é uma letra da palavra 'CASA'}</code>?",
+            "quiz_q4_m21_opt1": "<code>{'C', 'A', 'S'}</code>",
+            "quiz_q4_m21_opt2": "<code>{'C', 'A', 'S', 'A'}</code>", // Repetition
+            "quiz_q4_m21_opt3": "<code>{'c', 'a', 's', 'a'}</code>", // Case sensitive usually
+            "quiz_q4_m21_opt4": "<code>{'C', 'S'}</code>",
+            "quiz_feedback_correct": "Correto! 🎉",
+            "quiz_feedback_incorrect": "Não foi bem assim! A resposta correta era: {correctAnswerText}",
+            "quiz_final_score_title": "Teste Rápido Completo!",
+            "quiz_final_score_summary": "Você respondeu {score} de {total} perguntas corretamente.",
+            "quiz_final_score_perfect": "Excelente! Você compreendeu bem os conceitos fundamentais de conjuntos.",
+            "quiz_final_score_good": "Bom trabalho! Continue praticando para solidificar esses conceitos importantes.",
+
+            // Completion Section M21
+            "completion_theory_title_m21": "Teoria do Módulo 21 Completa!",
+            "completion_theory_desc_m21": "Parabéns! Você aprendeu os conceitos fundamentais da Teoria dos Conjuntos: o que são, como representá-los, como verificar a pertinência de elementos e como determinar se dois conjuntos são iguais.<br>Esta base é crucial para as operações e aplicações que veremos a seguir. Hora de solidificar seu conhecimento na prática!",
+        }
+    };
+
+    // --- Global Variables ---
+    let currentQuestionIndex = 0;
+    let score = 0;
+    const lang = 'pt'; // Hardcoded language
+
+    // --- DOM Elements (Get them once) ---
+    const navToggleButton = document.getElementById('minimal-nav-toggle');
+    const navPanel = document.getElementById('minimal-nav-panel');
+    const body = document.body;
+    const quizArea = document.getElementById('quiz-area');
+    const feedbackArea = document.getElementById('quiz-feedback');
+    const nextButton = document.getElementById('next-question-btn');
+    // No specific simulation elements needed for this module's equality section example
+
+    // --- Functions ---
+
+    function getTranslation(key, replacements = {}) {
+         // Fallback for missing keys
+         let text = translations[lang]?.[key] ?? `[${key}]`;
+         // Simple placeholder replacement
+         for (const placeholder in replacements) {
+             // Basic regex to avoid replacing parts of other keys if using similar names
+             const regex = new RegExp(`\\{${placeholder}\\}`, 'g');
+             text = text.replace(regex, replacements[placeholder]);
+         }
+         return text;
+    }
+
+
+    function translatePage() {
+         document.querySelectorAll('[data-translate]').forEach(el => {
+             const key = el.getAttribute('data-translate');
+             let translation = getTranslation(key);
+
+             if (el.tagName === 'TITLE') { document.title = translation; }
+             else if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') { /* Skip form elements */ }
+             else {
+                 // Basic check for allowed tags - expand if needed
+                 const safeHtmlRegex = /<\/?(code|strong|span|br|i|b|em|ul|li|div|p)>|<span class="highlight">|<\/span>|<code class="math-symbol">|<\/code>|<code class="set-literal">|<\/code>|<span class="set-example"[^>]*>|<\/span>/gi;
+                 let containsSafeHtml = safeHtmlRegex.test(translation);
+
+                 // Allow innerHTML if it contains ONLY safe tags OR if it's in a container known to need HTML
+                 const allowedContainers = '.definition-box, .membership-details, .equality-text, .quiz-feedback, .completion-section p, .welcome p, footer p';
+                 if (containsSafeHtml || el.closest(allowedContainers)) {
+                    // Sanitize slightly more aggressively if needed, but trust translations for now
+                    el.innerHTML = translation;
+                 } else {
+                    el.textContent = translation; // Safer default
+                 }
+             }
+         });
+         // Tooltips might not be needed for this module, but keep the logic just in case
+         document.querySelectorAll('.code-highlight[data-translate-tooltip]').forEach(el => {
+             const tooltipKey = el.getAttribute('data-translate-tooltip');
+             const tooltipSpan = el.querySelector('.tooltip');
+             if(tooltipSpan && tooltipKey) {
+                tooltipSpan.innerHTML = getTranslation(tooltipKey);
+             }
+         });
+         // Translate code comments specifically if marked
+         document.querySelectorAll('.code-comment[data-translate]').forEach(commentSpan => {
+             const key = commentSpan.getAttribute('data-translate');
+             let translatedText = getTranslation(key);
+             // Ensure comments start with #
+             let commentContent = translatedText.startsWith('#') ? translatedText.substring(1).trim() : translatedText;
+             commentSpan.textContent = '# ' + commentContent;
+         });
+    }
+
+
+    // --- Quiz Data & Functions (Module 21) ---
+    const quizData = [
+         { questionKey: "quiz_q1_m21", optionKeys: ["quiz_q1_m21_opt1", "quiz_q1_m21_opt2", "quiz_q1_m21_opt3", "quiz_q1_m21_opt4"], correctAnswer: 0 },
+         { questionKey: "quiz_q2_m21", optionKeys: ["quiz_q2_m21_opt1", "quiz_q2_m21_opt2", "quiz_q2_m21_opt3", "quiz_q2_m21_opt4"], correctAnswer: 2 },
+         { questionKey: "quiz_q3_m21", optionKeys: ["quiz_q3_m21_opt1", "quiz_q3_m21_opt2", "quiz_q3_m21_opt3", "quiz_q3_m21_opt4"], correctAnswer: 1 },
+         { questionKey: "quiz_q4_m21", optionKeys: ["quiz_q4_m21_opt1", "quiz_q4_m21_opt2", "quiz_q4_m21_opt3", "quiz_q4_m21_opt4"], correctAnswer: 0 } // Sets are unique elements
+    ];
+
+    function loadQuestion() {
+          if (!quizArea) return; // Ensure quizArea exists
+
+          // If we reached the end, show score
+          if (currentQuestionIndex >= quizData.length) {
+              if (!quizArea.querySelector('[data-translate="quiz_final_score_title"]')) { // Avoid re-rendering score
+                 showFinalScore();
+              }
+              return;
+          }
+
+          const currentQuiz = quizData[currentQuestionIndex];
+          const questionText = getTranslation(currentQuiz.questionKey);
+          // Generate HTML for question and options, allowing safe HTML in questions/options
+          quizArea.innerHTML = `
+              <div class="quiz-question">${currentQuestionIndex + 1}. ${questionText}</div>
+              <div class="quiz-options">
+                  ${currentQuiz.optionKeys.map((optionKey, index) => `
+                      <button class="quiz-option-btn" data-index="${index}">${getTranslation(optionKey)}</button>
+                  `).join('')}
+              </div>
+          `;
+
+          // Reset feedback and next button
+          if (feedbackArea) {
+            feedbackArea.classList.remove('visible', 'correct', 'incorrect');
+            feedbackArea.innerHTML = ''; // Use innerHTML since feedback might contain HTML
+            feedbackArea.style.height = '0'; // Reset height
+            feedbackArea.style.marginBottom = '0'; // Reset margin
+          }
+          if (nextButton) {
+            nextButton.classList.remove('visible');
+            nextButton.disabled = true;
+          }
+
+          // Add event listeners to the new buttons
+          quizArea.querySelectorAll('.quiz-option-btn').forEach(button => {
+              button.addEventListener('click', handleAnswer);
+          });
+    }
+
+    function handleAnswer(event) {
+         const selectedButton = event.target.closest('.quiz-option-btn'); // Ensure clicking inside button works
+         if (!selectedButton) return;
+
+         const selectedIndex = parseInt(selectedButton.dataset.index);
+         const correctIndex = quizData[currentQuestionIndex].correctAnswer;
+         const correctOptionKey = quizData[currentQuestionIndex].optionKeys[correctIndex];
+
+         // Disable all options
+         quizArea.querySelectorAll('.quiz-option-btn').forEach(btn => {
+            btn.disabled = true;
+            btn.classList.remove('shake'); // Remove shake if present from previous incorrect
+         });
+
+         if (!feedbackArea || !nextButton) return; // Ensure elements exist
+
+         feedbackArea.classList.add('visible');
+
+         if (selectedIndex === correctIndex) {
+             selectedButton.classList.add('correct');
+             feedbackArea.innerHTML = getTranslation('quiz_feedback_correct'); // Allows HTML like the checkmark
+             feedbackArea.classList.add('correct');
+             feedbackArea.classList.remove('incorrect');
+             score++;
+             selectedButton.classList.add('tada-anim');
+         } else {
+             selectedButton.classList.add('incorrect');
+             // Get the correct answer text, potentially with HTML (like <code>)
+             const formattedCorrectAnswer = getTranslation(correctOptionKey);
+             feedbackArea.innerHTML = getTranslation('quiz_feedback_incorrect', { correctAnswerText: `<strong>${formattedCorrectAnswer}</strong>` }); // Allow strong tag
+             feedbackArea.classList.add('incorrect');
+             feedbackArea.classList.remove('correct');
+             // Highlight the correct button as well
+             const correctButton = quizArea.querySelector(`.quiz-option-btn[data-index="${correctIndex}"]`);
+             if(correctButton) correctButton.classList.add('correct');
+             selectedButton.classList.add('shake');
+         }
+
+         // Remove animation classes after they finish
+          selectedButton.addEventListener('animationend', () => {
+               selectedButton.classList.remove('tada-anim', 'shake');
+          }, { once: true });
+
+         // Make feedback area adjust height and margin smoothly
+         feedbackArea.style.height = feedbackArea.scrollHeight + 'px';
+         feedbackArea.style.marginBottom = '1rem';
+
+
+         // Show and enable next button
+         nextButton.classList.add('visible');
+         nextButton.disabled = false;
+     }
+
+     function showFinalScore() {
+            if (!quizArea) return;
+            const totalQuestions = quizData.length;
+            // Determine message based on score percentage
+            let resultMessageKey = 'quiz_final_score_good'; // Default
+             if (score === totalQuestions) {
+                resultMessageKey = 'quiz_final_score_perfect';
+             } // Can add more tiers if needed
+
+             // Use innerHTML for score summary and result message as they might have styling/HTML from translations
+            quizArea.innerHTML = `
+               <div class="quiz-question text-center" data-translate="quiz_final_score_title" style="font-size: 1.5rem;">${getTranslation('quiz_final_score_title')}</div>
+               <p class="text-center" style="font-size: 1.2rem; margin-bottom: 1rem;">${getTranslation('quiz_final_score_summary', { score: score, total: totalQuestions })}</p>
+               <p class="text-center" style="color: ${score === totalQuestions ? 'var(--success-color)' : 'var(--primary-color)'}; font-weight: bold;">${getTranslation(resultMessageKey)}</p>
+            `;
+            if (feedbackArea) feedbackArea.classList.remove('visible'); // Hide feedback area
+            if (nextButton) nextButton.style.display = 'none'; // Hide next button
+            quizArea.scrollIntoView({ behavior: 'smooth', block: 'center' }); // Scroll score into view
+     }
+
+
+    // --- Intersection Observer Setup ---
+    function setupObservers() {
+        const observerOptions = {
+            root: null, // relative to viewport
+            rootMargin: '0px',
+            threshold: 0.1 // Trigger when 10% of the element is visible
+        };
+
+        // No complex code simulation observer needed for this module's current setup
+
+        const observerCallback = (entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    // Optional: Unobserve after first visibility for performance
+                     observer.unobserve(entry.target);
+                }
+                // Optional: Remove 'visible' if it scrolls out of view (if you want fade-out)
+                // else {
+                //     entry.target.classList.remove('visible');
+                // }
+            });
+        };
+
+        const animationObserver = new IntersectionObserver(observerCallback, observerOptions);
+
+        // Observe elements with the fade-in class
+        document.querySelectorAll('.fade-in-on-scroll').forEach(el => {
+            animationObserver.observe(el);
+        });
+    }
+
+    // --- Event Listeners Setup ---
+    function setupEventListeners() {
+        // Navbar Toggle
+        if (navToggleButton && navPanel) {
+            navToggleButton.addEventListener('click', (event) => {
+                event.stopPropagation();
+                body.classList.toggle('nav-active');
+                navToggleButton.setAttribute('aria-expanded', body.classList.contains('nav-active'));
+            });
+
+            // Close nav if clicking outside
+            document.addEventListener('click', (event) => {
+                if (body.classList.contains('nav-active') && !navPanel.contains(event.target) && event.target !== navToggleButton && !navToggleButton.contains(event.target)) {
+                    body.classList.remove('nav-active');
+                    navToggleButton.setAttribute('aria-expanded', 'false');
+                }
+            });
+
+            // Close nav on link click (especially for internal # links)
+            navPanel.querySelectorAll('a').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    if (link.getAttribute('href').startsWith('#')) {
+                        // Close panel slightly delayed to allow scroll to start
+                        setTimeout(() => {
+                            body.classList.remove('nav-active');
+                            navToggleButton.setAttribute('aria-expanded', 'false');
+                        }, 150);
+                    }
+                    // External links will navigate away anyway
+                });
+            });
+
+            // Close nav on Escape key
+            document.addEventListener('keydown', (event) => {
+                 if (event.key === 'Escape' && body.classList.contains('nav-active')) {
+                     body.classList.remove('nav-active');
+                     navToggleButton.setAttribute('aria-expanded', 'false');
+                 }
+             });
+        }
+
+        // Quiz Next Button
+        if (nextButton) {
+            nextButton.addEventListener('click', () => {
+                if (!nextButton.disabled) {
+                    currentQuestionIndex++;
+                    loadQuestion(); // Load the next question
+                }
+            });
+        } else {
+            console.error("Elemento #next-question-btn não encontrado.");
+        }
+    }
+
+    // --- Initialization ---
+    document.addEventListener('DOMContentLoaded', () => {
+        // Check if elements needed for quiz exist before proceeding
+        if (!quizArea) console.error("Elemento #quiz-area não encontrado.");
+        if (!feedbackArea) console.error("Elemento #quiz-feedback não encontrado.");
+
+        translatePage();        // Apply translations first
+        setupEventListeners();  // Set up interactive elements
+        setupObservers();       // Set up animations
+
+        if (quizArea) {
+            loadQuestion();     // Load the first quiz question if container exists
+        }
+    });
+
+    </script>
+
+</body>
+</html>

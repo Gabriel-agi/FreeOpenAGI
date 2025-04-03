@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<!-- Language set to Portuguese BR -->
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Title set by JS -->
+    <title data-translate="page_title">Módulo 20: Simulações e Ferramentas</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Include Python Brand Icon -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/brands.min.css">
+
+
+    <style>
+        /* --- Reset & Base Styles --- */
+        :root {
+            --primary-color: #007bff; /* Blue */
+            --secondary-color: #6c757d; /* Gray */
+            --background-light: #f8f9fa;
+            --background-dark: #343a40;
+            --text-light: #f8f9fa;
+            --text-dark: #212529;
+            --accent-color: #ffc107; /* Yellow */
+            --success-color: #28a745; /* Green */
+            --error-color: #dc3545; /* Red */
+            --excel-color: #1D6F42; /* Excel Green */
+            --python-color: #306998; /* Python Blue */
+            --simulation-color: #fd7e14; /* Orange */
+            --border-radius: 8px;
+            --transition-speed: 0.3s;
+            --animation-speed: 0.6s; /* Control fade-in speed */
+            --font-body: 'Roboto', sans-serif;
+            --font-title: 'Orbitron', sans-serif;
+            --nav-primary: #6e48aa;
+            --nav-success: #4cc9f0;
+            --nav-dark: #1a1a2e;
+            --footer-border-color: #495057;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; font-size: 16px; }
+        body {
+            font-family: var(--font-body); line-height: 1.7;
+            background-color: var(--background-light); color: var(--text-dark);
+            overflow-x: hidden; display: flex; flex-direction: column; min-height: 100vh;
+        }
+        main { flex-grow: 1; }
+
+        /* --- Utility Classes --- */
+        .container { max-width: 960px; margin: 0 auto; padding: 0 15px; }
+        .text-center { text-align: center; }
+        .highlight { color: var(--primary-color); font-weight: bold; }
+        code {
+             background-color: #e9ecef;
+             padding: 0.2em 0.4em;
+             margin: 0;
+             font-size: 85%;
+             border-radius: 3px;
+             font-family: 'Courier New', Courier, monospace;
+             color: #333;
+        }
+        pre code {
+            display: block;
+            padding: 1em;
+            overflow-x: auto;
+            background-color: var(--background-dark);
+            color: var(--text-light);
+            border-radius: var(--border-radius);
+        }
+        .placeholder-image {
+            background-color: #e0e0e0;
+            border: 1px dashed var(--secondary-color);
+            padding: 3rem 1rem;
+            text-align: center;
+            color: var(--secondary-color);
+            margin: 2rem auto;
+            border-radius: var(--border-radius);
+            font-style: italic;
+        }
+
+        /* Elements to be animated by observer */
+        .fade-in-on-scroll {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+        }
+        .fade-in-on-scroll.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        /* Add delays for staggering */
+        .delay-1.visible { transition-delay: 0.1s; }
+        .delay-2.visible { transition-delay: 0.2s; }
+        .delay-3.visible { transition-delay: 0.3s; }
+        .delay-4.visible { transition-delay: 0.4s; }
+        .delay-5.visible { transition-delay: 0.5s; }
+        .delay-6.visible { transition-delay: 0.6s; }
+        .delay-7.visible { transition-delay: 0.7s; }
+
+
+        .button-group { margin-top: 2rem; display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; }
+        .action-button {
+             display: inline-flex; align-items: center; justify-content: center; gap: 0.5em;
+             padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold;
+             color: var(--text-light); background-color: var(--primary-color); border: none;
+             border-radius: var(--border-radius); cursor: pointer;
+             transition: background-color var(--transition-speed), transform var(--transition-speed), filter var(--transition-speed), box-shadow var(--transition-speed), opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out; /* Add animation transition */
+             margin-top: 1rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+             text-decoration: none; line-height: 1.2;
+             opacity: 0; /* Start hidden if animated */
+             transform: translateY(20px); /* Start offset if animated */
+        }
+        .action-button.visible { /* Make visible via observer */
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .action-button i.fas {}
+        .action-button:hover:not(:disabled) { background-color: #0056b3; transform: translateY(-2px) !important; box-shadow: 0 4px 8px rgba(0,0,0,0.15); } /* Use !important to override initial transform */
+        .action-button:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none !important; box-shadow: none; opacity: 0.7; }
+        .action-button.success { background-color: var(--success-color); }
+        .action-button.success:hover:not(:disabled) { background-color: #218838; }
+        .action-button.secondary { background-color: var(--secondary-color); }
+        .action-button.secondary:hover:not(:disabled) { background-color: #5a6268; }
+        .action-button:active:not(:disabled) { transform: translateY(1px) scale(0.98) !important; filter: brightness(0.95); }
+
+        /* --- Animations --- */
+        @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); } 50% { transform: scale(1.03); box-shadow: 0 0 15px rgba(0, 123, 255, 0.6); } 100% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); } }
+        @keyframes tada { from { transform: scale3d(1, 1, 1); } 10%, 20% { transform: scale3d(.9, .9, .9) rotate3d(0, 0, 1, -3deg); } 30%, 50%, 70%, 90% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, 3deg); } 40%, 60%, 80% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, -3deg); } to { transform: scale3d(1, 1, 1); } }
+        .tada-anim { animation: tada 1s ease; }
+        @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
+        @keyframes iconAppearCorrect { 0% { transform: scale(0.5) rotate(-15deg); opacity: 0; } 60% { transform: scale(1.2) rotate(5deg); opacity: 1; } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
+
+        /* --- Minimal Retractable Nav --- */
+        .minimal-nav-button { position: fixed; top: 15px; right: 15px; z-index: 1001; background-color: rgba(52, 58, 64, 0.75); color: var(--text-light); border: none; border-radius: var(--border-radius); padding: 8px 12px; cursor: pointer; transition: background-color var(--transition-speed), opacity var(--transition-speed), transform var(--transition-speed); font-size: 1.1rem; opacity: 0.6; box-shadow: 0 2px 5px rgba(0,0,0,0.2); line-height: 1; }
+        .minimal-nav-button:hover { background-color: rgba(52, 58, 64, 0.95); opacity: 1; transform: scale(1.05); }
+        .minimal-nav { position: fixed; top: 60px; right: 15px; z-index: 1000; background-color: var(--background-dark); border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.3); padding: 0.8rem; opacity: 0; transform: translateY(-15px) scale(0.95); transform-origin: top right; pointer-events: none; transition: opacity var(--transition-speed) ease, transform var(--transition-speed) ease; min-width: 200px; }
+        body.nav-active .minimal-nav { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+        .minimal-nav ul { list-style: none; margin: 0; padding: 0; }
+        .minimal-nav ul li { margin-bottom: 5px; }
+        .minimal-nav ul li:last-child { margin-bottom: 0; }
+        .minimal-nav ul li a { display: flex; align-items: center; color: var(--text-light); text-decoration: none; padding: 0.6rem 1rem; border-radius: 4px; transition: background-color var(--transition-speed), color var(--transition-speed); white-space: nowrap; font-weight: 400; font-size: 0.95rem; }
+        .minimal-nav ul li a i.fas, .minimal-nav ul li a i.fab { margin-right: 10px; width: 1.2em; text-align: center; opacity: 0.8; transition: opacity var(--transition-speed); }
+        .minimal-nav ul li a:hover { background-color: var(--primary-color); color: var(--text-light); }
+        .minimal-nav ul li a:hover i.fas, .minimal-nav ul li a:hover i.fab { opacity: 1; }
+
+        /* --- Header --- */
+        .main-header { background: linear-gradient(135deg, var(--primary-color), #0056b3); color: var(--text-light); padding: 4rem 0 6rem; text-align: center; position: relative; overflow: hidden; }
+        .main-header .container { /* Start visible */ }
+        .main-header h1 { font-family: var(--font-title); font-size: 3rem; margin-bottom: 0.5rem; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); }
+        .main-header p { font-size: 1.2rem; font-weight: 300; opacity: 0.9; }
+        .header-shape { position: absolute; border-radius: 50%; background-color: rgba(255, 255, 255, 0.1); animation: pulse 5s infinite ease-in-out alternate; }
+        .shape1 { width: 150px; height: 150px; bottom: -50px; left: 10%; animation-duration: 6s; }
+        .shape2 { width: 80px; height: 80px; top: 50px; right: 15%; animation-duration: 4s; }
+        .shape3 { width: 50px; height: 50px; bottom: 20px; right: 30%; animation-duration: 7s; }
+
+        /* --- Section Styling --- */
+        section { padding: 4rem 0; border-bottom: 1px solid #eee; }
+        main section:last-of-type { border-bottom: none; padding-bottom: 0;}
+        section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); margin-bottom: 2rem; text-align: center; position: relative; padding-bottom: 10px; }
+        section h2::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 60px; height: 4px; background-color: var(--accent-color); border-radius: 2px; }
+
+        /* --- Intro Sim Section --- */
+        #intro-sim p { font-size: 1.1rem; max-width: 700px; margin: 0 auto 1rem; text-align: center; }
+        .monte-carlo-box {
+            background-color: #fff; padding: 1.5rem; border-radius: var(--border-radius);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.07); text-align: center;
+            margin-top: 2rem; border-left: 5px solid var(--simulation-color);
+        }
+        .monte-carlo-box h3 { color: var(--simulation-color); margin-bottom: 0.5rem; font-size: 1.4rem;}
+        .monte-carlo-box p { font-size: 1rem; color: var(--secondary-color); text-align: left; max-width: none; margin-bottom: 0;}
+
+        /* --- Tool Cards Section (Excel & Python) --- */
+         #excel-analysis .tool-cards, #python-analysis .tool-cards {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem; margin-top: 2rem;
+        }
+        .tool-card { /* Animated by observer */
+            background-color: #fff; padding: 1.5rem; border-radius: var(--border-radius);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.07); text-align: center;
+            transition: transform var(--transition-speed) ease, box-shadow var(--transition-speed) ease, opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+            opacity: 0; transform: translateY(20px); /* Start state */
+            border-top: 4px solid transparent;
+        }
+        .tool-card.visible { opacity: 1; transform: translateY(0); }
+        .tool-card.excel { border-top-color: var(--excel-color); }
+        .tool-card.python { border-top-color: var(--python-color); }
+        .tool-card:hover { transform: translateY(-5px) scale(1.02) !important; box-shadow: 0 8px 20px rgba(0,0,0,0.12); }
+        .tool-icon { font-size: 2.5rem; margin-bottom: 1rem; }
+        #excel-analysis .tool-icon { color: var(--excel-color); }
+        #python-analysis .tool-icon { color: var(--python-color); }
+        .tool-card h3 { font-family: var(--font-body); font-weight: 700; font-size: 1.3rem; margin-bottom: 0.8rem; color: var(--text-dark); }
+        .tool-details {
+             font-size: 1rem; color: var(--secondary-color); margin-top: 1rem; line-height: 1.6; text-align: left;
+        }
+        .tool-details ul { list-style: inside; padding-left: 10px; margin-top: 0.5rem; }
+        .tool-details li { margin-bottom: 0.3rem; }
+
+
+        /* --- Practical Example Section --- */
+        #practical-example .explanation { display: flex; gap: 2rem; align-items: flex-start; margin-top: 2rem; flex-wrap: wrap; }
+        .text-demo { /* Animated by observer */
+            flex-basis: 55%; background-color: var(--background-dark); color: #eee;
+            padding: 1.5rem; border-radius: var(--border-radius); font-family: 'Courier New', Courier, monospace;
+            position: relative; min-height: 300px; box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            font-size: 0.9rem; line-height: 1.6;
+            opacity: 0; transition: opacity var(--animation-speed) ease-out; /* Only fade opacity */
+        }
+        .text-demo.visible { opacity: 1; }
+        .text-demo .code-line { margin-bottom: 0.7rem; display: block; white-space: pre; overflow-x: auto;} /* Allow wrapping/scrolling */
+        .text-demo .code-output-area { /* Animated by JS after parent visible */
+            color: var(--accent-color); font-weight: bold; font-size: 1rem;
+            border-top: 1px dashed var(--secondary-color); padding-top: 1rem; margin-top: 1rem;
+            opacity: 0; transition: opacity 0.8s ease 0.4s; /* Delay appearance */
+            line-height: 1.8; white-space: pre-wrap; /* Allow wrapping */
+        }
+        .text-demo .code-output-area.visible { opacity: 1; }
+        .text-explanation { /* Animated by observer */
+            flex-basis: 40%; font-size: 1.05rem;
+             opacity: 0; transition: opacity var(--animation-speed) ease-out; /* Only fade opacity */
+        }
+        .text-explanation.visible { opacity: 1; }
+        .text-explanation p { margin-bottom: 1rem; }
+        .code-highlight {
+            background-color: rgba(0, 123, 255, 0.1); color: #0056b3; padding: 0.2em 0.4em;
+            border-radius: 4px; font-family: 'Courier New', Courier, monospace; font-weight: bold;
+            cursor: pointer; transition: background-color var(--transition-speed);
+            display: inline-block; position: relative;
+        }
+        .code-highlight:hover { background-color: rgba(0, 123, 255, 0.2); }
+        .tooltip {
+            visibility: hidden; width: 220px; background-color: var(--background-dark);
+            color: var(--text-light); text-align: center; border-radius: 6px; padding: 8px 5px;
+            position: absolute; z-index: 1; bottom: 125%; left: 50%; margin-left: -110px;
+            opacity: 0; transition: opacity 0.3s; font-family: var(--font-body);
+            font-size: 0.9rem; font-weight: normal; pointer-events: none; line-height: 1.3;
+        }
+        .tooltip::after { content: ""; position: absolute; top: 100%; left: 50%; margin-left: -5px; border-width: 5px; border-style: solid; border-color: var(--background-dark) transparent transparent transparent; }
+        .code-highlight:hover .tooltip { visibility: visible; opacity: 1; }
+        .code-variable { color: #9cdcfe; }
+        .code-operator { color: #d4d4d4; }
+        .code-keyword { color: #569cd6; } /* import, from, as */
+        .code-string { color: #ce9178; }
+        .code-comment { color: #6a9955; font-style: italic;}
+        .code-function { color: #dcdcaa; } /* print, np.random.poisson, np.mean, plt.hist */
+        .code-number { color: #b5cea8; }
+        .code-parameter { color: #4fc1ff; } /* lambda_, size, bins, density */
+        .code-library { color: #4ec9b0; } /* numpy, matplotlib.pyplot */
+
+        /* --- Knowledge Check Section --- */
+        #knowledge-check { background-color: #e9ecef; }
+        .quiz-container { /* Animated by observer */
+             background-color: #fff; padding: 2rem; border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.1); max-width: 700px; margin: 2rem auto 0;
+             opacity: 0; transition: opacity var(--animation-speed) ease-out; /* Only fade opacity */
+        }
+        .quiz-container.visible { opacity: 1; }
+        .quiz-question { font-size: 1.2rem; font-weight: bold; margin-bottom: 1.5rem; color: var(--text-dark); }
+        .quiz-options button { display: block; width: 100%; padding: 1rem; margin-bottom: 1rem; text-align: left; font-size: 1rem; background-color: #f8f9fa; border: 1px solid #ced4da; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), border-color var(--transition-speed), transform var(--transition-speed); }
+        .quiz-options button:not(:disabled):hover { background-color: #e2e6ea; border-color: #adb5bd; transform: translateX(5px); }
+        .quiz-options button:disabled { cursor: default; opacity: 0.7; }
+        .quiz-options button.correct { background-color: #d4edda; border-color: var(--success-color); color: #155724; font-weight: bold; }
+        .quiz-options button.incorrect { background-color: #f8d7da; border-color: var(--error-color); color: #721c24; font-weight: bold; }
+        .quiz-options button.incorrect.shake { animation: shake 0.5s ease; }
+        .quiz-feedback { margin-top: 1.5rem; padding: 1rem; border-radius: var(--border-radius); font-weight: bold; text-align: center; opacity: 0; transition: opacity 0.5s ease, height 0.5s ease, margin-bottom 0.5s ease; height: 0; overflow: hidden; margin-bottom: 0;}
+        .quiz-feedback.visible { opacity: 1; height: auto; margin-bottom: 1rem; }
+        .quiz-feedback.correct { background-color: #d4edda; color: #155724; }
+        .quiz-feedback.incorrect { background-color: #f8d7da; color: #721c24; }
+        #next-question-btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5em; margin: 1.5rem auto 0; padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold; color: var(--text-light); background-color: var(--primary-color); border: none; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), transform var(--transition-speed), opacity 0.3s, visibility 0.3s; opacity: 0; visibility: hidden; }
+        #next-question-btn:hover:not(:disabled) { background-color: #0056b3; transform: scale(1.05); }
+        #next-question-btn.visible { opacity: 1; visibility: visible; }
+        #next-question-btn:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none; opacity: 0.7; }
+
+
+        /* --- Completion Section Styling --- */
+        .completion-section { padding: 4rem 0; text-align: center; background-color: var(--background-light); }
+        .completion-section .icon { font-size: 4rem; color: var(--success-color); margin-bottom: 1rem; display: inline-block; animation: iconAppearCorrect 1s ease-out 0.5s forwards; opacity: 0; /* Initial state for animation */}
+        /* Ensure completion elements are targeted by observer */
+        .completion-section h2, .completion-section p {
+            opacity: 0; transform: translateY(20px);
+            transition: opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+        }
+        .completion-section h2.visible, .completion-section p.visible {
+            opacity: 1; transform: translateY(0);
+        }
+        .completion-section .button-group { margin-top: 2.5rem; }
+        .completion-section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); margin-bottom: 1rem; }
+        .completion-section h2::after { display: none; }
+        .completion-section p { font-size: 1.1rem; margin-top: 1rem; color: var(--secondary-color); max-width: 700px; margin-left: auto; margin-right: auto; line-height: 1.8; }
+
+
+        /* --- Footer Styling --- */
+        .main-footer {
+            background-color: var(--background-light);
+            color: var(--text-light);
+            text-align: center;
+            padding: 2rem 0;
+            font-size: 0.9rem;
+            margin-top: auto;
+            border-top: 1px solid var(--background-light);
+            opacity: 0.85;
+        }
+        .main-footer p { margin: 0; line-height: 1.5; }
+
+        /* --- Responsive Design --- */
+        @media (max-width: 768px) {
+            html { font-size: 15px; }
+            .main-header h1 { font-size: 2.5rem; } .main-header p { font-size: 1.1rem; }
+            section h2 { font-size: 1.8rem; }
+            .tool-cards { grid-template-columns: 1fr; }
+            #practical-example .explanation { flex-direction: column; }
+            .text-demo, .text-explanation { flex-basis: 100%; }
+            .minimal-nav { min-width: 180px; } .minimal-nav ul li a { padding: 0.6rem 0.8rem; }
+            .completion-section h2 { font-size: 2rem; }
+            .completion-section .button-group { flex-direction: column; align-items: center; gap: 0.8rem; }
+            .completion-section .action-button { width: 80%; max-width: 350px; margin-top: 0; }
+            .main-footer { padding: 1.5rem 0; }
+        }
+        @media (max-width: 480px) {
+            html { font-size: 14px; }
+            .main-header h1 { font-size: 2rem; } .main-header p { font-size: 1rem; }
+            section h2 { font-size: 1.6rem; }
+            .quiz-options button { padding: 0.8rem; font-size: 0.95rem; }
+            .tooltip { width: 160px; margin-left: -80px; font-size: 0.8rem;}
+            .minimal-nav-button { top: 10px; right: 10px; padding: 6px 10px; font-size: 1rem; }
+            .minimal-nav { top: 48px; right: 10px; min-width: 160px; }
+            .minimal-nav ul li a { padding: 0.5rem 0.7rem; font-size: 0.9rem;}
+            .minimal-nav ul li a i.fas, .minimal-nav ul li a i.fab { margin-right: 8px; }
+            .completion-section .icon { font-size: 3.5rem; }
+            .completion-section h2 { font-size: 1.8rem; } .completion-section p { font-size: 1rem; }
+            .completion-section .action-button { width: 90%; max-width: 300px; }
+             .text-demo { font-size: 0.85rem; }
+            .main-footer { padding: 1rem 0; font-size: 0.85rem; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- ========= Minimal Nav Handle ========= -->
+    <button id="minimal-nav-toggle" class="minimal-nav-button" aria-label="Alternar Menu de Navegação" aria-expanded="false">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- ========= Minimal Nav Panel ========= -->
+    <nav id="minimal-nav-panel" class="minimal-nav">
+        <ul>
+            <!-- IMPORTANT: Updated links for Module 20 and 'math' prefix -->
+            <li><a href="math-practice-20.html"><i class="fas fa-pencil-alt fa-fw"></i> <span data-translate="nav_practice">Iniciar Prática</span></a></li>
+            <li><a href="math-advanced-20.html"><i class="fas fa-flask fa-fw"></i> <span data-translate="nav_advanced">Prática Avançada</span></a></li>
+            <li><a href="math-dashboard.html"><i class="fas fa-list fa-fw"></i> <span data-translate="nav_menu">Menu do Curso</span></a></li>
+             <hr style="border: none; border-top: 1px solid var(--secondary-color); margin: 8px 0;">
+             <!-- Internal Navigation for Module 20 Sections -->
+             <li><a href="#intro-sim"><i class="fas fa-laptop-code fa-fw"></i> <span data-translate="nav_intro_sim">Intro Simulações</span></a></li>
+             <li><a href="#excel-analysis"><i class="fas fa-file-excel fa-fw"></i> <span data-translate="nav_excel">Excel Análise</span></a></li>
+             <li><a href="#python-analysis"><i class="fab fa-python fa-fw"></i> <span data-translate="nav_python">Python Análise</span></a></li>
+             <li><a href="#practical-example"><i class="fas fa-cogs fa-fw"></i> <span data-translate="nav_example">Exemplo Prático</span></a></li>
+             <li><a href="#knowledge-check"><i class="fas fa-check-double fa-fw"></i> <span data-translate="nav_quiz">Teste Rápido</span></a></li>
+             <li><a href="#completion"><i class="fas fa-flag-checkered fa-fw"></i> <span data-translate="completion_theory_title_m20">Conclusão</span></a></li>
+        </ul>
+    </nav>
+
+    <header class="main-header">
+        <div class="header-shape shape1"></div>
+        <div class="header-shape shape2"></div>
+        <div class="header-shape shape3"></div>
+        <div class="container"> <!-- Start visible -->
+            <h1 data-translate="header_title_m20">Módulo 20: Simulações e Ferramentas</h1>
+            <p data-translate="header_subtitle_m20">Utilizando Excel e Python para explorar distribuições e realizar análises.</p>
+        </div>
+    </header>
+
+    <main>
+        <!-- ========= Intro Simulations Section ========= -->
+        <section id="intro-sim">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="intro_sim_title">🎲 Por Que Simular e Usar Ferramentas?</h2>
+                <p class="fade-in-on-scroll delay-1" data-translate="intro_sim_p1">
+                    Bem-vindo ao Módulo 20! Nos módulos anteriores, exploramos os fundamentos da probabilidade e diversas distribuições (Binomial, Poisson, Normal, etc.). Agora, vamos ver como podemos usar <span class="highlight">ferramentas computacionais</span> para dar vida a esses conceitos.
+                </p>
+                <p class="fade-in-on-scroll delay-2" data-translate="intro_sim_p2">
+                    Em IA e Ciência de Dados, raramente calculamos probabilidades complexas manualmente. Usamos software para <span class="highlight">simular</span> cenários, gerar dados aleatórios que seguem distribuições específicas e realizar análises estatísticas rapidamente. Isso nos ajuda a:
+                </p>
+                <ul class="fade-in-on-scroll delay-3" style="max-width: 600px; margin: 1rem auto; list-style-position: inside;">
+                    <li data-translate="intro_sim_li1">Entender sistemas complexos onde a matemática exata é difícil.</li>
+                    <li data-translate="intro_sim_li2">Testar hipóteses e validar modelos (ex: o tráfego de um site segue uma distribuição de Poisson?).</li>
+                    <li data-translate="intro_sim_li3">Avaliar o desempenho de algoritmos de IA sob diferentes condições de incerteza.</li>
+                    <li data-translate="intro_sim_li4">Gerar dados sintéticos para treinar modelos quando dados reais são escassos.</li>
+                </ul>
+                 <div class="monte-carlo-box fade-in-on-scroll delay-4">
+                     <h3 data-translate="intro_sim_mc_title">Métodos de Monte Carlo</h3>
+                     <p data-translate="intro_sim_mc_text">Uma classe importante de algoritmos computacionais que utilizam amostragem aleatória repetida para obter resultados numéricos. Basicamente, simulamos um processo muitas vezes para estimar probabilidades ou outras quantidades. Veremos como ferramentas como Python facilitam isso.</p>
+                 </div>
+            </div>
+        </section>
+
+        <!-- ========= Excel Analysis Section ========= -->
+        <section id="excel-analysis">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="excel_title"><i class="fas fa-file-excel" style="color: var(--excel-color); margin-right: 10px;"></i>Excel para Análise Rápida</h2>
+                <p class="text-center fade-in-on-scroll delay-1" data-translate="excel_subtitle">Planilhas como ferramenta inicial para cálculos e visualizações.</p>
+
+                <div class="tool-cards">
+                     <div class="tool-card excel fade-in-on-scroll delay-2">
+                        <span class="tool-icon"><i class="fas fa-calculator"></i></span>
+                        <h3 data-translate="excel_card1_title">Funções Estatísticas</h3>
+                        <div class="tool-details" data-translate="excel_card1_text">
+                            O Excel oferece funções prontas para estatística descritiva e distribuições:
+                            <ul>
+                                <li><code>MÉDIA</code>, <code>MED</code>, <code>MODO.ÚNICO</code>: Tendência central.</li>
+                                <li><code>DESVPAD.A</code>, <code>VAR.A</code>: Dispersão.</li>
+                                <li><code>DIST.NORM.N</code>: Probabilidades da Normal.</li>
+                                <li><code>DIST.BINOM.N</code>: Probabilidades da Binomial.</li>
+                                <li><code>DIST.POISSON</code>: Probabilidades de Poisson.</li>
+                                <li><code>ALEATÓRIOENTRE</code>: Gerar inteiros aleatórios (simples).</li>
+                            </ul>
+                        </div>
+                    </div>
+                     <div class="tool-card excel fade-in-on-scroll delay-3">
+                        <span class="tool-icon"><i class="fas fa-chart-bar"></i></span>
+                        <h3 data-translate="excel_card2_title">Visualização Básica</h3>
+                        <div class="tool-details" data-translate="excel_card2_text">
+                            Útil para criar rapidamente gráficos e entender os dados:
+                            <ul>
+                                <li>Histogramas: Para visualizar a distribuição de frequência de um conjunto de dados.</li>
+                                <li>Gráficos de Dispersão: Para explorar a relação entre duas variáveis.</li>
+                                <li>Gráficos de Linha/Barra: Para séries temporais ou comparações.</li>
+                            </ul>
+                            Embora limitado para análises complexas, é ótimo para exploração inicial.
+                        </div>
+                    </div>
+                </div>
+                <div class="placeholder-image fade-in-on-scroll delay-4" data-translate="excel_placeholder">
+                    Exemplo Visual: Planilha Excel mostrando cálculo de média e um histograma.
+                </div>
+                <p class="text-center fade-in-on-scroll delay-5" data-translate="excel_conclusion">Excel é acessível e bom para análises rápidas, mas para simulações avançadas, grande volume de dados e automação, o Python é mais poderoso.</p>
+            </div>
+        </section>
+
+        <!-- ========= Python Analysis Section ========= -->
+        <section id="python-analysis">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="python_title"><i class="fab fa-python" style="color: var(--python-color); margin-right: 10px;"></i>Python: Poder e Flexibilidade</h2>
+                <p class="text-center fade-in-on-scroll delay-1" data-translate="python_subtitle">Usando bibliotecas especializadas para simulação e análise estatística.</p>
+
+                <div class="tool-cards">
+                     <div class="tool-card python fade-in-on-scroll delay-2">
+                        <span class="tool-icon"><i class="fas fa-cogs"></i></span>
+                        <h3 data-translate="python_card1_title">NumPy & SciPy</h3>
+                        <div class="tool-details" data-translate="python_card1_text">
+                            Fundamentais para computação científica:
+                            <ul>
+                                <li><code>NumPy</code>: Arrays eficientes, operações matemáticas e geração de números aleatórios (<code>numpy.random</code> para diversas distribuições).</li>
+                                <li><code>SciPy</code> (<code>scipy.stats</code>): Módulo com vasta coleção de distribuições de probabilidade, testes estatísticos, funções descritivas e mais. Permite calcular PDF/PMF, CDF, quantis, gerar amostras, etc.</li>
+                            </ul>
+                        </div>
+                    </div>
+                     <div class="tool-card python fade-in-on-scroll delay-3">
+                        <span class="tool-icon"><i class="fas fa-paint-brush"></i></span>
+                        <h3 data-translate="python_card2_title">Matplotlib & Seaborn</h3>
+                        <div class="tool-details" data-translate="python_card2_text">
+                             Bibliotecas para visualização de dados:
+                            <ul>
+                                <li><code>Matplotlib</code>: Base para gráficos em Python. Permite criar histogramas, gráficos de densidade, boxplots, etc., com alto grau de customização.</li>
+                                <li><code>Seaborn</code>: Construída sobre Matplotlib, oferece interfaces de alto nível para gráficos estatísticos mais atraentes e informativos com menos código (ex: <code>seaborn.histplot</code> com estimativa de densidade).</li>
+                            </ul>
+                        </div>
+                    </div>
+                     <div class="tool-card python fade-in-on-scroll delay-4">
+                        <span class="tool-icon"><i class="fas fa-table"></i></span>
+                        <h3 data-translate="python_card3_title">Pandas</h3>
+                        <div class="tool-details" data-translate="python_card3_text">
+                            Essencial para manipulação e análise de dados:
+                            <ul>
+                                <li>Estruturas de dados como <code>DataFrame</code> (tabelas) e <code>Series</code> (colunas).</li>
+                                <li>Leitura e escrita de diversos formatos de arquivo (CSV, Excel).</li>
+                                <li>Limpeza, transformação, agregação e análise de dados tabulares.</li>
+                                <li>Integra-se perfeitamente com NumPy, SciPy e Matplotlib/Seaborn.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                 <p class="text-center fade-in-on-scroll delay-5" data-translate="python_conclusion">Python, com seu ecossistema de bibliotecas, oferece um ambiente robusto e flexível para simulações complexas, análises estatísticas aprofundadas e integração com fluxos de trabalho de Machine Learning.</p>
+            </div>
+        </section>
+
+        <!-- ========= Practical Example Section ========= -->
+        <section id="practical-example">
+             <div class="container">
+                 <h2 class="fade-in-on-scroll" data-translate="practical_example_title">⚙️ Ferramentas em Ação: Simulação</h2>
+                 <p class="text-center fade-in-on-scroll delay-1" data-translate="practical_example_subtitle">Simulando chegadas a um site (Poisson) e analisando com Python.</p>
+
+                 <div class="explanation">
+                     <div class="text-demo fade-in-on-scroll delay-2"> <!-- Observe container -->
+                        <span class="code-line"><span class="code-keyword">import</span> <span class="code-library">numpy</span> <span class="code-keyword">as</span> <span class="code-variable">np</span></span>
+                        <span class="code-line"><span class="code-keyword">import</span> <span class="code-library">matplotlib.pyplot</span> <span class="code-keyword">as</span> <span class="code-variable">plt</span></span>
+                        <span class="code-line"> </span>
+                        <span class="code-line"><span class="code-comment"># Parâmetros da simulação</span></span>
+                        <span class="code-line"><span class="code-variable">taxa_media_chegadas</span> <span class="code-operator">=</span> <span class="code-number">5</span>  <span class="code-comment"># Lambda (λ) para Poisson: 5 chegadas por minuto</span></span>
+                        <span class="code-line"><span class="code-variable">numero_minutos_simulados</span> <span class="code-operator">=</span> <span class="code-number">60</span> <span class="code-comment"># Simular por 1 hora</span></span>
+                        <span class="code-line"> </span>
+                        <span class="code-line"><span class="code-comment"># Simulação: Gerar números aleatórios da distribuição de Poisson</span></span>
+                        <span class="code-line"><span class="code-variable">chegadas_por_minuto</span> <span class="code-operator">=</span> <span class="code-library">np</span>.<span class="code-library">random</span>.<span class="code-function">poisson</span>(<span class="code-parameter">lam</span><span class="code-operator">=</span><span class="code-variable">taxa_media_chegadas</span>, <span class="code-parameter">size</span><span class="code-operator">=</span><span class="code-variable">numero_minutos_simulados</span>)</span>
+                        <span class="code-line"> </span>
+                        <span class="code-line"><span class="code-comment"># Análise básica</span></span>
+                        <span class="code-line"><span class="code-variable">media_observada</span> <span class="code-operator">=</span> <span class="code-library">np</span>.<span class="code-function">mean</span>(<span class="code-variable">chegadas_por_minuto</span>)</span>
+                        <span class="code-line"><span class="code-variable">max_chegadas</span> <span class="code-operator">=</span> <span class="code-library">np</span>.<span class="code-function">max</span>(<span class="code-variable">chegadas_por_minuto</span>)</span>
+                         <span class="code-line"> </span>
+                         <span class="code-line"><span class="code-comment"># Exibir resultados</span></span>
+                         <span class="code-line"><span class="code-function">print</span>(<span class="code-string">f"Simulação de {numero_minutos_simulados} minutos:"</span>)</span>
+                         <span class="code-line"><span class="code-function">print</span>(<span class="code-string">f"Taxa média de chegada esperada (λ): {taxa_media_chegadas}"</span>)</span>
+                         <span class="code-line"><span class="code-function">print</span>(<span class="code-string">f"Taxa média de chegada observada: {media_observada:.2f}"</span>)</span>
+                         <span class="code-line"><span class="code-function">print</span>(<span class="code-string">f"Máximo de chegadas em um minuto: {max_chegadas}"</span>)</span>
+                         <span class="code-line"><span class="code-function">print</span>(<span class="code-string">"Dados simulados (primeiros 10 min):"</span>, <span class="code-variable">chegadas_por_minuto</span>[:<span class="code-number">10</span>])</span>
+                         <span class="code-line"> </span>
+                         <span class="code-line"><span class="code-comment"># Visualização (Histograma)</span></span>
+                         <span class="code-line"><span class="code-library">plt</span>.<span class="code-function">hist</span>(<span class="code-variable">chegadas_por_minuto</span>, <span class="code-parameter">bins</span><span class="code-operator">=</span><span class="code-library">np</span>.<span class="code-function">arange</span>(<span class="code-number">0</span>, <span class="code-variable">max_chegadas</span> <span class="code-operator">+</span> <span class="code-number">2</span>) <span class="code-operator">-</span> <span class="code-number">0.5</span>, <span class="code-parameter">density</span><span class="code-operator">=</span><span class="code-keyword">True</span>, <span class="code-parameter">alpha</span><span class="code-operator">=</span><span class="code-number">0.7</span>, <span class="code-parameter">label</span><span class="code-operator">=</span><span class="code-string">'Simulado'</span>)</span>
+                         <span class="code-line"><span class="code-library">plt</span>.<span class="code-function">xlabel</span>(<span class="code-string">"Número de Chegadas por Minuto"</span>)</span>
+                         <span class="code-line"><span class="code-library">plt</span>.<span class="code-function">ylabel</span>(<span class="code-string">"Frequência Relativa"</span>)</span>
+                         <span class="code-line"><span class="code-library">plt</span>.<span class="code-function">title</span>(<span class="code-string">f'Distribuição de Poisson Simulada (λ={taxa_media_chegadas})'</span>)</span>
+                         <span class="code-line"><span class="code-library">plt</span>.<span class="code-function">xticks</span>(<span class="code-library">np</span>.<span class="code-function">arange</span>(<span class="code-number">0</span>, <span class="code-variable">max_chegadas</span> <span class="code-operator">+</span> <span class="code-number">1</span>))</span>
+                         <span class="code-line"><span class="code-comment"># plt.show() # Descomente para exibir o gráfico em ambiente local</span></span>
+
+                        <div class="code-output-area"> <!-- JS will add .visible -->
+                            <!-- Output will appear here via JS -->
+                        </div>
+                     </div>
+                     <div class="text-explanation fade-in-on-scroll delay-3"> <!-- Observe container -->
+                         <p data-translate="practical_example_p1">Neste exemplo, queremos simular o número de usuários chegando a um website, assumindo que segue uma <span class="highlight">Distribuição de Poisson</span> com uma taxa média (λ) de 5 chegadas por minuto.</p>
+                         <p data-translate="practical_example_p2">Usamos a biblioteca <span class="code-highlight" data-translate-tooltip="tooltip_numpy"><code>NumPy</code><span class="tooltip">Biblioteca fundamental para computação numérica em Python. 'np' é o alias comum.</span></span> para gerar <span class="code-highlight" data-translate-tooltip="tooltip_poisson"><code>np.random.poisson()</code><span class="tooltip">Função do NumPy que gera números aleatórios seguindo a distribuição de Poisson. Requer 'lam' (lambda) e 'size' (número de amostras).</span></span>. Simulamos 60 minutos.</p>
+                         <p data-translate="practical_example_p3">Calculamos a <span class="code-highlight" data-translate-tooltip="tooltip_mean"><code>média observada</code><span class="tooltip">Calculada com np.mean(). Espera-se que seja próxima de lambda (5) devido à Lei dos Grandes Números.</span></span> e o valor máximo de chegadas em um minuto durante a simulação.</p>
+                         <p data-translate="practical_example_p4">A saída mostra a média observada (próxima de 5) e os dados simulados para os primeiros 10 minutos. Isso ilustra a variabilidade inerente a processos aleatórios.</p>
+                         <p data-translate="practical_example_p5">Finalmente, usamos <span class="code-highlight" data-translate-tooltip="tooltip_matplotlib"><code>Matplotlib</code><span class="tooltip">Biblioteca para criação de gráficos. 'plt' é o alias comum. plt.hist() cria um histograma.</span></span> para visualizar a distribuição das chegadas simuladas. O histograma deve se assemelhar à forma da PMF da Poisson com λ=5.</p>
+                          <p data-translate="practical_example_p6"><strong>Em IA:</strong> Simulações como esta podem ajudar a dimensionar servidores, prever carga em sistemas, testar algoritmos de recomendação sob diferentes padrões de uso, etc.</p>
+                     </div>
+                 </div>
+             </div>
+        </section>
+
+        <!-- ========= Knowledge Check Section ========= -->
+        <section id="knowledge-check">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="quiz_title">🧠 Teste Rápido!</h2>
+                <div class="quiz-container fade-in-on-scroll delay-1"> <!-- Observe container -->
+                    <div id="quiz-area">
+                         <p style="text-align: center; padding: 2rem 0;">Carregando quiz...</p>
+                    </div>
+                    <div id="quiz-feedback" class="quiz-feedback"></div>
+                    <button id="next-question-btn" data-translate="quiz_next_button">Próxima Pergunta</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========= Completion Section ========= -->
+        <section id="completion" class="completion-section"> <!-- Added ID for nav link -->
+            <div class="container">
+                 <div class="icon">
+                    <!-- Combining icons relevant to the module -->
+                    <i class="fas fa-laptop-code"></i>
+                    <i class="fab fa-python" style="margin: 0 0.5rem;"></i>
+                    <i class="fas fa-chart-line"></i>
+                    <i class="fas fa-star"></i>
+                </div>
+                <h2 class="fade-in-on-scroll delay-1" data-translate="completion_theory_title_m20">Teoria do Módulo 20 Completa!</h2>
+                <p class="fade-in-on-scroll delay-2" data-translate="completion_theory_desc_m20">
+                    Excelente trabalho! Você agora tem uma visão geral de como usar ferramentas como Excel e, principalmente, Python para realizar simulações e análises estatísticas. <br>
+                    Dominar essas ferramentas é crucial para aplicar os conceitos de probabilidade e estatística em problemas reais de IA e Ciência de Dados. Hora de colocar a mão na massa!
+                </p>
+                <div class="button-group">
+                    <!-- Buttons observed -->
+                     <!-- IMPORTANT: Updated links for Module 20 and 'math' prefix -->
+                    <a href="math-dashboard.html" class="action-button secondary fade-in-on-scroll delay-3"><i class="fas fa-list"></i> <span data-translate="nav_menu">Menu do Curso</span></a>
+                    <a href="math-practice-20.html" class="action-button success fade-in-on-scroll delay-4"><i class="fas fa-pencil-alt"></i> <span data-translate="nav_practice">Iniciar Prática</span></a>
+                    <a href="math-advanced-20.html" class="action-button secondary fade-in-on-scroll delay-5"><i class="fas fa-flask"></i> <span data-translate="nav_advanced">Prática Avançada</span></a>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="main-footer">
+        <div class="container">
+            <p data-translate="footer_copyright"></p>
+        </div>
+    </footer>
+
+    <script>
+    // --- Translations Object (Portuguese Only) ---
+    const translations = {
+        pt: {
+            "page_title": "Módulo 20: Simulações e Ferramentas",
+            "nav_practice": "Iniciar Prática",
+            "nav_advanced": "Prática Avançada",
+            "nav_menu": "Menu do Curso",
+            "nav_intro_sim": "Intro Simulações", "nav_excel": "Excel Análise", "nav_python": "Python Análise", "nav_example": "Exemplo Prático", "nav_quiz": "Teste Rápido",
+            "header_title_m20": "Módulo 20: Simulações e Ferramentas", "header_subtitle_m20": "Utilizando Excel e Python para explorar distribuições e realizar análises.",
+            "intro_sim_title": "🎲 Por Que Simular e Usar Ferramentas?",
+            "intro_sim_p1": "Bem-vindo ao Módulo 20! Nos módulos anteriores, exploramos os fundamentos da probabilidade e diversas distribuições (Binomial, Poisson, Normal, etc.). Agora, vamos ver como podemos usar <span class=\"highlight\">ferramentas computacionais</span> para dar vida a esses conceitos.",
+            "intro_sim_p2": "Em IA e Ciência de Dados, raramente calculamos probabilidades complexas manualmente. Usamos software para <span class=\"highlight\">simular</span> cenários, gerar dados aleatórios que seguem distribuições específicas e realizar análises estatísticas rapidamente. Isso nos ajuda a:",
+            "intro_sim_li1": "Entender sistemas complexos onde a matemática exata é difícil.",
+            "intro_sim_li2": "Testar hipóteses e validar modelos (ex: o tráfego de um site segue uma distribuição de Poisson?).",
+            "intro_sim_li3": "Avaliar o desempenho de algoritmos de IA sob diferentes condições de incerteza.",
+            "intro_sim_li4": "Gerar dados sintéticos para treinar modelos quando dados reais são escassos.",
+            "intro_sim_mc_title": "Métodos de Monte Carlo",
+            "intro_sim_mc_text": "Uma classe importante de algoritmos computacionais que utilizam amostragem aleatória repetida para obter resultados numéricos. Basicamente, simulamos um processo muitas vezes para estimar probabilidades ou outras quantidades. Veremos como ferramentas como Python facilitam isso.",
+            "excel_title": "<i class='fas fa-file-excel' style='color: var(--excel-color); margin-right: 10px;'></i>Excel para Análise Rápida",
+            "excel_subtitle": "Planilhas como ferramenta inicial para cálculos e visualizações.",
+            "excel_card1_title": "Funções Estatísticas",
+            "excel_card1_text": "O Excel oferece funções prontas para estatística descritiva e distribuições:<ul><li><code>MÉDIA</code>, <code>MED</code>, <code>MODO.ÚNICO</code>: Tendência central.</li><li><code>DESVPAD.A</code>, <code>VAR.A</code>: Dispersão.</li><li><code>DIST.NORM.N</code>: Probabilidades da Normal.</li><li><code>DIST.BINOM.N</code>: Probabilidades da Binomial.</li><li><code>DIST.POISSON</code>: Probabilidades de Poisson.</li><li><code>ALEATÓRIOENTRE</code>: Gerar inteiros aleatórios (simples).</li></ul>",
+            "excel_card2_title": "Visualização Básica",
+            "excel_card2_text": "Útil para criar rapidamente gráficos e entender os dados:<ul><li>Histogramas: Para visualizar a distribuição de frequência de um conjunto de dados.</li><li>Gráficos de Dispersão: Para explorar a relação entre duas variáveis.</li><li>Gráficos de Linha/Barra: Para séries temporais ou comparações.</li></ul>Embora limitado para análises complexas, é ótimo para exploração inicial.",
+            "excel_placeholder": "Exemplo Visual: Planilha Excel mostrando cálculo de média e um histograma.",
+            "excel_conclusion": "Excel é acessível e bom para análises rápidas, mas para simulações avançadas, grande volume de dados e automação, o Python é mais poderoso.",
+            "python_title": "<i class='fab fa-python' style='color: var(--python-color); margin-right: 10px;'></i>Python: Poder e Flexibilidade",
+            "python_subtitle": "Usando bibliotecas especializadas para simulação e análise estatística.",
+            "python_card1_title": "NumPy & SciPy",
+            "python_card1_text": "Fundamentais para computação científica:<ul><li><code>NumPy</code>: Arrays eficientes, operações matemáticas e geração de números aleatórios (<code>numpy.random</code> para diversas distribuições).</li><li><code>SciPy</code> (<code>scipy.stats</code>): Módulo com vasta coleção de distribuições de probabilidade, testes estatísticos, funções descritivas e mais. Permite calcular PDF/PMF, CDF, quantis, gerar amostras, etc.</li></ul>",
+            "python_card2_title": "Matplotlib & Seaborn",
+            "python_card2_text": "Bibliotecas para visualização de dados:<ul><li><code>Matplotlib</code>: Base para gráficos em Python. Permite criar histogramas, gráficos de densidade, boxplots, etc., com alto grau de customização.</li><li><code>Seaborn</code>: Construída sobre Matplotlib, oferece interfaces de alto nível para gráficos estatísticos mais atraentes e informativos com menos código (ex: <code>seaborn.histplot</code> com estimativa de densidade).</li></ul>",
+             "python_card3_title": "Pandas",
+            "python_card3_text": "Essencial para manipulação e análise de dados:<ul><li>Estruturas de dados como <code>DataFrame</code> (tabelas) e <code>Series</code> (colunas).</li><li>Leitura e escrita de diversos formatos de arquivo (CSV, Excel).</li><li>Limpeza, transformação, agregação e análise de dados tabulares.</li><li>Integra-se perfeitamente com NumPy, SciPy e Matplotlib/Seaborn.</li></ul>",
+            "python_conclusion": "Python, com seu ecossistema de bibliotecas, oferece um ambiente robusto e flexível para simulações complexas, análises estatísticas aprofundadas e integração com fluxos de trabalho de Machine Learning.",
+            "practical_example_title": "⚙️ Ferramentas em Ação: Simulação",
+            "practical_example_subtitle": "Simulando chegadas a um site (Poisson) e analisando com Python.",
+            "practical_example_p1": "Neste exemplo, queremos simular o número de usuários chegando a um website, assumindo que segue uma <span class=\"highlight\">Distribuição de Poisson</span> com uma taxa média (λ) de 5 chegadas por minuto.",
+            "practical_example_p2": "Usamos a biblioteca <code>NumPy</code> para gerar <code>np.random.poisson()</code>. Simulamos 60 minutos.",
+            "practical_example_p3": "Calculamos a <code>média observada</code> e o valor máximo de chegadas em um minuto durante a simulação.",
+            "practical_example_p4": "A saída mostra a média observada (próxima de 5) e os dados simulados para os primeiros 10 minutos. Isso ilustra a variabilidade inerente a processos aleatórios.",
+            "practical_example_p5": "Finalmente, usamos <code>Matplotlib</code> para visualizar a distribuição das chegadas simuladas. O histograma deve se assemelhar à forma da PMF da Poisson com λ=5.",
+            "practical_example_p6": "<strong>Em IA:</strong> Simulações como esta podem ajudar a dimensionar servidores, prever carga em sistemas, testar algoritmos de recomendação sob diferentes padrões de uso, etc.",
+            "tooltip_numpy": "Biblioteca fundamental para computação numérica em Python. 'np' é o alias comum.",
+            "tooltip_poisson": "Função do NumPy que gera números aleatórios seguindo a distribuição de Poisson. Requer 'lam' (lambda) e 'size' (número de amostras).",
+            "tooltip_mean": "Calculada com np.mean(). Espera-se que seja próxima de lambda (5) devido à Lei dos Grandes Números.",
+            "tooltip_matplotlib": "Biblioteca para criação de gráficos. 'plt' é o alias comum. plt.hist() cria um histograma.",
+            "quiz_title": "🧠 Teste Rápido!", "quiz_next_button": "Próxima Pergunta",
+            "quiz_q1_m20": "Qual ferramenta é geralmente mais adequada para simulações complexas e análise de grandes volumes de dados?",
+            "quiz_q1_m20_opt1": "Excel", "quiz_q1_m20_opt2": "Python (com NumPy/SciPy/Pandas)", "quiz_q1_m20_opt3": "Calculadora Científica", "quiz_q1_m20_opt4": "Word",
+            "quiz_q2_m20": "Qual biblioteca Python é primariamente usada para gerar números aleatórios de várias distribuições e para operações com arrays?",
+            "quiz_q2_m20_opt1": "Matplotlib", "quiz_q2_m20_opt2": "Pandas", "quiz_q2_m20_opt3": "NumPy", "quiz_q2_m20_opt4": "SciPy.stats",
+            "quiz_q3_m20": "Para que servem os Métodos de Monte Carlo?",
+            "quiz_q3_m20_opt1": "Desenhar gráficos bonitos", "quiz_q3_m20_opt2": "Resolver equações diferenciais analiticamente", "quiz_q3_m20_opt3": "Estimar resultados através de amostragem aleatória repetida", "quiz_q3_m20_opt4": "Escrever fórmulas no Excel",
+            "quiz_q4_m20": "Se você precisa calcular a probabilidade acumulada (CDF) de uma distribuição Normal em Python, qual módulo da SciPy você provavelmente usaria?",
+            "quiz_q4_m20_opt1": "`scipy.linalg`", "quiz_q4_m20_opt2": "`scipy.optimize`", "quiz_q4_m20_opt3": "`scipy.integrate`", "quiz_q4_m20_opt4": "`scipy.stats`",
+            "quiz_feedback_correct": "Correto! 🎉", "quiz_feedback_incorrect": "Não foi bem assim! A resposta correta era: {correctAnswerText}",
+            "quiz_final_score_title": "Teste Rápido Completo!",
+            "quiz_final_score_summary": "Você respondeu {score} de {total} perguntas corretamente.",
+            "quiz_final_score_perfect": "Excelente! Você está pronto para usar essas ferramentas!", "quiz_final_score_good": "Bom trabalho! Continue praticando o uso de Excel e Python para análise.",
+            "completion_theory_title_m20": "Teoria do Módulo 20 Completa!",
+            "completion_theory_desc_m20": "Excelente trabalho! Você agora tem uma visão geral de como usar ferramentas como Excel e, principalmente, Python para realizar simulações e análises estatísticas. <br> Dominar essas ferramentas é crucial para aplicar os conceitos de probabilidade e estatística em problemas reais de IA e Ciência de Dados. Hora de colocar a mão na massa!",
+            "footer_copyright": "© 2024 Matemática para IA. Todos os direitos reservados."
+        }
+    };
+
+    // --- Global Variables ---
+    let currentQuestionIndex = 0;
+    let score = 0;
+    const lang = 'pt'; // Hardcoded language
+
+    // --- DOM Elements (Get them once) ---
+    const navToggleButton = document.getElementById('minimal-nav-toggle');
+    const navPanel = document.getElementById('minimal-nav-panel');
+    const body = document.body;
+    const quizArea = document.getElementById('quiz-area');
+    const feedbackArea = document.getElementById('quiz-feedback');
+    const nextButton = document.getElementById('next-question-btn');
+    const textDemoBox = document.querySelector('#practical-example .text-demo');
+    const codeOutputArea = document.querySelector('#practical-example .code-output-area');
+
+    // --- Functions ---
+
+    function getTranslation(key, replacements = {}) {
+         let text = translations[lang]?.[key] ?? `[${key}]`; // Default to key if not found
+         // Replace placeholders like {placeholder_name}
+         for (const placeholder in replacements) {
+             // Use a more robust regex to avoid issues with special characters
+             const regex = new RegExp(`\\{${placeholder.replace(/([.*+?^=!:${}()|\[\]\/\\])/g, "\\$1")}\\}`, 'g');
+             text = text.replace(regex, replacements[placeholder]);
+         }
+         return text;
+    }
+
+
+    function translatePage() {
+         document.querySelectorAll('[data-translate]').forEach(el => {
+             const key = el.getAttribute('data-translate');
+             let translation = getTranslation(key);
+
+              if (el.tagName === 'TITLE') { document.title = translation; }
+              else if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') { /* Skip form inputs */ }
+              else {
+                   // Allow specific HTML tags safely using a more permissive regex
+                   // Allows <code>, <span>, <strong>, <em>, <i>, <b>, <br>, <ul>, <li>
+                   const safeHtmlRegex = /<\/?(code|span|strong|em|i|b|br|ul|li|div|p)/gi;
+                   let containsSafeHtml = safeHtmlRegex.test(translation);
+                   let allowedContainers = '.tool-details, .text-explanation, .footer p, .monte-carlo-box p, #quiz-feedback'; // Add more selectors if needed
+
+                   // Allow innerHTML if it contains only reasonably safe tags OR if it's in an allowed container
+                   if (containsSafeHtml || el.closest(allowedContainers)) {
+                      // Basic check to prevent script injection (though innerHTML is inherently risky)
+                      if (!/<script/i.test(translation)) {
+                          el.innerHTML = translation;
+                      } else {
+                          console.warn("Skipping translation with potential script tag:", key);
+                          el.textContent = `[Translation Blocked: ${key}]`;
+                      }
+                   } else {
+                      el.textContent = translation;
+                   }
+              }
+         });
+
+         // Update tooltips
+          document.querySelectorAll('.code-highlight[data-translate-tooltip]').forEach(el => {
+              const tooltipKey = el.getAttribute('data-translate-tooltip');
+              const tooltipSpan = el.querySelector('.tooltip');
+              if(tooltipSpan && tooltipKey) {
+                 // Tooltips are simpler, allow basic HTML like <code>
+                 let tooltipTranslation = getTranslation(tooltipKey);
+                  if (!/<script/i.test(tooltipTranslation)) {
+                     tooltipSpan.innerHTML = tooltipTranslation.replace(/`(.*?)`/g, '<code>$1</code>');
+                  } else {
+                      tooltipSpan.textContent = `[Tooltip Blocked]`;
+                  }
+              }
+          });
+    }
+
+
+    // --- Quiz Data & Functions ---
+    const quizData = [
+        { questionKey: "quiz_q1_m20", optionKeys: ["quiz_q1_m20_opt1", "quiz_q1_m20_opt2", "quiz_q1_m20_opt3", "quiz_q1_m20_opt4"], correctAnswer: 1 },
+        { questionKey: "quiz_q2_m20", optionKeys: ["quiz_q2_m20_opt1", "quiz_q2_m20_opt2", "quiz_q2_m20_opt3", "quiz_q2_m20_opt4"], correctAnswer: 2 },
+        { questionKey: "quiz_q3_m20", optionKeys: ["quiz_q3_m20_opt1", "quiz_q3_m20_opt2", "quiz_q3_m20_opt3", "quiz_q3_m20_opt4"], correctAnswer: 2 },
+        { questionKey: "quiz_q4_m20", optionKeys: ["quiz_q4_m20_opt1", "quiz_q4_m20_opt2", "quiz_q4_m20_opt3", "quiz_q4_m20_opt4"], correctAnswer: 3 }
+    ];
+
+    function loadQuestion() {
+          if (!quizArea) return; // Ensure quizArea exists
+
+          // If we reached the end, show score
+          if (currentQuestionIndex >= quizData.length) {
+              // Avoid re-rendering score if it's already displayed
+              if (!quizArea.querySelector('[data-translate="quiz_final_score_title"]')) {
+                 showFinalScore();
+              }
+              return;
+          }
+
+          const currentQuiz = quizData[currentQuestionIndex];
+          const questionText = getTranslation(currentQuiz.questionKey);
+          // Generate HTML for question and options
+          // Use textContent for safety unless specific HTML is needed and sanitized
+          quizArea.innerHTML = `
+              <div class="quiz-question">${currentQuestionIndex + 1}. ${questionText.replace(/`(.*?)`/g, '<code>$1</code>')}</div>
+              <div class="quiz-options">
+                  ${currentQuiz.optionKeys.map((optionKey, index) => {
+                      let optionText = getTranslation(optionKey).replace(/`(.*?)`/g, '<code>$1</code>');
+                      // Basic sanitization before setting innerHTML (if complex HTML needed)
+                      // For simple text, textContent is safer
+                      return `<button class="quiz-option-btn" data-index="${index}">${optionText}</button>`;
+                  }).join('')}
+              </div>
+          `;
+
+
+          // Reset feedback and next button
+          if (feedbackArea) {
+            feedbackArea.classList.remove('visible', 'correct', 'incorrect');
+            feedbackArea.textContent = '';
+            feedbackArea.style.height = '0'; // Reset height
+            feedbackArea.style.marginBottom = '0'; // Reset margin
+          }
+          if (nextButton) {
+            nextButton.classList.remove('visible');
+            nextButton.disabled = true;
+          }
+
+          // Add event listeners to the new buttons
+          quizArea.querySelectorAll('.quiz-option-btn').forEach(button => {
+              button.addEventListener('click', handleAnswer);
+          });
+    }
+
+     function handleAnswer(event) {
+         const selectedButton = event.target.closest('.quiz-option-btn'); // Ensure we get the button itself
+         if (!selectedButton) return; // Exit if click wasn't on a button
+
+         const selectedIndex = parseInt(selectedButton.dataset.index);
+         const correctIndex = quizData[currentQuestionIndex].correctAnswer;
+         const correctOptionKey = quizData[currentQuestionIndex].optionKeys[correctIndex];
+
+         // Disable all options
+         quizArea.querySelectorAll('.quiz-option-btn').forEach(btn => {
+            btn.disabled = true;
+            btn.classList.remove('shake'); // Remove shake if present from previous incorrect
+         });
+
+         if (!feedbackArea || !nextButton) return; // Ensure elements exist
+
+         feedbackArea.classList.add('visible');
+
+         if (selectedIndex === correctIndex) {
+             selectedButton.classList.add('correct');
+             feedbackArea.innerHTML = getTranslation('quiz_feedback_correct'); // Safe, simple text
+             feedbackArea.classList.add('correct');
+             feedbackArea.classList.remove('incorrect');
+             score++;
+             selectedButton.classList.add('tada-anim');
+         } else {
+             selectedButton.classList.add('incorrect');
+             // Sanitize correct answer text before inserting into HTML
+             const formattedCorrectAnswer = getTranslation(correctOptionKey).replace(/`(.*?)`/g, '<code>$1</code>');
+             const feedbackText = getTranslation('quiz_feedback_incorrect', { correctAnswerText: `<strong>${formattedCorrectAnswer}</strong>` });
+             // Basic check for safety before innerHTML
+             if (!/<script/i.test(feedbackText)) {
+                 feedbackArea.innerHTML = feedbackText;
+             } else {
+                 feedbackArea.textContent = "[Feedback Blocked]";
+             }
+             feedbackArea.classList.add('incorrect');
+             feedbackArea.classList.remove('correct');
+             // Highlight the correct button as well
+             const correctButton = quizArea.querySelector(`.quiz-option-btn[data-index="${correctIndex}"]`);
+             if(correctButton) correctButton.classList.add('correct');
+             selectedButton.classList.add('shake');
+         }
+
+         // Remove animation classes after they finish
+          selectedButton.addEventListener('animationend', () => {
+               selectedButton.classList.remove('tada-anim', 'shake');
+          }, { once: true });
+
+         // Make feedback area adjust height and margin smoothly
+         feedbackArea.style.height = feedbackArea.scrollHeight + 'px';
+         feedbackArea.style.marginBottom = '1rem';
+
+
+         // Show and enable next button
+         nextButton.classList.add('visible');
+         nextButton.disabled = false;
+     }
+
+     function showFinalScore() {
+            if (!quizArea) return;
+            const totalQuestions = quizData.length;
+            // Determine message based on score percentage
+            let resultMessageKey = (score / totalQuestions) >= 0.75 ? 'quiz_final_score_perfect' : 'quiz_final_score_good'; // 75% threshold
+
+            // Use safe text assignment where possible
+            const titleText = getTranslation('quiz_final_score_title');
+            const summaryText = getTranslation('quiz_final_score_summary', { score: score, total: totalQuestions });
+            const resultText = getTranslation(resultMessageKey);
+
+            quizArea.innerHTML = `
+               <div class="quiz-question text-center" style="font-size: 1.5rem;"></div>
+               <p class="text-center" style="font-size: 1.2rem; margin-bottom: 1rem;"></p>
+               <p class="text-center" style="color: ${score === totalQuestions ? 'var(--success-color)' : 'var(--primary-color)'}; font-weight: bold;"></p>
+            `;
+            // Assign text safely
+            quizArea.children[0].textContent = titleText;
+            quizArea.children[1].textContent = summaryText;
+            quizArea.children[2].textContent = resultText;
+
+
+            if (feedbackArea) feedbackArea.classList.remove('visible'); // Hide feedback area
+            if (nextButton) nextButton.style.display = 'none'; // Hide next button
+            quizArea.scrollIntoView({ behavior: 'smooth', block: 'center' }); // Scroll score into view
+     }
+
+
+    // --- Intersection Observer Setup ---
+    function setupObservers() {
+        const observerOptions = {
+            root: null, // relative to viewport
+            rootMargin: '0px',
+            threshold: 0.1 // Trigger when 10% of the element is visible
+        };
+
+        const codeObserverOptions = {
+            root: null,
+            rootMargin: '0px',
+            threshold: 0.4 // Trigger when 40% of the code box is visible
+        };
+
+        const observerCallback = (entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    // Optional: Unobserve after it becomes visible to save resources
+                    // observer.unobserve(entry.target);
+                }
+                // Optional: Remove 'visible' if it scrolls out of view
+                // else {
+                //     entry.target.classList.remove('visible');
+                // }
+            });
+        };
+
+        const animationObserver = new IntersectionObserver(observerCallback, observerOptions);
+
+        // Observe elements with the fade-in class
+        document.querySelectorAll('.fade-in-on-scroll').forEach(el => {
+            animationObserver.observe(el);
+        });
+
+        // --- Specific Observer for Code Output Simulation (Module 20 Example) ---
+        if (codeOutputArea && textDemoBox) {
+             const codeOutputObserver = new IntersectionObserver((entries, observer) => {
+                 entries.forEach(entry => {
+                     // Trigger only when the textDemoBox is intersecting
+                     if (entry.isIntersecting && !codeOutputArea.classList.contains('visible')) {
+                        // Short delay to ensure parent's fade-in completes visually
+                        setTimeout(() => {
+                            // Simulate the output based on the Python code example
+                            // Note: Actual output will vary slightly due to randomness
+                            const taxa_media_chegadas = 5;
+                            const numero_minutos_simulados = 60;
+                            // Generate *example* data (won't match perfectly every time)
+                            const example_poisson_data = [5, 3, 6, 4, 7, 5, 2, 8, 6, 4]; // Just first 10 for display
+                            const example_mean = 5.1; // Simulate a plausible observed mean
+                            const example_max = 10; // Simulate a plausible max
+
+                            let outputText = `Simulação de ${numero_minutos_simulados} minutos:\n`;
+                            outputText += `Taxa média de chegada esperada (λ): ${taxa_media_chegadas}\n`;
+                            outputText += `Taxa média de chegada observada: ${example_mean.toFixed(2)}\n`; // Format
+                            outputText += `Máximo de chegadas em um minuto: ${example_max}\n`;
+                            outputText += `Dados simulados (primeiros 10 min): [${example_poisson_data.join(' ')}]`; // Format array nicely
+
+                            // Set the text content (safer than innerHTML for simple text output)
+                            codeOutputArea.textContent = outputText;
+                            codeOutputArea.classList.add('visible');
+                        }, 600); // Slightly longer delay for code simulation
+                        observer.unobserve(entry.target); // Unobserve after triggering
+                     }
+                 });
+             }, codeObserverOptions); // Use the specific threshold for this
+             codeOutputObserver.observe(textDemoBox); // Observe the container
+        }
+    }
+
+    // --- Event Listeners Setup ---
+    function setupEventListeners() {
+        // Navbar Toggle
+        if (navToggleButton && navPanel) {
+            navToggleButton.addEventListener('click', (event) => {
+                event.stopPropagation();
+                body.classList.toggle('nav-active');
+                navToggleButton.setAttribute('aria-expanded', body.classList.contains('nav-active'));
+            });
+
+            // Close nav if clicking outside
+            document.addEventListener('click', (event) => {
+                if (body.classList.contains('nav-active') && !navPanel.contains(event.target) && event.target !== navToggleButton && !navToggleButton.contains(event.target)) {
+                    body.classList.remove('nav-active');
+                    navToggleButton.setAttribute('aria-expanded', 'false');
+                }
+            });
+
+            // Close nav on link click (only for internal # links)
+            navPanel.querySelectorAll('a').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    // Check if it's an internal link starting with #
+                    if (link.getAttribute('href').startsWith('#')) {
+                         // Close panel slightly delayed to allow scroll animation
+                        setTimeout(() => {
+                            body.classList.remove('nav-active');
+                            navToggleButton.setAttribute('aria-expanded', 'false');
+                        }, 150);
+                    }
+                    // External links will navigate away anyway, no need to close manually
+                });
+            });
+
+            // Close nav on Escape key
+            document.addEventListener('keydown', (event) => {
+                 if (event.key === 'Escape' && body.classList.contains('nav-active')) {
+                     body.classList.remove('nav-active');
+                     navToggleButton.setAttribute('aria-expanded', 'false');
+                 }
+             });
+        }
+
+        // Quiz Next Button
+        if (nextButton) {
+            nextButton.addEventListener('click', () => {
+                if (!nextButton.disabled) {
+                    currentQuestionIndex++;
+                    loadQuestion(); // Load the next question
+                }
+            });
+        } else {
+            console.error("Elemento #next-question-btn não encontrado.");
+        }
+    }
+
+    // --- Initialization ---
+    document.addEventListener('DOMContentLoaded', () => {
+        // Check if elements needed for quiz exist before proceeding
+        if (!quizArea) console.error("Elemento #quiz-area não encontrado.");
+        if (!feedbackArea) console.error("Elemento #quiz-feedback não encontrado.");
+
+        translatePage();        // Apply translations first
+        setupEventListeners();  // Set up interactive elements
+        setupObservers();       // Set up animations
+
+        if (quizArea) {
+            loadQuestion();     // Load the first quiz question if container exists
+        }
+    });
+
+    </script>
+
+</body>
+</html>

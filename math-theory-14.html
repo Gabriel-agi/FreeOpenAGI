@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<!-- Language set to Portuguese BR -->
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Title set by JS -->
+    <title data-translate="page_title">Módulo 14: Distribuições Discretas (Parte 1)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* --- Reset & Base Styles --- */
+        :root {
+            --primary-color: #007bff; /* Blue */
+            --secondary-color: #6c757d; /* Gray */
+            --background-light: #f8f9fa;
+            --background-dark: #343a40;
+            --text-light: #f8f9fa;
+            --text-dark: #212529;
+            --accent-color: #ffc107; /* Yellow */
+            --success-color: #28a745; /* Green */
+            --error-color: #dc3545; /* Red */
+            --bernoulli-color: #17a2b8; /* Teal */
+            --binomial-color: #fd7e14; /* Orange */
+            --formula-color: #6f42c1; /* Indigo */
+            --border-radius: 8px;
+            --transition-speed: 0.3s;
+            --animation-speed: 0.6s; /* Control fade-in speed */
+            --font-body: 'Roboto', sans-serif;
+            --font-title: 'Orbitron', sans-serif;
+            --nav-primary: #6e48aa;
+            --nav-success: #4cc9f0;
+            --nav-dark: #1a1a2e;
+            --footer-border-color: #495057;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; font-size: 16px; }
+        body {
+            font-family: var(--font-body); line-height: 1.7;
+            background-color: var(--background-light); color: var(--text-dark);
+            overflow-x: hidden; display: flex; flex-direction: column; min-height: 100vh;
+        }
+        main { flex-grow: 1; }
+
+        /* --- Utility Classes --- */
+        .container { max-width: 960px; margin: 0 auto; padding: 0 15px; }
+        .text-center { text-align: center; }
+        .highlight { color: var(--primary-color); font-weight: bold; }
+        .formula {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #e9ecef;
+            padding: 0.8rem 1rem;
+            border-radius: 4px;
+            margin: 1rem auto;
+            font-size: 1.05rem; /* Slightly larger for readability */
+            color: var(--formula-color);
+            display: block; /* Changed from inline-block for better centering/spacing */
+            border: 1px solid #ced4da;
+            text-align: center;
+            overflow-x: auto; /* Handle long formulas */
+            white-space: normal; /* Allow wrapping */
+        }
+         .formula code { /* Style code within formula blocks */
+             background-color: transparent; /* Inherit background */
+             padding: 0;
+             color: inherit; /* Inherit color */
+         }
+        .placeholder-image {
+            background-color: #e9ecef; border: 1px dashed var(--secondary-color);
+            padding: 3rem 1rem; text-align: center; color: var(--secondary-color);
+            font-style: italic; margin: 2rem auto; border-radius: var(--border-radius);
+            max-width: 80%;
+        }
+
+        /* Elements to be animated by observer */
+        .fade-in-on-scroll {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+        }
+        .fade-in-on-scroll.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        /* Add delays for staggering */
+        .delay-1.visible { transition-delay: 0.1s; }
+        .delay-2.visible { transition-delay: 0.2s; }
+        .delay-3.visible { transition-delay: 0.3s; }
+        .delay-4.visible { transition-delay: 0.4s; }
+        .delay-5.visible { transition-delay: 0.5s; }
+        .delay-6.visible { transition-delay: 0.6s; }
+        .delay-7.visible { transition-delay: 0.7s; }
+
+
+        .button-group { margin-top: 2rem; display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; }
+        .action-button {
+             display: inline-flex; align-items: center; justify-content: center; gap: 0.5em;
+             padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold;
+             color: var(--text-light); background-color: var(--primary-color); border: none;
+             border-radius: var(--border-radius); cursor: pointer;
+             transition: background-color var(--transition-speed), transform var(--transition-speed), filter var(--transition-speed), box-shadow var(--transition-speed), opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out; /* Add animation transition */
+             margin-top: 1rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+             text-decoration: none; line-height: 1.2;
+             opacity: 0; /* Start hidden if animated */
+             transform: translateY(20px); /* Start offset if animated */
+        }
+        .action-button.visible { /* Make visible via observer */
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .action-button i.fas {}
+        .action-button:hover:not(:disabled) { background-color: #0056b3; transform: translateY(-2px) !important; box-shadow: 0 4px 8px rgba(0,0,0,0.15); } /* Use !important to override initial transform */
+        .action-button:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none !important; box-shadow: none; opacity: 0.7; }
+        .action-button.success { background-color: var(--success-color); }
+        .action-button.success:hover:not(:disabled) { background-color: #218838; }
+        .action-button.secondary { background-color: var(--secondary-color); }
+        .action-button.secondary:hover:not(:disabled) { background-color: #5a6268; }
+        .action-button:active:not(:disabled) { transform: translateY(1px) scale(0.98) !important; filter: brightness(0.95); }
+
+        /* --- Animations --- */
+        @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); } 50% { transform: scale(1.03); box-shadow: 0 0 15px rgba(0, 123, 255, 0.6); } 100% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); } }
+        @keyframes tada { from { transform: scale3d(1, 1, 1); } 10%, 20% { transform: scale3d(.9, .9, .9) rotate3d(0, 0, 1, -3deg); } 30%, 50%, 70%, 90% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, 3deg); } 40%, 60%, 80% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, -3deg); } to { transform: scale3d(1, 1, 1); } }
+        .tada-anim { animation: tada 1s ease; }
+        @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
+        @keyframes iconAppearCorrect { 0% { transform: scale(0.5) rotate(-15deg); opacity: 0; } 60% { transform: scale(1.2) rotate(5deg); opacity: 1; } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
+
+        /* --- Minimal Retractable Nav --- */
+        .minimal-nav-button { position: fixed; top: 15px; right: 15px; z-index: 1001; background-color: rgba(52, 58, 64, 0.75); color: var(--text-light); border: none; border-radius: var(--border-radius); padding: 8px 12px; cursor: pointer; transition: background-color var(--transition-speed), opacity var(--transition-speed), transform var(--transition-speed); font-size: 1.1rem; opacity: 0.6; box-shadow: 0 2px 5px rgba(0,0,0,0.2); line-height: 1; }
+        .minimal-nav-button:hover { background-color: rgba(52, 58, 64, 0.95); opacity: 1; transform: scale(1.05); }
+        .minimal-nav { position: fixed; top: 60px; right: 15px; z-index: 1000; background-color: var(--background-dark); border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.3); padding: 0.8rem; opacity: 0; transform: translateY(-15px) scale(0.95); transform-origin: top right; pointer-events: none; transition: opacity var(--transition-speed) ease, transform var(--transition-speed) ease; min-width: 200px; }
+        body.nav-active .minimal-nav { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+        .minimal-nav ul { list-style: none; margin: 0; padding: 0; }
+        .minimal-nav ul li { margin-bottom: 5px; }
+        .minimal-nav ul li:last-child { margin-bottom: 0; }
+        .minimal-nav ul li a { display: flex; align-items: center; color: var(--text-light); text-decoration: none; padding: 0.6rem 1rem; border-radius: 4px; transition: background-color var(--transition-speed), color var(--transition-speed); white-space: nowrap; font-weight: 400; font-size: 0.95rem; }
+        .minimal-nav ul li a i.fas { margin-right: 10px; width: 1.2em; text-align: center; opacity: 0.8; transition: opacity var(--transition-speed); }
+        .minimal-nav ul li a:hover { background-color: var(--primary-color); color: var(--text-light); }
+        .minimal-nav ul li a:hover i.fas { opacity: 1; }
+
+        /* --- Header --- */
+        .main-header { background: linear-gradient(135deg, var(--primary-color), #0056b3); color: var(--text-light); padding: 4rem 0 6rem; text-align: center; position: relative; overflow: hidden; }
+        .main-header .container { /* Start visible */ }
+        .main-header h1 { font-family: var(--font-title); font-size: 2.8rem; /* Adjusted size slightly */ margin-bottom: 0.5rem; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); }
+        .main-header p { font-size: 1.15rem; /* Adjusted size */ font-weight: 300; opacity: 0.9; }
+        .header-shape { position: absolute; border-radius: 50%; background-color: rgba(255, 255, 255, 0.1); animation: pulse 5s infinite ease-in-out alternate; }
+        .shape1 { width: 150px; height: 150px; bottom: -50px; left: 10%; animation-duration: 6s; }
+        .shape2 { width: 80px; height: 80px; top: 50px; right: 15%; animation-duration: 4s; }
+        .shape3 { width: 50px; height: 50px; bottom: 20px; right: 30%; animation-duration: 7s; }
+
+        /* --- Section Styling --- */
+        section { padding: 4rem 0; border-bottom: 1px solid #eee; }
+        main section:last-of-type { border-bottom: none; padding-bottom: 0;}
+        section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); margin-bottom: 2rem; text-align: center; position: relative; padding-bottom: 10px; }
+        section h2::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 60px; height: 4px; background-color: var(--accent-color); border-radius: 2px; }
+
+        /* --- Welcome Section --- */
+        #welcome p { font-size: 1.1rem; max-width: 700px; margin: 0 auto 1rem; text-align: center; }
+
+        /* --- Specific Distribution Sections (Bernoulli, Binomial) --- */
+        .dist-cards {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem; margin-top: 2rem;
+        }
+        .dist-card { /* Animated by observer */
+            background-color: #fff; padding: 2rem; border-radius: var(--border-radius);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.07);
+            transition: transform var(--transition-speed) ease, box-shadow var(--transition-speed) ease, opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+            opacity: 0; transform: translateY(20px); /* Start state */
+            border-top: 4px solid transparent;
+        }
+        .dist-card.visible { opacity: 1; transform: translateY(0); }
+        .dist-card:hover { transform: translateY(-5px) scale(1.01) !important; box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
+
+        /* Specific card styling */
+        #bernoulli-dist .dist-card { border-top-color: var(--bernoulli-color); }
+        #binomial-dist .dist-card { border-top-color: var(--binomial-color); }
+
+        .dist-card h3 {
+            font-family: var(--font-body); font-weight: 700; font-size: 1.4rem;
+            margin-bottom: 1.5rem; color: var(--text-dark); display: flex;
+            align-items: center; gap: 0.7rem; justify-content: center;
+        }
+        .dist-card h3 i { /* Icon color matches border */
+             font-size: 1.8rem; opacity: 0.9;
+        }
+        #bernoulli-dist h3 i { color: var(--bernoulli-color); }
+        #binomial-dist h3 i { color: var(--binomial-color); }
+
+        .dist-card h4 { /* Subheadings within cards */
+            font-size: 1.1rem; color: var(--primary-color);
+            margin-top: 1.5rem; margin-bottom: 0.8rem;
+            border-bottom: 1px solid #eee; padding-bottom: 5px;
+        }
+        .dist-card p { font-size: 1rem; color: var(--secondary-color); line-height: 1.6; margin-bottom: 1rem; }
+        .dist-card ul { list-style: disc; margin-left: 25px; margin-bottom: 1rem; color: var(--secondary-color); padding-left: 5px;}
+        .dist-card ul li { margin-bottom: 0.5rem; }
+        .dist-card code { /* Inline code styling */
+            background-color: rgba(0, 123, 255, 0.1); color: #0056b3;
+            padding: 0.2em 0.4em; border-radius: 4px; font-family: 'Courier New', Courier, monospace;
+            font-size: 0.95em;
+        }
+
+        /* --- Putting It Together Section --- */
+        #putting-it-together-m14 .explanation {
+             display: flex; gap: 2rem; align-items: flex-start; margin-top: 2rem; flex-wrap: wrap;
+             background-color: #fff; padding: 2rem; border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        }
+        .calc-steps { /* Animated by observer */
+            flex-basis: 60%;
+            opacity: 0; transition: opacity var(--animation-speed) ease-out; /* Only fade opacity */
+        }
+        .calc-steps.visible { opacity: 1; }
+        .calc-steps h4 { font-size: 1.2rem; color: var(--primary-color); margin-bottom: 1rem; }
+        .calc-steps .step { margin-bottom: 1.5rem; padding-left: 1.5rem; position: relative; border-left: 3px solid var(--accent-color); padding-bottom: 0.5rem; }
+        .calc-steps .step::before {
+            content: counter(step-counter);
+            counter-increment: step-counter;
+            position: absolute; left: -15px; top: -2px;
+            background-color: var(--accent-color); color: var(--text-dark);
+            width: 25px; height: 25px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: bold; font-size: 0.9rem;
+        }
+        .calc-steps { counter-reset: step-counter; } /* Initialize counter */
+        .calc-steps .step p { margin-bottom: 0.5rem; color: var(--text-dark); font-size: 1.05rem;}
+        .calc-steps .step .formula { margin-top: 0.5rem; margin-bottom: 0.5rem; font-size: 1rem; padding: 0.6rem 0.8rem; }
+        .calc-explanation { /* Animated by observer */
+            flex-basis: 35%; font-size: 1rem; padding-left: 1rem; border-left: 1px solid #eee;
+             opacity: 0; transition: opacity var(--animation-speed) ease-out; /* Only fade opacity */
+        }
+        .calc-explanation.visible { opacity: 1; }
+        .calc-explanation p { margin-bottom: 1rem; color: var(--secondary-color); line-height: 1.7; }
+        .calc-explanation strong { color: var(--text-dark); font-weight: bold;}
+
+        /* --- Knowledge Check Section --- */
+        #knowledge-check { background-color: #e9ecef; }
+        .quiz-container { /* Animated by observer */
+             background-color: #fff; padding: 2rem; border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.1); max-width: 700px; margin: 2rem auto 0;
+             opacity: 0; transition: opacity var(--animation-speed) ease-out; /* Only fade opacity */
+        }
+        .quiz-container.visible { opacity: 1; }
+        .quiz-question { font-size: 1.2rem; font-weight: bold; margin-bottom: 1.5rem; color: var(--text-dark); }
+        .quiz-question code { /* Style code within question */
+            background-color: rgba(0, 123, 255, 0.1); color: #0056b3;
+            padding: 0.1em 0.3em; border-radius: 3px; font-family: 'Courier New', Courier, monospace;
+            font-size: 0.95em; vertical-align: baseline;
+        }
+        .quiz-options button { display: block; width: 100%; padding: 1rem; margin-bottom: 1rem; text-align: left; font-size: 1rem; background-color: #f8f9fa; border: 1px solid #ced4da; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), border-color var(--transition-speed), transform var(--transition-speed); }
+        .quiz-options button code { /* Style code within options */
+             background-color: rgba(0, 123, 255, 0.1); color: #0056b3;
+             padding: 0.1em 0.3em; border-radius: 3px; font-family: 'Courier New', Courier, monospace;
+             font-size: 0.95em; vertical-align: baseline;
+        }
+        .quiz-options button:not(:disabled):hover { background-color: #e2e6ea; border-color: #adb5bd; transform: translateX(5px); }
+        .quiz-options button:disabled { cursor: default; opacity: 0.7; }
+        .quiz-options button.correct { background-color: #d4edda; border-color: var(--success-color); color: #155724; font-weight: bold; }
+        .quiz-options button.incorrect { background-color: #f8d7da; border-color: var(--error-color); color: #721c24; font-weight: bold; }
+        .quiz-options button.incorrect.shake { animation: shake 0.5s ease; }
+        .quiz-feedback { margin-top: 1.5rem; padding: 1rem; border-radius: var(--border-radius); font-weight: bold; text-align: center; opacity: 0; transition: opacity 0.5s ease, height 0.5s ease, margin-bottom 0.5s ease; height: 0; overflow: hidden; margin-bottom: 0;}
+        .quiz-feedback.visible { opacity: 1; height: auto; margin-bottom: 1rem; }
+        .quiz-feedback.correct { background-color: #d4edda; color: #155724; }
+        .quiz-feedback.incorrect { background-color: #f8d7da; color: #721c24; }
+        #next-question-btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5em; margin: 1.5rem auto 0; padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold; color: var(--text-light); background-color: var(--primary-color); border: none; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), transform var(--transition-speed), opacity 0.3s, visibility 0.3s; opacity: 0; visibility: hidden; }
+        #next-question-btn:hover:not(:disabled) { background-color: #0056b3; transform: scale(1.05); }
+        #next-question-btn.visible { opacity: 1; visibility: visible; }
+        #next-question-btn:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none; opacity: 0.7; }
+
+
+        /* --- Completion Section Styling --- */
+        .completion-section { padding: 4rem 0; text-align: center; background-color: var(--background-light); }
+        .completion-section .icon { font-size: 4rem; color: var(--success-color); margin-bottom: 1rem; display: inline-block; animation: iconAppearCorrect 1s ease-out 0.5s forwards; opacity: 0; /* Initial state for animation */}
+        /* Ensure completion elements are targeted by observer */
+        .completion-section h2, .completion-section p {
+            opacity: 0; transform: translateY(20px);
+            transition: opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+        }
+        .completion-section h2.visible, .completion-section p.visible {
+            opacity: 1; transform: translateY(0);
+        }
+        .completion-section .button-group { margin-top: 2.5rem; }
+        .completion-section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); margin-bottom: 1rem; }
+        .completion-section h2::after { display: none; }
+        .completion-section p { font-size: 1.1rem; margin-top: 1rem; color: var(--secondary-color); max-width: 700px; margin-left: auto; margin-right: auto; line-height: 1.8; }
+
+
+        /* --- Footer Styling --- */
+        .main-footer {
+            background-color: var(--background-light);
+            color: var(--text-light);
+            text-align: center;
+            padding: 2rem 0;
+            font-size: 0.9rem;
+            margin-top: auto;
+            border-top: 1px solid var(--background-light);
+            opacity: 0.85;
+        }
+        .main-footer p { margin: 0; line-height: 1.5; }
+
+        /* --- Responsive Design --- */
+        @media (max-width: 768px) {
+            html { font-size: 15px; }
+            .main-header h1 { font-size: 2.5rem; } .main-header p { font-size: 1.1rem; }
+            section h2 { font-size: 1.8rem; }
+            .dist-cards { grid-template-columns: 1fr; }
+            #putting-it-together-m14 .explanation { flex-direction: column; }
+            .calc-steps, .calc-explanation { flex-basis: 100%; }
+            .calc-explanation { padding-left: 0; border-left: none; border-top: 1px solid #eee; margin-top: 1.5rem; padding-top: 1.5rem;}
+            .minimal-nav { min-width: 180px; } .minimal-nav ul li a { padding: 0.6rem 0.8rem; }
+            .completion-section h2 { font-size: 2rem; }
+            .completion-section .button-group { flex-direction: column; align-items: center; gap: 0.8rem; }
+            .completion-section .action-button { width: 80%; max-width: 350px; margin-top: 0; }
+            .main-footer { padding: 1.5rem 0; }
+        }
+        @media (max-width: 480px) {
+            html { font-size: 14px; }
+            .main-header h1 { font-size: 2rem; } .main-header p { font-size: 1rem; }
+            section h2 { font-size: 1.6rem; }
+            .quiz-options button { padding: 0.8rem; font-size: 0.95rem; }
+            .minimal-nav-button { top: 10px; right: 10px; padding: 6px 10px; font-size: 1rem; }
+            .minimal-nav { top: 48px; right: 10px; min-width: 160px; }
+            .minimal-nav ul li a { padding: 0.5rem 0.7rem; font-size: 0.9rem;}
+            .minimal-nav ul li a i.fas { margin-right: 8px; }
+            .completion-section .icon { font-size: 3.5rem; }
+            .completion-section h2 { font-size: 1.8rem; } .completion-section p { font-size: 1rem; }
+            .completion-section .action-button { width: 90%; max-width: 300px; }
+            .formula { font-size: 0.95rem; padding: 0.6rem; }
+             .calc-steps .step p { font-size: 1rem; }
+            .main-footer { padding: 1rem 0; font-size: 0.85rem; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- ========= Minimal Nav Handle ========= -->
+    <button id="minimal-nav-toggle" class="minimal-nav-button" aria-label="Alternar Menu de Navegação" aria-expanded="false">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- ========= Minimal Nav Panel ========= -->
+    <nav id="minimal-nav-panel" class="minimal-nav">
+        <ul>
+            <!-- IMPORTANT: Links updated to math- and module 14 -->
+            <li><a href="math-practice-14.html"><i class="fas fa-pencil-alt fa-fw"></i> <span data-translate="nav_practice">Iniciar Prática</span></a></li>
+            <li><a href="math-advanced-14.html"><i class="fas fa-flask fa-fw"></i> <span data-translate="nav_advanced">Prática Avançada</span></a></li>
+            <li><a href="math-dashboard.html"><i class="fas fa-list fa-fw"></i> <span data-translate="nav_menu">Menu do Curso</span></a></li>
+             <hr style="border: none; border-top: 1px solid var(--secondary-color); margin: 8px 0;">
+             <li><a href="#welcome"><i class="fas fa-door-open fa-fw"></i> <span data-translate="nav_welcome_m14">Boas-vindas M14</span></a></li>
+             <li><a href="#bernoulli-dist"><i class="fas fa-toggle-on fa-fw"></i> <span data-translate="nav_bernoulli">Distribuição Bernoulli</span></a></li>
+             <li><a href="#binomial-dist"><i class="fas fa-cubes fa-fw"></i> <span data-translate="nav_binomial">Distribuição Binomial</span></a></li>
+             <li><a href="#putting-it-together-m14"><i class="fas fa-calculator fa-fw"></i> <span data-translate="nav_putting_together_m14">Exemplo de Cálculo</span></a></li>
+             <li><a href="#knowledge-check"><i class="fas fa-check-double fa-fw"></i> <span data-translate="nav_quiz">Teste Rápido</span></a></li>
+             <li><a href="#completion"><i class="fas fa-flag-checkered fa-fw"></i> <span data-translate="completion_theory_title_m14">Conclusão</span></a></li>
+        </ul>
+    </nav>
+
+    <header class="main-header">
+        <div class="header-shape shape1"></div>
+        <div class="header-shape shape2"></div>
+        <div class="header-shape shape3"></div>
+        <div class="container"> <!-- Start visible -->
+            <h1 data-translate="header_title_m14">Módulo 14: Distribuições Discretas (Parte 1)</h1>
+            <p data-translate="header_subtitle_m14">Explorando os Fundamentos: Bernoulli e Binomial.</p>
+        </div>
+    </header>
+
+    <main>
+        <!-- ========= Welcome Section ========= -->
+        <section id="welcome">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="welcome_title_m14">🎲 Modelando Eventos Aleatórios Discretos</h2>
+                <p class="fade-in-on-scroll delay-1" data-translate="welcome_p1_m14">
+                    Bem-vindo ao Módulo 14! No mundo da IA e da computação, muitos eventos têm resultados que podemos contar e que são inerentemente aleatórios. Por exemplo, um email é spam ou não? Uma conexão de rede falha ou sucede? Um usuário clica em um anúncio ou ignora?
+                </p>
+                <p class="fade-in-on-scroll delay-2" data-translate="welcome_p2_m14">
+                    As <span class="highlight">distribuições de probabilidade discretas</span> nos fornecem as ferramentas matemáticas para descrever e analisar esses cenários. Neste módulo, focaremos em duas das distribuições mais fundamentais: <span class="highlight">Bernoulli</span> e <span class="highlight">Binomial</span>.
+                </p>
+                 <p class="fade-in-on-scroll delay-3" data-translate="welcome_p3_m14">
+                    Entender essas distribuições é crucial para modelar resultados binários, analisar sequências de eventos independentes e construir bases para modelos mais complexos em machine learning e análise de dados.
+                </p>
+            </div>
+        </section>
+
+        <!-- ========= Bernoulli Distribution Section ========= -->
+        <section id="bernoulli-dist">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="bernoulli_title">🪙 A Distribuição de Bernoulli</h2>
+                <p class="text-center fade-in-on-scroll delay-1" data-translate="bernoulli_subtitle">O bloco de construção mais simples para resultados binários.</p>
+
+                <div class="dist-cards">
+                    <div class="dist-card fade-in-on-scroll delay-2">
+                         <h3><i class="fas fa-toggle-on"></i> <span data-translate="bernoulli_card_title">Ensaio de Bernoulli</span></h3>
+                        <p data-translate="bernoulli_card_p1">
+                            Um ensaio de Bernoulli é um experimento aleatório com exatamente <span class="highlight">dois resultados possíveis</span>: "sucesso" (geralmente denotado por 1) e "fracasso" (denotado por 0).
+                        </p>
+                         <p data-translate="bernoulli_card_p2">
+                            Pense no lançamento de uma moeda (cara ou coroa), um teste médico (positivo ou negativo) ou a classificação de um email (spam ou não spam).
+                         </p>
+
+                         <h4><span data-translate="bernoulli_parameter_title">Parâmetro (p)</span></h4>
+                         <p data-translate="bernoulli_parameter_text">
+                            A distribuição de Bernoulli é definida por um único parâmetro, <code>p</code>, que representa a <span class="highlight">probabilidade de sucesso</span> (P(X=1)). A probabilidade de fracasso é, consequentemente, <code>1-p</code> (P(X=0)).
+                         </p>
+                         <div class="formula" data-translate="bernoulli_parameter_formula"><code>0 ≤ p ≤ 1</code></div>
+
+                         <h4><span data-translate="bernoulli_pmf_title">Função Massa de Probabilidade (FMP)</span></h4>
+                         <p data-translate="bernoulli_pmf_text">A FMP de uma variável aleatória de Bernoulli X é:</p>
+                         <div class="formula" data-translate="bernoulli_pmf_formula">
+                            <code>P(X=k) = p^k * (1-p)^(1-k)</code> para k ∈ {0, 1}
+                         </div>
+                         <p data-translate="bernoulli_pmf_explain">Ou, de forma mais simples: P(X=1) = p, P(X=0) = 1-p.</p>
+
+                         <h4><span data-translate="bernoulli_stats_title">Valor Esperado e Variância</span></h4>
+                         <ul>
+                             <li data-translate="bernoulli_ev">Valor Esperado (Média): <code>E[X] = p</code></li>
+                             <li data-translate="bernoulli_var">Variância: <code>Var(X) = p * (1-p)</code></li>
+                         </ul>
+                         <p data-translate="bernoulli_stats_conclusion">
+                            A Bernoulli é a base para muitas outras distribuições e processos, incluindo a Binomial que veremos a seguir.
+                         </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========= Binomial Distribution Section ========= -->
+        <section id="binomial-dist">
+             <div class="container">
+                 <h2 class="fade-in-on-scroll" data-translate="binomial_title">📊 A Distribuição Binomial</h2>
+                 <p class="text-center fade-in-on-scroll delay-1" data-translate="binomial_subtitle">Contando o número de sucessos em uma sequência de ensaios de Bernoulli.</p>
+
+                 <div class="dist-cards">
+                     <div class="dist-card fade-in-on-scroll delay-2">
+                         <h3><i class="fas fa-cubes"></i> <span data-translate="binomial_card_title">Múltiplos Ensaios Independentes</span></h3>
+                         <p data-translate="binomial_card_p1">
+                            A distribuição Binomial modela o <span class="highlight">número de sucessos (k)</span> em uma sequência de <span class="highlight">n ensaios de Bernoulli independentes</span>, onde cada ensaio tem a <span class="highlight">mesma probabilidade de sucesso (p)</span>.
+                         </p>
+                         <p data-translate="binomial_card_p2">
+                             Exemplos: O número de caras em 10 lançamentos de moeda; o número de emails classificados como spam em um lote de 100; o número de peças defeituosas em uma amostra de 50.
+                         </p>
+
+                         <h4><span data-translate="binomial_parameters_title">Parâmetros (n, p)</span></h4>
+                         <ul>
+                             <li data-translate="binomial_param_n"><code>n</code>: O número total de ensaios independentes.</li>
+                             <li data-translate="binomial_param_p"><code>p</code>: A probabilidade de sucesso em cada ensaio individual (a mesma para todos os ensaios).</li>
+                         </ul>
+                         <p data-translate="binomial_variable_k">A variável aleatória X segue uma distribuição Binomial, X ~ B(n, p), e representa o número de sucessos, onde <code>k</code> (o valor que X pode assumir) varia de 0 a n (<code>k ∈ {0, 1, ..., n}</code>).</p>
+
+
+                         <h4><span data-translate="binomial_pmf_title">Função Massa de Probabilidade (FMP)</span></h4>
+                         <p data-translate="binomial_pmf_text">A probabilidade de obter exatamente <code>k</code> sucessos em <code>n</code> ensaios é dada por:</p>
+                         <div class="formula" data-translate="binomial_pmf_formula">
+                            <code>P(X=k) = C(n, k) * p^k * (1-p)^(n-k)</code>
+                         </div>
+                         <p data-translate="binomial_pmf_explain">
+                             Onde <code>C(n, k)</code> (lê-se "n escolhe k" ou "combinação de n, k a k") é o <span class="highlight">coeficiente binomial</span>, calculado como <code>n! / (k! * (n-k)!)</code>. Ele representa o número de maneiras diferentes de escolher <code>k</code> sucessos dentre <code>n</code> ensaios.
+                         </p>
+
+                         <h4><span data-translate="binomial_stats_title">Valor Esperado e Variância</span></h4>
+                          <ul>
+                              <li data-translate="binomial_ev">Valor Esperado (Média): <code>E[X] = n * p</code></li>
+                              <li data-translate="binomial_var">Variância: <code>Var(X) = n * p * (1-p)</code></li>
+                          </ul>
+                          <p data-translate="binomial_stats_conclusion">
+                             A Binomial é extremamente útil em controle de qualidade, modelagem de cliques, análise de experimentos A/B e muitos outros cenários em IA e ciência de dados.
+                          </p>
+                     </div>
+                 </div>
+             </div>
+        </section>
+
+        <!-- ========= Putting It Together Section ========= -->
+        <section id="putting-it-together-m14">
+             <div class="container">
+                 <h2 class="fade-in-on-scroll" data-translate="putting_together_title_m14">⚙️ Binomial em Ação: Exemplo de Cálculo</h2>
+                 <p class="text-center fade-in-on-scroll delay-1" data-translate="putting_together_subtitle_m14">Calculando a probabilidade de um cenário específico usando a FMP Binomial.</p>
+
+                 <div class="explanation">
+                     <div class="calc-steps fade-in-on-scroll delay-2"> <!-- Observe container -->
+                         <h4 data-translate="calc_scenario_title">Cenário: Teste de Classificador de Spam</h4>
+                         <p data-translate="calc_scenario_desc">Suponha que um classificador de email tenha uma probabilidade de <code>p = 0.9</code> de classificar corretamente um email como spam. Se recebermos <code>n = 5</code> emails de spam, qual a probabilidade de que <span class="highlight">exatamente <code>k = 4</code></span> sejam classificados corretamente?</p>
+
+                         <div class="step">
+                             <p data-translate="calc_step1_title"><strong>Passo 1:</strong> Identificar os parâmetros</p>
+                             <p data-translate="calc_step1_desc">Temos <code>n = 5</code> (número de ensaios/emails), <code>p = 0.9</code> (probabilidade de sucesso/classificação correta) e queremos encontrar a probabilidade para <code>k = 4</code> (número exato de sucessos).</p>
+                         </div>
+                          <div class="step">
+                              <p data-translate="calc_step2_title"><strong>Passo 2:</strong> Calcular o Coeficiente Binomial C(n, k)</p>
+                              <p data-translate="calc_step2_desc">Precisamos de C(5, 4):</p>
+                              <div class="formula" data-translate="calc_step2_formula"><code>C(5, 4) = 5! / (4! * (5-4)!) = 5! / (4! * 1!) = (5 * 4!) / (4! * 1) = 5</code></div>
+                              <p data-translate="calc_step2_explain">Existem 5 maneiras de 4 dos 5 emails serem classificados corretamente.</p>
+                          </div>
+                           <div class="step">
+                               <p data-translate="calc_step3_title"><strong>Passo 3:</strong> Calcular os termos de probabilidade</p>
+                               <ul>
+                                    <li data-translate="calc_step3_p_k">Termo de sucesso: <code>p^k = 0.9^4 = 0.6561</code></li>
+                                    <li data-translate="calc_step3_1mp_nk">Termo de fracasso: <code>(1-p)^(n-k) = (1 - 0.9)^(5 - 4) = 0.1^1 = 0.1</code></li>
+                               </ul>
+                           </div>
+                           <div class="step">
+                               <p data-translate="calc_step4_title"><strong>Passo 4:</strong> Aplicar a Fórmula da FMP Binomial</p>
+                               <p data-translate="calc_step4_desc">Juntamos tudo: <code>P(X=4) = C(5, 4) * p^4 * (1-p)^(5-4)</code></p>
+                               <div class="formula" data-translate="calc_step4_formula"><code>P(X=4) = 5 * 0.6561 * 0.1 = 0.32805</code></div>
+                           </div>
+                           <div class="step">
+                                <p data-translate="calc_step5_title"><strong>Conclusão</strong></p>
+                                <p data-translate="calc_step5_desc">A probabilidade de classificar exatamente 4 dos 5 emails de spam corretamente é de aproximadamente <span class="highlight">32.81%</span>.</p>
+                           </div>
+                     </div>
+                     <div class="calc-explanation fade-in-on-scroll delay-3"> <!-- Observe container -->
+                          <p data-translate="calc_explanation_p1">
+                              Este exemplo demonstra como a fórmula Binomial nos permite calcular a probabilidade de um número específico de sucessos em um conjunto fixo de tentativas independentes.
+                          </p>
+                          <p data-translate="calc_explanation_p2">
+                              <strong>Componentes Chave:</strong>
+                              <ul>
+                                  <li data-translate="calc_explanation_item1"><strong>C(n, k):</strong> Conta as combinações possíveis. Essencial porque a ordem dos sucessos não importa (ex: SSSSF é o mesmo resultado que SFSSS em termos de contagem).</li>
+                                  <li data-translate="calc_explanation_item2"><strong>p^k:</strong> A probabilidade de obter <code>k</code> sucessos.</li>
+                                  <li data-translate="calc_explanation_item3"><strong>(1-p)^(n-k):</strong> A probabilidade de obter os <code>n-k</code> fracassos restantes.</li>
+                              </ul>
+                          </p>
+                          <p data-translate="calc_explanation_p3">
+                              Alterar <code>n</code>, <code>p</code> ou <code>k</code> mudaria drasticamente o resultado. Ferramentas computacionais (Python com SciPy, R, Excel) facilitam esses cálculos para valores maiores.
+                          </p>
+                     </div>
+                 </div>
+             </div>
+        </section>
+
+        <!-- ========= Knowledge Check Section ========= -->
+        <section id="knowledge-check">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="quiz_title">🧠 Teste Rápido!</h2>
+                <div class="quiz-container fade-in-on-scroll delay-1"> <!-- Observe container -->
+                    <div id="quiz-area">
+                         <p style="text-align: center; padding: 2rem 0;">Carregando quiz...</p>
+                    </div>
+                    <div id="quiz-feedback" class="quiz-feedback"></div>
+                    <button id="next-question-btn" data-translate="quiz_next_button">Próxima Pergunta</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========= Completion Section ========= -->
+        <section id="completion" class="completion-section"> <!-- Added ID for nav link -->
+            <div class="container">
+                 <div class="icon">
+                    <!-- Using probability / chart icons -->
+                    <i class="fas fa-chart-pie"></i>
+                    <i class="fas fa-calculator"></i>
+                    <i class="fas fa-star"></i>
+                </div>
+                <h2 class="fade-in-on-scroll delay-1" data-translate="completion_theory_title_m14">Teoria do Módulo 14 Completa!</h2>
+                <p class="fade-in-on-scroll delay-2" data-translate="completion_theory_desc_m14">
+                    Excelente trabalho! Você explorou as distribuições de Bernoulli e Binomial, duas ferramentas essenciais para modelar eventos discretos em IA e ciência da computação. Compreender seus parâmetros, FMPs e propriedades é fundamental.
+                    <br>Pratique esses conceitos na <strong>Zona de Prática</strong> ou aprofunde-se na <strong>Prática Avançada</strong> do Módulo 14.
+                </p>
+                <div class="button-group">
+                    <!-- Buttons observed - IMPORTANT: Links updated to math- and module 14 -->
+                    <a href="math-dashboard.html" class="action-button secondary fade-in-on-scroll delay-3"><i class="fas fa-list"></i> <span data-translate="nav_menu">Menu do Curso</span></a>
+                    <a href="math-practice-14.html" class="action-button success fade-in-on-scroll delay-4"><i class="fas fa-pencil-alt"></i> <span data-translate="nav_practice">Iniciar Prática</span></a>
+                    <a href="math-advanced-14.html" class="action-button secondary fade-in-on-scroll delay-5"><i class="fas fa-flask"></i> <span data-translate="nav_advanced">Prática Avançada</span></a>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="main-footer">
+        <div class="container">
+            <p data-translate="footer_copyright"></p> <!-- Updated Footer Text -->
+        </div>
+    </footer>
+
+    <script>
+    // --- Translations Object (Portuguese Only for Module 14) ---
+    const translations = {
+        pt: {
+            "page_title": "Módulo 14: Distribuições Discretas (Parte 1)",
+            "nav_practice": "Iniciar Prática",
+            "nav_advanced": "Prática Avançada",
+            "nav_menu": "Menu do Curso",
+            "nav_welcome_m14": "Boas-vindas M14",
+            "nav_bernoulli": "Distribuição Bernoulli",
+            "nav_binomial": "Distribuição Binomial",
+            "nav_putting_together_m14": "Exemplo de Cálculo",
+            "nav_quiz": "Teste Rápido",
+            "completion_theory_title_m14": "Conclusão", // Adjusted key name slightly
+            "lang_pt": "🇧🇷 Português",
+            "header_title_m14": "Módulo 14: Distribuições Discretas (Parte 1)",
+            "header_subtitle_m14": "Explorando os Fundamentos: Bernoulli e Binomial.",
+            "welcome_title_m14": "🎲 Modelando Eventos Aleatórios Discretos",
+            "welcome_p1_m14": "Bem-vindo ao Módulo 14! No mundo da IA e da computação, muitos eventos têm resultados que podemos contar e que são inerentemente aleatórios. Por exemplo, um email é spam ou não? Uma conexão de rede falha ou sucede? Um usuário clica em um anúncio ou ignora?",
+            "welcome_p2_m14": "As distribuições de probabilidade discretas nos fornecem as ferramentas matemáticas para descrever e analisar esses cenários. Neste módulo, focaremos em duas das distribuições mais fundamentais: Bernoulli e Binomial.",
+            "welcome_p3_m14": "Entender essas distribuições é crucial para modelar resultados binários, analisar sequências de eventos independentes e construir bases para modelos mais complexos em machine learning e análise de dados.",
+
+            "bernoulli_title": "🪙 A Distribuição de Bernoulli",
+            "bernoulli_subtitle": "O bloco de construção mais simples para resultados binários.",
+            "bernoulli_card_title": "Ensaio de Bernoulli",
+            "bernoulli_card_p1": "Um ensaio de Bernoulli é um experimento aleatório com exatamente dois resultados possíveis: \"sucesso\" (geralmente denotado por 1) e \"fracasso\" (denotado por 0).",
+            "bernoulli_card_p2": "Pense no lançamento de uma moeda (cara ou coroa), um teste médico (positivo ou negativo) ou a classificação de um email (spam ou não spam).",
+            "bernoulli_parameter_title": "Parâmetro (p)",
+            "bernoulli_parameter_text": "A distribuição de Bernoulli é definida por um único parâmetro, <code>p</code>, que representa a probabilidade de sucesso (P(X=1)). A probabilidade de fracasso é, consequentemente, <code>1-p</code> (P(X=0)).",
+            "bernoulli_parameter_formula": "<code>0 ≤ p ≤ 1</code>",
+            "bernoulli_pmf_title": "Função Massa de Probabilidade (FMP)",
+            "bernoulli_pmf_text": "A FMP de uma variável aleatória de Bernoulli X é:",
+            "bernoulli_pmf_formula": "<code>P(X=k) = p^k * (1-p)^(1-k)</code> para k ∈ {0, 1}",
+            "bernoulli_pmf_explain": "Ou, de forma mais simples: P(X=1) = p, P(X=0) = 1-p.",
+            "bernoulli_stats_title": "Valor Esperado e Variância",
+            "bernoulli_ev": "Valor Esperado (Média): <code>E[X] = p</code>",
+            "bernoulli_var": "Variância: <code>Var(X) = p * (1-p)</code>",
+            "bernoulli_stats_conclusion": "A Bernoulli é a base para muitas outras distribuições e processos, incluindo a Binomial que veremos a seguir.",
+
+            "binomial_title": "📊 A Distribuição Binomial",
+            "binomial_subtitle": "Contando o número de sucessos em uma sequência de ensaios de Bernoulli.",
+            "binomial_card_title": "Múltiplos Ensaios Independentes",
+            "binomial_card_p1": "A distribuição Binomial modela o número de sucessos (k) em uma sequência de n ensaios de Bernoulli independentes, onde cada ensaio tem a mesma probabilidade de sucesso (p).",
+            "binomial_card_p2": "Exemplos: O número de caras em 10 lançamentos de moeda; o número de emails classificados como spam em um lote de 100; o número de peças defeituosas em uma amostra de 50.",
+            "binomial_parameters_title": "Parâmetros (n, p)",
+            "binomial_param_n": "<code>n</code>: O número total de ensaios independentes.",
+            "binomial_param_p": "<code>p</code>: A probabilidade de sucesso em cada ensaio individual (a mesma para todos os ensaios).",
+            "binomial_variable_k": "A variável aleatória X segue uma distribuição Binomial, X ~ B(n, p), e representa o número de sucessos, onde <code>k</code> (o valor que X pode assumir) varia de 0 a n (<code>k ∈ {0, 1, ..., n}</code>).",
+            "binomial_pmf_title": "Função Massa de Probabilidade (FMP)",
+            "binomial_pmf_text": "A probabilidade de obter exatamente <code>k</code> sucessos em <code>n</code> ensaios é dada por:",
+            "binomial_pmf_formula": "<code>P(X=k) = C(n, k) * p^k * (1-p)^(n-k)</code>",
+            "binomial_pmf_explain": "Onde <code>C(n, k)</code> (lê-se \"n escolhe k\" ou \"combinação de n, k a k\") é o coeficiente binomial, calculado como <code>n! / (k! * (n-k)!)</code>. Ele representa o número de maneiras diferentes de escolher <code>k</code> sucessos dentre <code>n</code> ensaios.",
+            "binomial_stats_title": "Valor Esperado e Variância",
+            "binomial_ev": "Valor Esperado (Média): <code>E[X] = n * p</code>",
+            "binomial_var": "Variância: <code>Var(X) = n * p * (1-p)</code>",
+            "binomial_stats_conclusion": "A Binomial é extremamente útil em controle de qualidade, modelagem de cliques, análise de experimentos A/B e muitos outros cenários em IA e ciência de dados.",
+
+            "putting_together_title_m14": "⚙️ Binomial em Ação: Exemplo de Cálculo",
+            "putting_together_subtitle_m14": "Calculando a probabilidade de um cenário específico usando a FMP Binomial.",
+            "calc_scenario_title": "Cenário: Teste de Classificador de Spam",
+            "calc_scenario_desc": "Suponha que um classificador de email tenha uma probabilidade de <code>p = 0.9</code> de classificar corretamente um email como spam. Se recebermos <code>n = 5</code> emails de spam, qual a probabilidade de que exatamente <code>k = 4</code> sejam classificados corretamente?",
+            "calc_step1_title": "<strong>Passo 1:</strong> Identificar os parâmetros",
+            "calc_step1_desc": "Temos <code>n = 5</code> (número de ensaios/emails), <code>p = 0.9</code> (probabilidade de sucesso/classificação correta) e queremos encontrar a probabilidade para <code>k = 4</code> (número exato de sucessos).",
+            "calc_step2_title": "<strong>Passo 2:</strong> Calcular o Coeficiente Binomial C(n, k)",
+            "calc_step2_desc": "Precisamos de C(5, 4):",
+            "calc_step2_formula": "<code>C(5, 4) = 5! / (4! * (5-4)!) = 5! / (4! * 1!) = (5 * 4!) / (4! * 1) = 5</code>",
+            "calc_step2_explain": "Existem 5 maneiras de 4 dos 5 emails serem classificados corretamente.",
+            "calc_step3_title": "<strong>Passo 3:</strong> Calcular os termos de probabilidade",
+            "calc_step3_p_k": "Termo de sucesso: <code>p^k = 0.9^4 = 0.6561</code>",
+            "calc_step3_1mp_nk": "Termo de fracasso: <code>(1-p)^(n-k) = (1 - 0.9)^(5 - 4) = 0.1^1 = 0.1</code>",
+            "calc_step4_title": "<strong>Passo 4:</strong> Aplicar a Fórmula da FMP Binomial",
+            "calc_step4_desc": "Juntamos tudo: <code>P(X=4) = C(5, 4) * p^4 * (1-p)^(5-4)</code>",
+            "calc_step4_formula": "<code>P(X=4) = 5 * 0.6561 * 0.1 = 0.32805</code>",
+            "calc_step5_title": "<strong>Conclusão</strong>",
+            "calc_step5_desc": "A probabilidade de classificar exatamente 4 dos 5 emails de spam corretamente é de aproximadamente 32.81%.",
+            "calc_explanation_p1": "Este exemplo demonstra como a fórmula Binomial nos permite calcular a probabilidade de um número específico de sucessos em um conjunto fixo de tentativas independentes.",
+            "calc_explanation_p2": "<strong>Componentes Chave:</strong>",
+            "calc_explanation_item1": "<strong>C(n, k):</strong> Conta as combinações possíveis. Essencial porque a ordem dos sucessos não importa (ex: SSSSF é o mesmo resultado que SFSSS em termos de contagem).",
+            "calc_explanation_item2": "<strong>p^k:</strong> A probabilidade de obter <code>k</code> sucessos.",
+            "calc_explanation_item3": "<strong>(1-p)^(n-k):</strong> A probabilidade de obter os <code>n-k</code> fracassos restantes.",
+            "calc_explanation_p3": "Alterar <code>n</code>, <code>p</code> ou <code>k</code> mudaria drasticamente o resultado. Ferramentas computacionais (Python com SciPy, R, Excel) facilitam esses cálculos para valores maiores.",
+
+            "quiz_title": "🧠 Teste Rápido!", "quiz_next_button": "Próxima Pergunta",
+            "quiz_q1_m14": "Qual é a principal característica de um ensaio de Bernoulli?",
+            "quiz_q1_m14_opt1": "Múltiplos resultados possíveis.",
+            "quiz_q1_m14_opt2": "Exatamente dois resultados possíveis (sucesso/fracasso).",
+            "quiz_q1_m14_opt3": "Resultados que seguem uma curva normal.",
+            "quiz_q1_m14_opt4": "Depende de ensaios anteriores.",
+            "quiz_q2_m14": "Na distribuição Binomial B(n, p), o que o parâmetro 'n' representa?",
+            "quiz_q2_m14_opt1": "A probabilidade de sucesso.",
+            "quiz_q2_m14_opt2": "O número de sucessos desejados.",
+            "quiz_q2_m14_opt3": "O número total de ensaios independentes.",
+            "quiz_q2_m14_opt4": "A variância da distribuição.",
+            "quiz_q3_m14": "Se X ~ B(10, 0.7), qual é o valor esperado de X (E[X])?",
+            "quiz_q3_m14_opt1": "10",
+            "quiz_q3_m14_opt2": "0.7",
+            "quiz_q3_m14_opt3": "7", // E[X] = n * p = 10 * 0.7 = 7
+            "quiz_q3_m14_opt4": "2.1", // Var(X) = n * p * (1-p) = 10 * 0.7 * 0.3 = 2.1
+            "quiz_q4_m14": "Qual componente da fórmula Binomial P(X=k) = C(n, k) * p^k * (1-p)^(n-k) representa o número de maneiras de obter k sucessos em n ensaios?",
+            "quiz_q4_m14_opt1": "<code>p^k</code>",
+            "quiz_q4_m14_opt2": "<code>(1-p)^(n-k)</code>",
+            "quiz_q4_m14_opt3": "<code>C(n, k)</code>",
+            "quiz_q4_m14_opt4": "<code>n * p</code>",
+            "quiz_feedback_correct": "Correto! 🎉", "quiz_feedback_incorrect": "Não foi bem assim! A resposta correta era: {correctAnswerText}",
+            "quiz_final_score_title": "Teste Rápido Completo!",
+            "quiz_final_score_summary": "Você respondeu {score} de {total} perguntas corretamente.",
+            "quiz_final_score_perfect": "Excelente! Você compreendeu bem as distribuições Bernoulli e Binomial.",
+            "quiz_final_score_good": "Bom trabalho! Continue praticando para solidificar os conceitos.",
+            "completion_theory_title_m14": "Teoria do Módulo 14 Completa!",
+            "completion_theory_desc_m14": "Excelente trabalho! Você explorou as distribuições de Bernoulli e Binomial, duas ferramentas essenciais para modelar eventos discretos em IA e ciência da computação. Compreender seus parâmetros, FMPs e propriedades é fundamental.<br>Pratique esses conceitos na <strong>Zona de Prática</strong> ou aprofunde-se na <strong>Prática Avançada</strong> do Módulo 14.",
+            "footer_copyright": "© 2024 Matemática para IA. Todos os direitos reservados."
+        }
+    };
+
+    // --- Global Variables ---
+    let currentQuestionIndex = 0;
+    let score = 0;
+    const lang = 'pt'; // Hardcoded language
+
+    // --- DOM Elements (Get them once) ---
+    const navToggleButton = document.getElementById('minimal-nav-toggle');
+    const navPanel = document.getElementById('minimal-nav-panel');
+    const body = document.body;
+    const quizArea = document.getElementById('quiz-area');
+    const feedbackArea = document.getElementById('quiz-feedback');
+    const nextButton = document.getElementById('next-question-btn');
+    // Removed textDemoBox and codeOutputArea as they are not used in this module's structure
+
+    // --- Functions ---
+
+    function getTranslation(key, replacements = {}) {
+         let text = translations[lang]?.[key] ?? `[${key}]`;
+         for (const placeholder in replacements) {
+             const regex = new RegExp(`\\{${placeholder}\\}`, 'g');
+             text = text.replace(regex, replacements[placeholder]);
+         }
+         return text;
+    }
+
+    function translatePage() {
+         document.querySelectorAll('[data-translate]').forEach(el => {
+             const key = el.getAttribute('data-translate');
+             let translation = getTranslation(key);
+
+              if (el.tagName === 'TITLE') { document.title = translation; }
+              else if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') { /* Skip */ }
+              else {
+                   // Allow specific HTML tags safely within translations
+                   const safeHtmlRegex = /<\/?(code|strong|span|br|i|b|em|ul|li)>|<(strong|span)>.*?<\/\2>/gi;
+                   let containsSafeHtml = safeHtmlRegex.test(translation);
+
+                   // List of parent selectors where innerHTML is generally safe or necessary for formatting
+                   const safeParentsSelectors = [
+                       '.formula', '.dist-card p', '.dist-card li', '.dist-card h4',
+                       '.calc-steps .step p', '.calc-steps li', '.calc-explanation p', '.calc-explanation li',
+                       '.quiz-question', '.quiz-options button', '.quiz-feedback',
+                       '.completion-section p', '.footer p'
+                   ];
+
+                   // Check if the element itself or any of its parents match the safe selectors
+                   let isSafeParentContext = safeParentsSelectors.some(selector => el.closest(selector));
+
+                   if (containsSafeHtml || isSafeParentContext) {
+                      el.innerHTML = translation;
+                   } else {
+                      // Fallback to textContent for elements not matching safe contexts or not containing HTML
+                      el.textContent = translation;
+                   }
+              }
+         });
+         // Tooltips are not used in this module, so the related code is removed.
+    }
+
+    // --- Quiz Data & Functions (Module 14) ---
+    const quizData = [
+         { questionKey: "quiz_q1_m14", optionKeys: ["quiz_q1_m14_opt1", "quiz_q1_m14_opt2", "quiz_q1_m14_opt3", "quiz_q1_m14_opt4"], correctAnswer: 1 },
+         { questionKey: "quiz_q2_m14", optionKeys: ["quiz_q2_m14_opt1", "quiz_q2_m14_opt2", "quiz_q2_m14_opt3", "quiz_q2_m14_opt4"], correctAnswer: 2 },
+         { questionKey: "quiz_q3_m14", optionKeys: ["quiz_q3_m14_opt1", "quiz_q3_m14_opt2", "quiz_q3_m14_opt3", "quiz_q3_m14_opt4"], correctAnswer: 2 }, // E[X] = 7
+         { questionKey: "quiz_q4_m14", optionKeys: ["quiz_q4_m14_opt1", "quiz_q4_m14_opt2", "quiz_q4_m14_opt3", "quiz_q4_m14_opt4"], correctAnswer: 2 }  // C(n, k)
+    ];
+
+    function loadQuestion() {
+          if (!quizArea) return; // Ensure quizArea exists
+
+          // If we reached the end, show score
+          if (currentQuestionIndex >= quizData.length) {
+              if (!quizArea.querySelector('[data-translate="quiz_final_score_title"]')) { // Avoid re-rendering score
+                 showFinalScore();
+              }
+              return;
+          }
+
+          const currentQuiz = quizData[currentQuestionIndex];
+          const questionText = getTranslation(currentQuiz.questionKey);
+          // Generate HTML for question and options - uses innerHTML because questions/options might contain <code>
+          quizArea.innerHTML = `
+              <div class="quiz-question">${currentQuestionIndex + 1}. ${questionText}</div>
+              <div class="quiz-options">
+                  ${currentQuiz.optionKeys.map((optionKey, index) => `
+                      <button class="quiz-option-btn" data-index="${index}">${getTranslation(optionKey)}</button>
+                  `).join('')}
+              </div>
+          `;
+
+          // Reset feedback and next button
+          if (feedbackArea) {
+            feedbackArea.classList.remove('visible', 'correct', 'incorrect');
+            feedbackArea.textContent = '';
+            feedbackArea.style.height = '0'; // Reset height
+            feedbackArea.style.marginBottom = '0'; // Reset margin
+          }
+          if (nextButton) {
+            nextButton.classList.remove('visible');
+            nextButton.disabled = true;
+          }
+
+          // Add event listeners to the new buttons
+          quizArea.querySelectorAll('.quiz-option-btn').forEach(button => {
+              button.addEventListener('click', handleAnswer);
+          });
+    }
+
+    function handleAnswer(event) {
+         const selectedButton = event.target.closest('.quiz-option-btn'); // Ensure we get the button itself
+         if (!selectedButton) return; // Exit if click wasn't on a button
+
+         const selectedIndex = parseInt(selectedButton.dataset.index);
+         const correctIndex = quizData[currentQuestionIndex].correctAnswer;
+         const correctOptionKey = quizData[currentQuestionIndex].optionKeys[correctIndex];
+
+         // Disable all options
+         quizArea.querySelectorAll('.quiz-option-btn').forEach(btn => {
+            btn.disabled = true;
+            btn.classList.remove('shake'); // Remove shake if present from previous incorrect
+         });
+
+         if (!feedbackArea || !nextButton) return; // Ensure elements exist
+
+         feedbackArea.classList.add('visible');
+
+         if (selectedIndex === correctIndex) {
+             selectedButton.classList.add('correct');
+             feedbackArea.innerHTML = getTranslation('quiz_feedback_correct'); // Use innerHTML for potential icons/markup
+             feedbackArea.classList.add('correct');
+             feedbackArea.classList.remove('incorrect');
+             score++;
+             selectedButton.classList.add('tada-anim');
+         } else {
+             selectedButton.classList.add('incorrect');
+             // Get the text/HTML of the correct answer to display it properly formatted
+             const correctButtonElement = quizArea.querySelector(`.quiz-option-btn[data-index="${correctIndex}"]`);
+             const formattedCorrectAnswer = correctButtonElement ? correctButtonElement.innerHTML : getTranslation(correctOptionKey); // Fallback
+
+             feedbackArea.innerHTML = getTranslation('quiz_feedback_incorrect', { correctAnswerText: `<strong>${formattedCorrectAnswer}</strong>` });
+             feedbackArea.classList.add('incorrect');
+             feedbackArea.classList.remove('correct');
+             // Highlight the correct button as well
+             if(correctButtonElement) correctButtonElement.classList.add('correct');
+             selectedButton.classList.add('shake');
+         }
+
+         // Remove animation classes after they finish
+          selectedButton.addEventListener('animationend', () => {
+               selectedButton.classList.remove('tada-anim', 'shake');
+          }, { once: true });
+
+         // Make feedback area adjust height and margin smoothly
+         feedbackArea.style.height = feedbackArea.scrollHeight + 'px';
+         feedbackArea.style.marginBottom = '1rem';
+
+
+         // Show and enable next button
+         nextButton.classList.add('visible');
+         nextButton.disabled = false;
+     }
+
+     function showFinalScore() {
+            if (!quizArea) return;
+            const totalQuestions = quizData.length;
+            // Determine message based on score percentage
+            let resultMessageKey = (score / totalQuestions) >= 0.75 ? 'quiz_final_score_perfect' : 'quiz_final_score_good'; // 75% threshold
+
+            // Use innerHTML for score display as messages might have formatting
+            quizArea.innerHTML = `
+               <div class="quiz-question text-center" data-translate="quiz_final_score_title" style="font-size: 1.5rem;">${getTranslation('quiz_final_score_title')}</div>
+               <p class="text-center" style="font-size: 1.2rem; margin-bottom: 1rem;">${getTranslation('quiz_final_score_summary', { score: score, total: totalQuestions })}</p>
+               <p class="text-center" style="color: ${score === totalQuestions ? 'var(--success-color)' : 'var(--primary-color)'}; font-weight: bold;">${getTranslation(resultMessageKey)}</p>
+            `;
+            if (feedbackArea) feedbackArea.classList.remove('visible'); // Hide feedback area
+            if (nextButton) nextButton.style.display = 'none'; // Hide next button
+            quizArea.scrollIntoView({ behavior: 'smooth', block: 'center' }); // Scroll score into view
+     }
+
+
+    // --- Intersection Observer Setup ---
+    function setupObservers() {
+        const observerOptions = {
+            root: null, // relative to viewport
+            rootMargin: '0px',
+            threshold: 0.1 // Trigger when 10% of the element is visible
+        };
+
+        const observerCallback = (entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    // Optional: Unobserve after it becomes visible to save resources
+                    // observer.unobserve(entry.target);
+                }
+                // Optional: Remove 'visible' if it scrolls out of view
+                // else {
+                //     entry.target.classList.remove('visible');
+                // }
+            });
+        };
+
+        const animationObserver = new IntersectionObserver(observerCallback, observerOptions);
+
+        // Observe elements with the fade-in class
+        document.querySelectorAll('.fade-in-on-scroll').forEach(el => {
+            animationObserver.observe(el);
+        });
+
+        // No specific code output simulation needed for this module
+    }
+
+    // --- Event Listeners Setup ---
+    function setupEventListeners() {
+        // Navbar Toggle
+        if (navToggleButton && navPanel) {
+            navToggleButton.addEventListener('click', (event) => {
+                event.stopPropagation();
+                body.classList.toggle('nav-active');
+                navToggleButton.setAttribute('aria-expanded', body.classList.contains('nav-active'));
+            });
+
+            // Close nav if clicking outside
+            document.addEventListener('click', (event) => {
+                if (body.classList.contains('nav-active') && !navPanel.contains(event.target) && event.target !== navToggleButton && !navToggleButton.contains(event.target)) {
+                    body.classList.remove('nav-active');
+                    navToggleButton.setAttribute('aria-expanded', 'false');
+                }
+            });
+
+            // Close nav on link click
+            navPanel.querySelectorAll('a').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    // Check if it's an internal link
+                    if (link.getAttribute('href').startsWith('#')) {
+                         // Allow default scroll behavior
+                        // Close panel slightly delayed
+                        setTimeout(() => {
+                            body.classList.remove('nav-active');
+                            navToggleButton.setAttribute('aria-expanded', 'false');
+                        }, 150);
+                    }
+                    // External links will navigate away anyway
+                });
+            });
+
+            // Close nav on Escape key
+            document.addEventListener('keydown', (event) => {
+                 if (event.key === 'Escape' && body.classList.contains('nav-active')) {
+                     body.classList.remove('nav-active');
+                     navToggleButton.setAttribute('aria-expanded', 'false');
+                 }
+             });
+        }
+
+        // Quiz Next Button
+        if (nextButton) {
+            nextButton.addEventListener('click', () => {
+                if (!nextButton.disabled) {
+                    currentQuestionIndex++;
+                    loadQuestion(); // Load the next question
+                }
+            });
+        } else {
+            console.error("Elemento #next-question-btn não encontrado.");
+        }
+    }
+
+    // --- Initialization ---
+    document.addEventListener('DOMContentLoaded', () => {
+        // Check if elements needed for quiz exist before proceeding
+        if (!quizArea) console.error("Elemento #quiz-area não encontrado.");
+        if (!feedbackArea) console.error("Elemento #quiz-feedback não encontrado.");
+
+        translatePage();        // Apply translations first
+        setupEventListeners();  // Set up interactive elements
+        setupObservers();       // Set up animations
+
+        if (quizArea) {
+            loadQuestion();     // Load the first quiz question if container exists
+        }
+    });
+
+    </script>
+
+</body>
+</html>

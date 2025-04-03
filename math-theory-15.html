@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<!-- Language set to Portuguese BR -->
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Title set by JS -->
+    <title data-translate="page_title">Módulo 15: Distribuições Discretas (Parte 2)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* --- Reset & Base Styles --- */
+        :root {
+            --primary-color: #007bff; /* Blue */
+            --secondary-color: #6c757d; /* Gray */
+            --background-light: #f8f9fa;
+            --background-dark: #343a40;
+            --text-light: #f8f9fa;
+            --text-dark: #212529;
+            --accent-color: #ffc107; /* Yellow */
+            --success-color: #28a745; /* Green */
+            --error-color: #dc3545; /* Red */
+            --poisson-color: #17a2b8; /* Teal */
+            --geometric-color: #fd7e14; /* Orange */
+            --info-color: #6f42c1; /* Indigo */
+            --border-radius: 8px;
+            --transition-speed: 0.3s;
+            --animation-speed: 0.6s; /* Control fade-in speed */
+            --font-body: 'Roboto', sans-serif;
+            --font-title: 'Orbitron', sans-serif;
+            --nav-primary: #6e48aa;
+            --nav-success: #4cc9f0;
+            --nav-dark: #1a1a2e;
+            --footer-border-color: #495057;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; font-size: 16px; }
+        body {
+            font-family: var(--font-body); line-height: 1.7;
+            background-color: var(--background-light); color: var(--text-dark);
+            overflow-x: hidden; display: flex; flex-direction: column; min-height: 100vh;
+        }
+        main { flex-grow: 1; }
+
+        /* --- Utility Classes --- */
+        .container { max-width: 960px; margin: 0 auto; padding: 0 15px; }
+        .text-center { text-align: center; }
+        .highlight { color: var(--primary-color); font-weight: bold; }
+        .math-formula {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #e9ecef;
+            padding: 1rem;
+            border-radius: 4px;
+            margin: 1rem auto;
+            font-size: 1.1rem;
+            color: var(--text-dark);
+            border: 1px solid #ced4da;
+            overflow-x: auto;
+            text-align: center;
+        }
+        .math-formula code { background: none; padding: 0; }
+        .parameter { color: var(--poisson-color); font-weight: bold; }
+        .parameter-g { color: var(--geometric-color); font-weight: bold; }
+
+        /* Elements to be animated by observer */
+        .fade-in-on-scroll {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+        }
+        .fade-in-on-scroll.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        /* Add delays for staggering */
+        .delay-1.visible { transition-delay: 0.1s; }
+        .delay-2.visible { transition-delay: 0.2s; }
+        .delay-3.visible { transition-delay: 0.3s; }
+        .delay-4.visible { transition-delay: 0.4s; }
+        .delay-5.visible { transition-delay: 0.5s; }
+        .delay-6.visible { transition-delay: 0.6s; }
+        .delay-7.visible { transition-delay: 0.7s; }
+
+
+        .button-group { margin-top: 2rem; display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; }
+        .action-button {
+             display: inline-flex; align-items: center; justify-content: center; gap: 0.5em;
+             padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold;
+             color: var(--text-light); background-color: var(--primary-color); border: none;
+             border-radius: var(--border-radius); cursor: pointer;
+             transition: background-color var(--transition-speed), transform var(--transition-speed), filter var(--transition-speed), box-shadow var(--transition-speed), opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out; /* Add animation transition */
+             margin-top: 1rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+             text-decoration: none; line-height: 1.2;
+             opacity: 0; /* Start hidden if animated */
+             transform: translateY(20px); /* Start offset if animated */
+        }
+        .action-button.visible { /* Make visible via observer */
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .action-button i.fas {}
+        .action-button:hover:not(:disabled) { background-color: #0056b3; transform: translateY(-2px) !important; box-shadow: 0 4px 8px rgba(0,0,0,0.15); } /* Use !important to override initial transform */
+        .action-button:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none !important; box-shadow: none; opacity: 0.7; }
+        .action-button.success { background-color: var(--success-color); }
+        .action-button.success:hover:not(:disabled) { background-color: #218838; }
+        .action-button.secondary { background-color: var(--secondary-color); }
+        .action-button.secondary:hover:not(:disabled) { background-color: #5a6268; }
+        .action-button:active:not(:disabled) { transform: translateY(1px) scale(0.98) !important; filter: brightness(0.95); }
+
+        /* --- Animations --- */
+        @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); } 50% { transform: scale(1.03); box-shadow: 0 0 15px rgba(0, 123, 255, 0.6); } 100% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); } }
+        @keyframes tada { from { transform: scale3d(1, 1, 1); } 10%, 20% { transform: scale3d(.9, .9, .9) rotate3d(0, 0, 1, -3deg); } 30%, 50%, 70%, 90% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, 3deg); } 40%, 60%, 80% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, -3deg); } to { transform: scale3d(1, 1, 1); } }
+        .tada-anim { animation: tada 1s ease; }
+        @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
+        @keyframes iconAppearCorrect { 0% { transform: scale(0.5) rotate(-15deg); opacity: 0; } 60% { transform: scale(1.2) rotate(5deg); opacity: 1; } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
+
+        /* --- Minimal Retractable Nav --- */
+        .minimal-nav-button { position: fixed; top: 15px; right: 15px; z-index: 1001; background-color: rgba(52, 58, 64, 0.75); color: var(--text-light); border: none; border-radius: var(--border-radius); padding: 8px 12px; cursor: pointer; transition: background-color var(--transition-speed), opacity var(--transition-speed), transform var(--transition-speed); font-size: 1.1rem; opacity: 0.6; box-shadow: 0 2px 5px rgba(0,0,0,0.2); line-height: 1; }
+        .minimal-nav-button:hover { background-color: rgba(52, 58, 64, 0.95); opacity: 1; transform: scale(1.05); }
+        .minimal-nav { position: fixed; top: 60px; right: 15px; z-index: 1000; background-color: var(--background-dark); border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.3); padding: 0.8rem; opacity: 0; transform: translateY(-15px) scale(0.95); transform-origin: top right; pointer-events: none; transition: opacity var(--transition-speed) ease, transform var(--transition-speed) ease; min-width: 200px; }
+        body.nav-active .minimal-nav { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+        .minimal-nav ul { list-style: none; margin: 0; padding: 0; }
+        .minimal-nav ul li { margin-bottom: 5px; }
+        .minimal-nav ul li:last-child { margin-bottom: 0; }
+        .minimal-nav ul li a { display: flex; align-items: center; color: var(--text-light); text-decoration: none; padding: 0.6rem 1rem; border-radius: 4px; transition: background-color var(--transition-speed), color var(--transition-speed); white-space: nowrap; font-weight: 400; font-size: 0.95rem; }
+        .minimal-nav ul li a i.fas { margin-right: 10px; width: 1.2em; text-align: center; opacity: 0.8; transition: opacity var(--transition-speed); }
+        .minimal-nav ul li a:hover { background-color: var(--primary-color); color: var(--text-light); }
+        .minimal-nav ul li a:hover i.fas { opacity: 1; }
+
+        /* --- Header --- */
+        .main-header { background: linear-gradient(135deg, var(--primary-color), #0056b3); color: var(--text-light); padding: 4rem 0 6rem; text-align: center; position: relative; overflow: hidden; }
+        .main-header .container { /* Start visible */ }
+        .main-header h1 { font-family: var(--font-title); font-size: 2.8rem; margin-bottom: 0.5rem; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); }
+        .main-header p { font-size: 1.2rem; font-weight: 300; opacity: 0.9; max-width: 800px; margin: 0 auto; }
+        .header-shape { position: absolute; border-radius: 50%; background-color: rgba(255, 255, 255, 0.1); animation: pulse 5s infinite ease-in-out alternate; }
+        .shape1 { width: 150px; height: 150px; bottom: -50px; left: 10%; animation-duration: 6s; }
+        .shape2 { width: 80px; height: 80px; top: 50px; right: 15%; animation-duration: 4s; }
+        .shape3 { width: 50px; height: 50px; bottom: 20px; right: 30%; animation-duration: 7s; }
+
+        /* --- Section Styling --- */
+        section { padding: 4rem 0; border-bottom: 1px solid #eee; }
+        main section:last-of-type { border-bottom: none; padding-bottom: 0;}
+        section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); margin-bottom: 2rem; text-align: center; position: relative; padding-bottom: 10px; }
+        section h2::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 60px; height: 4px; background-color: var(--accent-color); border-radius: 2px; }
+        section h3 { font-family: var(--font-title); font-size: 1.6rem; color: var(--secondary-color); margin-top: 2.5rem; margin-bottom: 1rem; }
+        section ul { list-style: disc; margin-left: 25px; margin-bottom: 1.5rem; }
+        section li { margin-bottom: 0.8rem; }
+
+        /* --- Placeholder Styling --- */
+        .placeholder-image {
+            background-color: #e9ecef; border: 1px dashed var(--secondary-color);
+            padding: 3rem 1rem; text-align: center; color: var(--secondary-color);
+            border-radius: var(--border-radius); margin: 2rem auto; font-style: italic;
+            max-width: 600px;
+        }
+
+        /* --- Specific Section Styles --- */
+
+        /* Distribution Cards */
+        .distribution-cards {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem; margin-top: 3rem;
+        }
+        .dist-card { /* Animated by observer */
+            background-color: #fff; padding: 2rem; border-radius: var(--border-radius);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            transition: transform var(--transition-speed) ease, box-shadow var(--transition-speed) ease, opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+            opacity: 0; transform: translateY(20px); /* Start state */
+            border-top: 5px solid transparent;
+        }
+        .dist-card.visible { opacity: 1; transform: translateY(0); }
+        .dist-card:hover { transform: translateY(-5px) scale(1.02) !important; box-shadow: 0 8px 20px rgba(0,0,0,0.12); }
+        .dist-card h3 { margin-top: 0; font-size: 1.8rem; text-align: center; margin-bottom: 1.5rem; }
+        .dist-card .icon { font-size: 3rem; display: block; text-align: center; margin-bottom: 1.5rem; }
+
+        #poisson-distribution .dist-card { border-top-color: var(--poisson-color); }
+        #poisson-distribution .icon { color: var(--poisson-color); }
+        #geometric-distribution .dist-card { border-top-color: var(--geometric-color); }
+        #geometric-distribution .icon { color: var(--geometric-color); }
+
+        .dist-card h4 { font-size: 1.2rem; color: var(--text-dark); margin-bottom: 0.5rem; border-bottom: 2px solid #eee; padding-bottom: 5px;}
+        .dist-card p { margin-bottom: 1rem; }
+        .dist-card ul { margin-left: 20px; margin-bottom: 1rem; }
+        .dist-card li { margin-bottom: 0.5rem; font-size: 0.95rem; }
+
+
+        /* --- Putting It Together Section --- */
+        #applications-m15 .explanation { display: flex; gap: 2rem; align-items: flex-start; margin-top: 2rem; flex-wrap: wrap; }
+        .text-demo { /* Animated by observer */
+            flex-basis: 55%; background-color: var(--background-dark); color: #eee;
+            padding: 1.5rem; border-radius: var(--border-radius); font-family: 'Courier New', Courier, monospace;
+            position: relative; min-height: 350px; box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            font-size: 0.9rem; line-height: 1.6;
+            opacity: 0; transition: opacity var(--animation-speed) ease-out; /* Only fade opacity */
+        }
+        .text-demo.visible { opacity: 1; }
+        .text-demo .code-line { margin-bottom: 0.7rem; display: block; white-space: nowrap; overflow: hidden; }
+        .text-demo .code-output-area { /* Animated by JS after parent visible */
+            color: var(--accent-color); font-weight: bold; font-size: 1rem;
+            border-top: 1px dashed var(--secondary-color); padding-top: 1rem; margin-top: 1rem;
+            opacity: 0; transition: opacity 0.8s ease 0.4s; /* Delay appearance */
+            line-height: 1.8; white-space: pre-wrap; /* Allow wrapping */
+        }
+        .text-demo .code-output-area.visible { opacity: 1; }
+        .text-explanation { /* Animated by observer */
+            flex-basis: 40%; font-size: 1.05rem;
+             opacity: 0; transition: opacity var(--animation-speed) ease-out; /* Only fade opacity */
+        }
+        .text-explanation.visible { opacity: 1; }
+        .text-explanation p { margin-bottom: 1rem; }
+        .code-highlight {
+            background-color: rgba(0, 123, 255, 0.1); color: #0056b3; padding: 0.2em 0.4em;
+            border-radius: 4px; font-family: 'Courier New', Courier, monospace; font-weight: bold;
+            cursor: pointer; transition: background-color var(--transition-speed);
+            display: inline-block; position: relative;
+        }
+        .code-highlight:hover { background-color: rgba(0, 123, 255, 0.2); }
+        .tooltip {
+            visibility: hidden; width: 220px; background-color: var(--background-dark);
+            color: var(--text-light); text-align: center; border-radius: 6px; padding: 8px 5px;
+            position: absolute; z-index: 1; bottom: 125%; left: 50%; margin-left: -110px; /* Adjusted for width */
+            opacity: 0; transition: opacity 0.3s; font-family: var(--font-body);
+            font-size: 0.9rem; font-weight: normal; pointer-events: none; line-height: 1.3;
+        }
+        .tooltip::after { content: ""; position: absolute; top: 100%; left: 50%; margin-left: -5px; border-width: 5px; border-style: solid; border-color: var(--background-dark) transparent transparent transparent; }
+        .code-highlight:hover .tooltip { visibility: visible; opacity: 1; }
+        .code-variable { color: #9cdcfe; } /* Light blue for variables */
+        .code-operator { color: #d4d4d4; } /* Light gray for operators */
+        .code-keyword { color: #569cd6; } /* Blue for keywords */
+        .code-string { color: #ce9178; } /* Orange/brown for strings */
+        .code-comment { color: #6a9955; font-style: italic;} /* Green for comments */
+        .code-function { color: #dcdcaa; } /* Yellow for functions */
+        .code-number { color: #b5cea8; } /* Light green for numbers */
+        .code-parameter { color: var(--accent-color); font-style: italic; } /* Yellow accent for params */
+
+
+        /* --- Knowledge Check Section --- */
+        #knowledge-check { background-color: #e9ecef; }
+        .quiz-container { /* Animated by observer */
+             background-color: #fff; padding: 2rem; border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.1); max-width: 700px; margin: 2rem auto 0;
+             opacity: 0; transition: opacity var(--animation-speed) ease-out; /* Only fade opacity */
+        }
+        .quiz-container.visible { opacity: 1; }
+        .quiz-question { font-size: 1.2rem; font-weight: bold; margin-bottom: 1.5rem; color: var(--text-dark); }
+        .quiz-options button { display: block; width: 100%; padding: 1rem; margin-bottom: 1rem; text-align: left; font-size: 1rem; background-color: #f8f9fa; border: 1px solid #ced4da; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), border-color var(--transition-speed), transform var(--transition-speed); }
+        .quiz-options button:not(:disabled):hover { background-color: #e2e6ea; border-color: #adb5bd; transform: translateX(5px); }
+        .quiz-options button:disabled { cursor: default; opacity: 0.7; }
+        .quiz-options button.correct { background-color: #d4edda; border-color: var(--success-color); color: #155724; font-weight: bold; }
+        .quiz-options button.incorrect { background-color: #f8d7da; border-color: var(--error-color); color: #721c24; font-weight: bold; }
+        .quiz-options button.incorrect.shake { animation: shake 0.5s ease; }
+        .quiz-feedback { margin-top: 1.5rem; padding: 1rem; border-radius: var(--border-radius); font-weight: bold; text-align: center; opacity: 0; transition: opacity 0.5s ease, height 0.5s ease, margin-bottom 0.5s ease; height: 0; overflow: hidden; margin-bottom: 0;}
+        .quiz-feedback.visible { opacity: 1; height: auto; margin-bottom: 1rem; }
+        .quiz-feedback.correct { background-color: #d4edda; color: #155724; }
+        .quiz-feedback.incorrect { background-color: #f8d7da; color: #721c24; }
+        #next-question-btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5em; margin: 1.5rem auto 0; padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold; color: var(--text-light); background-color: var(--primary-color); border: none; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), transform var(--transition-speed), opacity 0.3s, visibility 0.3s; opacity: 0; visibility: hidden; }
+        #next-question-btn:hover:not(:disabled) { background-color: #0056b3; transform: scale(1.05); }
+        #next-question-btn.visible { opacity: 1; visibility: visible; }
+        #next-question-btn:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none; opacity: 0.7; }
+
+
+        /* --- Completion Section Styling --- */
+        .completion-section { padding: 4rem 0; text-align: center; background-color: var(--background-light); }
+        .completion-section .icon { font-size: 4rem; color: var(--success-color); margin-bottom: 1rem; display: inline-block; animation: iconAppearCorrect 1s ease-out 0.5s forwards; opacity: 0; /* Initial state for animation */}
+        /* Ensure completion elements are targeted by observer */
+        .completion-section h2, .completion-section p {
+            opacity: 0; transform: translateY(20px);
+            transition: opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+        }
+        .completion-section h2.visible, .completion-section p.visible {
+            opacity: 1; transform: translateY(0);
+        }
+        .completion-section .button-group { margin-top: 2.5rem; }
+        .completion-section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); margin-bottom: 1rem; }
+        .completion-section h2::after { display: none; }
+        .completion-section p { font-size: 1.1rem; margin-top: 1rem; color: var(--secondary-color); max-width: 700px; margin-left: auto; margin-right: auto; line-height: 1.8; }
+
+
+        /* --- Footer Styling --- */
+        .main-footer {
+            background-color: var(--background-light);
+            color: var(--text-light);
+            text-align: center;
+            padding: 2rem 0;
+            font-size: 0.9rem;
+            margin-top: auto;
+            border-top: 1px solid var(--background-light);
+            opacity: 0.85;
+        }
+        .main-footer p { margin: 0; line-height: 1.5; }
+
+        /* --- Responsive Design --- */
+        @media (max-width: 768px) {
+            html { font-size: 15px; }
+            .main-header h1 { font-size: 2.4rem; } .main-header p { font-size: 1.1rem; }
+            section h2 { font-size: 1.8rem; } section h3 { font-size: 1.4rem; }
+            .distribution-cards { grid-template-columns: 1fr; }
+            #applications-m15 .explanation { flex-direction: column; }
+            .text-demo, .text-explanation { flex-basis: 100%; }
+            .minimal-nav { min-width: 180px; } .minimal-nav ul li a { padding: 0.6rem 0.8rem; }
+            .completion-section h2 { font-size: 2rem; }
+            .completion-section .button-group { flex-direction: column; align-items: center; gap: 0.8rem; }
+            .completion-section .action-button { width: 80%; max-width: 350px; margin-top: 0; }
+            .main-footer { padding: 1.5rem 0; }
+        }
+        @media (max-width: 480px) {
+            html { font-size: 14px; }
+            .main-header h1 { font-size: 2rem; } .main-header p { font-size: 1rem; }
+            section h2 { font-size: 1.6rem; } section h3 { font-size: 1.3rem; }
+            .quiz-options button { padding: 0.8rem; font-size: 0.95rem; }
+            .tooltip { width: 180px; margin-left: -90px; font-size: 0.8rem;}
+            .minimal-nav-button { top: 10px; right: 10px; padding: 6px 10px; font-size: 1rem; }
+            .minimal-nav { top: 48px; right: 10px; min-width: 160px; }
+            .minimal-nav ul li a { padding: 0.5rem 0.7rem; font-size: 0.9rem;}
+            .minimal-nav ul li a i.fas { margin-right: 8px; }
+            .completion-section .icon { font-size: 3.5rem; }
+            .completion-section h2 { font-size: 1.8rem; } .completion-section p { font-size: 1rem; }
+            .completion-section .action-button { width: 90%; max-width: 300px; }
+             .text-demo { font-size: 0.85rem; }
+            .main-footer { padding: 1rem 0; font-size: 0.85rem; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- ========= Minimal Nav Handle ========= -->
+    <button id="minimal-nav-toggle" class="minimal-nav-button" aria-label="Alternar Menu de Navegação" aria-expanded="false">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- ========= Minimal Nav Panel ========= -->
+    <nav id="minimal-nav-panel" class="minimal-nav">
+        <ul>
+            <!-- IMPORTANT: Changed hrefs from ctp- to math- and updated module number -->
+            <li><a href="math-practice-15.html"><i class="fas fa-pencil-alt fa-fw"></i> <span data-translate="nav_practice">Iniciar Prática</span></a></li>
+            <li><a href="math-advanced-15.html"><i class="fas fa-flask fa-fw"></i> <span data-translate="nav_advanced">Prática Avançada</span></a></li>
+            <li><a href="math-dashboard.html"><i class="fas fa-list fa-fw"></i> <span data-translate="nav_menu">Menu do Curso</span></a></li>
+             <hr style="border: none; border-top: 1px solid var(--secondary-color); margin: 8px 0;">
+             <li><a href="#welcome"><i class="fas fa-door-open fa-fw"></i> <span data-translate="nav_welcome_m15">Boas-vindas M15</span></a></li>
+             <li><a href="#poisson-distribution"><i class="fas fa-fish fa-fw"></i> <span data-translate="nav_poisson">Poisson</span></a></li>
+             <li><a href="#geometric-distribution"><i class="fas fa-layer-group fa-fw"></i> <span data-translate="nav_geometric">Geométrica</span></a></li>
+             <li><a href="#applications-m15"><i class="fas fa-cogs fa-fw"></i> <span data-translate="nav_applications">Aplicações</span></a></li>
+             <li><a href="#knowledge-check"><i class="fas fa-check-double fa-fw"></i> <span data-translate="nav_quiz">Teste Rápido</span></a></li>
+             <li><a href="#completion"><i class="fas fa-flag-checkered fa-fw"></i> <span data-translate="completion_theory_title_m15">Conclusão</span></a></li>
+        </ul>
+    </nav>
+
+    <header class="main-header">
+        <div class="header-shape shape1"></div>
+        <div class="header-shape shape2"></div>
+        <div class="header-shape shape3"></div>
+        <div class="container"> <!-- Start visible -->
+            <h1 data-translate="header_title_m15">Módulo 15: Distribuições Discretas (Parte 2)</h1>
+            <p data-translate="header_subtitle_m15">Explorando as distribuições de Poisson e Geométrica: contando eventos raros e esperando pelo sucesso.</p>
+        </div>
+    </header>
+
+    <main>
+        <!-- ========= Welcome Section ========= -->
+        <section id="welcome">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="welcome_title_m15">🎲 Contando Eventos e Tentativas</h2>
+                <p class="fade-in-on-scroll delay-1" data-translate="welcome_p1_m15">
+                    Bem-vindo ao Módulo 15! Após explorarmos as distribuições Binomial e Bernoulli, vamos agora nos aprofundar em mais duas distribuições de probabilidade discretas essenciais: a de <span class="highlight">Poisson</span> e a <span class="highlight">Geométrica</span>.
+                </p>
+                <p class="fade-in-on-scroll delay-2" data-translate="welcome_p2_m15">
+                    A distribuição de Poisson nos ajuda a modelar a frequência de eventos ocorrendo em um intervalo fixo (tempo, espaço, etc.), enquanto a Geométrica foca no número de tentativas necessárias para alcançar o primeiro sucesso em uma série de ensaios independentes. Ambas têm aplicações vastas em IA e Ciência da Computação, desde análise de tráfego de rede até modelagem de falhas em sistemas.
+                </p>
+                <p class="fade-in-on-scroll delay-3" data-translate="welcome_p3_m15">
+                    Vamos entender como elas funcionam e onde podemos aplicá-las!
+                </p>
+            </div>
+        </section>
+
+        <!-- ========= Poisson Distribution Section ========= -->
+        <section id="poisson-distribution">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="poisson_title">🐟 Distribuição de Poisson: Contando Eventos Raros</h2>
+                <p class="text-center fade-in-on-scroll delay-1" data-translate="poisson_subtitle">Modelando o número de ocorrências de um evento em um intervalo fixo.</p>
+
+                <div class="distribution-cards">
+                    <div class="dist-card fade-in-on-scroll delay-2">
+                        <span class="icon"><i class="fas fa-stopwatch"></i></span>
+                        <h3 data-translate="poisson_what_title">O que é?</h3>
+                        <p data-translate="poisson_what_desc">
+                            A Distribuição de Poisson descreve a probabilidade de um <span class="highlight">número</span> de eventos ocorrerem em um <span class="highlight">intervalo fixo</span> de tempo ou espaço, dado que esses eventos ocorrem com uma taxa média conhecida (<span class="parameter">λ</span> - lambda) e independentemente do tempo desde o último evento.
+                        </p>
+                        <p data-translate="poisson_assumptions">
+                            Assume-se que os eventos são independentes, a taxa média é constante e a probabilidade de mais de um evento ocorrer em um intervalo muito pequeno é negligenciável.
+                        </p>
+                    </div>
+                    <div class="dist-card fade-in-on-scroll delay-3">
+                        <span class="icon"><i class="fas fa-calculator"></i></span>
+                        <h3 data-translate="poisson_formula_title">Fórmula (PMF)</h3>
+                        <p data-translate="poisson_formula_desc">
+                             A Função Massa de Probabilidade (PMF) de Poisson, que dá a probabilidade de observar exatamente <code class="code-parameter">k</code> eventos, é:
+                        </p>
+                        <div class="math-formula">
+                            <code>P(X=k) = (e<sup>-<span class="parameter">λ</span></sup> * <span class="parameter">λ</span><sup>k</sup>) / k!</code>
+                        </div>
+                        <ul>
+                            <li data-translate="poisson_formula_k"><code>k</code>: O número de ocorrências do evento (k = 0, 1, 2, ...).</li>
+                            <li data-translate="poisson_formula_lambda"><span class="parameter">λ</span> (lambda): A taxa média de ocorrência de eventos no intervalo especificado (λ > 0).</li>
+                            <li data-translate="poisson_formula_e"><code>e</code>: A base do logaritmo natural (aproximadamente 2.71828).</li>
+                            <li data-translate="poisson_formula_factorial"><code>k!</code>: O fatorial de k (k * (k-1) * ... * 1).</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <h3 class="fade-in-on-scroll delay-4" data-translate="poisson_properties_title">Propriedades e Aplicações</h3>
+                <div class="fade-in-on-scroll delay-5">
+                    <ul>
+                        <li data-translate="poisson_prop_mean">A <strong data-translate="mean">Média</strong> (valor esperado) do número de eventos é <span class="parameter">λ</span>.</li>
+                        <li data-translate="poisson_prop_variance">A <strong data-translate="variance">Variância</strong> também é <span class="parameter">λ</span>. Uma característica única!</li>
+                        <li data-translate="poisson_prop_shape">A forma da distribuição depende de <span class="parameter">λ</span>. Para <span class="parameter">λ</span> pequeno, é assimétrica à direita; conforme <span class="parameter">λ</span> aumenta, torna-se mais simétrica, aproximando-se da Normal.</li>
+                    </ul>
+                    <p data-translate="poisson_applications_intro">É útil em cenários como:</p>
+                    <ul>
+                        <li data-translate="poisson_app_web">Número de requisições a um servidor web por minuto.</li>
+                        <li data-translate="poisson_app_bugs">Número de bugs encontrados por cada 1000 linhas de código.</li>
+                        <li data-translate="poisson_app_calls">Número de chamadas recebidas em um call center por hora.</li>
+                        <li data-translate="poisson_app_packets">Número de pacotes de rede chegando a um roteador por segundo.</li>
+                        <li data-translate="poisson_app_nlp">Frequência de palavras raras em um grande corpus de texto (NLP).</li>
+                    </ul>
+                </div>
+                <div class="placeholder-image fade-in-on-scroll delay-6" data-translate="poisson_graph_placeholder">
+                    Gráfico Exemplo da Distribuição de Poisson (Assimetria varia com λ)
+                </div>
+            </div>
+        </section>
+
+        <!-- ========= Geometric Distribution Section ========= -->
+        <section id="geometric-distribution">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="geometric_title">📐 Distribuição Geométrica: Esperando o Primeiro Sucesso</h2>
+                <p class="text-center fade-in-on-scroll delay-1" data-translate="geometric_subtitle">Modelando o número de tentativas de Bernoulli até o primeiro sucesso.</p>
+
+                <div class="distribution-cards">
+                     <div class="dist-card fade-in-on-scroll delay-2">
+                        <span class="icon"><i class="fas fa-layer-group"></i></span>
+                        <h3 data-translate="geometric_what_title">O que é?</h3>
+                        <p data-translate="geometric_what_desc">
+                            A Distribuição Geométrica descreve a probabilidade de que a <span class="highlight">primeira ocorrência de sucesso</span> em uma sequência de ensaios de Bernoulli independentes ocorra na <span class="highlight">k-ésima tentativa</span>. Cada tentativa tem a mesma probabilidade de sucesso (<span class="parameter-g">p</span>).
+                        </p>
+                        <p data-translate="geometric_assumption">Assume-se que os ensaios são independentes e a probabilidade de sucesso <span class="parameter-g">p</span> é constante.</p>
+                    </div>
+                    <div class="dist-card fade-in-on-scroll delay-3">
+                        <span class="icon"><i class="fas fa-chart-line"></i></span>
+                        <h3 data-translate="geometric_formula_title">Fórmula (PMF)</h3>
+                        <p data-translate="geometric_formula_desc">
+                             A Função Massa de Probabilidade (PMF) Geométrica, para a k-ésima tentativa ser o primeiro sucesso, é:
+                        </p>
+                        <div class="math-formula">
+                             <code>P(X=k) = (1 - <span class="parameter-g">p</span>)<sup>k-1</sup> * <span class="parameter-g">p</span></code>
+                        </div>
+                        <ul>
+                            <li data-translate="geometric_formula_k"><code>k</code>: O número da tentativa em que ocorre o primeiro sucesso (k = 1, 2, 3, ...).</li>
+                            <li data-translate="geometric_formula_p"><span class="parameter-g">p</span>: A probabilidade de sucesso em uma única tentativa (0 < p ≤ 1).</li>
+                            <li data-translate="geometric_formula_q"><code>(1 - p)</code>: A probabilidade de falha (às vezes denotada como <code class="code-parameter">q</code>).</li>
+                        </ul>
+                        <p data-translate="geometric_formula_note">Nota: Às vezes, a Geométrica é definida como o número de *falhas* antes do primeiro sucesso (k = 0, 1, 2,...). A fórmula aqui é para o número da *tentativa*.</p>
+                    </div>
+                </div>
+
+                 <h3 class="fade-in-on-scroll delay-4" data-translate="geometric_properties_title">Propriedades e Aplicações</h3>
+                 <div class="fade-in-on-scroll delay-5">
+                    <ul>
+                        <li data-translate="geometric_prop_mean">A <strong data-translate="mean">Média</strong> (valor esperado) do número de tentativas até o primeiro sucesso é <code class="math-formula" style="display:inline; padding: 0.2em 0.4em;">1 / <span class="parameter-g">p</span></code>.</li>
+                        <li data-translate="geometric_prop_variance">A <strong data-translate="variance">Variância</strong> é <code class="math-formula" style="display:inline; padding: 0.2em 0.4em;">(1 - <span class="parameter-g">p</span>) / <span class="parameter-g">p</span><sup>2</sup></code>.</li>
+                        <li data-translate="geometric_prop_memoryless">Possui a propriedade de <strong data-translate="memoryless">Falta de Memória</strong>: se o primeiro sucesso ainda não ocorreu após <code class="code-parameter">n</code> tentativas, a probabilidade de ocorrer na tentativa <code class="code-parameter">n+k</code> é a mesma que a probabilidade original de ocorrer na tentativa <code class="code-parameter">k</code>.</li>
+                    </ul>
+                    <p data-translate="geometric_applications_intro">É útil em cenários como:</p>
+                    <ul>
+                        <li data-translate="geometric_app_connection">Número de tentativas para estabelecer uma conexão de rede.</li>
+                        <li data-translate="geometric_app_testing">Número de vezes que um software precisa ser testado até encontrar o primeiro bug crítico.</li>
+                        <li data-translate="geometric_app_sales">Número de clientes contatados até realizar a primeira venda.</li>
+                        <li data-translate="geometric_app_qa">Número de itens inspecionados em uma linha de produção até encontrar o primeiro defeituoso.</li>
+                         <li data-translate="geometric_app_retries">Número de tentativas de login antes de um acesso bem-sucedido (assumindo probabilidade constante de acerto).</li>
+                    </ul>
+                 </div>
+                 <div class="placeholder-image fade-in-on-scroll delay-6" data-translate="geometric_graph_placeholder">
+                    Gráfico Exemplo da Distribuição Geométrica (Decai exponencialmente)
+                 </div>
+            </div>
+        </section>
+
+        <!-- ========= Putting It Together/Applications Section ========= -->
+        <section id="applications-m15">
+             <div class="container">
+                 <h2 class="fade-in-on-scroll" data-translate="applications_title_m15">⚙️ Poisson e Geométrica em Ação</h2>
+                 <p class="text-center fade-in-on-scroll delay-1" data-translate="applications_subtitle_m15">Vamos ver um exemplo computacional que usa ambas as distribuições.</p>
+
+                 <div class="explanation">
+                     <div class="text-demo fade-in-on-scroll delay-2"> <!-- Observe container -->
+                        <span class="code-line"><span class="code-comment" data-translate="scenario_comment"># Cenário: Análise de Erros em Sistema</span></span>
+                        <span class="code-line"><span class="code-variable">taxa_media_erros_hora</span> <span class="code-operator">=</span> <span class="code-number">2.5</span> <span class="code-comment"># Lambda (λ) para Poisson</span></span>
+                        <span class="code-line"><span class="code-variable">prob_erro_critico_por_erro</span> <span class="code-operator">=</span> <span class="code-number">0.1</span> <span class="code-comment"># p para Geométrica</span></span>
+
+                        <span class="code-line" style="margin-top: 1rem;"><span class="code-comment" data-translate="poisson_calc_comment"># Poisson: Probabilidade de exatamente 3 erros na próxima hora?</span></span>
+                        <span class="code-line"><span class="code-variable">k_poisson</span> <span class="code-operator">=</span> <span class="code-number">3</span></span>
+                        <span class="code-line"><span class="code-variable">prob_3_erros</span> <span class="code-operator">=</span> <span class="code-function">calcular_poisson</span>(<span class="code-variable">taxa_media_erros_hora</span>, <span class="code-variable">k_poisson</span>)</span>
+
+                        <span class="code-line" style="margin-top: 1rem;"><span class="code-comment" data-translate="geometric_calc_comment"># Geométrica: Probabilidade do 5º erro ser o 1º erro crítico?</span></span>
+                        <span class="code-line"><span class="code-variable">k_geometric</span> <span class="code-operator">=</span> <span class="code-number">5</span></span>
+                        <span class="code-line"><span class="code-variable">prob_1o_critico_no_5o</span> <span class="code-operator">=</span> <span class="code-function">calcular_geometrica</span>(<span class="code-variable">prob_erro_critico_por_erro</span>, <span class="code-variable">k_geometric</span>)</span>
+
+                         <span class="code-line" style="margin-top: 1.5rem;"><span class="code-keyword">print</span>(<span class="code-string">f"Taxa média (λ): {taxa_media_erros_hora} erros/hora"</span>)</span>
+                         <span class="code-line"><span class="code-keyword">print</span>(<span class="code-string">f"Prob. erro crítico (p): {prob_erro_critico_por_erro}"</span>)</span>
+                         <span class="code-line"><span class="code-keyword">print</span>(<span class="code-string">"-"</span>*<span class="code-number">30</span>)</span>
+                         <span class="code-line"><span class="code-keyword">print</span>(<span class="code-string">f"P(X={k_poisson} erros | Poisson λ={taxa_media_erros_hora}) = {prob_3_erros:.4f}"</span>)</span>
+                         <span class="code-line"><span class="code-keyword">print</span>(<span class="code-string">f"P(Y={k_geometric}º erro ser 1º crítico | Geométrica p={prob_erro_critico_por_erro}) = {prob_1o_critico_no_5o:.4f}"</span>)</span>
+
+                        <div class="code-output-area"> <!-- JS will add .visible and content -->
+                            <!-- Output will appear here via JS -->
+                        </div>
+                     </div>
+                     <div class="text-explanation fade-in-on-scroll delay-3"> <!-- Observe container -->
+                         <p data-translate="applications_p1_m15">Neste exemplo, modelamos dois aspectos de erros em um sistema:</p>
+                         <p data-translate="applications_p2_m15">
+                             1. Usamos a <span class="code-highlight" data-translate-tooltip="tooltip_poisson"><span style="color: var(--poisson-color)">Poisson</span><span class="tooltip">Ideal para contar eventos (erros) ocorrendo em um intervalo (hora) com uma taxa média (λ = 2.5).</span></span> para calcular a probabilidade de ocorrerem <span class="code-parameter">exatamente 3 erros</span> em uma hora, dada uma taxa média <span class="parameter">λ = 2.5</span> erros/hora.
+                         </p>
+                         <p data-translate="applications_p3_m15">
+                             2. Assumindo que cada erro tem uma chance <span class="parameter-g">p = 0.1</span> de ser "crítico" (sucesso), usamos a <span class="code-highlight" data-translate-tooltip="tooltip_geometric"><span style="color: var(--geometric-color)">Geométrica</span><span class="tooltip">Ideal para contar o número de tentativas (erros) até o primeiro sucesso (erro crítico), com probabilidade p = 0.1.</span></span> para encontrar a probabilidade de que o <span class="code-parameter">5º erro</span> seja o <span class="highlight">primeiro erro crítico</span> encontrado.
+                         </p>
+                         <p data-translate="applications_p4_m15">
+                             Observe como definimos os parâmetros <span class="parameter">λ</span> e <span class="parameter-g">p</span> com base no problema e usamos as funções <code class="code-function">calcular_poisson</code> e <code class="code-function">calcular_geometrica</code> (que implementariam as fórmulas PMF) para obter as probabilidades.
+                         </p>
+                          <p data-translate="applications_p5_m15">Entender qual distribuição aplicar a qual tipo de problema (contagem de eventos em intervalo vs. espera pelo primeiro sucesso) é crucial.</p>
+                     </div>
+                 </div>
+             </div>
+        </section>
+
+        <!-- ========= Knowledge Check Section ========= -->
+        <section id="knowledge-check">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="quiz_title">🧠 Teste Rápido!</h2>
+                <div class="quiz-container fade-in-on-scroll delay-1"> <!-- Observe container -->
+                    <div id="quiz-area">
+                         <p style="text-align: center; padding: 2rem 0;">Carregando quiz...</p>
+                    </div>
+                    <div id="quiz-feedback" class="quiz-feedback"></div>
+                    <button id="next-question-btn" data-translate="quiz_next_button">Próxima Pergunta</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========= Completion Section ========= -->
+        <section id="completion" class="completion-section"> <!-- Added ID for nav link -->
+            <div class="container">
+                 <div class="icon">
+                    <i class="fas fa-calculator"></i>
+                    <i class="fas fa-lightbulb"></i>
+                    <i class="fas fa-star"></i>
+                </div>
+                <h2 class="fade-in-on-scroll delay-1" data-translate="completion_theory_title_m15">Teoria do Módulo 15 Completa!</h2>
+                <p class="fade-in-on-scroll delay-2" data-translate="completion_theory_desc_m15">
+                    Excelente! Você agora compreende as distribuições de Poisson e Geométrica, ferramentas poderosas para modelar diferentes tipos de fenômenos discretos. Saber quando usar cada uma é uma habilidade valiosa em análise de dados e IA.
+                    <br>
+                    Pronto para aplicar esses conceitos? Siga para a <strong>Zona de Prática</strong> ou a <strong>Prática Avançada</strong> do Módulo 15.
+                </p>
+                <div class="button-group">
+                    <!-- Buttons observed, links updated -->
+                    <a href="math-dashboard.html" class="action-button secondary fade-in-on-scroll delay-3"><i class="fas fa-list"></i> <span data-translate="nav_menu">Menu do Curso</span></a>
+                    <a href="math-practice-15.html" class="action-button success fade-in-on-scroll delay-4"><i class="fas fa-pencil-alt"></i> <span data-translate="nav_practice">Iniciar Prática</span></a>
+                    <a href="math-advanced-15.html" class="action-button secondary fade-in-on-scroll delay-5"><i class="fas fa-flask"></i> <span data-translate="nav_advanced">Prática Avançada</span></a>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="main-footer">
+        <div class="container">
+            <p data-translate="footer_copyright"></p>
+        </div>
+    </footer>
+
+    <script>
+    // --- Translations Object (Portuguese Only) ---
+    const translations = {
+        pt: {
+            "page_title": "Módulo 15: Distribuições Discretas (Parte 2)",
+            "nav_practice": "Iniciar Prática",
+            "nav_advanced": "Prática Avançada",
+            "nav_menu": "Menu do Curso",
+            "nav_welcome_m15": "Boas-vindas M15", "nav_poisson": "Poisson", "nav_geometric": "Geométrica", "nav_applications": "Aplicações", "nav_quiz": "Teste Rápido",
+            "header_title_m15": "Módulo 15: Distribuições Discretas (Parte 2)",
+            "header_subtitle_m15": "Explorando as distribuições de Poisson e Geométrica: contando eventos raros e esperando pelo sucesso.",
+            "welcome_title_m15": "🎲 Contando Eventos e Tentativas",
+            "welcome_p1_m15": "Bem-vindo ao Módulo 15! Após explorarmos as distribuições Binomial e Bernoulli, vamos agora nos aprofundar em mais duas distribuições de probabilidade discretas essenciais: a de Poisson e a Geométrica.",
+            "welcome_p2_m15": "A distribuição de Poisson nos ajuda a modelar a frequência de eventos ocorrendo em um intervalo fixo (tempo, espaço, etc.), enquanto a Geométrica foca no número de tentativas necessárias para alcançar o primeiro sucesso em uma série de ensaios independentes. Ambas têm aplicações vastas em IA e Ciência da Computação, desde análise de tráfego de rede até modelagem de falhas em sistemas.",
+            "welcome_p3_m15": "Vamos entender como elas funcionam e onde podemos aplicá-las!",
+
+            "poisson_title": "🐟 Distribuição de Poisson: Contando Eventos Raros",
+            "poisson_subtitle": "Modelando o número de ocorrências de um evento em um intervalo fixo.",
+            "poisson_what_title": "O que é?",
+            "poisson_what_desc": "A Distribuição de Poisson descreve a probabilidade de um <span class=\"highlight\">número</span> de eventos ocorrerem em um <span class=\"highlight\">intervalo fixo</span> de tempo ou espaço, dado que esses eventos ocorrem com uma taxa média conhecida (<span class=\"parameter\">λ</span> - lambda) e independentemente do tempo desde o último evento.",
+            "poisson_assumptions": "Assume-se que os eventos são independentes, a taxa média é constante e a probabilidade de mais de um evento ocorrer em um intervalo muito pequeno é negligenciável.",
+            "poisson_formula_title": "Fórmula (PMF)",
+            "poisson_formula_desc": "A Função Massa de Probabilidade (PMF) de Poisson, que dá a probabilidade de observar exatamente <code class=\"code-parameter\">k</code> eventos, é:",
+            "poisson_formula_k": "<code>k</code>: O número de ocorrências do evento (k = 0, 1, 2, ...).",
+            "poisson_formula_lambda": "<span class=\"parameter\">λ</span> (lambda): A taxa média de ocorrência de eventos no intervalo especificado (λ > 0).",
+            "poisson_formula_e": "<code>e</code>: A base do logaritmo natural (aproximadamente 2.71828).",
+            "poisson_formula_factorial": "<code>k!</code>: O fatorial de k (k * (k-1) * ... * 1).",
+            "poisson_properties_title": "Propriedades e Aplicações",
+            "mean": "Média", "variance": "Variância",
+            "poisson_prop_mean": "A <strong data-translate=\"mean\">Média</strong> (valor esperado) do número de eventos é <span class=\"parameter\">λ</span>.",
+            "poisson_prop_variance": "A <strong data-translate=\"variance\">Variância</strong> também é <span class=\"parameter\">λ</span>. Uma característica única!",
+            "poisson_prop_shape": "A forma da distribuição depende de <span class=\"parameter\">λ</span>. Para <span class=\"parameter\">λ</span> pequeno, é assimétrica à direita; conforme <span class=\"parameter\">λ</span> aumenta, torna-se mais simétrica, aproximando-se da Normal.",
+            "poisson_applications_intro": "É útil em cenários como:",
+            "poisson_app_web": "Número de requisições a um servidor web por minuto.",
+            "poisson_app_bugs": "Número de bugs encontrados por cada 1000 linhas de código.",
+            "poisson_app_calls": "Número de chamadas recebidas em um call center por hora.",
+            "poisson_app_packets": "Número de pacotes de rede chegando a um roteador por segundo.",
+            "poisson_app_nlp": "Frequência de palavras raras em um grande corpus de texto (NLP).",
+            "poisson_graph_placeholder": "Gráfico Exemplo da Distribuição de Poisson (Assimetria varia com λ)",
+
+            "geometric_title": "📐 Distribuição Geométrica: Esperando o Primeiro Sucesso",
+            "geometric_subtitle": "Modelando o número de tentativas de Bernoulli até o primeiro sucesso.",
+            "geometric_what_title": "O que é?",
+            "geometric_what_desc": "A Distribuição Geométrica descreve a probabilidade de que a <span class=\"highlight\">primeira ocorrência de sucesso</span> em uma sequência de ensaios de Bernoulli independentes ocorra na <span class=\"highlight\">k-ésima tentativa</span>. Cada tentativa tem a mesma probabilidade de sucesso (<span class=\"parameter-g\">p</span>).",
+             "geometric_assumption": "Assume-se que os ensaios são independentes e a probabilidade de sucesso <span class=\"parameter-g\">p</span> é constante.",
+            "geometric_formula_title": "Fórmula (PMF)",
+            "geometric_formula_desc": "A Função Massa de Probabilidade (PMF) Geométrica, para a k-ésima tentativa ser o primeiro sucesso, é:",
+            "geometric_formula_k": "<code>k</code>: O número da tentativa em que ocorre o primeiro sucesso (k = 1, 2, 3, ...).",
+            "geometric_formula_p": "<span class=\"parameter-g\">p</span>: A probabilidade de sucesso em uma única tentativa (0 < p ≤ 1).",
+            "geometric_formula_q": "<code>(1 - p)</code>: A probabilidade de falha (às vezes denotada como <code class=\"code-parameter\">q</code>).",
+            "geometric_formula_note": "Nota: Às vezes, a Geométrica é definida como o número de *falhas* antes do primeiro sucesso (k = 0, 1, 2,...). A fórmula aqui é para o número da *tentativa*.",
+            "geometric_properties_title": "Propriedades e Aplicações",
+            "memoryless": "Falta de Memória",
+            "geometric_prop_mean": "A <strong data-translate=\"mean\">Média</strong> (valor esperado) do número de tentativas até o primeiro sucesso é <code class=\"math-formula\" style=\"display:inline; padding: 0.2em 0.4em;\">1 / <span class=\"parameter-g\">p</span></code>.",
+            "geometric_prop_variance": "A <strong data-translate=\"variance\">Variância</strong> é <code class=\"math-formula\" style=\"display:inline; padding: 0.2em 0.4em;\">(1 - <span class=\"parameter-g\">p</span>) / <span class=\"parameter-g\">p</span><sup>2</sup></code>.",
+            "geometric_prop_memoryless": "Possui a propriedade de <strong data-translate=\"memoryless\">Falta de Memória</strong>: se o primeiro sucesso ainda não ocorreu após <code class=\"code-parameter\">n</code> tentativas, a probabilidade de ocorrer na tentativa <code class=\"code-parameter\">n+k</code> é a mesma que a probabilidade original de ocorrer na tentativa <code class=\"code-parameter\">k</code>.",
+            "geometric_applications_intro": "É útil em cenários como:",
+            "geometric_app_connection": "Número de tentativas para estabelecer uma conexão de rede.",
+            "geometric_app_testing": "Número de vezes que um software precisa ser testado até encontrar o primeiro bug crítico.",
+            "geometric_app_sales": "Número de clientes contatados até realizar a primeira venda.",
+            "geometric_app_qa": "Número de itens inspecionados em uma linha de produção até encontrar o primeiro defeituoso.",
+            "geometric_app_retries": "Número de tentativas de login antes de um acesso bem-sucedido (assumindo probabilidade constante de acerto).",
+            "geometric_graph_placeholder": "Gráfico Exemplo da Distribuição Geométrica (Decai exponencialmente)",
+
+            "applications_title_m15": "⚙️ Poisson e Geométrica em Ação",
+            "applications_subtitle_m15": "Vamos ver um exemplo computacional que usa ambas as distribuições.",
+            "scenario_comment": "# Cenário: Análise de Erros em Sistema",
+            "poisson_calc_comment": "# Poisson: Probabilidade de exatamente 3 erros na próxima hora?",
+            "geometric_calc_comment": "# Geométrica: Probabilidade do 5º erro ser o 1º erro crítico?",
+            "applications_p1_m15": "Neste exemplo, modelamos dois aspectos de erros em um sistema:",
+            "applications_p2_m15": "1. Usamos a <span style=\"color: var(--poisson-color)\">Poisson</span> para calcular a probabilidade de ocorrerem <span class=\"code-parameter\">exatamente 3 erros</span> em uma hora, dada uma taxa média <span class=\"parameter\">λ = 2.5</span> erros/hora.",
+            "applications_p3_m15": "2. Assumindo que cada erro tem uma chance <span class=\"parameter-g\">p = 0.1</span> de ser \"crítico\" (sucesso), usamos a <span style=\"color: var(--geometric-color)\">Geométrica</span> para encontrar a probabilidade de que o <span class=\"code-parameter\">5º erro</span> seja o <span class=\"highlight\">primeiro erro crítico</span> encontrado.",
+            "applications_p4_m15": "Observe como definimos os parâmetros <span class=\"parameter\">λ</span> e <span class=\"parameter-g\">p</span> com base no problema e usamos as funções <code class=\"code-function\">calcular_poisson</code> e <code class=\"code-function\">calcular_geometrica</code> (que implementariam as fórmulas PMF) para obter as probabilidades.",
+            "applications_p5_m15": "Entender qual distribuição aplicar a qual tipo de problema (contagem de eventos em intervalo vs. espera pelo primeiro sucesso) é crucial.",
+            "tooltip_poisson": "Ideal para contar eventos (erros) ocorrendo em um intervalo (hora) com uma taxa média (λ = 2.5).",
+            "tooltip_geometric": "Ideal para contar o número de tentativas (erros) até o primeiro sucesso (erro crítico), com probabilidade p = 0.1.",
+
+            "quiz_title": "🧠 Teste Rápido!", "quiz_next_button": "Próxima Pergunta",
+            "quiz_q1_m15": "Qual distribuição é mais apropriada para modelar o número de e-mails recebidos em uma caixa de entrada por hora?",
+            "quiz_q1_m15_opt1": "Binomial", "quiz_q1_m15_opt2": "Geométrica", "quiz_q1_m15_opt3": "Poisson", "quiz_q1_m15_opt4": "Bernoulli",
+            "quiz_q2_m15": "A distribuição Geométrica modela:",
+            "quiz_q2_m15_opt1": "O número de sucessos em N tentativas.", "quiz_q2_m15_opt2": "O número de tentativas até o k-ésimo sucesso.", "quiz_q2_m15_opt3": "O número de eventos em um intervalo fixo.", "quiz_q2_m15_opt4": "O número de tentativas até o primeiro sucesso.",
+            "quiz_q3_m15": "Se a taxa média de chegada de clientes (λ) em uma loja é 5 por hora, qual o parâmetro da distribuição de Poisson para modelar chegadas em DUAS horas?",
+            "quiz_q3_m15_opt1": "λ = 5", "quiz_q3_m15_opt2": "λ = 2.5", "quiz_q3_m15_opt3": "λ = 10", "quiz_q3_m15_opt4": "Não pode ser determinado",
+            "quiz_q4_m15": "Qual propriedade única é compartilhada pela média e variância na distribuição de Poisson?",
+            "quiz_q4_m15_opt1": "Ambas são iguais a p", "quiz_q4_m15_opt2": "Ambas são iguais a 1/p", "quiz_q4_m15_opt3": "Ambas são iguais a λ", "quiz_q4_m15_opt4": "A média é λ e a variância é λ*(1-λ)",
+            "quiz_feedback_correct": "Correto! 🎉", "quiz_feedback_incorrect": "Não foi bem assim! A resposta correta era: {correctAnswerText}",
+            "quiz_final_score_title": "Teste Rápido Completo!",
+            "quiz_final_score_summary": "Você respondeu {score} de {total} perguntas corretamente.",
+            "quiz_final_score_perfect": "Excelente! Você compreendeu bem as distribuições Poisson e Geométrica.",
+            "quiz_final_score_good": "Bom trabalho! Continue revisando as características e aplicações dessas distribuições.",
+
+            "completion_theory_title_m15": "Teoria do Módulo 15 Completa!",
+            "completion_theory_desc_m15": "Excelente! Você agora compreende as distribuições de Poisson e Geométrica, ferramentas poderosas para modelar diferentes tipos de fenômenos discretos. Saber quando usar cada uma é uma habilidade valiosa em análise de dados e IA.<br> Pronto para aplicar esses conceitos? Siga para a <strong>Zona de Prática</strong> ou a <strong>Prática Avançada</strong> do Módulo 15.",
+            "footer_copyright": "© 2024 Matemática para IA. Todos os direitos reservados."
+        }
+    };
+
+    // --- Global Variables ---
+    let currentQuestionIndex = 0;
+    let score = 0;
+    const lang = 'pt'; // Hardcoded language
+
+    // --- DOM Elements (Get them once) ---
+    const navToggleButton = document.getElementById('minimal-nav-toggle');
+    const navPanel = document.getElementById('minimal-nav-panel');
+    const body = document.body;
+    const quizArea = document.getElementById('quiz-area');
+    const feedbackArea = document.getElementById('quiz-feedback');
+    const nextButton = document.getElementById('next-question-btn');
+    const textDemoBox = document.querySelector('#applications-m15 .text-demo');
+    const codeOutputArea = document.querySelector('#applications-m15 .code-output-area');
+
+    // --- Functions ---
+
+    function getTranslation(key, replacements = {}) {
+         let text = translations[lang]?.[key] ?? `[${key}]`;
+         for (const placeholder in replacements) {
+             const regex = new RegExp(`\\{${placeholder}\\}`, 'g');
+             text = text.replace(regex, replacements[placeholder]);
+         }
+         return text;
+    }
+
+    function translatePage() {
+         document.querySelectorAll('[data-translate]').forEach(el => {
+             const key = el.getAttribute('data-translate');
+             let translation = getTranslation(key);
+
+              if (el.tagName === 'TITLE') { document.title = translation; }
+              else if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') { /* Skip */ }
+              else {
+                   // Allow specific HTML tags safely
+                   const safeHtmlRegex = /<\/?(code|strong|span|br|i|b|em|sup)>|(&[a-zA-Z0-9#]+;)/gi; // Added sup and html entities
+                   let containsSafeHtml = safeHtmlRegex.test(translation);
+
+                   // Allow innerHTML if it contains only safe tags OR if it's in an allowed container
+                   if (containsSafeHtml || el.closest('.dist-card, .text-explanation, .footer p, .math-formula, li')) {
+                      el.innerHTML = translation;
+                   } else {
+                      el.textContent = translation;
+                   }
+              }
+         });
+
+          document.querySelectorAll('.code-highlight[data-translate-tooltip]').forEach(el => {
+              const tooltipKey = el.getAttribute('data-translate-tooltip');
+              const tooltipSpan = el.querySelector('.tooltip');
+              if(tooltipSpan && tooltipKey) {
+                 tooltipSpan.innerHTML = getTranslation(tooltipKey);
+              }
+          });
+
+           document.querySelectorAll('.code-comment[data-translate]').forEach(commentSpan => {
+               const key = commentSpan.getAttribute('data-translate');
+               let translatedText = getTranslation(key);
+               let commentContent = translatedText.startsWith('#') ? translatedText.substring(1).trim() : translatedText;
+               commentSpan.textContent = '# ' + commentContent;
+           });
+    }
+
+    // --- Helper Functions for Calculations (Factorial, Poisson, Geometric) ---
+    function factorial(n) {
+        if (n < 0) return NaN;
+        if (n === 0 || n === 1) return 1;
+        let result = 1;
+        for (let i = n; i > 1; i--) {
+            result *= i;
+        }
+        return result;
+    }
+
+    function calculatePoisson(lambda, k) {
+        if (lambda <= 0 || k < 0 || !Number.isInteger(k)) return NaN;
+        return (Math.exp(-lambda) * Math.pow(lambda, k)) / factorial(k);
+    }
+
+    function calculateGeometric(p, k) {
+        if (p <= 0 || p > 1 || k < 1 || !Number.isInteger(k)) return NaN;
+        return Math.pow(1 - p, k - 1) * p;
+    }
+
+
+    // --- Quiz Data & Functions ---
+    const quizData = [
+         { questionKey: "quiz_q1_m15", optionKeys: ["quiz_q1_m15_opt1", "quiz_q1_m15_opt2", "quiz_q1_m15_opt3", "quiz_q1_m15_opt4"], correctAnswer: 2 }, // Poisson for events in interval
+         { questionKey: "quiz_q2_m15", optionKeys: ["quiz_q2_m15_opt1", "quiz_q2_m15_opt2", "quiz_q2_m15_opt3", "quiz_q2_m15_opt4"], correctAnswer: 3 }, // Geometric for trials until first success
+         { questionKey: "quiz_q3_m15", optionKeys: ["quiz_q3_m15_opt1", "quiz_q3_m15_opt2", "quiz_q3_m15_opt3", "quiz_q3_m15_opt4"], correctAnswer: 2 }, // Lambda scales with interval: 5/hr * 2 hr = 10
+         { questionKey: "quiz_q4_m15", optionKeys: ["quiz_q4_m15_opt1", "quiz_q4_m15_opt2", "quiz_q4_m15_opt3", "quiz_q4_m15_opt4"], correctAnswer: 2 }  // Mean = Variance = Lambda for Poisson
+    ];
+
+    function loadQuestion() {
+          if (!quizArea) return; // Ensure quizArea exists
+
+          // If we reached the end, show score
+          if (currentQuestionIndex >= quizData.length) {
+              if (!quizArea.querySelector('[data-translate="quiz_final_score_title"]')) { // Avoid re-rendering score
+                 showFinalScore();
+              }
+              return;
+          }
+
+          const currentQuiz = quizData[currentQuestionIndex];
+          const questionText = getTranslation(currentQuiz.questionKey);
+          // Generate HTML for question and options
+          quizArea.innerHTML = `
+              <div class="quiz-question">${currentQuestionIndex + 1}. ${questionText.replace(/`(.*?)`/g, '<code>$1</code>')}</div>
+              <div class="quiz-options">
+                  ${currentQuiz.optionKeys.map((optionKey, index) => `
+                      <button class="quiz-option-btn" data-index="${index}">${getTranslation(optionKey).replace(/`(.*?)`/g, '<code>$1</code>')}</button>
+                  `).join('')}
+              </div>
+          `;
+
+          // Reset feedback and next button
+          if (feedbackArea) {
+            feedbackArea.classList.remove('visible', 'correct', 'incorrect');
+            feedbackArea.textContent = '';
+            feedbackArea.style.height = '0'; // Reset height
+            feedbackArea.style.marginBottom = '0'; // Reset margin
+          }
+          if (nextButton) {
+            nextButton.classList.remove('visible');
+            nextButton.disabled = true;
+          }
+
+          // Add event listeners to the new buttons
+          quizArea.querySelectorAll('.quiz-option-btn').forEach(button => {
+              button.addEventListener('click', handleAnswer);
+          });
+    }
+
+    function handleAnswer(event) {
+         const selectedButton = event.target;
+         const selectedIndex = parseInt(selectedButton.dataset.index);
+         const correctIndex = quizData[currentQuestionIndex].correctAnswer;
+         const correctOptionKey = quizData[currentQuestionIndex].optionKeys[correctIndex];
+
+         // Disable all options
+         quizArea.querySelectorAll('.quiz-option-btn').forEach(btn => {
+            btn.disabled = true;
+            btn.classList.remove('shake'); // Remove shake if present from previous incorrect
+         });
+
+         if (!feedbackArea || !nextButton) return; // Ensure elements exist
+
+         feedbackArea.classList.add('visible');
+
+         if (selectedIndex === correctIndex) {
+             selectedButton.classList.add('correct');
+             feedbackArea.innerHTML = getTranslation('quiz_feedback_correct');
+             feedbackArea.classList.add('correct');
+             feedbackArea.classList.remove('incorrect');
+             score++;
+             selectedButton.classList.add('tada-anim');
+         } else {
+             selectedButton.classList.add('incorrect');
+             const formattedCorrectAnswer = getTranslation(correctOptionKey).replace(/`(.*?)`/g, '<code>$1</code>');
+             feedbackArea.innerHTML = getTranslation('quiz_feedback_incorrect', { correctAnswerText: `<strong>${formattedCorrectAnswer}</strong>` });
+             feedbackArea.classList.add('incorrect');
+             feedbackArea.classList.remove('correct');
+             // Highlight the correct button as well
+             const correctButton = quizArea.querySelector(`.quiz-option-btn[data-index="${correctIndex}"]`);
+             if(correctButton) correctButton.classList.add('correct');
+             selectedButton.classList.add('shake');
+         }
+
+         // Remove animation classes after they finish
+          selectedButton.addEventListener('animationend', () => {
+               selectedButton.classList.remove('tada-anim', 'shake');
+          }, { once: true });
+
+         // Make feedback area adjust height and margin smoothly
+         feedbackArea.style.height = feedbackArea.scrollHeight + 'px';
+         feedbackArea.style.marginBottom = '1rem';
+
+
+         // Show and enable next button
+         nextButton.classList.add('visible');
+         nextButton.disabled = false;
+     }
+
+     function showFinalScore() {
+            if (!quizArea) return;
+            const totalQuestions = quizData.length;
+            // Determine message based on score percentage
+            let resultMessageKey = (score / totalQuestions) >= 0.75 ? 'quiz_final_score_perfect' : 'quiz_final_score_good'; // 75% threshold
+
+            quizArea.innerHTML = `
+               <div class="quiz-question text-center" data-translate="quiz_final_score_title" style="font-size: 1.5rem;">${getTranslation('quiz_final_score_title')}</div>
+               <p class="text-center" style="font-size: 1.2rem; margin-bottom: 1rem;">${getTranslation('quiz_final_score_summary', { score: score, total: totalQuestions })}</p>
+               <p class="text-center" style="color: ${score === totalQuestions ? 'var(--success-color)' : 'var(--primary-color)'}; font-weight: bold;">${getTranslation(resultMessageKey)}</p>
+            `;
+            if (feedbackArea) feedbackArea.classList.remove('visible'); // Hide feedback area
+            if (nextButton) nextButton.style.display = 'none'; // Hide next button
+            quizArea.scrollIntoView({ behavior: 'smooth', block: 'center' }); // Scroll score into view
+     }
+
+
+    // --- Intersection Observer Setup ---
+    function setupObservers() {
+        const observerOptions = {
+            root: null, // relative to viewport
+            rootMargin: '0px',
+            threshold: 0.1 // Trigger when 10% of the element is visible
+        };
+
+        const codeObserverOptions = {
+            root: null,
+            rootMargin: '0px',
+            threshold: 0.4 // Trigger when 40% of the code box is visible
+        };
+
+        const observerCallback = (entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    // Optional: Unobserve after it becomes visible to save resources
+                    // observer.unobserve(entry.target);
+                }
+                // Optional: Remove 'visible' if it scrolls out of view
+                // else {
+                //     entry.target.classList.remove('visible');
+                // }
+            });
+        };
+
+        const animationObserver = new IntersectionObserver(observerCallback, observerOptions);
+
+        // Observe elements with the fade-in class
+        document.querySelectorAll('.fade-in-on-scroll').forEach(el => {
+            animationObserver.observe(el);
+        });
+
+        // --- Specific Observer for Code Output Simulation ---
+        if (codeOutputArea && textDemoBox) {
+             const codeOutputObserver = new IntersectionObserver((entries, observer) => {
+                 entries.forEach(entry => {
+                     // Trigger only when the textDemoBox is intersecting
+                     if (entry.isIntersecting && !codeOutputArea.classList.contains('visible')) {
+                        // Short delay to ensure parent's fade-in completes visually
+                        setTimeout(() => {
+                            const taxa_media_erros_hora = 2.5;
+                            const prob_erro_critico_por_erro = 0.1;
+                            const k_poisson = 3;
+                            const k_geometric = 5;
+
+                            const prob_3_erros = calculatePoisson(taxa_media_erros_hora, k_poisson);
+                            const prob_1o_critico_no_5o = calculateGeometric(prob_erro_critico_por_erro, k_geometric);
+
+                            let outputText = `Taxa média (λ): ${taxa_media_erros_hora} erros/hora\n`;
+                            outputText += `Prob. erro crítico (p): ${prob_erro_critico_por_erro}\n`;
+                            outputText += `------------------------------\n`;
+                            outputText += `P(X=${k_poisson} erros | Poisson λ=${taxa_media_erros_hora}) = ${prob_3_erros.toFixed(4)}\n`;
+                            outputText += `P(Y=${k_geometric}º erro ser 1º crítico | Geométrica p=${prob_erro_critico_por_erro}) = ${prob_1o_critico_no_5o.toFixed(4)}`;
+
+                            codeOutputArea.textContent = outputText; // Use textContent for pre-like formatting
+                            codeOutputArea.classList.add('visible');
+                        }, 400); // Adjust delay slightly if needed
+                        observer.unobserve(entry.target); // Unobserve after triggering
+                     }
+                 });
+             }, codeObserverOptions); // Use the specific threshold for this
+             codeOutputObserver.observe(textDemoBox); // Observe the container
+        }
+    }
+
+    // --- Event Listeners Setup ---
+    function setupEventListeners() {
+        // Navbar Toggle
+        if (navToggleButton && navPanel) {
+            navToggleButton.addEventListener('click', (event) => {
+                event.stopPropagation();
+                body.classList.toggle('nav-active');
+                navToggleButton.setAttribute('aria-expanded', body.classList.contains('nav-active'));
+            });
+
+            // Close nav if clicking outside
+            document.addEventListener('click', (event) => {
+                if (body.classList.contains('nav-active') && !navPanel.contains(event.target) && event.target !== navToggleButton && !navToggleButton.contains(event.target)) {
+                    body.classList.remove('nav-active');
+                    navToggleButton.setAttribute('aria-expanded', 'false');
+                }
+            });
+
+            // Close nav on link click
+            navPanel.querySelectorAll('a').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    // Check if it's an internal link
+                    if (link.getAttribute('href').startsWith('#')) {
+                         // Allow default scroll behavior
+                        // Close panel slightly delayed
+                        setTimeout(() => {
+                            body.classList.remove('nav-active');
+                            navToggleButton.setAttribute('aria-expanded', 'false');
+                        }, 150);
+                    }
+                    // External links will navigate away anyway
+                });
+            });
+
+            // Close nav on Escape key
+            document.addEventListener('keydown', (event) => {
+                 if (event.key === 'Escape' && body.classList.contains('nav-active')) {
+                     body.classList.remove('nav-active');
+                     navToggleButton.setAttribute('aria-expanded', 'false');
+                 }
+             });
+        }
+
+        // Quiz Next Button
+        if (nextButton) {
+            nextButton.addEventListener('click', () => {
+                if (!nextButton.disabled) {
+                    currentQuestionIndex++;
+                    loadQuestion(); // Load the next question
+                }
+            });
+        } else {
+            console.error("Elemento #next-question-btn não encontrado.");
+        }
+    }
+
+    // --- Initialization ---
+    document.addEventListener('DOMContentLoaded', () => {
+        // Check if elements needed for quiz exist before proceeding
+        if (!quizArea) console.error("Elemento #quiz-area não encontrado.");
+        if (!feedbackArea) console.error("Elemento #quiz-feedback não encontrado.");
+
+        translatePage();        // Apply translations first
+        setupEventListeners();  // Set up interactive elements
+        setupObservers();       // Set up animations
+
+        if (quizArea) {
+            loadQuestion();     // Load the first quiz question if container exists
+        }
+    });
+
+    </script>
+
+</body>
+</html>

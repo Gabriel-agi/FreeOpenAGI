@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<!-- Language set to Portuguese BR -->
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Title set by JS -->
+    <title data-translate="page_title">Módulo 4: Organização de Dados</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* --- Reset & Base Styles --- */
+        :root {
+            --primary-color: #007bff; /* Blue - Consistent */
+            --secondary-color: #6c757d; /* Gray - Consistent */
+            --background-light: #f8f9fa; /* Light Gray - Consistent */
+            --background-dark: #343a40; /* Dark Gray - Consistent */
+            --text-light: #f8f9fa; /* Light Text - Consistent */
+            --text-dark: #212529; /* Dark Text - Consistent */
+            --accent-color: #ffc107; /* Yellow - Consistent */
+            --success-color: #28a745; /* Green - Consistent */
+            --error-color: #dc3545; /* Red - Consistent */
+            /* Module specific colors (can adapt) */
+            --table-color: #17a2b8; /* Teal for tables */
+            --distribution-color: #fd7e14; /* Orange for distributions */
+            --frequency-color: #6f42c1; /* Indigo for frequencies */
+            --border-radius: 8px;
+            --transition-speed: 0.3s;
+            --animation-speed: 0.6s; /* Control fade-in speed */
+            --font-body: 'Roboto', sans-serif;
+            --font-title: 'Orbitron', sans-serif;
+            --nav-primary: #6e48aa;
+            --nav-success: #4cc9f0;
+            --nav-dark: #1a1a2e;
+            --footer-border-color: #495057;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; font-size: 16px; }
+        body {
+            font-family: var(--font-body); line-height: 1.7;
+            background-color: var(--background-light); color: var(--text-dark);
+            overflow-x: hidden; display: flex; flex-direction: column; min-height: 100vh;
+        }
+        main { flex-grow: 1; }
+
+        /* --- Utility Classes --- */
+        .container { max-width: 960px; margin: 0 auto; padding: 0 15px; }
+        .text-center { text-align: center; }
+        .highlight { color: var(--primary-color); font-weight: bold; }
+        code {
+            background-color: #e9ecef;
+            padding: 0.2em 0.4em;
+            margin: 0;
+            font-size: 85%;
+            border-radius: 3px;
+            font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            color: var(--frequency-color);
+        }
+
+        /* Elements to be animated by observer */
+        .fade-in-on-scroll {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+        }
+        .fade-in-on-scroll.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        /* Add delays for staggering */
+        .delay-1.visible { transition-delay: 0.1s; }
+        .delay-2.visible { transition-delay: 0.2s; }
+        .delay-3.visible { transition-delay: 0.3s; }
+        .delay-4.visible { transition-delay: 0.4s; }
+        .delay-5.visible { transition-delay: 0.5s; }
+        .delay-6.visible { transition-delay: 0.6s; }
+        .delay-7.visible { transition-delay: 0.7s; }
+
+
+        .button-group { margin-top: 2rem; display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; }
+        .action-button {
+             display: inline-flex; align-items: center; justify-content: center; gap: 0.5em;
+             padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold;
+             color: var(--text-light); background-color: var(--primary-color); border: none;
+             border-radius: var(--border-radius); cursor: pointer;
+             transition: background-color var(--transition-speed), transform var(--transition-speed), filter var(--transition-speed), box-shadow var(--transition-speed), opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out; /* Add animation transition */
+             margin-top: 1rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+             text-decoration: none; line-height: 1.2;
+             opacity: 0; /* Start hidden if animated */
+             transform: translateY(20px); /* Start offset if animated */
+        }
+        .action-button.visible { /* Make visible via observer */
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .action-button i.fas {}
+        .action-button:hover:not(:disabled) { background-color: #0056b3; transform: translateY(-2px) !important; box-shadow: 0 4px 8px rgba(0,0,0,0.15); } /* Use !important to override initial transform */
+        .action-button:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none !important; box-shadow: none; opacity: 0.7; }
+        .action-button.success { background-color: var(--success-color); }
+        .action-button.success:hover:not(:disabled) { background-color: #218838; }
+        .action-button.secondary { background-color: var(--secondary-color); }
+        .action-button.secondary:hover:not(:disabled) { background-color: #5a6268; }
+        .action-button:active:not(:disabled) { transform: translateY(1px) scale(0.98) !important; filter: brightness(0.95); }
+
+        /* --- Animations --- */
+        @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); } 50% { transform: scale(1.03); box-shadow: 0 0 15px rgba(0, 123, 255, 0.6); } 100% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); } }
+        @keyframes tada { from { transform: scale3d(1, 1, 1); } 10%, 20% { transform: scale3d(.9, .9, .9) rotate3d(0, 0, 1, -3deg); } 30%, 50%, 70%, 90% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, 3deg); } 40%, 60%, 80% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, -3deg); } to { transform: scale3d(1, 1, 1); } }
+        .tada-anim { animation: tada 1s ease; }
+        @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
+        @keyframes iconAppearCorrect { 0% { transform: scale(0.5) rotate(-15deg); opacity: 0; } 60% { transform: scale(1.2) rotate(5deg); opacity: 1; } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
+
+        /* --- Minimal Retractable Nav --- */
+        .minimal-nav-button { position: fixed; top: 15px; right: 15px; z-index: 1001; background-color: rgba(52, 58, 64, 0.75); color: var(--text-light); border: none; border-radius: var(--border-radius); padding: 8px 12px; cursor: pointer; transition: background-color var(--transition-speed), opacity var(--transition-speed), transform var(--transition-speed); font-size: 1.1rem; opacity: 0.6; box-shadow: 0 2px 5px rgba(0,0,0,0.2); line-height: 1; }
+        .minimal-nav-button:hover { background-color: rgba(52, 58, 64, 0.95); opacity: 1; transform: scale(1.05); }
+        .minimal-nav { position: fixed; top: 60px; right: 15px; z-index: 1000; background-color: var(--background-dark); border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.3); padding: 0.8rem; opacity: 0; transform: translateY(-15px) scale(0.95); transform-origin: top right; pointer-events: none; transition: opacity var(--transition-speed) ease, transform var(--transition-speed) ease; min-width: 200px; }
+        body.nav-active .minimal-nav { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+        .minimal-nav ul { list-style: none; margin: 0; padding: 0; }
+        .minimal-nav ul li { margin-bottom: 5px; }
+        .minimal-nav ul li:last-child { margin-bottom: 0; }
+        .minimal-nav ul li a { display: flex; align-items: center; color: var(--text-light); text-decoration: none; padding: 0.6rem 1rem; border-radius: 4px; transition: background-color var(--transition-speed), color var(--transition-speed); white-space: nowrap; font-weight: 400; font-size: 0.95rem; }
+        .minimal-nav ul li a i.fas { margin-right: 10px; width: 1.2em; text-align: center; opacity: 0.8; transition: opacity var(--transition-speed); }
+        .minimal-nav ul li a:hover { background-color: var(--primary-color); color: var(--text-light); }
+        .minimal-nav ul li a:hover i.fas { opacity: 1; }
+
+        /* --- Header --- */
+        .main-header { background: linear-gradient(135deg, var(--primary-color), #0056b3); color: var(--text-light); padding: 4rem 0 6rem; text-align: center; position: relative; overflow: hidden; }
+        .main-header .container { /* Start visible */ }
+        .main-header h1 { font-family: var(--font-title); font-size: 3rem; margin-bottom: 0.5rem; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); }
+        .main-header p { font-size: 1.2rem; font-weight: 300; opacity: 0.9; }
+        .header-shape { position: absolute; border-radius: 50%; background-color: rgba(255, 255, 255, 0.1); animation: pulse 5s infinite ease-in-out alternate; }
+        .shape1 { width: 150px; height: 150px; bottom: -50px; left: 10%; animation-duration: 6s; }
+        .shape2 { width: 80px; height: 80px; top: 50px; right: 15%; animation-duration: 4s; }
+        .shape3 { width: 50px; height: 50px; bottom: 20px; right: 30%; animation-duration: 7s; }
+
+        /* --- Section Styling --- */
+        section { padding: 4rem 0; border-bottom: 1px solid #eee; }
+        main section:last-of-type { border-bottom: none; padding-bottom: 0;}
+        section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); margin-bottom: 2rem; text-align: center; position: relative; padding-bottom: 10px; }
+        section h2::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 60px; height: 4px; background-color: var(--accent-color); border-radius: 2px; }
+
+        /* --- Welcome Section --- */
+        #welcome p { font-size: 1.1rem; max-width: 700px; margin: 0 auto 1rem; text-align: center; }
+
+        /* --- Frequency Tables Section --- */
+        #tabelas-frequencia .frequency-types {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem; margin-top: 2rem;
+        }
+        .freq-type-card { /* Animated by observer */
+            background-color: #fff; padding: 1.5rem; border-radius: var(--border-radius);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.07); text-align: center;
+            transition: transform var(--transition-speed) ease, box-shadow var(--transition-speed) ease, opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+            opacity: 0; transform: translateY(20px); /* Start state */
+            border-top: 4px solid var(--table-color);
+        }
+        .freq-type-card.visible { opacity: 1; transform: translateY(0); }
+        .freq-type-card:hover { transform: translateY(-5px) scale(1.02) !important; box-shadow: 0 8px 20px rgba(0,0,0,0.12); }
+        .freq-icon { font-size: 2.5rem; margin-bottom: 1rem; color: var(--table-color);}
+        .freq-type-card h3 { font-family: var(--font-body); font-weight: 700; font-size: 1.3rem; margin-bottom: 0.8rem; color: var(--text-dark); }
+        .freq-details { font-size: 1rem; color: var(--secondary-color); margin-top: 1rem; line-height: 1.6; }
+        .freq-example {
+            font-family: 'Courier New', Courier, monospace; background-color: #f1f3f5;
+            padding: 0.5rem 0.8rem; border-radius: 4px; margin-top: 1rem;
+            font-size: 0.95rem; color: var(--text-dark); display: block;
+            border: 1px solid #dee2e6; margin-left: auto; margin-right: auto; max-width: 95%;
+            text-align: left;
+        }
+        .simple-table { margin-top: 1rem; width: 100%; border-collapse: collapse; }
+        .simple-table th, .simple-table td { border: 1px solid #dee2e6; padding: 0.5rem; text-align: center; font-size: 0.95rem;}
+        .simple-table th { background-color: #e9ecef; font-weight: bold; }
+        #tabelas-frequencia > .container > p:last-of-type { /* Conclusion para */
+            margin-top: 2rem;
+        }
+
+
+        /* --- Frequency Distributions Section --- */
+        #distribuicoes-frequencia .distribution-concepts {
+            display: flex; align-items: flex-start; justify-content: space-around;
+            background-color: #fff; padding: 2rem; border-radius: var(--border-radius);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08); margin-top: 2rem; flex-wrap: wrap; gap: 2rem;
+        }
+        .dist-concept { /* Animated by observer */
+            text-align: center; max-width: 300px;
+            opacity: 0; transform: scale(0.9) translateY(10px); /* Start state */
+            transition: opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+        }
+        .dist-concept.visible { opacity: 1; transform: scale(1) translateY(0); }
+        .dist-icon {
+            font-size: 3rem; margin-bottom: 1rem; color: var(--distribution-color);
+            display: inline-block; transition: transform var(--transition-speed) ease;
+        }
+        .dist-concept:hover .dist-icon { transform: scale(1.15) rotate(5deg); }
+        .dist-explanation {
+            font-size: 1rem; color: var(--secondary-color); margin-top: 0.5rem; line-height: 1.6; text-align: left;
+        }
+        .dist-explanation code { background-color: rgba(253, 126, 20, 0.1); color: #c2600a;}
+        #distribuicoes-frequencia > .container > p:last-of-type { /* Conclusion para */
+             margin-top: 2rem;
+        }
+
+        /* --- Putting It Together Section --- */
+        #organizando-dados-m4 .explanation { display: flex; gap: 2rem; align-items: flex-start; margin-top: 2rem; flex-wrap: wrap; }
+        .data-example { /* Animated by observer */
+            flex-basis: 55%; background-color: #f8f9fa; border: 1px solid #dee2e6;
+            padding: 1.5rem; border-radius: var(--border-radius);
+            position: relative; min-height: 300px; box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            font-size: 0.95rem; line-height: 1.6;
+            opacity: 0; transition: opacity var(--animation-speed) ease-out; /* Only fade opacity */
+        }
+        .data-example.visible { opacity: 1; }
+        .data-example h4 { margin-bottom: 1rem; color: var(--primary-color); font-weight: bold;}
+        .data-list { font-family: 'Courier New', Courier, monospace; background-color: #e9ecef; padding: 0.8rem; border-radius: 4px; margin-bottom: 1.5rem;}
+        .data-step { margin-bottom: 1rem; border-bottom: 1px dashed #ced4da; padding-bottom: 1rem;}
+        .data-step:last-child { border-bottom: none; padding-bottom: 0; }
+        .data-step strong { color: var(--frequency-color); }
+        .data-explanation { /* Animated by observer */
+            flex-basis: 40%; font-size: 1.05rem;
+             opacity: 0; transition: opacity var(--animation-speed) ease-out; /* Only fade opacity */
+        }
+        .data-explanation.visible { opacity: 1; }
+        .data-explanation p { margin-bottom: 1rem; }
+        .term-highlight {
+            background-color: rgba(0, 123, 255, 0.1); color: #0056b3; padding: 0.2em 0.4em;
+            border-radius: 4px; font-family: var(--font-body); font-weight: bold;
+            cursor: help; position: relative; display: inline-block;
+        }
+        .tooltip {
+            visibility: hidden; width: 220px; background-color: var(--background-dark);
+            color: var(--text-light); text-align: center; border-radius: 6px; padding: 8px 5px;
+            position: absolute; z-index: 1; bottom: 125%; left: 50%; margin-left: -110px; /* Adjusted margin-left */
+            opacity: 0; transition: opacity 0.3s; font-family: var(--font-body);
+            font-size: 0.9rem; font-weight: normal; pointer-events: none; line-height: 1.3;
+        }
+        .tooltip::after { content: ""; position: absolute; top: 100%; left: 50%; margin-left: -5px; border-width: 5px; border-style: solid; border-color: var(--background-dark) transparent transparent transparent; }
+        .term-highlight:hover .tooltip { visibility: visible; opacity: 1; }
+
+
+        /* --- Knowledge Check Section --- */
+        #knowledge-check { background-color: #e9ecef; }
+        .quiz-container { /* Animated by observer */
+             background-color: #fff; padding: 2rem; border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.1); max-width: 700px; margin: 2rem auto 0;
+             opacity: 0; transition: opacity var(--animation-speed) ease-out; /* Only fade opacity */
+        }
+        .quiz-container.visible { opacity: 1; }
+        .quiz-question { font-size: 1.2rem; font-weight: bold; margin-bottom: 1.5rem; color: var(--text-dark); }
+        .quiz-options button { display: block; width: 100%; padding: 1rem; margin-bottom: 1rem; text-align: left; font-size: 1rem; background-color: #f8f9fa; border: 1px solid #ced4da; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), border-color var(--transition-speed), transform var(--transition-speed); }
+        .quiz-options button:not(:disabled):hover { background-color: #e2e6ea; border-color: #adb5bd; transform: translateX(5px); }
+        .quiz-options button:disabled { cursor: default; opacity: 0.7; }
+        .quiz-options button.correct { background-color: #d4edda; border-color: var(--success-color); color: #155724; font-weight: bold; }
+        .quiz-options button.incorrect { background-color: #f8d7da; border-color: var(--error-color); color: #721c24; font-weight: bold; }
+        .quiz-options button.incorrect.shake { animation: shake 0.5s ease; }
+        .quiz-feedback { margin-top: 1.5rem; padding: 1rem; border-radius: var(--border-radius); font-weight: bold; text-align: center; opacity: 0; transition: opacity 0.5s ease, height 0.5s ease, margin-bottom 0.5s ease; height: 0; overflow: hidden; margin-bottom: 0;}
+        .quiz-feedback.visible { opacity: 1; height: auto; margin-bottom: 1rem; }
+        .quiz-feedback.correct { background-color: #d4edda; color: #155724; }
+        .quiz-feedback.incorrect { background-color: #f8d7da; color: #721c24; }
+        #next-question-btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5em; margin: 1.5rem auto 0; padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold; color: var(--text-light); background-color: var(--primary-color); border: none; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), transform var(--transition-speed), opacity 0.3s, visibility 0.3s; opacity: 0; visibility: hidden; }
+        #next-question-btn:hover:not(:disabled) { background-color: #0056b3; transform: scale(1.05); }
+        #next-question-btn.visible { opacity: 1; visibility: visible; }
+        #next-question-btn:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none; opacity: 0.7; }
+
+
+        /* --- Completion Section Styling --- */
+        .completion-section { padding: 4rem 0; text-align: center; background-color: var(--background-light); }
+        .completion-section .icon { font-size: 4rem; color: var(--success-color); margin-bottom: 1rem; display: inline-block; animation: iconAppearCorrect 1s ease-out 0.5s forwards; opacity: 0; /* Initial state for animation */}
+        /* Ensure completion elements are targeted by observer */
+        .completion-section h2, .completion-section p {
+            opacity: 0; transform: translateY(20px);
+            transition: opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+        }
+        .completion-section h2.visible, .completion-section p.visible {
+            opacity: 1; transform: translateY(0);
+        }
+        .completion-section .button-group { margin-top: 2.5rem; }
+        .completion-section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); margin-bottom: 1rem; }
+        .completion-section h2::after { display: none; }
+        .completion-section p { font-size: 1.1rem; margin-top: 1rem; color: var(--secondary-color); max-width: 700px; margin-left: auto; margin-right: auto; line-height: 1.8; }
+
+
+        /* --- Footer Styling --- */
+        .main-footer {
+            background-color: var(--background-light);
+            color: var(--text-light);
+            text-align: center;
+            padding: 2rem 0;
+            font-size: 0.9rem;
+            margin-top: auto;
+            border-top: 1px solid var(--background-light);
+            opacity: 0.85;
+        }
+        .main-footer p { margin: 0; line-height: 1.5; }
+
+        /* --- Responsive Design --- */
+        @media (max-width: 768px) {
+            html { font-size: 15px; }
+            .main-header h1 { font-size: 2.5rem; } .main-header p { font-size: 1.1rem; }
+            section h2 { font-size: 1.8rem; }
+            #tabelas-frequencia .frequency-types { grid-template-columns: 1fr; }
+            #distribuicoes-frequencia .distribution-concepts { flex-direction: column; gap: 1.5rem; align-items: center; }
+            #organizando-dados-m4 .explanation { flex-direction: column; }
+            .data-example, .data-explanation { flex-basis: 100%; }
+            .minimal-nav { min-width: 180px; } .minimal-nav ul li a { padding: 0.6rem 0.8rem; }
+            .completion-section h2 { font-size: 2rem; }
+            .completion-section .button-group { flex-direction: column; align-items: center; gap: 0.8rem; }
+            .completion-section .action-button { width: 80%; max-width: 350px; margin-top: 0; }
+            .main-footer { padding: 1.5rem 0; }
+        }
+        @media (max-width: 480px) {
+            html { font-size: 14px; }
+            .main-header h1 { font-size: 2rem; } .main-header p { font-size: 1rem; }
+            section h2 { font-size: 1.6rem; }
+            .quiz-options button { padding: 0.8rem; font-size: 0.95rem; }
+            .tooltip { width: 160px; margin-left: -80px; font-size: 0.8rem;}
+            .minimal-nav-button { top: 10px; right: 10px; padding: 6px 10px; font-size: 1rem; }
+            .minimal-nav { top: 48px; right: 10px; min-width: 160px; }
+            .minimal-nav ul li a { padding: 0.5rem 0.7rem; font-size: 0.9rem;}
+            .minimal-nav ul li a i.fas { margin-right: 8px; }
+            .completion-section .icon { font-size: 3.5rem; }
+            .completion-section h2 { font-size: 1.8rem; } .completion-section p { font-size: 1rem; }
+            .completion-section .action-button { width: 90%; max-width: 300px; }
+             .data-example { font-size: 0.9rem; }
+            .main-footer { padding: 1rem 0; font-size: 0.85rem; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- ========= Minimal Nav Handle ========= -->
+    <button id="minimal-nav-toggle" class="minimal-nav-button" aria-label="Alternar Menu de Navegação" aria-expanded="false">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- ========= Minimal Nav Panel ========= -->
+    <nav id="minimal-nav-panel" class="minimal-nav">
+        <ul>
+            <!-- IMPORTANT: Links updated to math- and module number 4 -->
+            <li><a href="math-practice-4.html"><i class="fas fa-pencil-alt fa-fw"></i> <span data-translate="nav_practice">Iniciar Prática</span></a></li>
+            <li><a href="math-advanced-4.html"><i class="fas fa-flask fa-fw"></i> <span data-translate="nav_advanced">Prática Avançada</span></a></li>
+            <li><a href="math-dashboard.html"><i class="fas fa-list fa-fw"></i> <span data-translate="nav_menu">Menu do Curso</span></a></li>
+             <hr style="border: none; border-top: 1px solid var(--secondary-color); margin: 8px 0;">
+             <!-- Module-specific navigation -->
+             <li><a href="#welcome"><i class="fas fa-door-open fa-fw"></i> <span data-translate="nav_welcome_m4">Boas-vindas M4</span></a></li>
+             <li><a href="#tabelas-frequencia"><i class="fas fa-table fa-fw"></i> <span data-translate="nav_freq_tables">Tabelas Freq.</span></a></li>
+             <li><a href="#distribuicoes-frequencia"><i class="fas fa-chart-bar fa-fw"></i> <span data-translate="nav_freq_dist">Distribuições Freq.</span></a></li>
+             <li><a href="#organizando-dados-m4"><i class="fas fa-cogs fa-fw"></i> <span data-translate="nav_putting_together">Organizando Dados</span></a></li>
+             <li><a href="#knowledge-check"><i class="fas fa-check-double fa-fw"></i> <span data-translate="nav_quiz">Teste Rápido</span></a></li>
+             <li><a href="#completion"><i class="fas fa-flag-checkered fa-fw"></i> <span data-translate="completion_theory_title_m4">Conclusão Teoria</span></a></li>
+        </ul>
+    </nav>
+
+    <header class="main-header">
+        <div class="header-shape shape1"></div>
+        <div class="header-shape shape2"></div>
+        <div class="header-shape shape3"></div>
+        <div class="container"> <!-- Start visible -->
+            <h1 data-translate="header_title_m4">Módulo 4: Organização de Dados</h1>
+            <p data-translate="header_subtitle_m4">Estruturando informações com tabelas e distribuições de frequência.</p>
+        </div>
+    </header>
+
+    <main>
+        <!-- ========= Welcome Section ========= -->
+        <section id="welcome">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="welcome_title_m4">📊 Colocando Ordem no Caos dos Dados</h2>
+                <p class="fade-in-on-scroll delay-1" data-translate="welcome_p1_m4">
+                    Bem-vindo ao Módulo 4! No mundo da IA e da ciência de dados, raramente recebemos informações perfeitamente organizadas. Dados brutos podem ser confusos e difíceis de interpretar.
+                    A primeira etapa crucial na análise é <span class="highlight">organizar</span> esses dados.
+                </p>
+                <p class="fade-in-on-scroll delay-2" data-translate="welcome_p2_m4">
+                    Neste módulo, aprenderemos técnicas fundamentais para resumir e estruturar conjuntos de dados: as <span class="highlight">tabelas de frequência</span> e as <span class="highlight">distribuições de frequência</span>. Elas nos ajudam a visualizar padrões e a preparar os dados para análises mais complexas.
+                </p>
+            </div>
+        </section>
+
+        <!-- ========= Frequency Tables Section ========= -->
+        <section id="tabelas-frequencia">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="freq_tables_title">🔢 Tabelas de Frequência: Quantificando Ocorrências</h2>
+                <p class="text-center fade-in-on-scroll delay-1" data-translate="freq_tables_subtitle">Contando quantas vezes cada valor ou categoria aparece.</p>
+
+                <div class="frequency-types">
+                    <!-- Absolute Frequency -->
+                    <div class="freq-type-card fade-in-on-scroll delay-2">
+                        <span class="freq-icon"><i class="fas fa-calculator"></i></span>
+                        <h3 data-translate="freq_abs_title">Frequência Absoluta (f ou fi)</h3>
+                        <div class="freq-details">
+                            <p data-translate="freq_abs_text">É a contagem direta de quantas vezes um determinado valor ou categoria ocorre no conjunto de dados.</p>
+                            <div class="freq-example" data-translate="freq_abs_example">Ex: Notas [A, B, C, B, A, B]<br>f(A) = 2<br>f(B) = 3<br>f(C) = 1</div>
+                        </div>
+                    </div>
+                    <!-- Relative Frequency -->
+                    <div class="freq-type-card fade-in-on-scroll delay-3">
+                        <span class="freq-icon"><i class="fas fa-percentage"></i></span>
+                        <h3 data-translate="freq_rel_title">Frequência Relativa (fr ou fri)</h3>
+                        <div class="freq-details">
+                            <p data-translate="freq_rel_text">Representa a proporção (ou porcentagem) de cada valor em relação ao total de observações. Calculada como <code>f / n</code> (onde n é o total de dados).</p>
+                            <div class="freq-example" data-translate="freq_rel_example">Total (n) = 6<br>fr(A) = 2/6 ≈ 0.33 (33%)<br>fr(B) = 3/6 = 0.50 (50%)<br>fr(C) = 1/6 ≈ 0.17 (17%)</div>
+                        </div>
+                    </div>
+                     <!-- Cumulative Frequency -->
+                     <div class="freq-type-card fade-in-on-scroll delay-4">
+                        <span class="freq-icon"><i class="fas fa-layer-group"></i></span>
+                        <h3 data-translate="freq_cum_title">Frequência Acumulada (F ou Fac)</h3>
+                        <div class="freq-details">
+                            <p data-translate="freq_cum_text">Soma das frequências (absolutas ou relativas) de um valor/categoria com as frequências de todos os valores/categorias anteriores (requer ordenação).</p>
+                            <div class="freq-example" data-translate="freq_cum_example">Usando F Absoluta:<br>Fac(A) = 2<br>Fac(B) = 2 + 3 = 5<br>Fac(C) = 5 + 1 = 6</div>
+                        </div>
+                    </div>
+                </div>
+                 <p class="text-center fade-in-on-scroll delay-5" data-translate="freq_tables_conclusion">Tabelas de frequência oferecem um resumo rápido e claro da distribuição dos seus dados.</p>
+            </div>
+        </section>
+
+        <!-- ========= Frequency Distributions Section ========= -->
+        <section id="distribuicoes-frequencia">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="freq_dist_title">📊 Distribuições de Frequência: Agrupando Dados</h2>
+                <p class="text-center fade-in-on-scroll delay-1" data-translate="freq_dist_subtitle">Organizando dados, especialmente os contínuos ou com muitos valores distintos, em classes ou intervalos.</p>
+
+                <div class="distribution-concepts">
+                     <!-- Ungrouped Data -->
+                     <div class="dist-concept fade-in-on-scroll delay-2">
+                        <span class="dist-icon"><i class="fas fa-list-ul"></i></span>
+                        <h3 data-translate="dist_ungrouped_title">Dados Não Agrupados</h3>
+                        <div class="dist-explanation">
+                            <p data-translate="dist_ungrouped_text">Quando há poucos valores distintos, a tabela de frequência simples (vista anteriormente) já funciona como uma distribuição. Listamos cada valor e sua frequência.</p>
+                        </div>
+                    </div>
+                    <!-- Grouped Data -->
+                    <div class="dist-concept fade-in-on-scroll delay-3">
+                        <span class="dist-icon"><i class="fas fa-layer-group"></i></span>
+                        <h3 data-translate="dist_grouped_title">Dados Agrupados em Classes</h3>
+                         <div class="dist-explanation">
+                            <p data-translate="dist_grouped_text">Para dados contínuos ou com muitos valores, agrupamos em <span class="highlight">classes</span> (intervalos). Ex: Idades [0-10), [10-20), [20-30).</p>
+                            <ul style="list-style: none; padding-left: 0; margin-top: 0.5rem;">
+                                <li data-translate="dist_grouped_li1"><code>Limite Inferior (Li)</code>: Menor valor da classe.</li>
+                                <li data-translate="dist_grouped_li2"><code>Limite Superior (Ls)</code>: Maior valor da classe.</li>
+                                <li data-translate="dist_grouped_li3"><code>Amplitude (h)</code>: Diferença entre Ls e Li.</li>
+                                <li data-translate="dist_grouped_li4"><code>Ponto Médio (xi)</code>: (Li + Ls) / 2. Representa a classe.</li>
+                            </ul>
+                        </div>
+                    </div>
+                     <!-- Importance -->
+                     <div class="dist-concept fade-in-on-scroll delay-4">
+                        <span class="dist-icon"><i class="fas fa-lightbulb"></i></span>
+                        <h3 data-translate="dist_importance_title">Por que Agrupar?</h3>
+                        <div class="dist-explanation">
+                            <p data-translate="dist_importance_text">Agrupar simplifica a visualização de grandes conjuntos de dados, revela a forma da distribuição e facilita o cálculo de outras estatísticas. É essencial no pré-processamento para muitos algoritmos de IA.</p>
+                        </div>
+                    </div>
+                </div>
+                 <p class="text-center fade-in-on-scroll delay-5" data-translate="freq_dist_conclusion">A escolha de como agrupar (número de classes, amplitude) pode influenciar a interpretação dos dados.</p>
+            </div>
+        </section>
+
+        <!-- ========= Putting It Together Section ========= -->
+        <section id="organizando-dados-m4">
+             <div class="container">
+                 <h2 class="fade-in-on-scroll" data-translate="putting_together_title_m4">⚙️ Organizando Dados na Prática</h2>
+                 <p class="text-center fade-in-on-scroll delay-1" data-translate="putting_together_subtitle_m4">Vamos criar uma tabela de frequência para um pequeno conjunto de dados de avaliações de usuários (1 a 5 estrelas).</p>
+
+                 <div class="explanation">
+                     <div class="data-example fade-in-on-scroll delay-2"> <!-- Observe container -->
+                        <h4 data-translate="putting_together_data_title">Dados Brutos (Avaliações):</h4>
+                        <div class="data-list">[4, 5, 4, 3, 5, 4, 4, 2, 3, 5, 4, 1, 5, 4, 3]</div>
+
+                        <div class="data-step">
+                            <strong data-translate="putting_together_step1_title">1. Contagem (Frequência Absoluta):</strong>
+                            <p data-translate="putting_together_step1_desc">Contamos quantas vezes cada avaliação aparece.</p>
+                            <ul style="list-style: none; padding-left: 10px;">
+                                <li>1 estrela: 1 vez</li>
+                                <li>2 estrelas: 1 vez</li>
+                                <li>3 estrelas: 3 vezes</li>
+                                <li>4 estrelas: 6 vezes</li>
+                                <li>5 estrelas: 4 vezes</li>
+                            </ul>
+                            <span data-translate="putting_together_step1_total">Total (n) = 15 avaliações.</span>
+                        </div>
+
+                        <div class="data-step">
+                            <strong data-translate="putting_together_step2_title">2. Tabela de Frequência:</strong>
+                             <p data-translate="putting_together_step2_desc">Organizamos as contagens e calculamos as outras frequências.</p>
+                             <table class="simple-table">
+                                 <thead>
+                                     <tr>
+                                         <th data-translate="table_header_rating">Avaliação</th>
+                                         <th data-translate="table_header_abs">f (Abs)</th>
+                                         <th data-translate="table_header_rel">fr (Rel)</th>
+                                         <th data-translate="table_header_rel_perc">fr (%)</th>
+                                         <th data-translate="table_header_cum">Fac (Abs Ac.)</th>
+                                     </tr>
+                                 </thead>
+                                 <tbody>
+                                     <tr><td>1</td><td>1</td><td>1/15 ≈ 0.07</td><td>7%</td><td>1</td></tr>
+                                     <tr><td>2</td><td>1</td><td>1/15 ≈ 0.07</td><td>7%</td><td>1+1 = 2</td></tr>
+                                     <tr><td>3</td><td>3</td><td>3/15 = 0.20</td><td>20%</td><td>2+3 = 5</td></tr>
+                                     <tr><td>4</td><td>6</td><td>6/15 = 0.40</td><td>40%</td><td>5+6 = 11</td></tr>
+                                     <tr><td>5</td><td>4</td><td>4/15 ≈ 0.27</td><td>27%</td><td>11+4 = 15</td></tr>
+                                 </tbody>
+                                  <tfoot>
+                                      <tr>
+                                          <th data-translate="table_footer_total">Total</th>
+                                          <th>15</th>
+                                          <th>1.00</th>
+                                          <th>100%</th>
+                                          <th>-</th>
+                                      </tr>
+                                  </tfoot>
+                             </table>
+                        </div>
+                     </div>
+                     <div class="data-explanation fade-in-on-scroll delay-3"> <!-- Observe container -->
+                         <p data-translate="putting_together_p1_m4">Começamos com uma lista desorganizada de avaliações.</p>
+                         <p data-translate="putting_together_p2_m4">O primeiro passo é contar a <span class="term-highlight" data-translate-tooltip="tooltip_abs_freq">Frequência Absoluta<span class="tooltip">Número de vezes que cada valor único (1, 2, 3, 4, 5 estrelas) aparece nos dados.</span></span> para cada valor possível (1 a 5 estrelas).</p>
+                         <p data-translate="putting_together_p3_m4">Com as contagens, montamos a tabela. Calculamos a <span class="term-highlight" data-translate-tooltip="tooltip_rel_freq">Frequência Relativa<span class="tooltip">Proporção de cada valor. Frequência Absoluta / Total de Dados (n=15). Útil para comparar distribuições com totais diferentes.</span></span> dividindo cada frequência absoluta pelo total (n=15). A porcentagem é apenas a frequência relativa x 100.</p>
+                         <p data-translate="putting_together_p4_m4">A <span class="term-highlight" data-translate-tooltip="tooltip_cum_freq">Frequência Acumulada<span class="tooltip">Soma da frequência de uma classe com as frequências das classes anteriores. Mostra quantos dados estão abaixo de um certo valor.</span></span> é calculada somando a frequência absoluta da linha atual com a acumulada da linha anterior.</p>
+                         <p data-translate="putting_together_p5_m4">Esta tabela organizada nos mostra rapidamente que a avaliação mais comum foi '4 estrelas' (40% das vezes) e que poucas pessoas deram avaliações muito baixas (1 ou 2 estrelas).</p>
+                     </div>
+                 </div>
+             </div>
+        </section>
+
+        <!-- ========= Knowledge Check Section ========= -->
+        <section id="knowledge-check">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="quiz_title">🧠 Teste Rápido!</h2>
+                <div class="quiz-container fade-in-on-scroll delay-1"> <!-- Observe container -->
+                    <div id="quiz-area">
+                         <p style="text-align: center; padding: 2rem 0;">Carregando quiz...</p>
+                    </div>
+                    <div id="quiz-feedback" class="quiz-feedback"></div>
+                    <button id="next-question-btn" data-translate="quiz_next_button">Próxima Pergunta</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========= Completion Section ========= -->
+        <section id="completion" class="completion-section"> <!-- Added ID for nav link -->
+            <div class="container">
+                 <div class="icon">
+                     <i class="fas fa-check-double"></i>
+                     <i class="fas fa-table"></i>
+                     <i class="fas fa-star"></i>
+                 </div>
+                 <!-- Title and text updated for Module 4 -->
+                <h2 class="fade-in-on-scroll delay-1" data-translate="completion_theory_title_m4">Teoria do Módulo 4 Completa!</h2>
+                <p class="fade-in-on-scroll delay-2" data-translate="completion_theory_desc_m4">
+                    Excelente! Você aprendeu a organizar dados usando tabelas e distribuições de frequência. Esta é uma habilidade essencial para entender conjuntos de dados antes de aplicar técnicas de IA mais avançadas.<br>
+                    Pronto para praticar? Siga para a <strong>Zona de Prática</strong> ou a <strong>Prática Avançada</strong> do Módulo 4.
+                </p>
+                <div class="button-group">
+                    <!-- Buttons observed -->
+                    <!-- IMPORTANT: Links updated to math- and module number 4 -->
+                    <a href="math-dashboard.html" class="action-button secondary fade-in-on-scroll delay-3"><i class="fas fa-list"></i> <span data-translate="nav_menu">Menu do Curso</span></a>
+                    <a href="math-practice-4.html" class="action-button success fade-in-on-scroll delay-4"><i class="fas fa-pencil-alt"></i> <span data-translate="nav_practice">Iniciar Prática</span></a>
+                    <a href="math-advanced-4.html" class="action-button secondary fade-in-on-scroll delay-5"><i class="fas fa-flask"></i> <span data-translate="nav_advanced">Prática Avançada</span></a>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="main-footer">
+        <div class="container">
+            <p data-translate="footer_copyright"></p>
+        </div>
+    </footer>
+
+    <script>
+    // --- Translations Object (Portuguese Only for Module 4) ---
+    const translations = {
+        pt: {
+            "page_title": "Módulo 4: Organização de Dados",
+            "nav_practice": "Iniciar Prática",
+            "nav_advanced": "Prática Avançada",
+            "nav_menu": "Menu do Curso",
+            "nav_welcome_m4": "Boas-vindas M4",
+            "nav_freq_tables": "Tabelas Freq.",
+            "nav_freq_dist": "Distribuições Freq.",
+            "nav_putting_together": "Organizando Dados",
+            "nav_quiz": "Teste Rápido",
+            "header_title_m4": "Módulo 4: Organização de Dados",
+            "header_subtitle_m4": "Estruturando informações com tabelas e distribuições de frequência.",
+            "welcome_title_m4": "📊 Colocando Ordem no Caos dos Dados",
+            "welcome_p1_m4": "Bem-vindo ao Módulo 4! No mundo da IA e da ciência de dados, raramente recebemos informações perfeitamente organizadas. Dados brutos podem ser confusos e difíceis de interpretar. A primeira etapa crucial na análise é <span class=\"highlight\">organizar</span> esses dados.",
+            "welcome_p2_m4": "Neste módulo, aprenderemos técnicas fundamentais para resumir e estruturar conjuntos de dados: as <span class=\"highlight\">tabelas de frequência</span> e as <span class=\"highlight\">distribuições de frequência</span>. Elas nos ajudam a visualizar padrões e a preparar os dados para análises mais complexas.",
+            "freq_tables_title": "🔢 Tabelas de Frequência: Quantificando Ocorrências",
+            "freq_tables_subtitle": "Contando quantas vezes cada valor ou categoria aparece.",
+            "freq_abs_title": "Frequência Absoluta (f ou fi)",
+            "freq_abs_text": "É a contagem direta de quantas vezes um determinado valor ou categoria ocorre no conjunto de dados.",
+            "freq_abs_example": "Ex: Notas [A, B, C, B, A, B]<br>f(A) = 2<br>f(B) = 3<br>f(C) = 1",
+            "freq_rel_title": "Frequência Relativa (fr ou fri)",
+            "freq_rel_text": "Representa a proporção (ou porcentagem) de cada valor em relação ao total de observações. Calculada como <code>f / n</code> (onde n é o total de dados).",
+            "freq_rel_example": "Total (n) = 6<br>fr(A) = 2/6 ≈ 0.33 (33%)<br>fr(B) = 3/6 = 0.50 (50%)<br>fr(C) = 1/6 ≈ 0.17 (17%)",
+            "freq_cum_title": "Frequência Acumulada (F ou Fac)",
+            "freq_cum_text": "Soma das frequências (absolutas ou relativas) de um valor/categoria com as frequências de todos os valores/categorias anteriores (requer ordenação).",
+            "freq_cum_example": "Usando F Absoluta:<br>Fac(A) = 2<br>Fac(B) = 2 + 3 = 5<br>Fac(C) = 5 + 1 = 6",
+            "freq_tables_conclusion": "Tabelas de frequência oferecem um resumo rápido e claro da distribuição dos seus dados.",
+            "freq_dist_title": "📊 Distribuições de Frequência: Agrupando Dados",
+            "freq_dist_subtitle": "Organizando dados, especialmente os contínuos ou com muitos valores distintos, em classes ou intervalos.",
+            "dist_ungrouped_title": "Dados Não Agrupados",
+            "dist_ungrouped_text": "Quando há poucos valores distintos, a tabela de frequência simples (vista anteriormente) já funciona como uma distribuição. Listamos cada valor e sua frequência.",
+            "dist_grouped_title": "Dados Agrupados em Classes",
+            "dist_grouped_text": "Para dados contínuos ou com muitos valores, agrupamos em <span class=\"highlight\">classes</span> (intervalos). Ex: Idades [0-10), [10-20), [20-30).",
+            "dist_grouped_li1": "<code>Limite Inferior (Li)</code>: Menor valor da classe.",
+            "dist_grouped_li2": "<code>Limite Superior (Ls)</code>: Maior valor da classe.",
+            "dist_grouped_li3": "<code>Amplitude (h)</code>: Diferença entre Ls e Li.",
+            "dist_grouped_li4": "<code>Ponto Médio (xi)</code>: (Li + Ls) / 2. Representa a classe.",
+            "dist_importance_title": "Por que Agrupar?",
+            "dist_importance_text": "Agrupar simplifica a visualização de grandes conjuntos de dados, revela a forma da distribuição e facilita o cálculo de outras estatísticas. É essencial no pré-processamento para muitos algoritmos de IA.",
+            "freq_dist_conclusion": "A escolha de como agrupar (número de classes, amplitude) pode influenciar a interpretação dos dados.",
+            "putting_together_title_m4": "⚙️ Organizando Dados na Prática",
+            "putting_together_subtitle_m4": "Vamos criar uma tabela de frequência para um pequeno conjunto de dados de avaliações de usuários (1 a 5 estrelas).",
+            "putting_together_data_title": "Dados Brutos (Avaliações):",
+            "putting_together_step1_title": "1. Contagem (Frequência Absoluta):",
+            "putting_together_step1_desc": "Contamos quantas vezes cada avaliação aparece.",
+            "putting_together_step1_total": "Total (n) = 15 avaliações.",
+            "putting_together_step2_title": "2. Tabela de Frequência:",
+            "putting_together_step2_desc": "Organizamos as contagens e calculamos as outras frequências.",
+            "table_header_rating": "Avaliação",
+            "table_header_abs": "f (Abs)",
+            "table_header_rel": "fr (Rel)",
+            "table_header_rel_perc": "fr (%)",
+            "table_header_cum": "Fac (Abs Ac.)",
+            "table_footer_total": "Total",
+            "putting_together_p1_m4": "Começamos com uma lista desorganizada de avaliações.",
+            "putting_together_p2_m4": "O primeiro passo é contar a Frequência Absoluta para cada valor possível (1 a 5 estrelas).",
+            "putting_together_p3_m4": "Com as contagens, montamos a tabela. Calculamos a Frequência Relativa dividindo cada frequência absoluta pelo total (n=15). A porcentagem é apenas a frequência relativa x 100.",
+            "putting_together_p4_m4": "A Frequência Acumulada é calculada somando a frequência absoluta da linha atual com a acumulada da linha anterior.",
+            "putting_together_p5_m4": "Esta tabela organizada nos mostra rapidamente que a avaliação mais comum foi '4 estrelas' (40% das vezes) e que poucas pessoas deram avaliações muito baixas (1 ou 2 estrelas).",
+            "tooltip_abs_freq": "Número de vezes que cada valor único (1, 2, 3, 4, 5 estrelas) aparece nos dados.",
+            "tooltip_rel_freq": "Proporção de cada valor. Frequência Absoluta / Total de Dados (n=15). Útil para comparar distribuições com totais diferentes.",
+            "tooltip_cum_freq": "Soma da frequência de uma classe com as frequências das classes anteriores. Mostra quantos dados estão abaixo de um certo valor.",
+            "quiz_title": "🧠 Teste Rápido!",
+            "quiz_next_button": "Próxima Pergunta",
+            "quiz_q1_m4": "Em um conjunto de dados [A, B, A, C, A, B], qual a frequência absoluta de 'A'?",
+            "quiz_q1_m4_opt1": "2", "quiz_q1_m4_opt2": "3", "quiz_q1_m4_opt3": "50%", "quiz_q1_m4_opt4": "6",
+            "quiz_q2_m4": "Se n=20 e a frequência absoluta de uma categoria é 5, qual sua frequência relativa?",
+            "quiz_q2_m4_opt1": "5", "quiz_q2_m4_opt2": "0.20", "quiz_q2_m4_opt3": "25%", "quiz_q2_m4_opt4": "0.25",
+            "quiz_q3_m4": "Para que tipo de dados a distribuição de frequência por classes é MAIS útil?",
+            "quiz_q3_m4_opt1": "Dados qualitativos nominais", "quiz_q3_m4_opt2": "Dados com poucos valores distintos", "quiz_q3_m4_opt3": "Dados contínuos ou com muitos valores", "quiz_q3_m4_opt4": "Dados qualitativos ordinais",
+            "quiz_q4_m4": "Na classe [20 - 30), qual é o limite inferior?",
+            "quiz_q4_m4_opt1": "20", "quiz_q4_m4_opt2": "30", "quiz_q4_m4_opt3": "25", "quiz_q4_m4_opt4": "10",
+            "quiz_feedback_correct": "Correto! 🎉",
+            "quiz_feedback_incorrect": "Não foi bem assim! A resposta correta era: {correctAnswerText}",
+            "quiz_final_score_title": "Teste Rápido Completo!",
+            "quiz_final_score_summary": "Você respondeu {score} de {total} perguntas corretamente.",
+            "quiz_final_score_perfect": "Excelente! Você está organizando bem os conceitos.",
+            "quiz_final_score_good": "Bom trabalho! Continue praticando a organização de dados.",
+            "completion_theory_title_m4": "Teoria do Módulo 4 Completa!",
+            "completion_theory_desc_m4": "Excelente! Você aprendeu a organizar dados usando tabelas e distribuições de frequência. Esta é uma habilidade essencial para entender conjuntos de dados antes de aplicar técnicas de IA mais avançadas.<br> Pronto para praticar? Siga para a <strong>Zona de Prática</strong> ou a <strong>Prática Avançada</strong> do Módulo 4.",
+            "footer_copyright": "© 2024 Matemática para IA. Todos os direitos reservados."
+        }
+    };
+
+    // --- Global Variables ---
+    let currentQuestionIndex = 0;
+    let score = 0;
+    const lang = 'pt-BR'; // Hardcoded language for this page
+
+    // --- DOM Elements (Get them once) ---
+    const navToggleButton = document.getElementById('minimal-nav-toggle');
+    const navPanel = document.getElementById('minimal-nav-panel');
+    const body = document.body;
+    const quizArea = document.getElementById('quiz-area');
+    const feedbackArea = document.getElementById('quiz-feedback');
+    const nextButton = document.getElementById('next-question-btn');
+    const dataExampleBox = document.querySelector('#organizando-dados-m4 .data-example'); // Adjusted selector
+
+    // --- Functions ---
+
+    function getTranslation(key, replacements = {}) {
+         // Use 'pt' as the key for the translations object
+         let text = translations['pt']?.[key] ?? `[${key}]`;
+         for (const placeholder in replacements) {
+             const regex = new RegExp(`\\{${placeholder}\\}`, 'g');
+             text = text.replace(regex, replacements[placeholder]);
+         }
+         return text;
+    }
+
+   function translatePage() {
+         document.querySelectorAll('[data-translate]').forEach(el => {
+             const key = el.getAttribute('data-translate');
+             let translation = getTranslation(key);
+
+              if (el.tagName === 'TITLE') { document.title = translation; }
+              else if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') { /* Skip input/textarea value */ }
+              else if (el.tagName === 'SPAN' && el.parentElement.classList.contains('term-highlight')) {
+                  // Skip translating tooltip spans directly, handled separately
+              }
+              else {
+                   // Allow specific HTML tags safely within translations
+                   const safeHtmlRegex = /<\/?(code|strong|span|br|i|b|em)>|<\/?(ul|li)>/gi; // Added ul/li
+                   let containsSafeHtml = safeHtmlRegex.test(translation);
+
+                   // Allow innerHTML if it contains only safe tags OR if it's in an allowed container
+                   if (containsSafeHtml || el.closest('.freq-example, .freq-details, .dist-explanation, .data-step, .data-explanation, .footer p, .quiz-question, .quiz-options button, .quiz-feedback')) {
+                      el.innerHTML = translation;
+                   } else {
+                      // Fallback to textContent for elements where complex HTML isn't expected or needed
+                      // Prevents potential issues if a translation accidentally contains unsafe HTML
+                      el.textContent = translation;
+                   }
+              }
+         });
+
+          // Tooltips need separate handling after main translation
+          document.querySelectorAll('.term-highlight[data-translate-tooltip]').forEach(el => {
+              const tooltipKey = el.getAttribute('data-translate-tooltip');
+              const tooltipSpan = el.querySelector('.tooltip');
+              if(tooltipSpan && tooltipKey) {
+                 tooltipSpan.innerHTML = getTranslation(tooltipKey); // Tooltips can have simple HTML
+              }
+          });
+    }
+
+
+    // --- Quiz Data & Functions (Module 4 Specific) ---
+    const quizData = [
+         { questionKey: "quiz_q1_m4", optionKeys: ["quiz_q1_m4_opt1", "quiz_q1_m4_opt2", "quiz_q1_m4_opt3", "quiz_q1_m4_opt4"], correctAnswer: 1 }, // f(A) = 3
+         { questionKey: "quiz_q2_m4", optionKeys: ["quiz_q2_m4_opt1", "quiz_q2_m4_opt2", "quiz_q2_m4_opt3", "quiz_q2_m4_opt4"], correctAnswer: 3 }, // fr = 5/20 = 0.25
+         { questionKey: "quiz_q3_m4", optionKeys: ["quiz_q3_m4_opt1", "quiz_q3_m4_opt2", "quiz_q3_m4_opt3", "quiz_q3_m4_opt4"], correctAnswer: 2 }, // Continuous or many values
+         { questionKey: "quiz_q4_m4", optionKeys: ["quiz_q4_m4_opt1", "quiz_q4_m4_opt2", "quiz_q4_m4_opt3", "quiz_q4_m4_opt4"], correctAnswer: 0 }  // Li = 20
+    ];
+
+    function loadQuestion() {
+          if (!quizArea) return; // Ensure quizArea exists
+
+          if (currentQuestionIndex >= quizData.length) {
+              if (!quizArea.querySelector('[data-translate="quiz_final_score_title"]')) {
+                 showFinalScore();
+              }
+              return;
+          }
+
+          const currentQuiz = quizData[currentQuestionIndex];
+          const questionText = getTranslation(currentQuiz.questionKey);
+
+          quizArea.innerHTML = `
+              <div class="quiz-question">${currentQuestionIndex + 1}. ${questionText.replace(/`(.*?)`/g, '<code>$1</code>')}</div>
+              <div class="quiz-options">
+                  ${currentQuiz.optionKeys.map((optionKey, index) => {
+                      let optionText = getTranslation(optionKey);
+                      // Allow <code> tags in options if present in translation
+                      if (!optionText.includes('<code>')) {
+                          optionText = optionText.replace(/`(.*?)`/g, '<code>$1</code>');
+                      }
+                      return `<button class="quiz-option-btn" data-index="${index}">${optionText}</button>`;
+                  }).join('')}
+              </div>
+          `;
+
+          if (feedbackArea) {
+            feedbackArea.classList.remove('visible', 'correct', 'incorrect');
+            feedbackArea.textContent = '';
+            feedbackArea.style.height = '0';
+            feedbackArea.style.marginBottom = '0';
+          }
+          if (nextButton) {
+            nextButton.classList.remove('visible');
+            nextButton.disabled = true;
+          }
+
+          quizArea.querySelectorAll('.quiz-option-btn').forEach(button => {
+              button.addEventListener('click', handleAnswer);
+          });
+    }
+
+    function handleAnswer(event) {
+         const selectedButton = event.target;
+         const selectedIndex = parseInt(selectedButton.dataset.index);
+         const correctIndex = quizData[currentQuestionIndex].correctAnswer;
+         const correctOptionKey = quizData[currentQuestionIndex].optionKeys[correctIndex];
+
+         quizArea.querySelectorAll('.quiz-option-btn').forEach(btn => {
+            btn.disabled = true;
+            btn.classList.remove('shake');
+         });
+
+         if (!feedbackArea || !nextButton) return;
+
+         feedbackArea.classList.add('visible');
+
+         if (selectedIndex === correctIndex) {
+             selectedButton.classList.add('correct');
+             feedbackArea.innerHTML = getTranslation('quiz_feedback_correct');
+             feedbackArea.classList.add('correct');
+             feedbackArea.classList.remove('incorrect');
+             score++;
+             selectedButton.classList.add('tada-anim');
+         } else {
+             selectedButton.classList.add('incorrect');
+             let formattedCorrectAnswer = getTranslation(correctOptionKey);
+              // Allow code tags in feedback
+             formattedCorrectAnswer = formattedCorrectAnswer.replace(/`(.*?)`/g, '<code>$1</code>');
+             feedbackArea.innerHTML = getTranslation('quiz_feedback_incorrect', { correctAnswerText: `<strong>${formattedCorrectAnswer}</strong>` });
+             feedbackArea.classList.add('incorrect');
+             feedbackArea.classList.remove('correct');
+             const correctButton = quizArea.querySelector(`.quiz-option-btn[data-index="${correctIndex}"]`);
+             if(correctButton) correctButton.classList.add('correct');
+             selectedButton.classList.add('shake');
+         }
+
+          selectedButton.addEventListener('animationend', () => {
+               selectedButton.classList.remove('tada-anim', 'shake');
+          }, { once: true });
+
+         feedbackArea.style.height = feedbackArea.scrollHeight + 'px';
+         feedbackArea.style.marginBottom = '1rem';
+
+         nextButton.classList.add('visible');
+         nextButton.disabled = false;
+     }
+
+     function showFinalScore() {
+            if (!quizArea) return;
+            const totalQuestions = quizData.length;
+            let resultMessageKey = (score / totalQuestions) >= 0.75 ? 'quiz_final_score_perfect' : 'quiz_final_score_good';
+
+            quizArea.innerHTML = `
+               <div class="quiz-question text-center" data-translate="quiz_final_score_title" style="font-size: 1.5rem;">${getTranslation('quiz_final_score_title')}</div>
+               <p class="text-center" style="font-size: 1.2rem; margin-bottom: 1rem;">${getTranslation('quiz_final_score_summary', { score: score, total: totalQuestions })}</p>
+               <p class="text-center" style="color: ${score === totalQuestions ? 'var(--success-color)' : 'var(--primary-color)'}; font-weight: bold;">${getTranslation(resultMessageKey)}</p>
+            `;
+            if (feedbackArea) feedbackArea.classList.remove('visible');
+            if (nextButton) nextButton.style.display = 'none';
+            quizArea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+     }
+
+
+    // --- Intersection Observer Setup ---
+    function setupObservers() {
+        const observerOptions = {
+            root: null, rootMargin: '0px', threshold: 0.1
+        };
+
+        const animationObserver = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    // Optionally unobserve after first animation
+                    // observer.unobserve(entry.target);
+                }
+                // Optional: Remove 'visible' if it scrolls out of view
+                // else { entry.target.classList.remove('visible'); }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.fade-in-on-scroll').forEach(el => {
+            animationObserver.observe(el);
+        });
+
+        // No complex JS simulation needed for the data example in this module
+        // The content is static HTML generated above.
+    }
+
+    // --- Event Listeners Setup ---
+    function setupEventListeners() {
+        // Navbar Toggle
+        if (navToggleButton && navPanel) {
+            navToggleButton.addEventListener('click', (event) => {
+                event.stopPropagation();
+                body.classList.toggle('nav-active');
+                navToggleButton.setAttribute('aria-expanded', body.classList.contains('nav-active'));
+            });
+
+            document.addEventListener('click', (event) => {
+                if (body.classList.contains('nav-active') && !navPanel.contains(event.target) && event.target !== navToggleButton && !navToggleButton.contains(event.target)) {
+                    body.classList.remove('nav-active');
+                    navToggleButton.setAttribute('aria-expanded', 'false');
+                }
+            });
+
+            navPanel.querySelectorAll('a').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    if (link.getAttribute('href').startsWith('#')) {
+                        setTimeout(() => {
+                            body.classList.remove('nav-active');
+                            navToggleButton.setAttribute('aria-expanded', 'false');
+                        }, 150);
+                    }
+                });
+            });
+
+             document.addEventListener('keydown', (event) => {
+                 if (event.key === 'Escape' && body.classList.contains('nav-active')) {
+                     body.classList.remove('nav-active');
+                     navToggleButton.setAttribute('aria-expanded', 'false');
+                 }
+             });
+        }
+
+        // Quiz Next Button
+        if (nextButton) {
+            nextButton.addEventListener('click', () => {
+                if (!nextButton.disabled) {
+                    currentQuestionIndex++;
+                    loadQuestion();
+                }
+            });
+        } else {
+            console.error("Elemento #next-question-btn não encontrado.");
+        }
+    }
+
+    // --- Initialization ---
+    document.addEventListener('DOMContentLoaded', () => {
+        if (!quizArea) console.error("Elemento #quiz-area não encontrado.");
+        if (!feedbackArea) console.error("Elemento #quiz-feedback não encontrado.");
+
+        translatePage();        // Apply translations
+        setupEventListeners();  // Set up interactions
+        setupObservers();       // Set up animations
+
+        if (quizArea) {
+            loadQuestion();     // Load the first quiz question
+        }
+    });
+
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<!-- Language set to Portuguese BR -->
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Title set by JS -->
+    <title data-translate="page_title">Módulo 22: Operações entre Conjuntos (Parte 1)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* --- Reset & Base Styles --- */
+        :root {
+            --primary-color: #007bff; /* Blue */
+            --secondary-color: #6c757d; /* Gray */
+            --background-light: #f8f9fa;
+            --background-dark: #343a40;
+            --text-light: #f8f9fa;
+            --text-dark: #212529;
+            --accent-color: #ffc107; /* Yellow */
+            --success-color: #28a745; /* Green */
+            --error-color: #dc3545; /* Red */
+            --set-op-union-color: #17a2b8; /* Teal */
+            --set-op-intersect-color: #fd7e14; /* Orange */
+            --set-op-diff-color: #6f42c1; /* Purple */
+            --border-radius: 8px;
+            --transition-speed: 0.3s;
+            --animation-speed: 0.6s; /* Control fade-in speed */
+            --font-body: 'Roboto', sans-serif;
+            --font-title: 'Orbitron', sans-serif;
+            --nav-primary: #6e48aa;
+            --nav-success: #4cc9f0;
+            --nav-dark: #1a1a2e;
+            --footer-border-color: #495057;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; font-size: 16px; }
+        body {
+            font-family: var(--font-body); line-height: 1.7;
+            background-color: var(--background-light); color: var(--text-dark);
+            overflow-x: hidden; display: flex; flex-direction: column; min-height: 100vh;
+        }
+        main { flex-grow: 1; }
+
+        /* --- Utility Classes --- */
+        .container { max-width: 960px; margin: 0 auto; padding: 0 15px; }
+        .text-center { text-align: center; }
+        .highlight { color: var(--primary-color); font-weight: bold; }
+        .code-block {
+             font-family: 'Courier New', Courier, monospace; background-color: #e9ecef;
+             padding: 1rem; border-radius: 4px; margin: 1rem 0;
+             font-size: 0.95rem; color: var(--text-dark); display: block;
+             border: 1px solid #ced4da; white-space: pre-wrap; /* Allows wrapping */
+             word-wrap: break-word; /* Breaks long words */
+        }
+         .code-inline {
+            font-family: 'Courier New', Courier, monospace; background-color: rgba(0, 123, 255, 0.1); color: #0056b3;
+            padding: 0.2em 0.4em; border-radius: 4px; font-size: 0.9em;
+         }
+        .math-symbol {
+             font-family: 'Times New Roman', Times, serif; font-size: 1.2em; font-weight: bold;
+             color: var(--primary-color);
+        }
+        .placeholder-diagram {
+            border: 2px dashed var(--secondary-color);
+            padding: 2rem;
+            margin: 1.5rem auto;
+            text-align: center;
+            color: var(--secondary-color);
+            font-style: italic;
+            background-color: #f0f0f0;
+            border-radius: var(--border-radius);
+            max-width: 400px;
+        }
+
+        /* Elements to be animated by observer */
+        .fade-in-on-scroll {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+        }
+        .fade-in-on-scroll.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        /* Add delays for staggering */
+        .delay-1.visible { transition-delay: 0.1s; }
+        .delay-2.visible { transition-delay: 0.2s; }
+        .delay-3.visible { transition-delay: 0.3s; }
+        .delay-4.visible { transition-delay: 0.4s; }
+        .delay-5.visible { transition-delay: 0.5s; }
+        .delay-6.visible { transition-delay: 0.6s; }
+        .delay-7.visible { transition-delay: 0.7s; }
+
+
+        .button-group { margin-top: 2rem; display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; }
+        .action-button {
+             display: inline-flex; align-items: center; justify-content: center; gap: 0.5em;
+             padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold;
+             color: var(--text-light); background-color: var(--primary-color); border: none;
+             border-radius: var(--border-radius); cursor: pointer;
+             transition: background-color var(--transition-speed), transform var(--transition-speed), filter var(--transition-speed), box-shadow var(--transition-speed), opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out; /* Add animation transition */
+             margin-top: 1rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+             text-decoration: none; line-height: 1.2;
+             opacity: 0; /* Start hidden if animated */
+             transform: translateY(20px); /* Start offset if animated */
+        }
+        .action-button.visible { /* Make visible via observer */
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .action-button i.fas {}
+        .action-button:hover:not(:disabled) { background-color: #0056b3; transform: translateY(-2px) !important; box-shadow: 0 4px 8px rgba(0,0,0,0.15); } /* Use !important to override initial transform */
+        .action-button:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none !important; box-shadow: none; opacity: 0.7; }
+        .action-button.success { background-color: var(--success-color); }
+        .action-button.success:hover:not(:disabled) { background-color: #218838; }
+        .action-button.secondary { background-color: var(--secondary-color); }
+        .action-button.secondary:hover:not(:disabled) { background-color: #5a6268; }
+        .action-button:active:not(:disabled) { transform: translateY(1px) scale(0.98) !important; filter: brightness(0.95); }
+
+        /* --- Animations --- */
+        @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); } 50% { transform: scale(1.03); box-shadow: 0 0 15px rgba(0, 123, 255, 0.6); } 100% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); } }
+        @keyframes tada { from { transform: scale3d(1, 1, 1); } 10%, 20% { transform: scale3d(.9, .9, .9) rotate3d(0, 0, 1, -3deg); } 30%, 50%, 70%, 90% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, 3deg); } 40%, 60%, 80% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, -3deg); } to { transform: scale3d(1, 1, 1); } }
+        .tada-anim { animation: tada 1s ease; }
+        @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
+        @keyframes iconAppearCorrect { 0% { transform: scale(0.5) rotate(-15deg); opacity: 0; } 60% { transform: scale(1.2) rotate(5deg); opacity: 1; } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
+
+        /* --- Minimal Retractable Nav --- */
+        .minimal-nav-button { position: fixed; top: 15px; right: 15px; z-index: 1001; background-color: rgba(52, 58, 64, 0.75); color: var(--text-light); border: none; border-radius: var(--border-radius); padding: 8px 12px; cursor: pointer; transition: background-color var(--transition-speed), opacity var(--transition-speed), transform var(--transition-speed); font-size: 1.1rem; opacity: 0.6; box-shadow: 0 2px 5px rgba(0,0,0,0.2); line-height: 1; }
+        .minimal-nav-button:hover { background-color: rgba(52, 58, 64, 0.95); opacity: 1; transform: scale(1.05); }
+        .minimal-nav { position: fixed; top: 60px; right: 15px; z-index: 1000; background-color: var(--background-dark); border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.3); padding: 0.8rem; opacity: 0; transform: translateY(-15px) scale(0.95); transform-origin: top right; pointer-events: none; transition: opacity var(--transition-speed) ease, transform var(--transition-speed) ease; min-width: 200px; }
+        body.nav-active .minimal-nav { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+        .minimal-nav ul { list-style: none; margin: 0; padding: 0; }
+        .minimal-nav ul li { margin-bottom: 5px; }
+        .minimal-nav ul li:last-child { margin-bottom: 0; }
+        .minimal-nav ul li a { display: flex; align-items: center; color: var(--text-light); text-decoration: none; padding: 0.6rem 1rem; border-radius: 4px; transition: background-color var(--transition-speed), color var(--transition-speed); white-space: nowrap; font-weight: 400; font-size: 0.95rem; }
+        .minimal-nav ul li a i.fas { margin-right: 10px; width: 1.2em; text-align: center; opacity: 0.8; transition: opacity var(--transition-speed); }
+        .minimal-nav ul li a:hover { background-color: var(--primary-color); color: var(--text-light); }
+        .minimal-nav ul li a:hover i.fas { opacity: 1; }
+
+        /* --- Header --- */
+        .main-header { background: linear-gradient(135deg, var(--primary-color), #0056b3); color: var(--text-light); padding: 4rem 0 6rem; text-align: center; position: relative; overflow: hidden; }
+        .main-header .container { /* Start visible */ }
+        .main-header h1 { font-family: var(--font-title); font-size: 3rem; margin-bottom: 0.5rem; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); }
+        .main-header p { font-size: 1.2rem; font-weight: 300; opacity: 0.9; }
+        .header-shape { position: absolute; border-radius: 50%; background-color: rgba(255, 255, 255, 0.1); animation: pulse 5s infinite ease-in-out alternate; }
+        .shape1 { width: 150px; height: 150px; bottom: -50px; left: 10%; animation-duration: 6s; }
+        .shape2 { width: 80px; height: 80px; top: 50px; right: 15%; animation-duration: 4s; }
+        .shape3 { width: 50px; height: 50px; bottom: 20px; right: 30%; animation-duration: 7s; }
+
+        /* --- Section Styling --- */
+        section { padding: 4rem 0; border-bottom: 1px solid #eee; }
+        main section:last-of-type { border-bottom: none; padding-bottom: 0;}
+        section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); margin-bottom: 2rem; text-align: center; position: relative; padding-bottom: 10px; }
+        section h2::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 60px; height: 4px; background-color: var(--accent-color); border-radius: 2px; }
+
+        /* --- Welcome Section --- */
+        #welcome p { font-size: 1.1rem; max-width: 750px; margin: 0 auto 1rem; text-align: center; }
+
+        /* --- Set Operations Sections (Shared Structure) --- */
+        .set-op-section {
+            display: flex; align-items: flex-start; justify-content: space-around;
+            background-color: #fff; padding: 2rem; border-radius: var(--border-radius);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08); margin-top: 2rem; flex-wrap: wrap; gap: 2rem;
+        }
+        .op-part { /* Animated by observer */
+            text-align: center; max-width: 300px; /* Increased width */
+            opacity: 0; transform: scale(0.9) translateY(10px); /* Start state */
+            transition: opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+        }
+        .op-part.visible { opacity: 1; transform: scale(1) translateY(0); }
+        .op-icon {
+            font-size: 3rem; margin-bottom: 1rem;
+            display: inline-block; transition: transform var(--transition-speed) ease;
+        }
+        .op-part:hover .op-icon { transform: scale(1.15); }
+        .op-description { text-align: left; margin-top: 1rem; }
+        .op-description p { margin-bottom: 0.8rem; }
+        .op-example {
+             font-family: 'Courier New', Courier, monospace; background-color: #e9ecef;
+             padding: 0.8rem 1rem; border-radius: 4px; margin-top: 1rem;
+             font-size: 0.95rem; color: var(--text-dark); display: inline-block;
+             border: 1px solid #ced4da; text-align: left;
+        }
+        /* Specific colors for icons */
+        #uniao .op-icon { color: var(--set-op-union-color); }
+        #intersecao .op-icon { color: var(--set-op-intersect-color); }
+        #diferenca .op-icon { color: var(--set-op-diff-color); }
+
+        /* --- Intersection Section (Using Cards) --- */
+         #intersecao .info-cards { /* Reusing card style */
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem; margin-top: 2rem; width: 100%; /* Take full width */
+        }
+        #intersecao .info-card { /* Animated by observer */
+            background-color: #fff; padding: 1.5rem; border-radius: var(--border-radius);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.07); text-align: center;
+            transition: transform var(--transition-speed) ease, box-shadow var(--transition-speed) ease, opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+            opacity: 0; transform: translateY(20px); /* Start state */
+            border-top: 4px solid var(--set-op-intersect-color);
+        }
+        #intersecao .info-card.visible { opacity: 1; transform: translateY(0); }
+        #intersecao .info-card:hover { transform: translateY(-5px) scale(1.02) !important; box-shadow: 0 8px 20px rgba(0,0,0,0.12); }
+        #intersecao .info-icon { font-size: 2.5rem; margin-bottom: 1rem; color: var(--set-op-intersect-color); }
+        #intersecao .info-card h3 { font-family: var(--font-body); font-weight: 700; font-size: 1.3rem; margin-bottom: 0.8rem; color: var(--text-dark); }
+        #intersecao .info-details {
+             font-size: 1rem; color: var(--secondary-color); margin-top: 1rem; line-height: 1.6;
+        }
+        #intersecao .info-example {
+             font-family: 'Courier New', Courier, monospace; background-color: #e9ecef;
+             padding: 0.8rem 1rem; border-radius: 4px; margin-top: 1rem;
+             font-size: 0.95rem; color: var(--text-dark); display: block;
+             border: 1px solid #ced4da; margin-left: auto; margin-right: auto; max-width: 90%;
+             text-align: left;
+        }
+
+        /* --- Combined Examples Section --- */
+        #exemplos .explanation { display: flex; gap: 2rem; align-items: flex-start; margin-top: 2rem; flex-wrap: wrap; }
+        .set-logic-demo { /* Animated by observer */
+            flex-basis: 55%; background-color: #fff; color: var(--text-dark);
+            padding: 1.5rem; border-radius: var(--border-radius); font-family: var(--font-body);
+            position: relative; min-height: 300px; box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            font-size: 1rem; line-height: 1.6;
+            border-top: 4px solid var(--primary-color);
+            opacity: 0; transition: opacity var(--animation-speed) ease-out; /* Only fade opacity */
+        }
+        .set-logic-demo.visible { opacity: 1; }
+        .set-logic-demo .step { margin-bottom: 1rem; }
+        .set-logic-demo .step strong { color: var(--primary-color); }
+        .set-logic-demo .result {
+            font-weight: bold; color: var(--success-color); font-family: 'Courier New', Courier, monospace;
+            display: inline-block; background-color: #e9ecef; padding: 0.3em 0.6em; border-radius: 4px; margin-left: 0.5em;
+        }
+        .explanation-text { /* Animated by observer */
+            flex-basis: 40%; font-size: 1.05rem;
+             opacity: 0; transition: opacity var(--animation-speed) ease-out; /* Only fade opacity */
+        }
+        .explanation-text.visible { opacity: 1; }
+        .explanation-text p { margin-bottom: 1rem; }
+
+
+        /* --- Knowledge Check Section --- */
+        #knowledge-check { background-color: #e9ecef; }
+        .quiz-container { /* Animated by observer */
+             background-color: #fff; padding: 2rem; border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.1); max-width: 700px; margin: 2rem auto 0;
+             opacity: 0; transition: opacity var(--animation-speed) ease-out; /* Only fade opacity */
+        }
+        .quiz-container.visible { opacity: 1; }
+        .quiz-question { font-size: 1.2rem; font-weight: bold; margin-bottom: 1.5rem; color: var(--text-dark); }
+        .quiz-options button { display: block; width: 100%; padding: 1rem; margin-bottom: 1rem; text-align: left; font-size: 1rem; background-color: #f8f9fa; border: 1px solid #ced4da; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), border-color var(--transition-speed), transform var(--transition-speed); }
+        .quiz-options button:not(:disabled):hover { background-color: #e2e6ea; border-color: #adb5bd; transform: translateX(5px); }
+        .quiz-options button:disabled { cursor: default; opacity: 0.7; }
+        .quiz-options button.correct { background-color: #d4edda; border-color: var(--success-color); color: #155724; font-weight: bold; }
+        .quiz-options button.incorrect { background-color: #f8d7da; border-color: var(--error-color); color: #721c24; font-weight: bold; }
+        .quiz-options button.incorrect.shake { animation: shake 0.5s ease; }
+        .quiz-feedback { margin-top: 1.5rem; padding: 1rem; border-radius: var(--border-radius); font-weight: bold; text-align: center; opacity: 0; transition: opacity 0.5s ease, height 0.5s ease, margin-bottom 0.5s ease; height: 0; overflow: hidden; margin-bottom: 0;}
+        .quiz-feedback.visible { opacity: 1; height: auto; margin-bottom: 1rem; }
+        .quiz-feedback.correct { background-color: #d4edda; color: #155724; }
+        .quiz-feedback.incorrect { background-color: #f8d7da; color: #721c24; }
+        #next-question-btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5em; margin: 1.5rem auto 0; padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold; color: var(--text-light); background-color: var(--primary-color); border: none; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), transform var(--transition-speed), opacity 0.3s, visibility 0.3s; opacity: 0; visibility: hidden; }
+        #next-question-btn:hover:not(:disabled) { background-color: #0056b3; transform: scale(1.05); }
+        #next-question-btn.visible { opacity: 1; visibility: visible; }
+        #next-question-btn:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none; opacity: 0.7; }
+
+
+        /* --- Completion Section Styling --- */
+        .completion-section { padding: 4rem 0; text-align: center; background-color: var(--background-light); }
+        .completion-section .icon { font-size: 4rem; color: var(--success-color); margin-bottom: 1rem; display: inline-block; animation: iconAppearCorrect 1s ease-out 0.5s forwards; opacity: 0; /* Initial state for animation */}
+        /* Ensure completion elements are targeted by observer */
+        .completion-section h2, .completion-section p {
+            opacity: 0; transform: translateY(20px);
+            transition: opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+        }
+        .completion-section h2.visible, .completion-section p.visible {
+            opacity: 1; transform: translateY(0);
+        }
+        .completion-section .button-group { margin-top: 2.5rem; }
+        .completion-section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); margin-bottom: 1rem; }
+        .completion-section h2::after { display: none; }
+        .completion-section p { font-size: 1.1rem; margin-top: 1rem; color: var(--secondary-color); max-width: 700px; margin-left: auto; margin-right: auto; line-height: 1.8; }
+
+
+        /* --- Footer Styling --- */
+        .main-footer {
+            background-color: var(--background-light);
+            color: var(--text-light);
+            text-align: center;
+            padding: 2rem 0;
+            font-size: 0.9rem;
+            margin-top: auto;
+            border-top: 1px solid var(--background-light);
+            opacity: 0.85;
+        }
+        .main-footer p { margin: 0; line-height: 1.5; }
+
+        /* --- Responsive Design --- */
+        @media (max-width: 768px) {
+            html { font-size: 15px; }
+            .main-header h1 { font-size: 2.5rem; } .main-header p { font-size: 1.1rem; }
+            section h2 { font-size: 1.8rem; }
+            .set-op-section { flex-direction: column; gap: 1.5rem; align-items: center; }
+            .op-part { max-width: 90%; } /* Allow parts to take more width */
+             #intersecao .info-cards { grid-template-columns: 1fr; }
+            #exemplos .explanation { flex-direction: column; }
+            .set-logic-demo, .explanation-text { flex-basis: 100%; }
+            .minimal-nav { min-width: 180px; } .minimal-nav ul li a { padding: 0.6rem 0.8rem; }
+            .completion-section h2 { font-size: 2rem; }
+            .completion-section .button-group { flex-direction: column; align-items: center; gap: 0.8rem; }
+            .completion-section .action-button { width: 80%; max-width: 350px; margin-top: 0; }
+            .main-footer { padding: 1.5rem 0; }
+        }
+        @media (max-width: 480px) {
+            html { font-size: 14px; }
+            .main-header h1 { font-size: 2rem; } .main-header p { font-size: 1rem; }
+            section h2 { font-size: 1.6rem; }
+            .quiz-options button { padding: 0.8rem; font-size: 0.95rem; }
+            .minimal-nav-button { top: 10px; right: 10px; padding: 6px 10px; font-size: 1rem; }
+            .minimal-nav { top: 48px; right: 10px; min-width: 160px; }
+            .minimal-nav ul li a { padding: 0.5rem 0.7rem; font-size: 0.9rem;}
+            .minimal-nav ul li a i.fas { margin-right: 8px; }
+            .completion-section .icon { font-size: 3.5rem; }
+            .completion-section h2 { font-size: 1.8rem; } .completion-section p { font-size: 1rem; }
+            .completion-section .action-button { width: 90%; max-width: 300px; }
+             .set-logic-demo { font-size: 0.9rem; }
+            .main-footer { padding: 1rem 0; font-size: 0.85rem; }
+            .code-block { font-size: 0.9rem; padding: 0.8rem; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- ========= Minimal Nav Handle ========= -->
+    <button id="minimal-nav-toggle" class="minimal-nav-button" aria-label="Alternar Menu de Navegação" aria-expanded="false">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- ========= Minimal Nav Panel ========= -->
+    <nav id="minimal-nav-panel" class="minimal-nav">
+        <ul>
+            <!-- IMPORTANT: Update hrefs to math- and module number 22 -->
+            <li><a href="math-practice-22.html"><i class="fas fa-pencil-alt fa-fw"></i> <span data-translate="nav_practice">Iniciar Prática</span></a></li>
+            <li><a href="math-advanced-22.html"><i class="fas fa-flask fa-fw"></i> <span data-translate="nav_advanced">Prática Avançada</span></a></li>
+            <li><a href="math-dashboard.html"><i class="fas fa-list fa-fw"></i> <span data-translate="nav_menu">Menu do Curso</span></a></li>
+             <hr style="border: none; border-top: 1px solid var(--secondary-color); margin: 8px 0;">
+             <li><a href="#welcome"><i class="fas fa-door-open fa-fw"></i> <span data-translate="nav_welcome_m22">Boas-vindas M22</span></a></li>
+             <li><a href="#uniao"><i class="fas fa-object-ungroup fa-fw"></i> <span data-translate="nav_union">União (∪)</span></a></li>
+             <li><a href="#intersecao"><i class="fas fa-link fa-fw"></i> <span data-translate="nav_intersection">Interseção (∩)</span></a></li>
+             <li><a href="#diferenca"><i class="fas fa-minus-circle fa-fw"></i> <span data-translate="nav_difference">Diferença (−)</span></a></li>
+             <li><a href="#exemplos"><i class="fas fa-cogs fa-fw"></i> <span data-translate="nav_examples">Exemplos</span></a></li>
+             <li><a href="#knowledge-check"><i class="fas fa-check-double fa-fw"></i> <span data-translate="nav_quiz">Teste Rápido</span></a></li>
+             <li><a href="#completion"><i class="fas fa-flag-checkered fa-fw"></i> <span data-translate="completion_theory_title_m22">Conclusão</span></a></li>
+        </ul>
+    </nav>
+
+    <header class="main-header">
+        <div class="header-shape shape1"></div>
+        <div class="header-shape shape2"></div>
+        <div class="header-shape shape3"></div>
+        <div class="container"> <!-- Start visible -->
+             <!-- IMPORTANT: Update Title -->
+            <h1 data-translate="header_title_m22">Módulo 22: Operações entre Conjuntos (Parte 1)</h1>
+            <p data-translate="header_subtitle_m22">Combinando e comparando conjuntos: União, Interseção e Diferença.</p>
+        </div>
+    </header>
+
+    <main>
+        <!-- ========= Welcome Section ========= -->
+        <section id="welcome">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="welcome_title_m22">🧮 Combinando Coleções: Operações de Conjuntos</h2>
+                <p class="fade-in-on-scroll delay-1" data-translate="welcome_p1_m22">
+                    Bem-vindo ao Módulo 22! Após entendermos o que são conjuntos, vamos explorar como <span class="highlight">operar</span> com eles. Assim como temos adição e subtração para números, temos operações para conjuntos que nos permitem combiná-los e encontrar elementos específicos.
+                </p>
+                <p class="fade-in-on-scroll delay-2" data-translate="welcome_p2_m22">
+                    Neste módulo, focaremos em três operações fundamentais: <span class="highlight">União</span>, <span class="highlight">Interseção</span> e <span class="highlight">Diferença</span>. Essas operações são a base para muitas tarefas em computação, desde consultas em bancos de dados (<code class="code-inline">SQL UNION</code>, <code class="code-inline">INTERSECT</code>) até a manipulação de dados e lógica em algoritmos de IA. Vamos mergulhar!
+                </p>
+            </div>
+        </section>
+
+        <!-- ========= Union Section ========= -->
+        <section id="uniao">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="union_title">União de Conjuntos (<span class="math-symbol">∪</span>)</h2>
+                <p class="text-center fade-in-on-scroll delay-1" data-translate="union_subtitle">Juntando todos os elementos, sem repetições.</p>
+
+                <div class="set-op-section">
+                    <div class="op-part fade-in-on-scroll delay-2">
+                        <span class="op-icon"><i class="fas fa-object-ungroup"></i></span>
+                        <h3 data-translate="union_concept_title">O Conceito</h3>
+                        <div class="op-description">
+                            <p data-translate="union_concept_text1">
+                                A <strong style="color: var(--set-op-union-color);">União</strong> de dois conjuntos, A e B (denotada por <code class="code-inline">A ∪ B</code>), é um novo conjunto que contém <span class="highlight">todos</span> os elementos que pertencem a A, <span class="highlight">ou</span> a B, <span class="highlight">ou</span> a ambos.
+                            </p>
+                            <p data-translate="union_concept_text2">
+                                Pense nisso como "misturar" os dois conjuntos e remover quaisquer duplicatas.
+                            </p>
+                            <p data-translate="union_notation">Notação Formal: <code class="code-inline">A ∪ B = {x | x ∈ A ou x ∈ B}</code></p>
+                        </div>
+                    </div>
+                    <div class="op-part fade-in-on-scroll delay-3">
+                         <span class="op-icon"><i class="fas fa-tasks"></i></span>
+                        <h3 data-translate="union_example_title">Exemplo Prático</h3>
+                        <p data-translate="union_example_intro">Se temos dois conjuntos de IDs de usuários:</p>
+                        <div class="op-example">
+                            <span data-translate="union_example_set_a">Conjunto A (Usuários Ativos): <code>{101, 102, 105}</code></span><br>
+                            <span data-translate="union_example_set_b">Conjunto B (Usuários VIP): <code>{102, 106, 107}</code></span><br><br>
+                            <span data-translate="union_example_result_label">A União <code>A ∪ B</code> (Todos usuários únicos) é:</span><br>
+                            <strong style="color: var(--set-op-union-color);"><code>{101, 102, 105, 106, 107}</code></strong>
+                            <p style="margin-top: 0.5rem;" data-translate="union_example_note">(Note que 102 aparece apenas uma vez).</p>
+                        </div>
+                        <p style="margin-top: 1rem;" data-translate="union_application">
+                            <strong>Aplicação em IA:</strong> Combinar listas de features detectadas por diferentes modelos.
+                        </p>
+                    </div>
+                </div>
+                 <p class="text-center fade-in-on-scroll delay-4" data-translate="union_conclusion">A União é útil quando queremos considerar todos os elementos possíveis de várias fontes.</p>
+            </div>
+        </section>
+
+        <!-- ========= Intersection Section ========= -->
+        <section id="intersecao">
+            <div class="container">
+                 <h2 class="fade-in-on-scroll" data-translate="intersection_title">Interseção de Conjuntos (<span class="math-symbol">∩</span>)</h2>
+                 <p class="text-center fade-in-on-scroll delay-1" data-translate="intersection_subtitle">Encontrando os elementos em comum.</p>
+
+                <div class="info-cards"> <!-- Using card structure for visual separation -->
+                    <div class="info-card fade-in-on-scroll delay-2">
+                        <span class="info-icon"><i class="fas fa-link"></i></span>
+                        <h3 data-translate="intersection_concept_title">O Conceito</h3>
+                        <div class="info-details">
+                            <p data-translate="intersection_concept_text1">
+                                A <strong style="color: var(--set-op-intersect-color);">Interseção</strong> de dois conjuntos, A e B (denotada por <code class="code-inline">A ∩ B</code>), é um novo conjunto que contém apenas os elementos que pertencem <span class="highlight">tanto</span> a A <span class="highlight">quanto</span> a B.
+                            </p>
+                            <p data-translate="intersection_concept_text2">
+                                Pense nisso como encontrar a "sobreposição" ou os elementos "compartilhados" entre os conjuntos.
+                            </p>
+                             <p data-translate="intersection_notation">Notação Formal: <code class="code-inline">A ∩ B = {x | x ∈ A e x ∈ B}</code></p>
+                        </div>
+                    </div>
+                    <div class="info-card fade-in-on-scroll delay-3">
+                        <span class="info-icon"><i class="fas fa-filter"></i></span>
+                        <h3 data-translate="intersection_example_title">Exemplo Prático</h3>
+                        <div class="info-details">
+                             <p data-translate="intersection_example_intro">Usando os mesmos conjuntos de usuários:</p>
+                             <div class="info-example">
+                                 <span data-translate="intersection_example_set_a">Conjunto A (Ativos): <code>{101, 102, 105}</code></span><br>
+                                 <span data-translate="intersection_example_set_b">Conjunto B (VIP): <code>{102, 106, 107}</code></span><br><br>
+                                 <span data-translate="intersection_example_result_label">A Interseção <code>A ∩ B</code> (Usuários Ativos E VIP) é:</span><br>
+                                 <strong style="color: var(--set-op-intersect-color);"><code>{102}</code></strong>
+                                 <p style="margin-top: 0.5rem;" data-translate="intersection_example_note">(Apenas 102 está em ambos).</p>
+                             </div>
+                             <p style="margin-top: 1rem;" data-translate="intersection_application">
+                                 <strong>Aplicação em Computação:</strong> Filtrar dados que satisfazem múltiplas condições (<code>AND</code> em SQL), encontrar permissões comuns entre grupos de usuários.
+                             </p>
+                        </div>
+                    </div>
+                </div>
+                 <p class="text-center fade-in-on-scroll delay-4" data-translate="intersection_conclusion">A Interseção é essencial para encontrar concordâncias e elementos compartilhados.</p>
+            </div>
+        </section>
+
+         <!-- ========= Difference Section ========= -->
+        <section id="diferenca">
+            <div class="container">
+                 <h2 class="fade-in-on-scroll" data-translate="difference_title">Diferença de Conjuntos (<span class="math-symbol">−</span> ou <span class="math-symbol">\\</span>)</h2>
+                 <p class="text-center fade-in-on-scroll delay-1" data-translate="difference_subtitle">Encontrando o que está em um conjunto, mas não no outro.</p>
+
+                <div class="set-op-section">
+                    <div class="op-part fade-in-on-scroll delay-2">
+                        <span class="op-icon"><i class="fas fa-minus-circle"></i></span>
+                        <h3 data-translate="difference_concept_title">O Conceito</h3>
+                        <div class="op-description">
+                            <p data-translate="difference_concept_text1">
+                                A <strong style="color: var(--set-op-diff-color);">Diferença</strong> entre dois conjuntos, A e B (denotada por <code class="code-inline">A − B</code> ou <code class="code-inline">A \ B</code>), é um novo conjunto que contém os elementos que pertencem a A, <span class="highlight">mas não</span> pertencem a B.
+                            </p>
+                            <p data-translate="difference_concept_text2">
+                                Pense como "remover" de A todos os elementos que também estão em B.
+                            </p>
+                            <p data-translate="difference_concept_text3">
+                                <strong class="highlight">Importante:</strong> A ordem importa! <code class="code-inline">A − B</code> é diferente de <code class="code-inline">B − A</code>.
+                            </p>
+                             <p data-translate="difference_notation">Notação Formal: <code class="code-inline">A − B = {x | x ∈ A e x ∉ B}</code></p>
+                        </div>
+                    </div>
+                    <div class="op-part fade-in-on-scroll delay-3">
+                        <span class="op-icon"><i class="fas fa-user-minus"></i></span>
+                        <h3 data-translate="difference_example_title">Exemplo Prático</h3>
+                         <p data-translate="difference_example_intro">Com os mesmos conjuntos:</p>
+                        <div class="op-example">
+                             <span data-translate="difference_example_set_a">Conjunto A (Ativos): <code>{101, 102, 105}</code></span><br>
+                             <span data-translate="difference_example_set_b">Conjunto B (VIP): <code>{102, 106, 107}</code></span><br><br>
+                             <span data-translate="difference_example_result_a_minus_b">A Diferença <code>A − B</code> (Ativos que NÃO são VIP) é:</span><br>
+                             <strong style="color: var(--set-op-diff-color);"><code>{101, 105}</code></strong><br><br>
+                             <span data-translate="difference_example_result_b_minus_a">A Diferença <code>B − A</code> (VIP que NÃO são Ativos) é:</span><br>
+                             <strong style="color: var(--set-op-diff-color);"><code>{106, 107}</code></strong>
+                        </div>
+                         <p style="margin-top: 1rem;" data-translate="difference_application">
+                            <strong>Aplicação em IA/CS:</strong> Identificar elementos únicos em um dataset comparado a outro, encontrar erros que ocorrem em uma versão de software mas não na outra (diff).
+                        </p>
+                    </div>
+                </div>
+                 <p class="text-center fade-in-on-scroll delay-4" data-translate="difference_conclusion">A Diferença nos ajuda a isolar elementos exclusivos de um conjunto em relação a outro.</p>
+            </div>
+        </section>
+
+        <!-- ========= Combined Examples Section ========= -->
+        <section id="exemplos">
+             <div class="container">
+                 <h2 class="fade-in-on-scroll" data-translate="examples_title">⚙️ Operações em Ação e Visualização</h2>
+                 <p class="text-center fade-in-on-scroll delay-1" data-translate="examples_subtitle">Combinando operações e a utilidade dos Diagramas de Venn.</p>
+
+                 <div class="explanation">
+                     <div class="set-logic-demo fade-in-on-scroll delay-2"> <!-- Observe container -->
+                        <h4 data-translate="examples_scenario_title">Cenário: Tags de Usuários em uma Plataforma</h4>
+                        <p data-translate="examples_scenario_sets">Considere três conjuntos de tags atribuídas a usuários:</p>
+                        <code class="code-block">
+                            Engajados = {"like", "comment", "share", "login_diario"}
+                            Compradores = {"purchase", "add_cart", "wishlist", "like"}
+                            Novos = {"new_user", "tutorial", "login_diario"}
+                        </code>
+                        <div class="step">
+                            <strong data-translate="examples_step1_label">1. Usuários Engajados OU Compradores (União):</strong>
+                            <code class="code-inline" data-translate="examples_step1_op">Engajados ∪ Compradores</code>
+                            <span class="result" data-translate="examples_step1_result">{ "like", "comment", "share", "login_diario", "purchase", "add_cart", "wishlist" }</span>
+                        </div>
+                         <div class="step">
+                            <strong data-translate="examples_step2_label">2. Usuários Engajados E Novos (Interseção):</strong>
+                             <code class="code-inline" data-translate="examples_step2_op">Engajados ∩ Novos</code>
+                             <span class="result" data-translate="examples_step2_result">{ "login_diario" }</span>
+                         </div>
+                        <div class="step">
+                            <strong data-translate="examples_step3_label">3. Usuários Compradores que NÃO são Novos (Diferença):</strong>
+                            <code class="code-inline" data-translate="examples_step3_op">Compradores − Novos</code>
+                            <span class="result" data-translate="examples_step3_result">{ "purchase", "add_cart", "wishlist", "like" }</span>
+                            <small data-translate="examples_step3_note">(Nenhuma tag de 'Novos' foi removida pois não havia interseção relevante).</small>
+                        </div>
+                         <div class="step">
+                            <strong data-translate="examples_step4_label">4. (Engajados ∪ Novos) ∩ Compradores:</strong><br>
+                            <span data-translate="examples_step4_part1_label">   Primeiro <code class="code-inline">Engajados ∪ Novos</code>:</span> <span class="result" data-translate="examples_step4_part1_result">{ "like", "comment", "share", "login_diario", "new_user", "tutorial" }</span><br>
+                             <span data-translate="examples_step4_part2_label">   Depois, intersecione com <code class="code-inline">Compradores</code>:</span> <span class="result" data-translate="examples_step4_part2_result">{ "like" }</span>
+                         </div>
+                     </div>
+                     <div class="explanation-text fade-in-on-scroll delay-3"> <!-- Observe container -->
+                         <h4 data-translate="examples_explanation_title">Entendendo as Combinações</h4>
+                         <p data-translate="examples_explanation_p1">
+                             Ao combinar operações, podemos responder perguntas mais complexas sobre nossos dados. Por exemplo, a Etapa 1 nos dá todas as tags associadas a usuários ativos na plataforma (seja por engajamento ou compra).
+                         </p>
+                         <p data-translate="examples_explanation_p2">
+                             A Etapa 2 identifica a característica comum entre usuários engajados e novos (neste caso, o login diário).
+                         </p>
+                          <p data-translate="examples_explanation_p3">
+                             A Etapa 3 mostra as tags de compra que não são típicas de novos usuários, ajudando a distinguir compradores estabelecidos.
+                         </p>
+                         <h4 style="margin-top: 1.5rem;" data-translate="examples_venn_title">Diagramas de Venn</h4>
+                         <p data-translate="examples_venn_text">
+                             Essas operações podem ser visualizadas usando <span class="highlight">Diagramas de Venn</span>. Círculos representam os conjuntos, e as áreas de sobreposição mostram as interseções. A área total coberta pelos círculos representa a união, e a área de um círculo que não se sobrepõe a outro representa a diferença.
+                         </p>
+                         <div class="placeholder-diagram fade-in-on-scroll delay-4" data-translate="examples_venn_placeholder">
+                             [Placeholder: Diagrama de Venn ilustrando A ∪ B, A ∩ B, A − B]
+                         </div>
+                     </div>
+                 </div>
+             </div>
+        </section>
+
+        <!-- ========= Knowledge Check Section ========= -->
+        <section id="knowledge-check">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="quiz_title">🧠 Teste Rápido!</h2>
+                <div class="quiz-container fade-in-on-scroll delay-1"> <!-- Observe container -->
+                    <div id="quiz-area">
+                         <p style="text-align: center; padding: 2rem 0;">Carregando quiz...</p>
+                    </div>
+                    <div id="quiz-feedback" class="quiz-feedback"></div>
+                    <button id="next-question-btn" data-translate="quiz_next_button">Próxima Pergunta</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========= Completion Section ========= -->
+        <section id="completion" class="completion-section"> <!-- Added ID for nav link -->
+            <div class="container">
+                 <div class="icon">
+                    <!-- Using set related icons -->
+                    <i class="fas fa-object-ungroup"></i>
+                    <i class="fas fa-link"></i>
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <!-- IMPORTANT: Update Title -->
+                <h2 class="fade-in-on-scroll delay-1" data-translate="completion_theory_title_m22">Teoria do Módulo 22 Completa!</h2>
+                <p class="fade-in-on-scroll delay-2" data-translate="completion_theory_desc_m22">
+                    Excelente! Você aprendeu sobre as operações fundamentais de União, Interseção e Diferença entre conjuntos. Dominar essas operações é crucial para manipular dados e aplicar lógica em IA e Ciência da Computação. <br>
+                    Pronto para aplicar esses conceitos? Vá para a <strong>Zona de Prática</strong> ou a <strong>Prática Avançada</strong> do Módulo 22.
+                </p>
+                <div class="button-group">
+                    <!-- Buttons observed -->
+                    <!-- IMPORTANT: Update hrefs -->
+                    <a href="math-dashboard.html" class="action-button secondary fade-in-on-scroll delay-3"><i class="fas fa-list"></i> <span data-translate="nav_menu">Menu do Curso</span></a>
+                    <a href="math-practice-22.html" class="action-button success fade-in-on-scroll delay-4"><i class="fas fa-pencil-alt"></i> <span data-translate="nav_practice">Iniciar Prática</span></a>
+                    <a href="math-advanced-22.html" class="action-button secondary fade-in-on-scroll delay-5"><i class="fas fa-flask"></i> <span data-translate="nav_advanced">Prática Avançada</span></a>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="main-footer">
+        <div class="container">
+            <p data-translate="footer_copyright"></p>
+        </div>
+    </footer>
+
+    <script>
+    // --- Translations Object (Portuguese Only) ---
+    const translations = {
+        pt: {
+            "page_title": "Módulo 22: Operações entre Conjuntos (Parte 1)",
+            "nav_practice": "Iniciar Prática",
+            "nav_advanced": "Prática Avançada",
+            "nav_menu": "Menu do Curso",
+            "nav_welcome_m22": "Boas-vindas M22", "nav_union": "União (∪)", "nav_intersection": "Interseção (∩)", "nav_difference": "Diferença (−)", "nav_examples": "Exemplos", "nav_quiz": "Teste Rápido",
+            "lang_pt": "🇧🇷 Português",
+            "header_title_m22": "Módulo 22: Operações entre Conjuntos (Parte 1)", "header_subtitle_m22": "Combinando e comparando conjuntos: União, Interseção e Diferença.",
+            "welcome_title_m22": "🧮 Combinando Coleções: Operações de Conjuntos",
+            "welcome_p1_m22": "Bem-vindo ao Módulo 22! Após entendermos o que são conjuntos, vamos explorar como <span class=\"highlight\">operar</span> com eles. Assim como temos adição e subtração para números, temos operações para conjuntos que nos permitem combiná-los e encontrar elementos específicos.",
+            "welcome_p2_m22": "Neste módulo, focaremos em três operações fundamentais: <span class=\"highlight\">União</span>, <span class=\"highlight\">Interseção</span> e <span class=\"highlight\">Diferença</span>. Essas operações são a base para muitas tarefas em computação, desde consultas em bancos de dados (<code class=\"code-inline\">SQL UNION</code>, <code class=\"code-inline\">INTERSECT</code>) até a manipulação de dados e lógica em algoritmos de IA. Vamos mergulhar!",
+
+            "union_title": "União de Conjuntos (<span class=\"math-symbol\">∪</span>)", "union_subtitle": "Juntando todos os elementos, sem repetições.",
+            "union_concept_title": "O Conceito",
+            "union_concept_text1": "A <strong style=\"color: var(--set-op-union-color);\">União</strong> de dois conjuntos, A e B (denotada por <code class=\"code-inline\">A ∪ B</code>), é um novo conjunto que contém <span class=\"highlight\">todos</span> os elementos que pertencem a A, <span class=\"highlight\">ou</span> a B, <span class=\"highlight\">ou</span> a ambos.",
+            "union_concept_text2": "Pense nisso como \"misturar\" os dois conjuntos e remover quaisquer duplicatas.",
+            "union_notation": "Notação Formal: <code class=\"code-inline\">A ∪ B = {x | x ∈ A ou x ∈ B}</code>",
+            "union_example_title": "Exemplo Prático",
+            "union_example_intro": "Se temos dois conjuntos de IDs de usuários:",
+            "union_example_set_a": "Conjunto A (Usuários Ativos): <code>{101, 102, 105}</code>",
+            "union_example_set_b": "Conjunto B (Usuários VIP): <code>{102, 106, 107}</code>",
+            "union_example_result_label": "A União <code>A ∪ B</code> (Todos usuários únicos) é:",
+            "union_example_result": "<code>{101, 102, 105, 106, 107}</code>",
+            "union_example_note": "(Note que 102 aparece apenas uma vez).",
+            "union_application": "<strong>Aplicação em IA:</strong> Combinar listas de features detectadas por diferentes modelos.",
+            "union_conclusion": "A União é útil quando queremos considerar todos os elementos possíveis de várias fontes.",
+
+            "intersection_title": "Interseção de Conjuntos (<span class=\"math-symbol\">∩</span>)", "intersection_subtitle": "Encontrando os elementos em comum.",
+            "intersection_concept_title": "O Conceito",
+            "intersection_concept_text1": "A <strong style=\"color: var(--set-op-intersect-color);\">Interseção</strong> de dois conjuntos, A e B (denotada por <code class=\"code-inline\">A ∩ B</code>), é um novo conjunto que contém apenas os elementos que pertencem <span class=\"highlight\">tanto</span> a A <span class=\"highlight\">quanto</span> a B.",
+            "intersection_concept_text2": "Pense nisso como encontrar a \"sobreposição\" ou os elementos \"compartilhados\" entre os conjuntos.",
+            "intersection_notation": "Notação Formal: <code class=\"code-inline\">A ∩ B = {x | x ∈ A e x ∈ B}</code>",
+            "intersection_example_title": "Exemplo Prático",
+            "intersection_example_intro": "Usando os mesmos conjuntos de usuários:",
+            "intersection_example_set_a": "Conjunto A (Ativos): <code>{101, 102, 105}</code>",
+            "intersection_example_set_b": "Conjunto B (VIP): <code>{102, 106, 107}</code>",
+            "intersection_example_result_label": "A Interseção <code>A ∩ B</code> (Usuários Ativos E VIP) é:",
+            "intersection_example_result": "<code>{102}</code>",
+            "intersection_example_note": "(Apenas 102 está em ambos).",
+            "intersection_application": "<strong>Aplicação em Computação:</strong> Filtrar dados que satisfazem múltiplas condições (<code>AND</code> em SQL), encontrar permissões comuns entre grupos de usuários.",
+            "intersection_conclusion": "A Interseção é essencial para encontrar concordâncias e elementos compartilhados.",
+
+            "difference_title": "Diferença de Conjuntos (<span class=\"math-symbol\">−</span> ou <span class=\"math-symbol\">\\</span>)", "difference_subtitle": "Encontrando o que está em um conjunto, mas não no outro.",
+            "difference_concept_title": "O Conceito",
+            "difference_concept_text1": "A <strong style=\"color: var(--set-op-diff-color);\">Diferença</strong> entre dois conjuntos, A e B (denotada por <code class=\"code-inline\">A − B</code> ou <code class=\"code-inline\">A \\ B</code>), é um novo conjunto que contém os elementos que pertencem a A, <span class=\"highlight\">mas não</span> pertencem a B.",
+            "difference_concept_text2": "Pense como \"remover\" de A todos os elementos que também estão em B.",
+             "difference_concept_text3": "<strong class=\"highlight\">Importante:</strong> A ordem importa! <code class=\"code-inline\">A − B</code> é diferente de <code class=\"code-inline\">B − A</code>.",
+            "difference_notation": "Notação Formal: <code class=\"code-inline\">A − B = {x | x ∈ A e x ∉ B}</code>",
+            "difference_example_title": "Exemplo Prático",
+            "difference_example_intro": "Com os mesmos conjuntos:",
+            "difference_example_set_a": "Conjunto A (Ativos): <code>{101, 102, 105}</code>",
+            "difference_example_set_b": "Conjunto B (VIP): <code>{102, 106, 107}</code>",
+            "difference_example_result_a_minus_b": "A Diferença <code>A − B</code> (Ativos que NÃO são VIP) é:",
+            "difference_example_result_b_minus_a": "A Diferença <code>B − A</code> (VIP que NÃO são Ativos) é:",
+            "difference_application": "<strong>Aplicação em IA/CS:</strong> Identificar elementos únicos em um dataset comparado a outro, encontrar erros que ocorrem em uma versão de software mas não na outra (diff).",
+            "difference_conclusion": "A Diferença nos ajuda a isolar elementos exclusivos de um conjunto em relação a outro.",
+
+            "examples_title": "⚙️ Operações em Ação e Visualização", "examples_subtitle": "Combinando operações e a utilidade dos Diagramas de Venn.",
+            "examples_scenario_title": "Cenário: Tags de Usuários em uma Plataforma",
+            "examples_scenario_sets": "Considere três conjuntos de tags atribuídas a usuários:",
+            "examples_step1_label": "1. Usuários Engajados OU Compradores (União):",
+            "examples_step1_op": "Engajados ∪ Compradores",
+            "examples_step1_result": "{ \"like\", \"comment\", \"share\", \"login_diario\", \"purchase\", \"add_cart\", \"wishlist\" }",
+            "examples_step2_label": "2. Usuários Engajados E Novos (Interseção):",
+            "examples_step2_op": "Engajados ∩ Novos",
+            "examples_step2_result": "{ \"login_diario\" }",
+            "examples_step3_label": "3. Usuários Compradores que NÃO são Novos (Diferença):",
+            "examples_step3_op": "Compradores − Novos",
+            "examples_step3_result": "{ \"purchase\", \"add_cart\", \"wishlist\", \"like\" }",
+            "examples_step3_note":"(Nenhuma tag de 'Novos' foi removida pois não havia interseção relevante).",
+            "examples_step4_label": "4. (Engajados ∪ Novos) ∩ Compradores:",
+            "examples_step4_part1_label": "   Primeiro <code class=\"code-inline\">Engajados ∪ Novos</code>:",
+            "examples_step4_part1_result": "{ \"like\", \"comment\", \"share\", \"login_diario\", \"new_user\", \"tutorial\" }",
+            "examples_step4_part2_label": "   Depois, intersecione com <code class=\"code-inline\">Compradores</code>:",
+            "examples_step4_part2_result": "{ \"like\" }",
+            "examples_explanation_title": "Entendendo as Combinações",
+            "examples_explanation_p1": "Ao combinar operações, podemos responder perguntas mais complexas sobre nossos dados. Por exemplo, a Etapa 1 nos dá todas as tags associadas a usuários ativos na plataforma (seja por engajamento ou compra).",
+            "examples_explanation_p2": "A Etapa 2 identifica a característica comum entre usuários engajados e novos (neste caso, o login diário).",
+            "examples_explanation_p3": "A Etapa 3 mostra as tags de compra que não são típicas de novos usuários, ajudando a distinguir compradores estabelecidos.",
+            "examples_venn_title": "Diagramas de Venn",
+            "examples_venn_text": "Essas operações podem ser visualizadas usando <span class=\"highlight\">Diagramas de Venn</span>. Círculos representam os conjuntos, e as áreas de sobreposição mostram as interseções. A área total coberta pelos círculos representa a união, e a área de um círculo que não se sobrepõe a outro representa a diferença.",
+            "examples_venn_placeholder": "[Placeholder: Diagrama de Venn ilustrando A ∪ B, A ∩ B, A − B]",
+
+            "quiz_title": "🧠 Teste Rápido!", "quiz_next_button": "Próxima Pergunta",
+            "quiz_q1_m22": "Se A = {1, 2, 3} e B = {3, 4, 5}, qual é A ∪ B?",
+            "quiz_q1_m22_opt1": "{1, 2, 3, 4, 5}", "quiz_q1_m22_opt2": "{3}", "quiz_q1_m22_opt3": "{1, 2}", "quiz_q1_m22_opt4": "{1, 2, 3, 3, 4, 5}",
+            "quiz_q2_m22": "Se C = {'a', 'b', 'c'} e D = {'b', 'd', 'e'}, qual é C ∩ D?",
+            "quiz_q2_m22_opt1": "{'a', 'c'}", "quiz_q2_m22_opt2": "{'a', 'b', 'c', 'd', 'e'}", "quiz_q2_m22_opt3": "{'b'}", "quiz_q2_m22_opt4": "{}",
+            "quiz_q3_m22": "Se X = {10, 20, 30} e Y = {20, 40}, qual é X − Y?",
+            "quiz_q3_m22_opt1": "{20}", "quiz_q3_m22_opt2": "{10, 30}", "quiz_q3_m22_opt3": "{40}", "quiz_q3_m22_opt4": "{10, 20, 30, 40}",
+            "quiz_q4_m22": "Se X = {10, 20, 30} e Y = {20, 40}, qual é Y − X?",
+            "quiz_q4_m22_opt1": "{10, 30}", "quiz_q4_m22_opt2": "{20}", "quiz_q4_m22_opt3": "{40}", "quiz_q4_m22_opt4": "{}",
+            "quiz_feedback_correct": "Correto! 🎉", "quiz_feedback_incorrect": "Não foi bem assim! A resposta correta era: {correctAnswerText}",
+            "quiz_final_score_title": "Teste Rápido Completo!",
+            "quiz_final_score_summary": "Você respondeu {score} de {total} perguntas corretamente.",
+            "quiz_final_score_perfect": "Excelente! Você compreendeu bem as operações básicas de conjuntos.",
+            "quiz_final_score_good": "Bom trabalho! Continue praticando para solidificar o entendimento.",
+
+            "completion_theory_title_m22": "Teoria do Módulo 22 Completa!",
+            "completion_theory_desc_m22": "Excelente! Você aprendeu sobre as operações fundamentais de União, Interseção e Diferença entre conjuntos. Dominar essas operações é crucial para manipular dados e aplicar lógica em IA e Ciência da Computação. <br> Pronto para aplicar esses conceitos? Vá para a <strong>Zona de Prática</strong> ou a <strong>Prática Avançada</strong> do Módulo 22.",
+            "footer_copyright": "© 2024 Matemática para IA. Todos os direitos reservados."
+        }
+    };
+
+    // --- Global Variables ---
+    let currentQuestionIndex = 0;
+    let score = 0;
+    const lang = 'pt'; // Hardcoded language
+
+    // --- DOM Elements (Get them once) ---
+    const navToggleButton = document.getElementById('minimal-nav-toggle');
+    const navPanel = document.getElementById('minimal-nav-panel');
+    const body = document.body;
+    const quizArea = document.getElementById('quiz-area');
+    const feedbackArea = document.getElementById('quiz-feedback');
+    const nextButton = document.getElementById('next-question-btn');
+    // No specific code simulation needed for this module like in the example
+
+    // --- Functions ---
+
+    function getTranslation(key, replacements = {}) {
+         let text = translations[lang]?.[key] ?? `[${key}]`; // Default to key if not found
+         for (const placeholder in replacements) {
+             const regex = new RegExp(`\\{${placeholder}\\}`, 'g');
+             text = text.replace(regex, replacements[placeholder]);
+         }
+         return text;
+    }
+
+    function translatePage() {
+         document.querySelectorAll('[data-translate]').forEach(el => {
+             const key = el.getAttribute('data-translate');
+             let translation = getTranslation(key);
+
+              if (el.tagName === 'TITLE') { document.title = translation; }
+              else if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') { /* Skip form elements */ }
+              else {
+                   // Allow specific HTML tags safely within translations
+                   // Updated regex to include span and strong, be cautious with user input if applicable
+                   const safeHtmlRegex = /<\/?(code|strong|span|br|i|b|em|strong|div)>/gi;
+                   let containsSafeHtml = safeHtmlRegex.test(translation);
+
+                   // Allow innerHTML if it contains only safe tags OR if it's in a known safe container
+                   if (containsSafeHtml || el.closest('.op-example, .info-example, .info-details, .explanation-text, .footer p, .op-description, .step, .quiz-feedback')) {
+                      el.innerHTML = translation;
+                   } else {
+                      // Fallback to textContent for elements where complex HTML isn't expected
+                      // This avoids issues if a translation accidentally contains unsafe HTML
+                      el.textContent = translation;
+                   }
+              }
+         });
+
+         // Tooltips are not used in this module's example, but kept for potential future use
+         /*
+          document.querySelectorAll('.code-highlight[data-translate-tooltip]').forEach(el => {
+              const tooltipKey = el.getAttribute('data-translate-tooltip');
+              const tooltipSpan = el.querySelector('.tooltip');
+              if(tooltipSpan && tooltipKey) {
+                 tooltipSpan.innerHTML = getTranslation(tooltipKey);
+              }
+          });
+          */
+    }
+
+    // --- Quiz Data & Functions ---
+    const quizData = [
+        // IMPORTANT: Update quiz questions for Module 22
+         { questionKey: "quiz_q1_m22", optionKeys: ["quiz_q1_m22_opt1", "quiz_q1_m22_opt2", "quiz_q1_m22_opt3", "quiz_q1_m22_opt4"], correctAnswer: 0 }, // A ∪ B
+         { questionKey: "quiz_q2_m22", optionKeys: ["quiz_q2_m22_opt1", "quiz_q2_m22_opt2", "quiz_q2_m22_opt3", "quiz_q2_m22_opt4"], correctAnswer: 2 }, // C ∩ D
+         { questionKey: "quiz_q3_m22", optionKeys: ["quiz_q3_m22_opt1", "quiz_q3_m22_opt2", "quiz_q3_m22_opt3", "quiz_q3_m22_opt4"], correctAnswer: 1 }, // X − Y
+         { questionKey: "quiz_q4_m22", optionKeys: ["quiz_q4_m22_opt1", "quiz_q4_m22_opt2", "quiz_q4_m22_opt3", "quiz_q4_m22_opt4"], correctAnswer: 2 }  // Y − X
+    ];
+
+    function loadQuestion() {
+          if (!quizArea) return; // Ensure quizArea exists
+
+          // If we reached the end, show score
+          if (currentQuestionIndex >= quizData.length) {
+              // Avoid re-rendering score if already shown
+               if (!quizArea.querySelector('[data-translate="quiz_final_score_title"]')) {
+                 showFinalScore();
+               }
+              return;
+          }
+
+          const currentQuiz = quizData[currentQuestionIndex];
+          const questionText = getTranslation(currentQuiz.questionKey);
+          // Generate HTML for question and options, using code-inline for sets
+          quizArea.innerHTML = `
+              <div class="quiz-question">${currentQuestionIndex + 1}. ${questionText.replace(/`{(.*?)}`/g, '<code class="code-inline">{$1}</code>').replace(/`([A-Z])`/g, '<code class="code-inline">$1</code>')}</div>
+              <div class="quiz-options">
+                  ${currentQuiz.optionKeys.map((optionKey, index) => `
+                      <button class="quiz-option-btn" data-index="${index}">${getTranslation(optionKey).replace(/`{(.*?)}`/g, '<code class="code-inline">{$1}</code>').replace(/`{}`/g, '<code class="code-inline">{}</code>')}</button>
+                  `).join('')}
+              </div>
+          `;
+
+          // Reset feedback and next button
+          if (feedbackArea) {
+            feedbackArea.classList.remove('visible', 'correct', 'incorrect');
+            feedbackArea.textContent = '';
+            feedbackArea.style.height = '0'; // Reset height for animation
+            feedbackArea.style.marginBottom = '0'; // Reset margin for animation
+          }
+          if (nextButton) {
+            nextButton.classList.remove('visible');
+            nextButton.disabled = true;
+          }
+
+          // Add event listeners to the new buttons
+          quizArea.querySelectorAll('.quiz-option-btn').forEach(button => {
+              button.addEventListener('click', handleAnswer);
+          });
+    }
+
+    function handleAnswer(event) {
+         const selectedButton = event.target.closest('button'); // Ensure we get the button
+         if (!selectedButton) return;
+
+         const selectedIndex = parseInt(selectedButton.dataset.index);
+         const correctIndex = quizData[currentQuestionIndex].correctAnswer;
+         const correctOptionKey = quizData[currentQuestionIndex].optionKeys[correctIndex];
+
+         // Disable all options
+         quizArea.querySelectorAll('.quiz-option-btn').forEach(btn => {
+            btn.disabled = true;
+            btn.classList.remove('shake'); // Remove shake if present from previous incorrect
+         });
+
+         if (!feedbackArea || !nextButton) return; // Ensure elements exist
+
+         feedbackArea.classList.add('visible'); // Make feedback area visible first
+
+         if (selectedIndex === correctIndex) {
+             selectedButton.classList.add('correct');
+             feedbackArea.innerHTML = getTranslation('quiz_feedback_correct');
+             feedbackArea.classList.add('correct');
+             feedbackArea.classList.remove('incorrect');
+             score++;
+             selectedButton.classList.add('tada-anim');
+         } else {
+             selectedButton.classList.add('incorrect');
+             // Format the correct answer text coming from translation (may contain code tags)
+             const formattedCorrectAnswer = getTranslation(correctOptionKey).replace(/`{(.*?)}`/g, '<code class="code-inline">{$1}</code>').replace(/`{}`/g, '<code class="code-inline">{}</code>');
+             feedbackArea.innerHTML = getTranslation('quiz_feedback_incorrect', { correctAnswerText: `<strong>${formattedCorrectAnswer}</strong>` });
+             feedbackArea.classList.add('incorrect');
+             feedbackArea.classList.remove('correct');
+             // Highlight the correct button as well
+             const correctButton = quizArea.querySelector(`.quiz-option-btn[data-index="${correctIndex}"]`);
+             if(correctButton) correctButton.classList.add('correct');
+             selectedButton.classList.add('shake');
+         }
+
+         // Remove animation classes after they finish
+          selectedButton.addEventListener('animationend', () => {
+               selectedButton.classList.remove('tada-anim', 'shake');
+          }, { once: true });
+
+         // Make feedback area adjust height and margin smoothly AFTER making it visible
+         feedbackArea.style.height = feedbackArea.scrollHeight + 'px'; // Set height based on content
+         feedbackArea.style.marginBottom = '1rem'; // Add margin back
+
+
+         // Show and enable next button
+         nextButton.classList.add('visible');
+         nextButton.disabled = false;
+     }
+
+     function showFinalScore() {
+            if (!quizArea) return;
+            const totalQuestions = quizData.length;
+            // Determine message based on score percentage
+            let resultMessageKey;
+            const percentage = score / totalQuestions;
+            if (percentage === 1) {
+                resultMessageKey = 'quiz_final_score_perfect';
+            } else {
+                resultMessageKey = 'quiz_final_score_good';
+            }
+
+            quizArea.innerHTML = `
+               <div class="quiz-question text-center" data-translate="quiz_final_score_title" style="font-size: 1.5rem;">${getTranslation('quiz_final_score_title')}</div>
+               <p class="text-center" style="font-size: 1.2rem; margin-bottom: 1rem;">${getTranslation('quiz_final_score_summary', { score: score, total: totalQuestions })}</p>
+               <p class="text-center" style="color: ${score === totalQuestions ? 'var(--success-color)' : 'var(--primary-color)'}; font-weight: bold;">${getTranslation(resultMessageKey)}</p>
+            `;
+            if (feedbackArea) feedbackArea.classList.remove('visible'); // Hide feedback area
+            if (nextButton) nextButton.style.display = 'none'; // Hide next button completely
+            quizArea.scrollIntoView({ behavior: 'smooth', block: 'center' }); // Scroll score into view
+     }
+
+
+    // --- Intersection Observer Setup ---
+    function setupObservers() {
+        const observerOptions = {
+            root: null, // relative to viewport
+            rootMargin: '0px',
+            threshold: 0.1 // Trigger when 10% of the element is visible
+        };
+
+        const observerCallback = (entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    // Optional: Unobserve after it becomes visible to save resources
+                    // observer.unobserve(entry.target);
+                }
+                // Optional: Remove 'visible' if it scrolls out of view
+                // else {
+                //     entry.target.classList.remove('visible');
+                // }
+            });
+        };
+
+        const animationObserver = new IntersectionObserver(observerCallback, observerOptions);
+
+        // Observe elements with the fade-in class
+        document.querySelectorAll('.fade-in-on-scroll').forEach(el => {
+            animationObserver.observe(el);
+        });
+
+        // No specific code output simulation needed for this module
+    }
+
+    // --- Event Listeners Setup ---
+    function setupEventListeners() {
+        // Navbar Toggle
+        if (navToggleButton && navPanel) {
+            navToggleButton.addEventListener('click', (event) => {
+                event.stopPropagation();
+                body.classList.toggle('nav-active');
+                navToggleButton.setAttribute('aria-expanded', body.classList.contains('nav-active'));
+            });
+
+            // Close nav if clicking outside
+            document.addEventListener('click', (event) => {
+                if (body.classList.contains('nav-active') && !navPanel.contains(event.target) && event.target !== navToggleButton && !navToggleButton.contains(event.target)) {
+                    body.classList.remove('nav-active');
+                    navToggleButton.setAttribute('aria-expanded', 'false');
+                }
+            });
+
+            // Close nav on link click
+            navPanel.querySelectorAll('a').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    // Check if it's an internal link
+                    if (link.getAttribute('href').startsWith('#')) {
+                         // Allow default scroll behavior
+                        // Close panel slightly delayed
+                        setTimeout(() => {
+                            body.classList.remove('nav-active');
+                            navToggleButton.setAttribute('aria-expanded', 'false');
+                        }, 150);
+                    }
+                    // External links will navigate away anyway, no need to explicitly close
+                });
+            });
+
+            // Close nav on Escape key
+            document.addEventListener('keydown', (event) => {
+                 if (event.key === 'Escape' && body.classList.contains('nav-active')) {
+                     body.classList.remove('nav-active');
+                     navToggleButton.setAttribute('aria-expanded', 'false');
+                 }
+             });
+        }
+
+        // Quiz Next Button
+        if (nextButton) {
+            nextButton.addEventListener('click', () => {
+                if (!nextButton.disabled) {
+                    currentQuestionIndex++;
+                    loadQuestion(); // Load the next question
+                }
+            });
+        } else {
+            console.error("Elemento #next-question-btn não encontrado.");
+        }
+    }
+
+    // --- Initialization ---
+    document.addEventListener('DOMContentLoaded', () => {
+        // Check if elements needed for quiz exist before proceeding
+        if (!quizArea) console.error("Elemento #quiz-area não encontrado.");
+        if (!feedbackArea) console.error("Elemento #quiz-feedback não encontrado.");
+
+        translatePage();        // Apply translations first
+        setupEventListeners();  // Set up interactive elements
+        setupObservers();       // Set up animations
+
+        if (quizArea) {
+            loadQuestion();     // Load the first quiz question if container exists
+        }
+    });
+
+    </script>
+
+</body>
+</html>

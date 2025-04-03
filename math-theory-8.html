@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<!-- Language set to Portuguese BR -->
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Title set by JS -->
+    <title data-translate="page_title_m8">Módulo 8: Medidas de Dispersão</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* --- Reset & Base Styles --- */
+        :root {
+            --primary-color: #007bff; /* Azul primário */
+            --secondary-color: #6c757d; /* Cinza secundário */
+            --background-light: #f8f9fa; /* Fundo claro */
+            --background-dark: #343a40; /* Fundo escuro */
+            --text-light: #f8f9fa; /* Texto claro */
+            --text-dark: #212529; /* Texto escuro */
+            --accent-color: #ffc107; /* Amarelo accent */
+            --success-color: #28a745; /* Verde sucesso */
+            --error-color: #dc3545; /* Vermelho erro */
+            --amplitude-color: #fd7e14; /* Laranja para Amplitude */
+            --variance-color: #6f42c1; /* Roxo para Variância */
+            --stddev-color: #17a2b8; /* Ciano para Desvio Padrão */
+            --border-radius: 8px;
+            --transition-speed: 0.3s;
+            --animation-speed: 0.6s; /* Control fade-in speed */
+            --font-body: 'Roboto', sans-serif;
+            --font-title: 'Orbitron', sans-serif;
+            --nav-primary: #6e48aa;
+            --nav-success: #4cc9f0;
+            --nav-dark: #1a1a2e;
+            --footer-border-color: #495057;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; font-size: 16px; }
+        body {
+            font-family: var(--font-body); line-height: 1.7;
+            background-color: var(--background-light); color: var(--text-dark);
+            overflow-x: hidden; display: flex; flex-direction: column; min-height: 100vh;
+        }
+        main { flex-grow: 1; }
+
+        /* --- Utility Classes --- */
+        .container { max-width: 960px; margin: 0 auto; padding: 0 15px; }
+        .text-center { text-align: center; }
+        .highlight { color: var(--primary-color); font-weight: bold; }
+        .formula { font-family: 'Courier New', Courier, monospace; background-color: #e9ecef; padding: 0.5rem 0.8rem; border-radius: 4px; margin-top: 0.5rem; margin-bottom: 1rem; font-size: 1rem; color: var(--text-dark); display: inline-block; border: 1px solid #ced4da; }
+        .placeholder-image { background-color: #e9ecef; border: 1px dashed var(--secondary-color); padding: 3rem 1rem; text-align: center; color: var(--secondary-color); font-style: italic; border-radius: var(--border-radius); margin: 2rem auto; max-width: 80%; }
+
+        /* Elements to be animated by observer */
+        .fade-in-on-scroll {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+        }
+        .fade-in-on-scroll.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        /* Add delays for staggering */
+        .delay-1.visible { transition-delay: 0.1s; }
+        .delay-2.visible { transition-delay: 0.2s; }
+        .delay-3.visible { transition-delay: 0.3s; }
+        .delay-4.visible { transition-delay: 0.4s; }
+        .delay-5.visible { transition-delay: 0.5s; }
+        .delay-6.visible { transition-delay: 0.6s; }
+        .delay-7.visible { transition-delay: 0.7s; }
+
+
+        .button-group { margin-top: 2rem; display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; }
+        .action-button {
+             display: inline-flex; align-items: center; justify-content: center; gap: 0.5em;
+             padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold;
+             color: var(--text-light); background-color: var(--primary-color); border: none;
+             border-radius: var(--border-radius); cursor: pointer;
+             transition: background-color var(--transition-speed), transform var(--transition-speed), filter var(--transition-speed), box-shadow var(--transition-speed), opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out; /* Add animation transition */
+             margin-top: 1rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+             text-decoration: none; line-height: 1.2;
+             opacity: 0; /* Start hidden if animated */
+             transform: translateY(20px); /* Start offset if animated */
+        }
+        .action-button.visible { /* Make visible via observer */
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .action-button i.fas {}
+        .action-button:hover:not(:disabled) { background-color: #0056b3; transform: translateY(-2px) !important; box-shadow: 0 4px 8px rgba(0,0,0,0.15); } /* Use !important to override initial transform */
+        .action-button:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none !important; box-shadow: none; opacity: 0.7; }
+        .action-button.success { background-color: var(--success-color); }
+        .action-button.success:hover:not(:disabled) { background-color: #218838; }
+        .action-button.secondary { background-color: var(--secondary-color); }
+        .action-button.secondary:hover:not(:disabled) { background-color: #5a6268; }
+        .action-button:active:not(:disabled) { transform: translateY(1px) scale(0.98) !important; filter: brightness(0.95); }
+
+        /* --- Animations --- */
+        @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); } 50% { transform: scale(1.03); box-shadow: 0 0 15px rgba(0, 123, 255, 0.6); } 100% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); } }
+        @keyframes tada { from { transform: scale3d(1, 1, 1); } 10%, 20% { transform: scale3d(.9, .9, .9) rotate3d(0, 0, 1, -3deg); } 30%, 50%, 70%, 90% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, 3deg); } 40%, 60%, 80% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, -3deg); } to { transform: scale3d(1, 1, 1); } }
+        .tada-anim { animation: tada 1s ease; }
+        @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
+        @keyframes iconAppearCorrect { 0% { transform: scale(0.5) rotate(-15deg); opacity: 0; } 60% { transform: scale(1.2) rotate(5deg); opacity: 1; } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
+
+        /* --- Minimal Retractable Nav --- */
+        .minimal-nav-button { position: fixed; top: 15px; right: 15px; z-index: 1001; background-color: rgba(52, 58, 64, 0.75); color: var(--text-light); border: none; border-radius: var(--border-radius); padding: 8px 12px; cursor: pointer; transition: background-color var(--transition-speed), opacity var(--transition-speed), transform var(--transition-speed); font-size: 1.1rem; opacity: 0.6; box-shadow: 0 2px 5px rgba(0,0,0,0.2); line-height: 1; }
+        .minimal-nav-button:hover { background-color: rgba(52, 58, 64, 0.95); opacity: 1; transform: scale(1.05); }
+        .minimal-nav { position: fixed; top: 60px; right: 15px; z-index: 1000; background-color: var(--background-dark); border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.3); padding: 0.8rem; opacity: 0; transform: translateY(-15px) scale(0.95); transform-origin: top right; pointer-events: none; transition: opacity var(--transition-speed) ease, transform var(--transition-speed) ease; min-width: 220px; /* Slightly wider for longer names */ }
+        body.nav-active .minimal-nav { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+        .minimal-nav ul { list-style: none; margin: 0; padding: 0; }
+        .minimal-nav ul li { margin-bottom: 5px; }
+        .minimal-nav ul li:last-child { margin-bottom: 0; }
+        .minimal-nav ul li a { display: flex; align-items: center; color: var(--text-light); text-decoration: none; padding: 0.6rem 1rem; border-radius: 4px; transition: background-color var(--transition-speed), color var(--transition-speed); white-space: nowrap; font-weight: 400; font-size: 0.95rem; }
+        .minimal-nav ul li a i.fas { margin-right: 10px; width: 1.2em; text-align: center; opacity: 0.8; transition: opacity var(--transition-speed); }
+        .minimal-nav ul li a:hover { background-color: var(--primary-color); color: var(--text-light); }
+        .minimal-nav ul li a:hover i.fas { opacity: 1; }
+
+        /* --- Header --- */
+        .main-header { background: linear-gradient(135deg, var(--primary-color), #0056b3); color: var(--text-light); padding: 4rem 0 6rem; text-align: center; position: relative; overflow: hidden; }
+        .main-header .container { /* Start visible */ }
+        .main-header h1 { font-family: var(--font-title); font-size: 3rem; margin-bottom: 0.5rem; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); }
+        .main-header p { font-size: 1.2rem; font-weight: 300; opacity: 0.9; }
+        .header-shape { position: absolute; border-radius: 50%; background-color: rgba(255, 255, 255, 0.1); animation: pulse 5s infinite ease-in-out alternate; }
+        .shape1 { width: 150px; height: 150px; bottom: -50px; left: 10%; animation-duration: 6s; }
+        .shape2 { width: 80px; height: 80px; top: 50px; right: 15%; animation-duration: 4s; }
+        .shape3 { width: 50px; height: 50px; bottom: 20px; right: 30%; animation-duration: 7s; }
+
+        /* --- Section Styling --- */
+        section { padding: 4rem 0; border-bottom: 1px solid #eee; }
+        main section:last-of-type { border-bottom: none; padding-bottom: 0;}
+        section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); margin-bottom: 2rem; text-align: center; position: relative; padding-bottom: 10px; }
+        section h2::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 60px; height: 4px; background-color: var(--accent-color); border-radius: 2px; }
+
+        /* --- Welcome Section --- */
+        #welcome-m8 p { font-size: 1.1rem; max-width: 750px; margin: 0 auto 1rem; text-align: center; }
+
+        /* --- Specific Measure Sections --- */
+        .measure-card { /* Animated by observer */
+            background-color: #fff; padding: 2rem; border-radius: var(--border-radius);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 2.5rem;
+            border-left: 5px solid var(--secondary-color); /* Default border */
+            opacity: 0; transform: translateX(-20px); /* Start state */
+            transition: border-left-color var(--transition-speed) ease, opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+        }
+        .measure-card.visible { opacity: 1; transform: translateX(0); }
+        .measure-card:hover { transform: translateX(5px) !important; /* Override observer transform slightly */}
+
+        /* Specific border colors */
+        #amplitude-m8 .measure-card { border-left-color: var(--amplitude-color); }
+        #variancia-m8 .measure-card { border-left-color: var(--variance-color); }
+        #desvio-padrao-m8 .measure-card { border-left-color: var(--stddev-color); }
+
+        .measure-card h3 {
+            font-family: var(--font-body); font-weight: 700; font-size: 1.6rem; margin-bottom: 1.5rem;
+            color: var(--text-dark); display: flex; align-items: center;
+        }
+        .measure-card h3 i { margin-right: 12px; font-size: 1.5em; opacity: 0.8; }
+        #amplitude-m8 .measure-card h3 i { color: var(--amplitude-color); }
+        #variancia-m8 .measure-card h3 i { color: var(--variance-color); }
+        #desvio-padrao-m8 .measure-card h3 i { color: var(--stddev-color); }
+
+        .measure-card p { margin-bottom: 1rem; line-height: 1.8; }
+        .measure-card ul { margin-left: 20px; margin-bottom: 1rem; }
+        .measure-card li { margin-bottom: 0.5rem; }
+        .advantages, .disadvantages {
+            margin-top: 1.5rem; padding: 1rem; border-radius: 4px;
+        }
+        .advantages { background-color: rgba(40, 167, 69, 0.1); border-left: 3px solid var(--success-color); }
+        .disadvantages { background-color: rgba(220, 53, 69, 0.1); border-left: 3px solid var(--error-color); }
+        .advantages strong, .disadvantages strong { display: block; margin-bottom: 0.5rem; font-weight: bold; }
+
+        /* --- Interpretation Section --- */
+        #interpretacao-m8 .comparison {
+            display: flex; gap: 2rem; align-items: flex-start; margin-top: 2rem; flex-wrap: wrap;
+        }
+        .comparison-text, .comparison-visual { /* Animated by observer */
+            flex: 1; min-width: 280px;
+            opacity: 0; transition: opacity var(--animation-speed) ease-out;
+        }
+        .comparison-text.visible, .comparison-visual.visible { opacity: 1; }
+        .comparison-text p { margin-bottom: 1.5rem; }
+        .ai-relevance { margin-top: 2rem; padding: 1.5rem; background-color: rgba(0, 123, 255, 0.05); border-left: 4px solid var(--primary-color); border-radius: 4px; }
+        .ai-relevance h4 { font-weight: bold; margin-bottom: 1rem; color: var(--primary-color); }
+        .ai-relevance ul { list-style-type: disc; margin-left: 20px; }
+        .ai-relevance li { margin-bottom: 0.5rem; }
+
+        /* --- Knowledge Check Section --- */
+        #knowledge-check-m8 { background-color: #e9ecef; }
+        .quiz-container { /* Animated by observer */
+             background-color: #fff; padding: 2rem; border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.1); max-width: 700px; margin: 2rem auto 0;
+             opacity: 0; transition: opacity var(--animation-speed) ease-out; /* Only fade opacity */
+        }
+        .quiz-container.visible { opacity: 1; }
+        .quiz-question { font-size: 1.2rem; font-weight: bold; margin-bottom: 1.5rem; color: var(--text-dark); }
+        .quiz-options button { display: block; width: 100%; padding: 1rem; margin-bottom: 1rem; text-align: left; font-size: 1rem; background-color: #f8f9fa; border: 1px solid #ced4da; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), border-color var(--transition-speed), transform var(--transition-speed); }
+        .quiz-options button:not(:disabled):hover { background-color: #e2e6ea; border-color: #adb5bd; transform: translateX(5px); }
+        .quiz-options button:disabled { cursor: default; opacity: 0.7; }
+        .quiz-options button.correct { background-color: #d4edda; border-color: var(--success-color); color: #155724; font-weight: bold; }
+        .quiz-options button.incorrect { background-color: #f8d7da; border-color: var(--error-color); color: #721c24; font-weight: bold; }
+        .quiz-options button.incorrect.shake { animation: shake 0.5s ease; }
+        .quiz-feedback { margin-top: 1.5rem; padding: 1rem; border-radius: var(--border-radius); font-weight: bold; text-align: center; opacity: 0; transition: opacity 0.5s ease, height 0.5s ease, margin-bottom 0.5s ease; height: 0; overflow: hidden; margin-bottom: 0;}
+        .quiz-feedback.visible { opacity: 1; height: auto; margin-bottom: 1rem; }
+        .quiz-feedback.correct { background-color: #d4edda; color: #155724; }
+        .quiz-feedback.incorrect { background-color: #f8d7da; color: #721c24; }
+        #next-question-btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5em; margin: 1.5rem auto 0; padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold; color: var(--text-light); background-color: var(--primary-color); border: none; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), transform var(--transition-speed), opacity 0.3s, visibility 0.3s; opacity: 0; visibility: hidden; }
+        #next-question-btn:hover:not(:disabled) { background-color: #0056b3; transform: scale(1.05); }
+        #next-question-btn.visible { opacity: 1; visibility: visible; }
+        #next-question-btn:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none; opacity: 0.7; }
+
+
+        /* --- Completion Section Styling --- */
+        .completion-section { padding: 4rem 0; text-align: center; background-color: var(--background-light); }
+        .completion-section .icon { font-size: 4rem; color: var(--success-color); margin-bottom: 1rem; display: inline-block; animation: iconAppearCorrect 1s ease-out 0.5s forwards; opacity: 0; /* Initial state for animation */}
+        /* Ensure completion elements are targeted by observer */
+        .completion-section h2, .completion-section p {
+            opacity: 0; transform: translateY(20px);
+            transition: opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+        }
+        .completion-section h2.visible, .completion-section p.visible {
+            opacity: 1; transform: translateY(0);
+        }
+        .completion-section .button-group { margin-top: 2.5rem; }
+        .completion-section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); margin-bottom: 1rem; }
+        .completion-section h2::after { display: none; }
+        .completion-section p { font-size: 1.1rem; margin-top: 1rem; color: var(--secondary-color); max-width: 700px; margin-left: auto; margin-right: auto; line-height: 1.8; }
+
+
+        /* --- Footer Styling --- */
+        .main-footer {
+            background-color: var(--background-light);
+            color: var(--text-light);
+            text-align: center;
+            padding: 2rem 0;
+            font-size: 0.9rem;
+            margin-top: auto;
+            border-top: 1px solid var(--background-light);
+            opacity: 0.85;
+        }
+        .main-footer p { margin: 0; line-height: 1.5; }
+
+        /* --- Responsive Design --- */
+        @media (max-width: 768px) {
+            html { font-size: 15px; }
+            .main-header h1 { font-size: 2.5rem; } .main-header p { font-size: 1.1rem; }
+            section h2 { font-size: 1.8rem; }
+            .measure-card h3 { font-size: 1.4rem; }
+            #interpretacao-m8 .comparison { flex-direction: column; }
+            .minimal-nav { min-width: 200px; } .minimal-nav ul li a { padding: 0.6rem 0.8rem; }
+            .completion-section h2 { font-size: 2rem; }
+            .completion-section .button-group { flex-direction: column; align-items: center; gap: 0.8rem; }
+            .completion-section .action-button { width: 80%; max-width: 350px; margin-top: 0; }
+            .main-footer { padding: 1.5rem 0; }
+        }
+        @media (max-width: 480px) {
+            html { font-size: 14px; }
+            .main-header h1 { font-size: 2rem; } .main-header p { font-size: 1rem; }
+            section h2 { font-size: 1.6rem; }
+            .measure-card h3 { font-size: 1.3rem; }
+            .quiz-options button { padding: 0.8rem; font-size: 0.95rem; }
+            .minimal-nav-button { top: 10px; right: 10px; padding: 6px 10px; font-size: 1rem; }
+            .minimal-nav { top: 48px; right: 10px; min-width: 180px; }
+            .minimal-nav ul li a { padding: 0.5rem 0.7rem; font-size: 0.9rem;}
+            .minimal-nav ul li a i.fas { margin-right: 8px; }
+            .completion-section .icon { font-size: 3.5rem; }
+            .completion-section h2 { font-size: 1.8rem; } .completion-section p { font-size: 1rem; }
+            .completion-section .action-button { width: 90%; max-width: 300px; }
+            .main-footer { padding: 1rem 0; font-size: 0.85rem; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- ========= Minimal Nav Handle ========= -->
+    <button id="minimal-nav-toggle" class="minimal-nav-button" aria-label="Alternar Menu de Navegação" aria-expanded="false">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- ========= Minimal Nav Panel ========= -->
+    <nav id="minimal-nav-panel" class="minimal-nav">
+        <ul>
+            <li><a href="math-practice-8.html"><i class="fas fa-pencil-alt fa-fw"></i> <span data-translate="nav_practice">Iniciar Prática</span></a></li>
+            <li><a href="math-advanced-8.html"><i class="fas fa-flask fa-fw"></i> <span data-translate="nav_advanced">Prática Avançada</span></a></li>
+            <li><a href="math-dashboard.html"><i class="fas fa-list fa-fw"></i> <span data-translate="nav_menu">Menu do Curso</span></a></li>
+             <hr style="border: none; border-top: 1px solid var(--secondary-color); margin: 8px 0;">
+             <li><a href="#welcome-m8"><i class="fas fa-door-open fa-fw"></i> <span data-translate="nav_welcome_m8">Boas-vindas M8</span></a></li>
+             <li><a href="#amplitude-m8"><i class="fas fa-arrows-alt-h fa-fw"></i> <span data-translate="nav_amplitude">Amplitude</span></a></li>
+             <li><a href="#variancia-m8"><i class="fas fa-calculator fa-fw"></i> <span data-translate="nav_variance">Variância</span></a></li>
+             <li><a href="#desvio-padrao-m8"><i class="fas fa-wave-square fa-fw"></i> <span data-translate="nav_stddev">Desvio Padrão</span></a></li>
+             <li><a href="#interpretacao-m8"><i class="fas fa-chart-bar fa-fw"></i> <span data-translate="nav_interpretation">Interpretação</span></a></li>
+             <li><a href="#knowledge-check-m8"><i class="fas fa-check-double fa-fw"></i> <span data-translate="nav_quiz">Teste Rápido</span></a></li>
+             <li><a href="#completion-m8"><i class="fas fa-flag-checkered fa-fw"></i> <span data-translate="completion_theory_title_m8">Conclusão</span></a></li>
+        </ul>
+    </nav>
+
+    <header class="main-header">
+        <div class="header-shape shape1"></div>
+        <div class="header-shape shape2"></div>
+        <div class="header-shape shape3"></div>
+        <div class="container"> <!-- Start visible -->
+            <h1 data-translate="header_title_m8">Módulo 8: Medidas de Dispersão</h1>
+            <p data-translate="header_subtitle_m8">Quantificando a variabilidade e o espalhamento nos seus dados.</p>
+        </div>
+    </header>
+
+    <main>
+        <!-- ========= Welcome Section ========= -->
+        <section id="welcome-m8">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="welcome_title_m8">📊 Por Que a Dispersão Importa?</h2>
+                <p class="fade-in-on-scroll delay-1" data-translate="welcome_p1_m8">
+                    Bem-vindo ao Módulo 8! No módulo anterior, exploramos as <span class="highlight">Medidas de Tendência Central</span> (média, mediana, moda), que nos dão uma ideia do valor "típico" em um conjunto de dados. No entanto, saber apenas o centro não conta toda a história.
+                </p>
+                <p class="fade-in-on-scroll delay-2" data-translate="welcome_p2_m8">
+                    Imagine duas cidades com a mesma temperatura média anual. Uma pode ter estações amenas, enquanto a outra tem verões escaldantes e invernos congelantes. A média é a mesma, mas a <span class="highlight">variabilidade</span> ou <span class="highlight">dispersão</span> dos dados é muito diferente!
+                </p>
+                 <p class="fade-in-on-scroll delay-3" data-translate="welcome_p3_m8">
+                    Neste módulo, aprenderemos a quantificar essa dispersão usando três medidas chave: <span style="color: var(--amplitude-color); font-weight: bold;">Amplitude</span>, <span style="color: var(--variance-color); font-weight: bold;">Variância</span> e <span style="color: var(--stddev-color); font-weight: bold;">Desvio Padrão</span>. Entender a dispersão é crucial em IA para tarefas como detecção de anomalias, avaliação de modelos e pré-processamento de dados.
+                </p>
+            </div>
+        </section>
+
+        <!-- ========= Amplitude Section ========= -->
+        <section id="amplitude-m8">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="amplitude_title">↔️ Amplitude (Range)</h2>
+                <div class="measure-card fade-in-on-scroll delay-1">
+                    <h3><i class="fas fa-arrows-alt-h"></i><span data-translate="amplitude_subtitle">A Medida Mais Simples de Espalhamento</span></h3>
+                    <p data-translate="amplitude_desc">
+                        A amplitude é simplesmente a diferença entre o maior e o menor valor em um conjunto de dados. É a forma mais básica de medir a dispersão total dos dados.
+                    </p>
+                    <strong data-translate="amplitude_formula_label">Fórmula:</strong>
+                    <div class="formula">Amplitude = Valor Máximo - Valor Mínimo</div>
+                    <p data-translate="amplitude_example_intro"><strong>Exemplo:</strong> Considere as idades (em anos) de um grupo de 5 participantes de um teste beta de IA: <code>[22, 25, 19, 35, 29]</code>.</p>
+                    <ul>
+                        <li data-translate="amplitude_example_step1">Valor Máximo = 35</li>
+                        <li data-translate="amplitude_example_step2">Valor Mínimo = 19</li>
+                        <li data-translate="amplitude_example_step3">Amplitude = 35 - 19 = 16 anos</li>
+                    </ul>
+
+                    <div class="advantages fade-in-on-scroll delay-2">
+                        <strong data-translate="amplitude_adv_title"><i class="fas fa-check-circle"></i> Vantagens</strong>
+                        <p data-translate="amplitude_adv_text">Fácil de calcular e entender. Fornece uma visão rápida da extensão total dos dados.</p>
+                    </div>
+                    <div class="disadvantages fade-in-on-scroll delay-3">
+                        <strong data-translate="amplitude_dis_title"><i class="fas fa-times-circle"></i> Desvantagens</strong>
+                        <p data-translate="amplitude_dis_text">Extremamente sensível a valores discrepantes (outliers). Utiliza apenas dois valores do conjunto de dados, ignorando a distribuição interna.</p>
+                    </div>
+                     <p class="fade-in-on-scroll delay-4" data-translate="amplitude_conclusion">Em computação, encontrar o mínimo e o máximo em uma lista ou array é uma operação comum, tornando o cálculo da amplitude direto.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========= Variância Section ========= -->
+        <section id="variancia-m8">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="variance_title">∑ Variância</h2>
+                 <div class="measure-card fade-in-on-scroll delay-1">
+                     <h3><i class="fas fa-calculator"></i><span data-translate="variance_subtitle">Medindo o Desvio Quadrático Médio</span></h3>
+                     <p data-translate="variance_desc">
+                         A variância mede a dispersão média dos dados em relação à média. Ela calcula a média dos quadrados das diferenças entre cada ponto de dado e a média do conjunto de dados. Elevar ao quadrado garante que desvios positivos e negativos não se cancelem e dá mais peso a desvios maiores.
+                     </p>
+                     <strong data-translate="variance_formula_label">Fórmulas:</strong>
+                     <ul>
+                         <li><strong data-translate="variance_pop_label">População (σ²):</strong> <span class="formula">σ² = Σ (xᵢ - μ)² / N</span></li>
+                         <li><strong data-translate="variance_sample_label">Amostra (s²):</strong> <span class="formula">s² = Σ (xᵢ - x̄)² / (n - 1)</span></li>
+                     </ul>
+                     <p data-translate="variance_formula_exp">
+                         Onde: <br>
+                         <code>Σ</code> representa a soma.<br>
+                         <code>xᵢ</code> é cada valor individual.<br>
+                         <code>μ</code> (mi) é a média da população, <code>x̄</code> (x-barra) é a média da amostra.<br>
+                         <code>N</code> é o tamanho da população, <code>n</code> é o tamanho da amostra.<br>
+                         <span class="highlight">Nota:</span> Usamos <code>n - 1</code> no denominador para a variância amostral para obter uma estimativa não enviesada da variância populacional (Correção de Bessel).
+                     </p>
+
+                     <p data-translate="variance_example_intro"><strong>Exemplo (usando as idades <code>[22, 25, 19, 35, 29]</code>, tratando como amostra):</strong></p>
+                     <ol>
+                         <li data-translate="variance_example_step1">Calcular a média (x̄): (22 + 25 + 19 + 35 + 29) / 5 = 130 / 5 = 26 anos.</li>
+                         <li data-translate="variance_example_step2">Calcular os desvios da média (xᵢ - x̄): [-4, -1, -7, 9, 3].</li>
+                         <li data-translate="variance_example_step3">Elevar os desvios ao quadrado (xᵢ - x̄)²: [16, 1, 49, 81, 9].</li>
+                         <li data-translate="variance_example_step4">Somar os desvios quadrados: 16 + 1 + 49 + 81 + 9 = 156.</li>
+                         <li data-translate="variance_example_step5">Dividir pelo tamanho da amostra menos 1 (n - 1 = 5 - 1 = 4): Variância (s²) = 156 / 4 = 39.</li>
+                     </ol>
+
+                     <div class="disadvantages fade-in-on-scroll delay-2">
+                         <strong data-translate="variance_dis_title"><i class="fas fa-exclamation-triangle"></i> Ponto de Atenção</strong>
+                         <p data-translate="variance_dis_text">A unidade da variância é o quadrado da unidade original dos dados (ex: anos² no nosso exemplo). Isso dificulta a interpretação direta em relação aos dados originais.</p>
+                     </div>
+                      <p class="fade-in-on-scroll delay-3" data-translate="variance_conclusion">A variância é uma medida fundamental em muitas técnicas estatísticas e algoritmos de Machine Learning (como Análise de Componentes Principais - PCA).</p>
+                 </div>
+            </div>
+        </section>
+
+        <!-- ========= Desvio Padrão Section ========= -->
+        <section id="desvio-padrao-m8">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="stddev_title">📏 Desvio Padrão</h2>
+                <div class="measure-card fade-in-on-scroll delay-1">
+                     <h3><i class="fas fa-wave-square"></i><span data-translate="stddev_subtitle">A Raiz Quadrada da Variância</span></h3>
+                     <p data-translate="stddev_desc">
+                         O desvio padrão é simplesmente a raiz quadrada da variância. Ele retorna a medida de dispersão para a unidade original dos dados, tornando-a muito mais interpretável do que a variância. Ele representa a "distância típica" ou "desvio médio" dos pontos de dados em relação à média.
+                     </p>
+                     <strong data-translate="stddev_formula_label">Fórmulas:</strong>
+                     <ul>
+                         <li><strong data-translate="stddev_pop_label">População (σ):</strong> <span class="formula">σ = √[ Σ (xᵢ - μ)² / N ]</span></li>
+                         <li><strong data-translate="stddev_sample_label">Amostra (s):</strong> <span class="formula">s = √[ Σ (xᵢ - x̄)² / (n - 1) ]</span></li>
+                     </ul>
+
+                     <p data-translate="stddev_example_intro"><strong>Exemplo (continuando com as idades, variância amostral s² = 39):</strong></p>
+                     <ul>
+                        <li data-translate="stddev_example_step1">Desvio Padrão (s) = √39 ≈ 6.24 anos.</li>
+                     </ul>
+                     <p data-translate="stddev_interpretation">
+                        Isso significa que, em média, as idades dos participantes neste grupo tendem a se afastar cerca de 6.24 anos da idade média de 26 anos.
+                     </p>
+
+                     <div class="advantages fade-in-on-scroll delay-2">
+                         <strong data-translate="stddev_adv_title"><i class="fas fa-info-circle"></i> Interpretação e Uso</strong>
+                         <ul data-translate="stddev_adv_list">
+                            <li>Mesmas unidades que os dados originais, facilitando a comparação e o entendimento.</li>
+                            <li>Amplamente utilizado em conjunto com a média para descrever distribuições de dados.</li>
+                            <li>Fundamental na Regra Empírica (68-95-99.7) para dados com distribuição aproximadamente normal.</li>
+                            <li>Usado em muitas métricas de avaliação de modelos e técnicas de pré-processamento (como padronização/standardization).</li>
+                         </ul>
+                     </div>
+                     <div class="placeholder-image fade-in-on-scroll delay-3" data-translate="stddev_empirical_placeholder">
+                         Placeholder: Diagrama da Regra Empírica (Curva Normal com áreas de 1, 2 e 3 desvios padrão)
+                     </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========= Interpretation & Comparison Section ========= -->
+        <section id="interpretacao-m8">
+             <div class="container">
+                 <h2 class="fade-in-on-scroll" data-translate="interpretation_title">💡 Interpretando e Comparando a Dispersão</h2>
+                 <p class="text-center fade-in-on-scroll delay-1" data-translate="interpretation_subtitle">Como essas medidas trabalham juntas e por que são cruciais para IA.</p>
+
+                 <div class="comparison">
+                     <div class="comparison-text fade-in-on-scroll delay-2">
+                         <p data-translate="interpretation_p1">
+                             Medidas de dispersão complementam as medidas de tendência central. Considere dois conjuntos de dados de notas de alunos em uma tarefa de IA (0 a 100):
+                         </p>
+                         <ul>
+                             <li><strong>Turma A:</strong> [70, 75, 80, 85, 90]</li>
+                             <li><strong>Turma B:</strong> [60, 70, 80, 90, 100]</li>
+                         </ul>
+                         <p data-translate="interpretation_p2">
+                            Ambas as turmas têm a <span class="highlight">mesma média (80)</span> e a <span class="highlight">mesma mediana (80)</span>. No entanto, seus níveis de dispersão são diferentes:
+                         </p>
+                          <ul>
+                              <li><strong>Turma A:</strong> Amplitude = 20, Desvio Padrão (amostral) ≈ 7.91</li>
+                              <li><strong>Turma B:</strong> Amplitude = 40, Desvio Padrão (amostral) ≈ 15.81</li>
+                          </ul>
+                         <p data-translate="interpretation_p3">
+                             A Turma B tem o dobro da amplitude e aproximadamente o dobro do desvio padrão da Turma A. Isso indica que as notas na Turma B são <span class="highlight">mais espalhadas</span> ou <span class="highlight">variáveis</span> do que na Turma A, mesmo que o desempenho central seja o mesmo.
+                         </p>
+                     </div>
+                     <div class="comparison-visual fade-in-on-scroll delay-3">
+                         <div class="placeholder-image" data-translate="interpretation_viz_placeholder">
+                             Placeholder: Visualização Comparativa (e.g., dois histogramas ou boxplots lado a lado mostrando Turma A e Turma B)
+                         </div>
+                     </div>
+                 </div>
+
+                 <div class="ai-relevance fade-in-on-scroll delay-4">
+                     <h4 data-translate="interpretation_ai_title">Relevância em IA Aplicada</h4>
+                     <ul data-translate="interpretation_ai_list">
+                        <li><strong>Detecção de Anomalias:</strong> Dados com alta dispersão podem indicar maior probabilidade de outliers. Pontos muito distantes da média (vários desvios padrão) são frequentemente sinalizados como anomalias.</li>
+                        <li><strong>Pré-processamento (Feature Scaling):</strong> Muitos algoritmos (ex: redes neurais, SVM) são sensíveis à escala das features. Técnicas como a padronização (subtrair a média e dividir pelo desvio padrão) usam diretamente essas medidas para colocar as features em uma escala comparável.</li>
+                        <li><strong>Avaliação de Modelos:</strong> A variância no desempenho de um modelo em diferentes subconjuntos de dados (ex: validação cruzada) pode indicar instabilidade ou overfitting.</li>
+                        <li><strong>Análise de Incerteza:</strong> Em modelos probabilísticos, a dispersão (variância) das previsões pode quantificar a incerteza do modelo.</li>
+                        <li><strong>Seleção de Features:</strong> Features com variância muito baixa (quase constantes) podem não ser informativas e podem ser removidas.</li>
+                     </ul>
+                 </div>
+             </div>
+        </section>
+
+        <!-- ========= Knowledge Check Section ========= -->
+        <section id="knowledge-check-m8">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="quiz_title">🧠 Teste Rápido!</h2>
+                <div class="quiz-container fade-in-on-scroll delay-1"> <!-- Observe container -->
+                    <div id="quiz-area">
+                         <p style="text-align: center; padding: 2rem 0;">Carregando quiz...</p>
+                    </div>
+                    <div id="quiz-feedback" class="quiz-feedback"></div>
+                    <button id="next-question-btn" data-translate="quiz_next_button">Próxima Pergunta</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========= Completion Section ========= -->
+        <section id="completion-m8" class="completion-section"> <!-- Added ID for nav link -->
+            <div class="container">
+                 <div class="icon">
+                    <i class="fas fa-chart-line"></i>
+                    <i class="fas fa-graduation-cap"></i>
+                    <i class="fas fa-star"></i>
+                </div>
+                <h2 class="fade-in-on-scroll delay-1" data-translate="completion_theory_title_m8">Teoria do Módulo 8 Completa!</h2>
+                <p class="fade-in-on-scroll delay-2" data-translate="completion_theory_desc_m8">
+                    Excelente! Você agora entende as medidas essenciais de dispersão: Amplitude, Variância e Desvio Padrão. Saber como quantificar a variabilidade é tão importante quanto conhecer a tendência central dos seus dados, especialmente em IA. <br>
+                    Pronto para aplicar esses conceitos? Vá para a <strong>Zona de Prática</strong> ou a <strong>Prática Avançada</strong> do Módulo 8.
+                </p>
+                <div class="button-group">
+                    <!-- Buttons observed -->
+                    <a href="math-dashboard.html" class="action-button secondary fade-in-on-scroll delay-3"><i class="fas fa-list"></i> <span data-translate="nav_menu">Menu do Curso</span></a>
+                    <a href="math-practice-8.html" class="action-button success fade-in-on-scroll delay-4"><i class="fas fa-pencil-alt"></i> <span data-translate="nav_practice">Iniciar Prática</span></a>
+                    <a href="math-advanced-8.html" class="action-button secondary fade-in-on-scroll delay-5"><i class="fas fa-flask"></i> <span data-translate="nav_advanced">Prática Avançada</span></a>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="main-footer">
+        <div class="container">
+            <p data-translate="footer_copyright"></p>
+        </div>
+    </footer>
+
+    <script>
+    // --- Translations Object (Portuguese Only) ---
+    const translations = {
+        pt: {
+            "page_title_m8": "Módulo 8: Medidas de Dispersão",
+            "nav_practice": "Iniciar Prática",
+            "nav_advanced": "Prática Avançada",
+            "nav_menu": "Menu do Curso",
+            "nav_welcome_m8": "Boas-vindas M8", "nav_amplitude": "Amplitude", "nav_variance": "Variância", "nav_stddev": "Desvio Padrão", "nav_interpretation": "Interpretação", "nav_quiz": "Teste Rápido",
+            "header_title_m8": "Módulo 8: Medidas de Dispersão", "header_subtitle_m8": "Quantificando a variabilidade e o espalhamento nos seus dados.",
+            "welcome_title_m8": "📊 Por Que a Dispersão Importa?",
+            "welcome_p1_m8": "Bem-vindo ao Módulo 8! No módulo anterior, exploramos as <span class=\"highlight\">Medidas de Tendência Central</span> (média, mediana, moda), que nos dão uma ideia do valor \"típico\" em um conjunto de dados. No entanto, saber apenas o centro não conta toda a história.",
+            "welcome_p2_m8": "Imagine duas cidades com a mesma temperatura média anual. Uma pode ter estações amenas, enquanto a outra tem verões escaldantes e invernos congelantes. A média é a mesma, mas a <span class=\"highlight\">variabilidade</span> ou <span class=\"highlight\">dispersão</span> dos dados é muito diferente!",
+            "welcome_p3_m8": "Neste módulo, aprenderemos a quantificar essa dispersão usando três medidas chave: <span style=\"color: var(--amplitude-color); font-weight: bold;\">Amplitude</span>, <span style=\"color: var(--variance-color); font-weight: bold;\">Variância</span> e <span style=\"color: var(--stddev-color); font-weight: bold;\">Desvio Padrão</span>. Entender a dispersão é crucial em IA para tarefas como detecção de anomalias, avaliação de modelos e pré-processamento de dados.",
+            "amplitude_title": "↔️ Amplitude (Range)", "amplitude_subtitle": "A Medida Mais Simples de Espalhamento",
+            "amplitude_desc": "A amplitude é simplesmente a diferença entre o maior e o menor valor em um conjunto de dados. É a forma mais básica de medir a dispersão total dos dados.",
+            "amplitude_formula_label": "Fórmula:", "amplitude_example_intro": "<strong>Exemplo:</strong> Considere as idades (em anos) de um grupo de 5 participantes de um teste beta de IA: <code>[22, 25, 19, 35, 29]</code>.",
+            "amplitude_example_step1": "Valor Máximo = 35", "amplitude_example_step2": "Valor Mínimo = 19", "amplitude_example_step3": "Amplitude = 35 - 19 = 16 anos",
+            "amplitude_adv_title": "<i class=\"fas fa-check-circle\"></i> Vantagens", "amplitude_adv_text": "Fácil de calcular e entender. Fornece uma visão rápida da extensão total dos dados.",
+            "amplitude_dis_title": "<i class=\"fas fa-times-circle\"></i> Desvantagens", "amplitude_dis_text": "Extremamente sensível a valores discrepantes (outliers). Utiliza apenas dois valores do conjunto de dados, ignorando a distribuição interna.",
+            "amplitude_conclusion": "Em computação, encontrar o mínimo e o máximo em uma lista ou array é uma operação comum, tornando o cálculo da amplitude direto.",
+            "variance_title": "∑ Variância", "variance_subtitle": "Medindo o Desvio Quadrático Médio",
+            "variance_desc": "A variância mede a dispersão média dos dados em relação à média. Ela calcula a média dos quadrados das diferenças entre cada ponto de dado e a média do conjunto de dados. Elevar ao quadrado garante que desvios positivos e negativos não se cancelem e dá mais peso a desvios maiores.",
+            "variance_formula_label": "Fórmulas:", "variance_pop_label": "População (σ²):", "variance_sample_label": "Amostra (s²):",
+            "variance_formula_exp": "Onde: <br><code>Σ</code> representa a soma.<br><code>xᵢ</code> é cada valor individual.<br><code>μ</code> (mi) é a média da população, <code>x̄</code> (x-barra) é a média da amostra.<br><code>N</code> é o tamanho da população, <code>n</code> é o tamanho da amostra.<br><span class=\"highlight\">Nota:</span> Usamos <code>n - 1</code> no denominador para a variância amostral para obter uma estimativa não enviesada da variância populacional (Correção de Bessel).",
+            "variance_example_intro": "<strong>Exemplo (usando as idades <code>[22, 25, 19, 35, 29]</code>, tratando como amostra):</strong>",
+            "variance_example_step1": "Calcular a média (x̄): (22 + 25 + 19 + 35 + 29) / 5 = 130 / 5 = 26 anos.",
+            "variance_example_step2": "Calcular os desvios da média (xᵢ - x̄): [-4, -1, -7, 9, 3].",
+            "variance_example_step3": "Elevar os desvios ao quadrado (xᵢ - x̄)²: [16, 1, 49, 81, 9].",
+            "variance_example_step4": "Somar os desvios quadrados: 16 + 1 + 49 + 81 + 9 = 156.",
+            "variance_example_step5": "Dividir pelo tamanho da amostra menos 1 (n - 1 = 5 - 1 = 4): Variância (s²) = 156 / 4 = 39.",
+            "variance_dis_title": "<i class=\"fas fa-exclamation-triangle\"></i> Ponto de Atenção", "variance_dis_text": "A unidade da variância é o quadrado da unidade original dos dados (ex: anos² no nosso exemplo). Isso dificulta a interpretação direta em relação aos dados originais.",
+            "variance_conclusion": "A variância é uma medida fundamental em muitas técnicas estatísticas e algoritmos de Machine Learning (como Análise de Componentes Principais - PCA).",
+            "stddev_title": "📏 Desvio Padrão", "stddev_subtitle": "A Raiz Quadrada da Variância",
+            "stddev_desc": "O desvio padrão é simplesmente a raiz quadrada da variância. Ele retorna a medida de dispersão para a unidade original dos dados, tornando-a muito mais interpretável do que a variância. Ele representa a \"distância típica\" ou \"desvio médio\" dos pontos de dados em relação à média.",
+            "stddev_formula_label": "Fórmulas:", "stddev_pop_label": "População (σ):", "stddev_sample_label": "Amostra (s):",
+            "stddev_example_intro": "<strong>Exemplo (continuando com as idades, variância amostral s² = 39):</strong>",
+            "stddev_example_step1": "Desvio Padrão (s) = √39 ≈ 6.24 anos.",
+            "stddev_interpretation": "Isso significa que, em média, as idades dos participantes neste grupo tendem a se afastar cerca de 6.24 anos da idade média de 26 anos.",
+            "stddev_adv_title": "<i class=\"fas fa-info-circle\"></i> Interpretação e Uso",
+            "stddev_adv_list": "<li>Mesmas unidades que os dados originais, facilitando a comparação e o entendimento.</li><li>Amplamente utilizado em conjunto com a média para descrever distribuições de dados.</li><li>Fundamental na Regra Empírica (68-95-99.7) para dados com distribuição aproximadamente normal.</li><li>Usado em muitas métricas de avaliação de modelos e técnicas de pré-processamento (como padronização/standardization).</li>",
+            "stddev_empirical_placeholder": "Placeholder: Diagrama da Regra Empírica (Curva Normal com áreas de 1, 2 e 3 desvios padrão)",
+            "interpretation_title": "💡 Interpretando e Comparando a Dispersão", "interpretation_subtitle": "Como essas medidas trabalham juntas e por que são cruciais para IA.",
+            "interpretation_p1": "Medidas de dispersão complementam as medidas de tendência central. Considere dois conjuntos de dados de notas de alunos em uma tarefa de IA (0 a 100):",
+            "interpretation_p2": "Ambas as turmas têm a <span class=\"highlight\">mesma média (80)</span> e a <span class=\"highlight\">mesma mediana (80)</span>. No entanto, seus níveis de dispersão são diferentes:",
+            "interpretation_p3": "A Turma B tem o dobro da amplitude e aproximadamente o dobro do desvio padrão da Turma A. Isso indica que as notas na Turma B são <span class=\"highlight\">mais espalhadas</span> ou <span class=\"highlight\">variáveis</span> do que na Turma A, mesmo que o desempenho central seja o mesmo.",
+            "interpretation_viz_placeholder": "Placeholder: Visualização Comparativa (e.g., dois histogramas ou boxplots lado a lado mostrando Turma A e Turma B)",
+            "interpretation_ai_title": "Relevância em IA Aplicada",
+            "interpretation_ai_list": "<li><strong>Detecção de Anomalias:</strong> Dados com alta dispersão podem indicar maior probabilidade de outliers. Pontos muito distantes da média (vários desvios padrão) são frequentemente sinalizados como anomalias.</li><li><strong>Pré-processamento (Feature Scaling):</strong> Muitos algoritmos (ex: redes neurais, SVM) são sensíveis à escala das features. Técnicas como a padronização (subtrair a média e dividir pelo desvio padrão) usam diretamente essas medidas para colocar as features em uma escala comparável.</li><li><strong>Avaliação de Modelos:</strong> A variância no desempenho de um modelo em diferentes subconjuntos de dados (ex: validação cruzada) pode indicar instabilidade ou overfitting.</li><li><strong>Análise de Incerteza:</strong> Em modelos probabilísticos, a dispersão (variância) das previsões pode quantificar a incerteza do modelo.</li><li><strong>Seleção de Features:</strong> Features com variância muito baixa (quase constantes) podem não ser informativas e podem ser removidas.</li>",
+
+            "quiz_title": "🧠 Teste Rápido!", "quiz_next_button": "Próxima Pergunta",
+            "quiz_q1_m8": "Para o conjunto de dados [10, 15, 12, 18, 20], qual é a amplitude?",
+            "quiz_q1_m8_opt1": "5", "quiz_q1_m8_opt2": "8", "quiz_q1_m8_opt3": "10", "quiz_q1_m8_opt4": "15",
+            "quiz_q2_m8": "Qual medida de dispersão é mais afetada por valores extremos (outliers)?",
+            "quiz_q2_m8_opt1": "Variância", "quiz_q2_m8_opt2": "Desvio Padrão", "quiz_q2_m8_opt3": "Amplitude", "quiz_q2_m8_opt4": "Mediana (Nota: Mediana não é medida de dispersão)",
+            "quiz_q3_m8": "Se a variância de um conjunto de dados é 16, qual é o desvio padrão?",
+            "quiz_q3_m8_opt1": "4", "quiz_q3_m8_opt2": "8", "quiz_q3_m8_opt3": "16", "quiz_q3_m8_opt4": "256",
+            "quiz_q4_m8": "Por que usamos (n-1) no denominador ao calcular a variância amostral?",
+            "quiz_q4_m8_opt1": "Para facilitar o cálculo.", "quiz_q4_m8_opt2": "Para tornar a variância menor.", "quiz_q4_m8_opt3": "Para obter uma estimativa não enviesada da variância populacional.", "quiz_q4_m8_opt4": "Porque a amostra tem sempre um elemento a menos que a população.",
+            "quiz_feedback_correct": "Correto! 🎉", "quiz_feedback_incorrect": "Não foi bem assim! A resposta correta era: {correctAnswerText}",
+            "quiz_final_score_title": "Teste Rápido Completo!",
+            "quiz_final_score_summary": "Você respondeu {score} de {total} perguntas corretamente.",
+            "quiz_final_score_perfect": "Excelente! Você compreendeu bem as medidas de dispersão.", "quiz_final_score_good": "Bom trabalho! Continue praticando para solidificar os conceitos.",
+            "completion_theory_title_m8": "Teoria do Módulo 8 Completa!",
+            "completion_theory_desc_m8": "Excelente! Você agora entende as medidas essenciais de dispersão: Amplitude, Variância e Desvio Padrão. Saber como quantificar a variabilidade é tão importante quanto conhecer a tendência central dos seus dados, especialmente em IA. <br> Pronto para aplicar esses conceitos? Vá para a <strong>Zona de Prática</strong> ou a <strong>Prática Avançada</strong> do Módulo 8.",
+            "footer_copyright": "© 2024 Matemática para IA. Todos os direitos reservados."
+        }
+    };
+
+    // --- Global Variables ---
+    let currentQuestionIndex = 0;
+    let score = 0;
+    const lang = 'pt'; // Hardcoded language
+
+    // --- DOM Elements (Get them once) ---
+    const navToggleButton = document.getElementById('minimal-nav-toggle');
+    const navPanel = document.getElementById('minimal-nav-panel');
+    const body = document.body;
+    const quizArea = document.getElementById('quiz-area');
+    const feedbackArea = document.getElementById('quiz-feedback');
+    const nextButton = document.getElementById('next-question-btn');
+    // const textDemoBox = document.querySelector('#putting-it-together-m3 .text-demo'); // Removed for M8
+    // const codeOutputArea = document.querySelector('#putting-it-together-m3 .code-output-area'); // Removed for M8
+
+    // --- Functions ---
+
+    function getTranslation(key, replacements = {}) {
+         let text = translations[lang]?.[key] ?? `[${key}]`;
+         for (const placeholder in replacements) {
+             const regex = new RegExp(`\\{${placeholder}\\}`, 'g');
+             text = text.replace(regex, replacements[placeholder]);
+         }
+         return text;
+    }
+
+    function translatePage() {
+         document.querySelectorAll('[data-translate]').forEach(el => {
+             const key = el.getAttribute('data-translate');
+             let translation = getTranslation(key);
+
+              if (el.tagName === 'TITLE') { document.title = translation; }
+              else if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') { /* Skip */ }
+              else {
+                   // Allow specific HTML tags safely (broader list for math/stats)
+                   const safeHtmlRegex = /<\/?(code|strong|span|br|i|b|em|strong|ul|li|div|sup)>|<\/?(h[1-6])>/gi;
+                   let containsSafeHtml = safeHtmlRegex.test(translation);
+
+                   // Allow innerHTML if it contains only safe tags OR if it's in an allowed container
+                   if (containsSafeHtml || el.closest('.advantages, .disadvantages, .ai-relevance, .measure-card, .comparison-text, .footer p, .quiz-feedback')) {
+                      el.innerHTML = translation;
+                   } else {
+                      // Fallback to textContent for safety, unless it's a known container for rich text
+                      if (el.classList.contains('placeholder-image') || el.classList.contains('quiz-question') || el.tagName === 'P' || el.tagName === 'H1' || el.tagName === 'H2' || el.tagName === 'H3' || el.tagName === 'H4') {
+                           el.innerHTML = translation; // Allow HTML in paragraphs and headings too now
+                      } else {
+                           el.textContent = translation;
+                      }
+                   }
+              }
+         });
+
+         // Tooltips are not used in this module, but keep the structure if needed later
+          // document.querySelectorAll('.code-highlight[data-translate-tooltip]').forEach(el => {
+          //     const tooltipKey = el.getAttribute('data-translate-tooltip');
+          //     const tooltipSpan = el.querySelector('.tooltip');
+          //     if(tooltipSpan && tooltipKey) {
+          //        tooltipSpan.innerHTML = getTranslation(tooltipKey);
+          //     }
+          // });
+
+           // Comment translation logic removed as no code examples with comments in this module
+    }
+
+    // --- Quiz Data & Functions ---
+    const quizData = [
+         { questionKey: "quiz_q1_m8", optionKeys: ["quiz_q1_m8_opt1", "quiz_q1_m8_opt2", "quiz_q1_m8_opt3", "quiz_q1_m8_opt4"], correctAnswer: 2 }, // Max=20, Min=10 -> Range = 10
+         { questionKey: "quiz_q2_m8", optionKeys: ["quiz_q2_m8_opt1", "quiz_q2_m8_opt2", "quiz_q2_m8_opt3", "quiz_q2_m8_opt4"], correctAnswer: 2 }, // Amplitude uses only min/max
+         { questionKey: "quiz_q3_m8", optionKeys: ["quiz_q3_m8_opt1", "quiz_q3_m8_opt2", "quiz_q3_m8_opt3", "quiz_q3_m8_opt4"], correctAnswer: 0 }, // sqrt(16) = 4
+         { questionKey: "quiz_q4_m8", optionKeys: ["quiz_q4_m8_opt1", "quiz_q4_m8_opt2", "quiz_q4_m8_opt3", "quiz_q4_m8_opt4"], correctAnswer: 2 } // Bessel's correction for unbiased estimate
+    ];
+
+    function loadQuestion() {
+          if (!quizArea) return; // Ensure quizArea exists
+
+          // If we reached the end, show score
+          if (currentQuestionIndex >= quizData.length) {
+              if (!quizArea.querySelector('[data-translate="quiz_final_score_title"]')) { // Avoid re-rendering score
+                 showFinalScore();
+              }
+              return;
+          }
+
+          const currentQuiz = quizData[currentQuestionIndex];
+          const questionText = getTranslation(currentQuiz.questionKey);
+          // Generate HTML for question and options
+          quizArea.innerHTML = `
+              <div class="quiz-question">${currentQuestionIndex + 1}. ${questionText.replace(/`(.*?)`/g, '<code>$1</code>')}</div>
+              <div class="quiz-options">
+                  ${currentQuiz.optionKeys.map((optionKey, index) => `
+                      <button class="quiz-option-btn" data-index="${index}">${getTranslation(optionKey).replace(/`(.*?)`/g, '<code>$1</code>')}</button>
+                  `).join('')}
+              </div>
+          `;
+
+          // Reset feedback and next button
+          if (feedbackArea) {
+            feedbackArea.classList.remove('visible', 'correct', 'incorrect');
+            feedbackArea.textContent = '';
+            feedbackArea.style.height = '0'; // Reset height
+            feedbackArea.style.marginBottom = '0'; // Reset margin
+          }
+          if (nextButton) {
+            nextButton.classList.remove('visible');
+            nextButton.disabled = true;
+          }
+
+          // Add event listeners to the new buttons
+          quizArea.querySelectorAll('.quiz-option-btn').forEach(button => {
+              button.addEventListener('click', handleAnswer);
+          });
+    }
+
+    function handleAnswer(event) {
+         const selectedButton = event.target;
+         const selectedIndex = parseInt(selectedButton.dataset.index);
+         const correctIndex = quizData[currentQuestionIndex].correctAnswer;
+         const correctOptionKey = quizData[currentQuestionIndex].optionKeys[correctIndex];
+
+         // Disable all options
+         quizArea.querySelectorAll('.quiz-option-btn').forEach(btn => {
+            btn.disabled = true;
+            btn.classList.remove('shake'); // Remove shake if present from previous incorrect
+         });
+
+         if (!feedbackArea || !nextButton) return; // Ensure elements exist
+
+         feedbackArea.classList.add('visible');
+
+         if (selectedIndex === correctIndex) {
+             selectedButton.classList.add('correct');
+             feedbackArea.innerHTML = getTranslation('quiz_feedback_correct');
+             feedbackArea.classList.add('correct');
+             feedbackArea.classList.remove('incorrect');
+             score++;
+             selectedButton.classList.add('tada-anim');
+         } else {
+             selectedButton.classList.add('incorrect');
+             const formattedCorrectAnswer = getTranslation(correctOptionKey).replace(/`(.*?)`/g, '<code>$1</code>');
+             feedbackArea.innerHTML = getTranslation('quiz_feedback_incorrect', { correctAnswerText: `<strong>${formattedCorrectAnswer}</strong>` });
+             feedbackArea.classList.add('incorrect');
+             feedbackArea.classList.remove('correct');
+             // Highlight the correct button as well
+             const correctButton = quizArea.querySelector(`.quiz-option-btn[data-index="${correctIndex}"]`);
+             if(correctButton) correctButton.classList.add('correct');
+             selectedButton.classList.add('shake');
+         }
+
+         // Remove animation classes after they finish
+          selectedButton.addEventListener('animationend', () => {
+               selectedButton.classList.remove('tada-anim', 'shake');
+          }, { once: true });
+
+         // Make feedback area adjust height and margin smoothly
+         feedbackArea.style.height = feedbackArea.scrollHeight + 'px';
+         feedbackArea.style.marginBottom = '1rem';
+
+
+         // Show and enable next button
+         nextButton.classList.add('visible');
+         nextButton.disabled = false;
+     }
+
+     function showFinalScore() {
+            if (!quizArea) return;
+            const totalQuestions = quizData.length;
+            // Determine message based on score percentage
+            let resultMessageKey = (score / totalQuestions) >= 0.75 ? 'quiz_final_score_perfect' : 'quiz_final_score_good'; // 75% threshold
+
+            quizArea.innerHTML = `
+               <div class="quiz-question text-center" data-translate="quiz_final_score_title" style="font-size: 1.5rem;">${getTranslation('quiz_final_score_title')}</div>
+               <p class="text-center" style="font-size: 1.2rem; margin-bottom: 1rem;">${getTranslation('quiz_final_score_summary', { score: score, total: totalQuestions })}</p>
+               <p class="text-center" style="color: ${score === totalQuestions ? 'var(--success-color)' : 'var(--primary-color)'}; font-weight: bold;">${getTranslation(resultMessageKey)}</p>
+            `;
+            if (feedbackArea) feedbackArea.classList.remove('visible'); // Hide feedback area
+            if (nextButton) nextButton.style.display = 'none'; // Hide next button
+            quizArea.scrollIntoView({ behavior: 'smooth', block: 'center' }); // Scroll score into view
+     }
+
+
+    // --- Intersection Observer Setup ---
+    function setupObservers() {
+        const observerOptions = {
+            root: null, // relative to viewport
+            rootMargin: '0px',
+            threshold: 0.1 // Trigger when 10% of the element is visible
+        };
+
+        // Removed codeObserverOptions as it's not needed for M8
+
+        const observerCallback = (entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    // Optional: Unobserve after it becomes visible to save resources
+                    // observer.unobserve(entry.target);
+                }
+                // Optional: Remove 'visible' if it scrolls out of view
+                // else {
+                //     entry.target.classList.remove('visible');
+                // }
+            });
+        };
+
+        const animationObserver = new IntersectionObserver(observerCallback, observerOptions);
+
+        // Observe elements with the fade-in class
+        document.querySelectorAll('.fade-in-on-scroll').forEach(el => {
+            animationObserver.observe(el);
+        });
+
+        // Removed Specific Observer for Code Output Simulation as it's not used in M8
+    }
+
+    // --- Event Listeners Setup ---
+    function setupEventListeners() {
+        // Navbar Toggle
+        if (navToggleButton && navPanel) {
+            navToggleButton.addEventListener('click', (event) => {
+                event.stopPropagation();
+                body.classList.toggle('nav-active');
+                navToggleButton.setAttribute('aria-expanded', body.classList.contains('nav-active'));
+            });
+
+            // Close nav if clicking outside
+            document.addEventListener('click', (event) => {
+                if (body.classList.contains('nav-active') && !navPanel.contains(event.target) && event.target !== navToggleButton && !navToggleButton.contains(event.target)) {
+                    body.classList.remove('nav-active');
+                    navToggleButton.setAttribute('aria-expanded', 'false');
+                }
+            });
+
+            // Close nav on link click
+            navPanel.querySelectorAll('a').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    // Check if it's an internal link
+                    if (link.getAttribute('href').startsWith('#')) {
+                         // Allow default scroll behavior
+                        // Close panel slightly delayed
+                        setTimeout(() => {
+                            body.classList.remove('nav-active');
+                            navToggleButton.setAttribute('aria-expanded', 'false');
+                        }, 150);
+                    }
+                    // External links will navigate away anyway
+                });
+            });
+
+            // Close nav on Escape key
+            document.addEventListener('keydown', (event) => {
+                 if (event.key === 'Escape' && body.classList.contains('nav-active')) {
+                     body.classList.remove('nav-active');
+                     navToggleButton.setAttribute('aria-expanded', 'false');
+                 }
+             });
+        }
+
+        // Quiz Next Button
+        if (nextButton) {
+            nextButton.addEventListener('click', () => {
+                if (!nextButton.disabled) {
+                    currentQuestionIndex++;
+                    loadQuestion(); // Load the next question
+                }
+            });
+        } else {
+            console.error("Elemento #next-question-btn não encontrado.");
+        }
+    }
+
+    // --- Initialization ---
+    document.addEventListener('DOMContentLoaded', () => {
+        // Check if elements needed for quiz exist before proceeding
+        if (!quizArea) console.error("Elemento #quiz-area não encontrado.");
+        if (!feedbackArea) console.error("Elemento #quiz-feedback não encontrado.");
+
+        translatePage();        // Apply translations first
+        setupEventListeners();  // Set up interactive elements
+        setupObservers();       // Set up animations
+
+        if (quizArea) {
+            loadQuestion();     // Load the first quiz question if container exists
+        }
+    });
+
+    </script>
+
+</body>
+</html>

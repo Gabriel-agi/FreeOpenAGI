@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<!-- Language set to Portuguese BR -->
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Title set by JS -->
+    <title data-translate="page_title">Módulo 29: Exercícios Integrados (Conjuntos e Probabilidade)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* --- Reset & Base Styles --- */
+        :root {
+            --primary-color: #007bff; /* Azul Primário */
+            --secondary-color: #6c757d; /* Cinza Secundário */
+            --background-light: #f8f9fa; /* Fundo Claro */
+            --background-dark: #343a40; /* Fundo Escuro */
+            --text-light: #f8f9fa; /* Texto Claro */
+            --text-dark: #212529; /* Texto Escuro */
+            --accent-color: #ffc107; /* Amarelo Acento */
+            --success-color: #28a745; /* Verde Sucesso */
+            --error-color: #dc3545; /* Vermelho Erro */
+            --set-op-color: #17a2b8; /* Ciano para Conjuntos */
+            --prob-color: #fd7e14; /* Laranja para Probabilidade */
+            --venn-color: #6610f2; /* Roxo para Venn */
+            --border-radius: 8px;
+            --transition-speed: 0.3s;
+            --animation-speed: 0.6s; /* Control fade-in speed */
+            --font-body: 'Roboto', sans-serif;
+            --font-title: 'Orbitron', sans-serif;
+            --nav-primary: #6e48aa;
+            --nav-success: #4cc9f0;
+            --nav-dark: #1a1a2e;
+            --footer-border-color: #495057;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; font-size: 16px; }
+        body {
+            font-family: var(--font-body); line-height: 1.7;
+            background-color: var(--background-light); color: var(--text-dark);
+            overflow-x: hidden; display: flex; flex-direction: column; min-height: 100vh;
+        }
+        main { flex-grow: 1; }
+
+        /* --- Utility Classes --- */
+        .container { max-width: 960px; margin: 0 auto; padding: 0 15px; }
+        .text-center { text-align: center; }
+        .highlight { color: var(--primary-color); font-weight: bold; }
+
+        /* Elements to be animated by observer */
+        .fade-in-on-scroll {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+        }
+        .fade-in-on-scroll.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        /* Add delays for staggering */
+        .delay-1.visible { transition-delay: 0.1s; }
+        .delay-2.visible { transition-delay: 0.2s; }
+        .delay-3.visible { transition-delay: 0.3s; }
+        .delay-4.visible { transition-delay: 0.4s; }
+        .delay-5.visible { transition-delay: 0.5s; }
+        .delay-6.visible { transition-delay: 0.6s; }
+        .delay-7.visible { transition-delay: 0.7s; }
+
+        .button-group { margin-top: 2rem; display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; }
+        .action-button {
+             display: inline-flex; align-items: center; justify-content: center; gap: 0.5em;
+             padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold;
+             color: var(--text-light); background-color: var(--primary-color); border: none;
+             border-radius: var(--border-radius); cursor: pointer;
+             transition: background-color var(--transition-speed), transform var(--transition-speed), filter var(--transition-speed), box-shadow var(--transition-speed), opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out; /* Add animation transition */
+             margin-top: 1rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+             text-decoration: none; line-height: 1.2;
+             opacity: 0; /* Start hidden if animated */
+             transform: translateY(20px); /* Start offset if animated */
+        }
+        .action-button.visible { /* Make visible via observer */
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .action-button i.fas {}
+        .action-button:hover:not(:disabled) { background-color: #0056b3; transform: translateY(-2px) !important; box-shadow: 0 4px 8px rgba(0,0,0,0.15); } /* Use !important to override initial transform */
+        .action-button:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none !important; box-shadow: none; opacity: 0.7; }
+        .action-button.success { background-color: var(--success-color); }
+        .action-button.success:hover:not(:disabled) { background-color: #218838; }
+        .action-button.secondary { background-color: var(--secondary-color); }
+        .action-button.secondary:hover:not(:disabled) { background-color: #5a6268; }
+        .action-button:active:not(:disabled) { transform: translateY(1px) scale(0.98) !important; filter: brightness(0.95); }
+
+        /* --- Animations --- */
+        @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); } 50% { transform: scale(1.03); box-shadow: 0 0 15px rgba(0, 123, 255, 0.6); } 100% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); } }
+        @keyframes tada { from { transform: scale3d(1, 1, 1); } 10%, 20% { transform: scale3d(.9, .9, .9) rotate3d(0, 0, 1, -3deg); } 30%, 50%, 70%, 90% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, 3deg); } 40%, 60%, 80% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, -3deg); } to { transform: scale3d(1, 1, 1); } }
+        .tada-anim { animation: tada 1s ease; }
+        @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
+        @keyframes iconAppearCorrect { 0% { transform: scale(0.5) rotate(-15deg); opacity: 0; } 60% { transform: scale(1.2) rotate(5deg); opacity: 1; } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
+
+        /* --- Minimal Retractable Nav --- */
+        .minimal-nav-button { position: fixed; top: 15px; right: 15px; z-index: 1001; background-color: rgba(52, 58, 64, 0.75); color: var(--text-light); border: none; border-radius: var(--border-radius); padding: 8px 12px; cursor: pointer; transition: background-color var(--transition-speed), opacity var(--transition-speed), transform var(--transition-speed); font-size: 1.1rem; opacity: 0.6; box-shadow: 0 2px 5px rgba(0,0,0,0.2); line-height: 1; }
+        .minimal-nav-button:hover { background-color: rgba(52, 58, 64, 0.95); opacity: 1; transform: scale(1.05); }
+        .minimal-nav { position: fixed; top: 60px; right: 15px; z-index: 1000; background-color: var(--background-dark); border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.3); padding: 0.8rem; opacity: 0; transform: translateY(-15px) scale(0.95); transform-origin: top right; pointer-events: none; transition: opacity var(--transition-speed) ease, transform var(--transition-speed) ease; min-width: 200px; }
+        body.nav-active .minimal-nav { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+        .minimal-nav ul { list-style: none; margin: 0; padding: 0; }
+        .minimal-nav ul li { margin-bottom: 5px; }
+        .minimal-nav ul li:last-child { margin-bottom: 0; }
+        .minimal-nav ul li a { display: flex; align-items: center; color: var(--text-light); text-decoration: none; padding: 0.6rem 1rem; border-radius: 4px; transition: background-color var(--transition-speed), color var(--transition-speed); white-space: nowrap; font-weight: 400; font-size: 0.95rem; }
+        .minimal-nav ul li a i.fas { margin-right: 10px; width: 1.2em; text-align: center; opacity: 0.8; transition: opacity var(--transition-speed); }
+        .minimal-nav ul li a:hover { background-color: var(--primary-color); color: var(--text-light); }
+        .minimal-nav ul li a:hover i.fas { opacity: 1; }
+
+        /* --- Header --- */
+        .main-header { background: linear-gradient(135deg, var(--primary-color), #0056b3); color: var(--text-light); padding: 4rem 0 6rem; text-align: center; position: relative; overflow: hidden; }
+        .main-header .container { /* Start visible */ }
+        .main-header h1 { font-family: var(--font-title); font-size: 2.8rem; /* Slightly smaller for longer title */ margin-bottom: 0.5rem; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); }
+        .main-header p { font-size: 1.2rem; font-weight: 300; opacity: 0.9; }
+        .header-shape { position: absolute; border-radius: 50%; background-color: rgba(255, 255, 255, 0.1); animation: pulse 5s infinite ease-in-out alternate; }
+        .shape1 { width: 150px; height: 150px; bottom: -50px; left: 10%; animation-duration: 6s; }
+        .shape2 { width: 80px; height: 80px; top: 50px; right: 15%; animation-duration: 4s; }
+        .shape3 { width: 50px; height: 50px; bottom: 20px; right: 30%; animation-duration: 7s; }
+
+        /* --- Section Styling --- */
+        section { padding: 4rem 0; border-bottom: 1px solid #eee; }
+        main section:last-of-type { border-bottom: none; padding-bottom: 0;}
+        section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); margin-bottom: 2rem; text-align: center; position: relative; padding-bottom: 10px; }
+        section h2::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 60px; height: 4px; background-color: var(--accent-color); border-radius: 2px; }
+
+        /* --- Welcome Section --- */
+        #welcome p { font-size: 1.1rem; max-width: 750px; /* Wider for intro */ margin: 0 auto 1rem; text-align: center; }
+
+        /* --- Recap Section --- */
+        #revisao-conceitos .concepts-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem; margin-top: 2rem;
+        }
+        .concept-card { /* Animated by observer */
+            background-color: #fff; padding: 1.5rem; border-radius: var(--border-radius);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.07);
+            transition: transform var(--transition-speed) ease, box-shadow var(--transition-speed) ease, opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+            opacity: 0; transform: translateY(20px); /* Start state */
+            border-top: 4px solid transparent;
+        }
+        .concept-card.visible { opacity: 1; transform: translateY(0); }
+        .concept-card:nth-child(1) { border-top-color: var(--set-op-color); }
+        .concept-card:nth-child(2) { border-top-color: var(--prob-color); }
+        .concept-card:hover { transform: translateY(-5px) scale(1.02) !important; box-shadow: 0 8px 20px rgba(0,0,0,0.12); }
+        .concept-icon { font-size: 2.5rem; margin-bottom: 1rem; display: block; text-align: center; }
+        #card-sets .concept-icon { color: var(--set-op-color); }
+        #card-prob .concept-icon { color: var(--prob-color); }
+        .concept-card h3 { font-family: var(--font-body); font-weight: 700; font-size: 1.3rem; margin-bottom: 0.8rem; color: var(--text-dark); text-align: center;}
+        .concept-details ul { list-style: none; padding-left: 0; margin-top: 1rem; }
+        .concept-details ul li { margin-bottom: 0.8rem; position: relative; padding-left: 1.5em; }
+        .concept-details ul li::before { content: '✓'; position: absolute; left: 0; color: var(--success-color); font-weight: bold; }
+        .concept-details code { background-color: #e9ecef; padding: 0.2em 0.4em; border-radius: 3px; font-family: 'Courier New', Courier, monospace; color: var(--text-dark); }
+
+        /* --- Venn Probability Section --- */
+        #prob-venn .venn-explanation {
+            display: flex; flex-direction: column; align-items: center; gap: 2rem; margin-top: 2rem;
+        }
+        .placeholder-image { /* Placeholder for Diagram */
+            width: 80%; max-width: 400px; height: 250px; background-color: #e0e0e0;
+            border: 2px dashed var(--secondary-color); border-radius: var(--border-radius);
+            display: flex; align-items: center; justify-content: center;
+            font-style: italic; color: var(--secondary-color); text-align: center; padding: 1rem;
+            opacity: 0; transition: opacity var(--animation-speed) ease-out 0.2s; /* Delay slightly */
+        }
+        .placeholder-image.visible { opacity: 1; }
+        .venn-text { max-width: 700px; text-align: center; }
+        .venn-text ul { list-style: none; padding-left: 0; margin-top: 1rem; }
+        .venn-text ul li { margin-bottom: 0.6rem; font-size: 1.05rem;}
+        .venn-text code { background-color: #e9ecef; padding: 0.2em 0.4em; border-radius: 3px; font-family: 'Courier New', Courier, monospace; color: var(--text-dark); font-weight: bold;}
+
+
+        /* --- Practical Scenarios Section --- */
+        #cenarios-praticos-m29 .scenario {
+            background-color: #fff; padding: 2rem; border-radius: var(--border-radius);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08); margin-bottom: 2.5rem;
+            opacity: 0; transform: translateY(20px); /* Start state */
+            transition: opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+        }
+        #cenarios-praticos-m29 .scenario.visible { opacity: 1; transform: translateY(0); }
+        .scenario h3 { font-size: 1.5rem; color: var(--primary-color); margin-bottom: 1rem; border-bottom: 2px solid var(--accent-color); padding-bottom: 0.5rem; }
+        .scenario .context { font-style: italic; color: var(--secondary-color); margin-bottom: 1.5rem; }
+        .scenario .data-points { margin-bottom: 1.5rem; }
+        .scenario .data-points strong { display: inline-block; min-width: 150px; }
+        .scenario .questions { margin-top: 1rem; margin-bottom: 1.5rem; }
+        .scenario .questions ul { list-style: disc; padding-left: 25px; }
+        .scenario .solution-steps {
+            background-color: var(--background-light); padding: 1.5rem; border-radius: var(--border-radius); border: 1px solid #eee; margin-top: 1.5rem;
+        }
+        .solution-steps h4 { font-size: 1.2rem; margin-bottom: 1rem; color: var(--success-color); }
+        .solution-steps p { margin-bottom: 0.8rem; line-height: 1.8; }
+        .solution-steps code {
+            background-color: #e9ecef; color: var(--text-dark); padding: 0.3em 0.5em; border-radius: 4px; font-family: 'Courier New', Courier, monospace; font-weight: bold; display: inline-block; border: 1px solid #ddd;
+        }
+        .formula { font-family: 'Times New Roman', Times, serif; font-style: italic; font-size: 1.1em; }
+
+
+        /* --- Knowledge Check Section --- */
+        #knowledge-check { background-color: #e9ecef; }
+        .quiz-container { /* Animated by observer */
+             background-color: #fff; padding: 2rem; border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.1); max-width: 700px; margin: 2rem auto 0;
+             opacity: 0; transition: opacity var(--animation-speed) ease-out; /* Only fade opacity */
+        }
+        .quiz-container.visible { opacity: 1; }
+        .quiz-question { font-size: 1.2rem; font-weight: bold; margin-bottom: 1.5rem; color: var(--text-dark); line-height: 1.5; }
+        .quiz-options button { display: block; width: 100%; padding: 1rem; margin-bottom: 1rem; text-align: left; font-size: 1rem; background-color: #f8f9fa; border: 1px solid #ced4da; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), border-color var(--transition-speed), transform var(--transition-speed); }
+        .quiz-options button:not(:disabled):hover { background-color: #e2e6ea; border-color: #adb5bd; transform: translateX(5px); }
+        .quiz-options button:disabled { cursor: default; opacity: 0.7; }
+        .quiz-options button.correct { background-color: #d4edda; border-color: var(--success-color); color: #155724; font-weight: bold; }
+        .quiz-options button.incorrect { background-color: #f8d7da; border-color: var(--error-color); color: #721c24; font-weight: bold; }
+        .quiz-options button.incorrect.shake { animation: shake 0.5s ease; }
+        .quiz-feedback { margin-top: 1.5rem; padding: 1rem; border-radius: var(--border-radius); font-weight: bold; text-align: center; opacity: 0; transition: opacity 0.5s ease, height 0.5s ease, margin-bottom 0.5s ease; height: 0; overflow: hidden; margin-bottom: 0;}
+        .quiz-feedback.visible { opacity: 1; height: auto; margin-bottom: 1rem; }
+        .quiz-feedback.correct { background-color: #d4edda; color: #155724; }
+        .quiz-feedback.incorrect { background-color: #f8d7da; color: #721c24; }
+        #next-question-btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5em; margin: 1.5rem auto 0; padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold; color: var(--text-light); background-color: var(--primary-color); border: none; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), transform var(--transition-speed), opacity 0.3s, visibility 0.3s; opacity: 0; visibility: hidden; }
+        #next-question-btn:hover:not(:disabled) { background-color: #0056b3; transform: scale(1.05); }
+        #next-question-btn.visible { opacity: 1; visibility: visible; }
+        #next-question-btn:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none; opacity: 0.7; }
+
+
+        /* --- Completion Section Styling --- */
+        .completion-section { padding: 4rem 0; text-align: center; background-color: var(--background-light); }
+        .completion-section .icon { font-size: 4rem; color: var(--success-color); margin-bottom: 1rem; display: inline-block; animation: iconAppearCorrect 1s ease-out 0.5s forwards; opacity: 0; /* Initial state for animation */}
+        /* Ensure completion elements are targeted by observer */
+        .completion-section h2, .completion-section p {
+            opacity: 0; transform: translateY(20px);
+            transition: opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+        }
+        .completion-section h2.visible, .completion-section p.visible {
+            opacity: 1; transform: translateY(0);
+        }
+        .completion-section .button-group { margin-top: 2.5rem; }
+        .completion-section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); margin-bottom: 1rem; }
+        .completion-section h2::after { display: none; }
+        .completion-section p { font-size: 1.1rem; margin-top: 1rem; color: var(--secondary-color); max-width: 700px; margin-left: auto; margin-right: auto; line-height: 1.8; }
+
+
+        /* --- Footer Styling --- */
+        .main-footer {
+            background-color: var(--background-light);
+            color: var(--text-light);
+            text-align: center;
+            padding: 2rem 0;
+            font-size: 0.9rem;
+            margin-top: auto;
+            border-top: 1px solid var(--background-light);
+            opacity: 0.85;
+        }
+        .main-footer p { margin: 0; line-height: 1.5; }
+
+        /* --- Responsive Design --- */
+        @media (max-width: 768px) {
+            html { font-size: 15px; }
+            .main-header h1 { font-size: 2.2rem; } .main-header p { font-size: 1.1rem; }
+            section h2 { font-size: 1.8rem; }
+            #revisao-conceitos .concepts-grid { grid-template-columns: 1fr; }
+            .placeholder-image { width: 90%; height: 200px; }
+            .minimal-nav { min-width: 180px; } .minimal-nav ul li a { padding: 0.6rem 0.8rem; }
+            .completion-section h2 { font-size: 2rem; }
+            .completion-section .button-group { flex-direction: column; align-items: center; gap: 0.8rem; }
+            .completion-section .action-button { width: 80%; max-width: 350px; margin-top: 0; }
+            .main-footer { padding: 1.5rem 0; }
+        }
+        @media (max-width: 480px) {
+            html { font-size: 14px; }
+            .main-header h1 { font-size: 1.9rem; } .main-header p { font-size: 1rem; }
+            section h2 { font-size: 1.6rem; }
+            .quiz-options button { padding: 0.8rem; font-size: 0.95rem; }
+            .minimal-nav-button { top: 10px; right: 10px; padding: 6px 10px; font-size: 1rem; }
+            .minimal-nav { top: 48px; right: 10px; min-width: 160px; }
+            .minimal-nav ul li a { padding: 0.5rem 0.7rem; font-size: 0.9rem;}
+            .minimal-nav ul li a i.fas { margin-right: 8px; }
+            .completion-section .icon { font-size: 3.5rem; }
+            .completion-section h2 { font-size: 1.8rem; } .completion-section p { font-size: 1rem; }
+            .completion-section .action-button { width: 90%; max-width: 300px; }
+            .scenario h3 { font-size: 1.3rem; }
+            .scenario .data-points strong { min-width: 120px; }
+            .main-footer { padding: 1rem 0; font-size: 0.85rem; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- ========= Minimal Nav Handle ========= -->
+    <button id="minimal-nav-toggle" class="minimal-nav-button" aria-label="Alternar Menu de Navegação" aria-expanded="false">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- ========= Minimal Nav Panel ========= -->
+    <nav id="minimal-nav-panel" class="minimal-nav">
+        <ul>
+            <!-- IMPORTANT: Update hrefs to use 'math' and correct module number -->
+            <li><a href="math-practice-29.html"><i class="fas fa-pencil-alt fa-fw"></i> <span data-translate="nav_practice">Iniciar Prática</span></a></li>
+            <li><a href="math-advanced-29.html"><i class="fas fa-flask fa-fw"></i> <span data-translate="nav_advanced">Prática Avançada</span></a></li>
+            <li><a href="math-dashboard.html"><i class="fas fa-list fa-fw"></i> <span data-translate="nav_menu">Menu do Curso</span></a></li>
+             <hr style="border: none; border-top: 1px solid var(--secondary-color); margin: 8px 0;">
+             <li><a href="#welcome"><i class="fas fa-door-open fa-fw"></i> <span data-translate="nav_welcome_m29">Boas-vindas M29</span></a></li>
+             <li><a href="#revisao-conceitos"><i class="fas fa-book-reader fa-fw"></i> <span data-translate="nav_recap">Revisão Rápida</span></a></li>
+             <li><a href="#prob-venn"><i class="fas fa-project-diagram fa-fw"></i> <span data-translate="nav_venn_prob">Prob. com Venn</span></a></li>
+             <li><a href="#cenarios-praticos-m29"><i class="fas fa-cogs fa-fw"></i> <span data-translate="nav_scenarios">Cenários Práticos</span></a></li>
+             <li><a href="#knowledge-check"><i class="fas fa-check-double fa-fw"></i> <span data-translate="nav_quiz">Teste Rápido</span></a></li>
+             <li><a href="#completion"><i class="fas fa-flag-checkered fa-fw"></i> <span data-translate="completion_theory_title_m29">Conclusão</span></a></li>
+        </ul>
+    </nav>
+
+    <header class="main-header">
+        <div class="header-shape shape1"></div>
+        <div class="header-shape shape2"></div>
+        <div class="header-shape shape3"></div>
+        <div class="container"> <!-- Start visible -->
+            <h1 data-translate="header_title_m29">Módulo 29: Exercícios Integrados</h1>
+            <p data-translate="header_subtitle_m29">Combinando Teoria dos Conjuntos e Probabilidade para resolver problemas.</p>
+        </div>
+    </header>
+
+    <main>
+        <!-- ========= Welcome Section ========= -->
+        <section id="welcome">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="welcome_title_m29">🤝 Integrando Conjuntos e Probabilidade</h2>
+                <p class="fade-in-on-scroll delay-1" data-translate="welcome_p1_m29">
+                    Bem-vindo ao Módulo 29! Nos módulos anteriores, exploramos a Teoria dos Conjuntos e a Probabilidade separadamente. Agora, vamos <span class="highlight">unir esses conceitos</span>. A capacidade de usar operações de conjuntos para definir eventos e calcular suas probabilidades é fundamental em muitas áreas da IA.
+                </p>
+                <p class="fade-in-on-scroll delay-2" data-translate="welcome_p2_m29">
+                    Analisaremos como classificar dados (conjuntos) e, em seguida, determinar a chance de certos padrões ou resultados ocorrerem (probabilidade). Isso é crucial para tarefas como <span class="highlight">classificação de dados, análise de risco, sistemas de recomendação</span> e muito mais. Prepare-se para aplicar o que aprendeu em cenários práticos!
+                </p>
+            </div>
+        </section>
+
+        <!-- ========= Recap Section ========= -->
+        <section id="revisao-conceitos">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="recap_title">📚 Revisão Rápida: Conceitos Essenciais</h2>
+                <p class="text-center fade-in-on-scroll delay-1" data-translate="recap_subtitle">Vamos relembrar os fundamentos que usaremos neste módulo.</p>
+
+                <div class="concepts-grid">
+                    <div class="concept-card fade-in-on-scroll delay-2" id="card-sets">
+                        <span class="concept-icon"><i class="fas fa-shapes"></i></span>
+                        <h3 data-translate="recap_sets_title">Teoria dos Conjuntos</h3>
+                        <div class="concept-details">
+                            <ul>
+                                <li data-translate="recap_sets_item1"><strong>União (A ∪ B):</strong> Elementos em A, ou em B, ou em ambos.</li>
+                                <li data-translate="recap_sets_item2"><strong>Interseção (A ∩ B):</strong> Elementos que estão em A <span class="highlight">e</span> em B.</li>
+                                <li data-translate="recap_sets_item3"><strong>Complementar (A'):</strong> Elementos no universo que <span class="highlight">não</span> estão em A.</li>
+                                <li data-translate="recap_sets_item4"><strong>Cardinalidade (|A|):</strong> Número de elementos no conjunto A.</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="concept-card fade-in-on-scroll delay-3" id="card-prob">
+                        <span class="concept-icon"><i class="fas fa-dice"></i></span>
+                        <h3 data-translate="recap_prob_title">Probabilidade Básica</h3>
+                        <div class="concept-details">
+                             <ul>
+                                <li data-translate="recap_prob_item1"><strong>Probabilidade de A (P(A)):</strong> <code>|A| / |Ω|</code> (casos favoráveis / casos totais).</li>
+                                <li data-translate="recap_prob_item2"><strong>Regra da Adição:</strong> <code>P(A ∪ B) = P(A) + P(B) - P(A ∩ B)</code>.</li>
+                                <li data-translate="recap_prob_item3"><strong>Probabilidade Condicional (P(A|B)):</strong> Probabilidade de A ocorrer <span class="highlight">dado que</span> B ocorreu. <code>P(A|B) = P(A ∩ B) / P(B)</code>.</li>
+                                <li data-translate="recap_prob_item4"><strong>Independência:</strong> A e B são independentes se <code>P(A ∩ B) = P(A) * P(B)</code>.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                 <p class="text-center fade-in-on-scroll delay-4" data-translate="recap_conclusion">Essas operações e fórmulas são as ferramentas que usaremos para resolver problemas integrados.</p>
+            </div>
+        </section>
+
+        <!-- ========= Venn Diagram & Probability Section ========= -->
+        <section id="prob-venn">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="venn_prob_title">📊 Calculando Probabilidades com Diagramas de Venn</h2>
+                <p class="text-center fade-in-on-scroll delay-1" data-translate="venn_prob_subtitle">Visualizando conjuntos para facilitar o cálculo de probabilidades.</p>
+
+                <div class="venn-explanation">
+                    <div class="placeholder-image fade-in-on-scroll delay-2" data-translate="venn_placeholder">Diagrama de Venn com dois conjuntos (A e B) e o Universo (Ω), mostrando as regiões A-B, B-A, A∩B e (A∪B)'</div>
+                    <div class="venn-text fade-in-on-scroll delay-3">
+                         <p data-translate="venn_prob_p1">Diagramas de Venn são excelentes para visualizar as relações entre conjuntos. Se soubermos o número de elementos (ou a proporção) em cada região, podemos calcular probabilidades diretamente:</p>
+                         <ul>
+                             <li data-translate="venn_prob_item1"><code>P(A)</code>: Soma das proporções nas regiões que compõem A (<code>A-B</code> e <code>A∩B</code>).</li>
+                             <li data-translate="venn_prob_item2"><code>P(B)</code>: Soma das proporções nas regiões que compõem B (<code>B-A</code> e <code>A∩B</code>).</li>
+                             <li data-translate="venn_prob_item3"><code>P(A ∩ B)</code>: Proporção na região de interseção.</li>
+                             <li data-translate="venn_prob_item4"><code>P(A ∪ B)</code>: Soma das proporções em <code>A-B</code>, <code>B-A</code>, e <code>A∩B</code>. Alternativamente, <code>P(A) + P(B) - P(A ∩ B)</code>.</li>
+                             <li data-translate="venn_prob_item5"><code>P(A')</code>: Proporção na região fora de A (<code>B-A</code> e <code>(A∪B)'</code>). Ou <code>1 - P(A)</code>.</li>
+                             <li data-translate="venn_prob_item6"><code>P(A | B) = P(A ∩ B) / P(B)</code>: A proporção da interseção em relação à área total de B.</li>
+                         </ul>
+                         <p data-translate="venn_prob_p2">Esta abordagem visual ajuda a entender como as operações de conjunto se traduzem em cálculos de probabilidade.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========= Practical Scenarios Section ========= -->
+        <section id="cenarios-praticos-m29">
+             <div class="container">
+                 <h2 class="fade-in-on-scroll" data-translate="scenarios_title">⚙️ Cenários Práticos: Aplicando os Conceitos</h2>
+                 <p class="text-center fade-in-on-scroll delay-1" data-translate="scenarios_subtitle">Vamos resolver alguns problemas que combinam conjuntos e probabilidade.</p>
+
+                 <!-- Scenario 1: User Analysis -->
+                 <div class="scenario fade-in-on-scroll delay-2">
+                     <h3 data-translate="scenario1_title">Cenário 1: Análise de Usuários de App</h3>
+                     <p class="context" data-translate="scenario1_context">Uma empresa de IA analisa o comportamento de 1000 usuários em seu novo aplicativo.</p>
+                     <div class="data-points">
+                         <p data-translate="scenario1_data1"><strong>Conjunto A (Clicaram em Anúncio):</strong> 200 usuários.</p>
+                         <p data-translate="scenario1_data2"><strong>Conjunto B (Fizeram Compra):</strong> 150 usuários.</p>
+                         <p data-translate="scenario1_data3"><strong>Interseção (A ∩ B - Clicaram e Compraram):</strong> 50 usuários.</p>
+                         <p data-translate="scenario1_data4"><strong>Universo (Ω - Total de Usuários):</strong> 1000 usuários.</p>
+                     </div>
+                     <div class="questions">
+                         <strong data-translate="scenario1_questions_title">Perguntas:</strong>
+                         <ul>
+                             <li data-translate="scenario1_q1">Qual a probabilidade de um usuário selecionado aleatoriamente ter clicado em um anúncio (P(A))?</li>
+                             <li data-translate="scenario1_q2">Qual a probabilidade de um usuário ter feito uma compra (P(B))?</li>
+                             <li data-translate="scenario1_q3">Qual a probabilidade de um usuário ter clicado OU feito uma compra (P(A ∪ B))?</li>
+                             <li data-translate="scenario1_q4">Dado que um usuário clicou em um anúncio, qual a probabilidade de ele ter feito uma compra (P(B|A))?</li>
+                         </ul>
+                     </div>
+                     <div class="solution-steps">
+                         <h4 data-translate="scenario1_solution_title">Passos da Solução:</h4>
+                         <p data-translate="scenario1_sol1">1. <strong>P(A):</strong> <code class="formula">|A| / |Ω| = 200 / 1000 = 0.20</code> (ou 20%).</p>
+                         <p data-translate="scenario1_sol2">2. <strong>P(B):</strong> <code class="formula">|B| / |Ω| = 150 / 1000 = 0.15</code> (ou 15%).</p>
+                         <p data-translate="scenario1_sol3">3. <strong>P(A ∩ B):</strong> <code class="formula">|A ∩ B| / |Ω| = 50 / 1000 = 0.05</code> (ou 5%).</p>
+                         <p data-translate="scenario1_sol4">4. <strong>P(A ∪ B):</strong> Usando a Regra da Adição: <code class="formula">P(A) + P(B) - P(A ∩ B) = 0.20 + 0.15 - 0.05 = 0.30</code> (ou 30%).</p>
+                         <p data-translate="scenario1_sol5">5. <strong>P(B|A):</strong> Usando a fórmula da Probabilidade Condicional: <code class="formula">P(A ∩ B) / P(A) = 0.05 / 0.20 = 0.25</code> (ou 25%).</p>
+                         <p data-translate="scenario1_insight"><strong>Insight:</strong> 25% dos usuários que clicam em anúncios acabam comprando, o que pode indicar a eficácia (ou ineficácia) relativa dos anúncios para esse grupo.</p>
+                     </div>
+                 </div>
+
+                 <!-- Scenario 2: Sensor Data -->
+                 <div class="scenario fade-in-on-scroll delay-3">
+                     <h3 data-translate="scenario2_title">Cenário 2: Análise de Dados de Sensor</h3>
+                     <p class="context" data-translate="scenario2_context">Um sistema de monitoramento usa sensores para prever falhas em máquinas. Analisando dados históricos:</p>
+                     <div class="data-points">
+                         <p data-translate="scenario2_data1"><strong>Evento F (Máquina Falhou):</strong> Ocorreu em 5% das observações (P(F) = 0.05).</p>
+                         <p data-translate="scenario2_data2"><strong>Evento T (Leitura do Sensor Acima do Limite T):</strong> Ocorreu em 10% das observações (P(T) = 0.10).</p>
+                         <p data-translate="scenario2_data3"><strong>Interseção (F ∩ T - Falhou E Leitura Alta):</strong> Ocorreu em 4% das observações (P(F ∩ T) = 0.04).</p>
+                     </div>
+                      <div class="questions">
+                         <strong data-translate="scenario2_questions_title">Perguntas:</strong>
+                         <ul>
+                             <li data-translate="scenario2_q1">Qual a probabilidade de uma máquina falhar, dado que a leitura do sensor está alta (P(F|T))?</li>
+                             <li data-translate="scenario2_q2">Qual a probabilidade da leitura estar alta, dado que a máquina falhou (P(T|F))?</li>
+                             <li data-translate="scenario2_q3">Os eventos F e T são independentes?</li>
+                         </ul>
+                     </div>
+                      <div class="solution-steps">
+                         <h4 data-translate="scenario2_solution_title">Passos da Solução:</h4>
+                         <p data-translate="scenario2_sol1">1. <strong>P(F|T):</strong> <code class="formula">P(F ∩ T) / P(T) = 0.04 / 0.10 = 0.40</code> (ou 40%).</p>
+                         <p data-translate="scenario2_sol2">2. <strong>P(T|F):</strong> <code class="formula">P(F ∩ T) / P(F) = 0.04 / 0.05 = 0.80</code> (ou 80%).</p>
+                         <p data-translate="scenario2_sol3">3. <strong>Independência:</strong> Precisamos verificar se <code class="formula">P(F ∩ T) = P(F) * P(T)</code>. Calculamos <code class="formula">P(F) * P(T) = 0.05 * 0.10 = 0.005</code>. Como <code class="formula">0.04 ≠ 0.005</code>, os eventos <span class="highlight">não são</span> independentes.</p>
+                         <p data-translate="scenario2_insight"><strong>Insight:</strong> Uma leitura alta do sensor aumenta significativamente a probabilidade de falha (de 5% para 40%). Além disso, 80% das falhas são precedidas por uma leitura alta, tornando o sensor um indicador útil, embora não perfeito. A dependência entre os eventos é crucial para a modelagem preditiva.</p>
+                     </div>
+                 </div>
+             </div>
+        </section>
+
+        <!-- ========= Knowledge Check Section ========= -->
+        <section id="knowledge-check">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="quiz_title">🧠 Teste Rápido!</h2>
+                <div class="quiz-container fade-in-on-scroll delay-1"> <!-- Observe container -->
+                    <div id="quiz-area">
+                         <p style="text-align: center; padding: 2rem 0;" data-translate="quiz_loading">Carregando quiz...</p>
+                    </div>
+                    <div id="quiz-feedback" class="quiz-feedback"></div>
+                    <button id="next-question-btn" data-translate="quiz_next_button">Próxima Pergunta</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========= Completion Section ========= -->
+        <section id="completion" class="completion-section"> <!-- Added ID for nav link -->
+            <div class="container">
+                 <div class="icon">
+                    <!-- Combination Icon Example -->
+                    <i class="fas fa-puzzle-piece"></i>
+                    <i class="fas fa-calculator"></i>
+                    <i class="fas fa-star"></i>
+                </div>
+                <h2 class="fade-in-on-scroll delay-1" data-translate="completion_theory_title_m29">Teoria do Módulo 29 Completa!</h2>
+                <p class="fade-in-on-scroll delay-2" data-translate="completion_theory_desc_m29">
+                    Excelente! Você aplicou a teoria dos conjuntos e a probabilidade para resolver problemas integrados. Essa habilidade é vital para analisar dados complexos e construir modelos inteligentes em IA.<br>
+                    Agora é hora de consolidar seu aprendizado. Vá para a <strong>Zona de Prática</strong> ou a <strong>Prática Avançada</strong> do Módulo 29.
+                </p>
+                <div class="button-group">
+                    <!-- Buttons observed -->
+                    <!-- IMPORTANT: Update hrefs to use 'math' and correct module number -->
+                    <a href="math-dashboard.html" class="action-button secondary fade-in-on-scroll delay-3"><i class="fas fa-list"></i> <span data-translate="nav_menu">Menu do Curso</span></a>
+                    <a href="math-practice-29.html" class="action-button success fade-in-on-scroll delay-4"><i class="fas fa-pencil-alt"></i> <span data-translate="nav_practice">Iniciar Prática</span></a>
+                    <a href="math-advanced-29.html" class="action-button secondary fade-in-on-scroll delay-5"><i class="fas fa-flask"></i> <span data-translate="nav_advanced">Prática Avançada</span></a>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="main-footer">
+        <div class="container">
+            <p data-translate="footer_copyright"></p>
+        </div>
+    </footer>
+
+    <script>
+    // --- Translations Object (Portuguese Only - Module 29) ---
+    const translations = {
+        pt: {
+            "page_title": "Módulo 29: Exercícios Integrados (Conjuntos e Probabilidade)",
+            "nav_practice": "Iniciar Prática",
+            "nav_advanced": "Prática Avançada",
+            "nav_menu": "Menu do Curso",
+            "nav_welcome_m29": "Boas-vindas M29", "nav_recap": "Revisão Rápida", "nav_venn_prob": "Prob. com Venn", "nav_scenarios": "Cenários Práticos", "nav_quiz": "Teste Rápido",
+            "header_title_m29": "Módulo 29: Exercícios Integrados", "header_subtitle_m29": "Combinando Teoria dos Conjuntos e Probabilidade para resolver problemas.",
+            "welcome_title_m29": "🤝 Integrando Conjuntos e Probabilidade",
+            "welcome_p1_m29": "Bem-vindo ao Módulo 29! Nos módulos anteriores, exploramos a Teoria dos Conjuntos e a Probabilidade separadamente. Agora, vamos unir esses conceitos. A capacidade de usar operações de conjuntos para definir eventos e calcular suas probabilidades é fundamental em muitas áreas da IA.",
+            "welcome_p2_m29": "Analisaremos como classificar dados (conjuntos) e, em seguida, determinar a chance de certos padrões ou resultados ocorrerem (probabilidade). Isso é crucial para tarefas como classificação de dados, análise de risco, sistemas de recomendação e muito mais. Prepare-se para aplicar o que aprendeu em cenários práticos!",
+            "recap_title": "📚 Revisão Rápida: Conceitos Essenciais", "recap_subtitle": "Vamos relembrar os fundamentos que usaremos neste módulo.",
+            "recap_sets_title": "Teoria dos Conjuntos", "recap_sets_item1": "<strong>União (A ∪ B):</strong> Elementos em A, ou em B, ou em ambos.", "recap_sets_item2": "<strong>Interseção (A ∩ B):</strong> Elementos que estão em A <span class=\"highlight\">e</span> em B.", "recap_sets_item3": "<strong>Complementar (A'):</strong> Elementos no universo que <span class=\"highlight\">não</span> estão em A.", "recap_sets_item4": "<strong>Cardinalidade (|A|):</strong> Número de elementos no conjunto A.",
+            "recap_prob_title": "Probabilidade Básica", "recap_prob_item1": "<strong>Probabilidade de A (P(A)):</strong> <code>|A| / |Ω|</code> (casos favoráveis / casos totais).", "recap_prob_item2": "<strong>Regra da Adição:</strong> <code>P(A ∪ B) = P(A) + P(B) - P(A ∩ B)</code>.", "recap_prob_item3": "<strong>Probabilidade Condicional (P(A|B)):</strong> Probabilidade de A ocorrer <span class=\"highlight\">dado que</span> B ocorreu. <code>P(A|B) = P(A ∩ B) / P(B)</code>.", "recap_prob_item4": "<strong>Independência:</strong> A e B são independentes se <code>P(A ∩ B) = P(A) * P(B)</code>.",
+            "recap_conclusion": "Essas operações e fórmulas são as ferramentas que usaremos para resolver problemas integrados.",
+            "venn_prob_title": "📊 Calculando Probabilidades com Diagramas de Venn", "venn_prob_subtitle": "Visualizando conjuntos para facilitar o cálculo de probabilidades.",
+            "venn_placeholder": "Diagrama de Venn com dois conjuntos (A e B) e o Universo (Ω), mostrando as regiões A-B, B-A, A∩B e (A∪B)'",
+            "venn_prob_p1": "Diagramas de Venn são excelentes para visualizar as relações entre conjuntos. Se soubermos o número de elementos (ou a proporção) em cada região, podemos calcular probabilidades diretamente:",
+            "venn_prob_item1": "<code>P(A)</code>: Soma das proporções nas regiões que compõem A (<code>A-B</code> e <code>A∩B</code>).", "venn_prob_item2": "<code>P(B)</code>: Soma das proporções nas regiões que compõem B (<code>B-A</code> e <code>A∩B</code>).", "venn_prob_item3": "<code>P(A ∩ B)</code>: Proporção na região de interseção.", "venn_prob_item4": "<code>P(A ∪ B)</code>: Soma das proporções em <code>A-B</code>, <code>B-A</code>, e <code>A∩B</code>. Alternativamente, <code>P(A) + P(B) - P(A ∩ B)</code>.", "venn_prob_item5": "<code>P(A')</code>: Proporção na região fora de A (<code>B-A</code> e <code>(A∪B)'</code>). Ou <code>1 - P(A)</code>.", "venn_prob_item6": "<code>P(A | B) = P(A ∩ B) / P(B)</code>: A proporção da interseção em relação à área total de B.",
+            "venn_prob_p2": "Esta abordagem visual ajuda a entender como as operações de conjunto se traduzem em cálculos de probabilidade.",
+            "scenarios_title": "⚙️ Cenários Práticos: Aplicando os Conceitos", "scenarios_subtitle": "Vamos resolver alguns problemas que combinam conjuntos e probabilidade.",
+            "scenario1_title": "Cenário 1: Análise de Usuários de App", "scenario1_context": "Uma empresa de IA analisa o comportamento de 1000 usuários em seu novo aplicativo.", "scenario1_data1": "<strong>Conjunto A (Clicaram em Anúncio):</strong> 200 usuários.", "scenario1_data2": "<strong>Conjunto B (Fizeram Compra):</strong> 150 usuários.", "scenario1_data3": "<strong>Interseção (A ∩ B - Clicaram e Compraram):</strong> 50 usuários.", "scenario1_data4": "<strong>Universo (Ω - Total de Usuários):</strong> 1000 usuários.", "scenario1_questions_title": "Perguntas:", "scenario1_q1": "Qual a probabilidade de um usuário selecionado aleatoriamente ter clicado em um anúncio (P(A))?", "scenario1_q2": "Qual a probabilidade de um usuário ter feito uma compra (P(B))?", "scenario1_q3": "Qual a probabilidade de um usuário ter clicado OU feito uma compra (P(A ∪ B))?", "scenario1_q4": "Dado que um usuário clicou em um anúncio, qual a probabilidade de ele ter feito uma compra (P(B|A))?", "scenario1_solution_title": "Passos da Solução:", "scenario1_sol1": "1. <strong>P(A):</strong> <code class=\"formula\">|A| / |Ω| = 200 / 1000 = 0.20</code> (ou 20%).", "scenario1_sol2": "2. <strong>P(B):</strong> <code class=\"formula\">|B| / |Ω| = 150 / 1000 = 0.15</code> (ou 15%).", "scenario1_sol3": "3. <strong>P(A ∩ B):</strong> <code class=\"formula\">|A ∩ B| / |Ω| = 50 / 1000 = 0.05</code> (ou 5%).", "scenario1_sol4": "4. <strong>P(A ∪ B):</strong> Usando a Regra da Adição: <code class=\"formula\">P(A) + P(B) - P(A ∩ B) = 0.20 + 0.15 - 0.05 = 0.30</code> (ou 30%).", "scenario1_sol5": "5. <strong>P(B|A):</strong> Usando a fórmula da Probabilidade Condicional: <code class=\"formula\">P(A ∩ B) / P(A) = 0.05 / 0.20 = 0.25</code> (ou 25%).", "scenario1_insight": "<strong>Insight:</strong> 25% dos usuários que clicam em anúncios acabam comprando, o que pode indicar a eficácia (ou ineficácia) relativa dos anúncios para esse grupo.",
+            "scenario2_title": "Cenário 2: Análise de Dados de Sensor", "scenario2_context": "Um sistema de monitoramento usa sensores para prever falhas em máquinas. Analisando dados históricos:", "scenario2_data1": "<strong>Evento F (Máquina Falhou):</strong> Ocorreu em 5% das observações (P(F) = 0.05).", "scenario2_data2": "<strong>Evento T (Leitura do Sensor Acima do Limite T):</strong> Ocorreu em 10% das observações (P(T) = 0.10).", "scenario2_data3": "<strong>Interseção (F ∩ T - Falhou E Leitura Alta):</strong> Ocorreu em 4% das observações (P(F ∩ T) = 0.04).", "scenario2_questions_title": "Perguntas:", "scenario2_q1": "Qual a probabilidade de uma máquina falhar, dado que a leitura do sensor está alta (P(F|T))?", "scenario2_q2": "Qual a probabilidade da leitura estar alta, dado que a máquina falhou (P(T|F))?", "scenario2_q3": "Os eventos F e T são independentes?", "scenario2_solution_title": "Passos da Solução:", "scenario2_sol1": "1. <strong>P(F|T):</strong> <code class=\"formula\">P(F ∩ T) / P(T) = 0.04 / 0.10 = 0.40</code> (ou 40%).", "scenario2_sol2": "2. <strong>P(T|F):</strong> <code class=\"formula\">P(F ∩ T) / P(F) = 0.04 / 0.05 = 0.80</code> (ou 80%).", "scenario2_sol3": "3. <strong>Independência:</strong> Precisamos verificar se <code class=\"formula\">P(F ∩ T) = P(F) * P(T)</code>. Calculamos <code class=\"formula\">P(F) * P(T) = 0.05 * 0.10 = 0.005</code>. Como <code class=\"formula\">0.04 ≠ 0.005</code>, os eventos <span class=\"highlight\">não são</span> independentes.", "scenario2_insight": "<strong>Insight:</strong> Uma leitura alta do sensor aumenta significativamente a probabilidade de falha (de 5% para 40%). Além disso, 80% das falhas são precedidas por uma leitura alta, tornando o sensor um indicador útil, embora não perfeito. A dependência entre os eventos é crucial para a modelagem preditiva.",
+            "quiz_title": "🧠 Teste Rápido!", "quiz_next_button": "Próxima Pergunta", "quiz_loading": "Carregando quiz...",
+            // Quiz Questions for Module 29
+            "quiz_q1_m29": "Em uma pesquisa com 50 estudantes, 30 gostam de Python (P) e 25 gostam de Java (J). Se 15 gostam de ambos, quantos gostam de Python OU Java (P ∪ J)?",
+            "quiz_q1_m29_opt1": "35", "quiz_q1_m29_opt2": "40", "quiz_q1_m29_opt3": "50", "quiz_q1_m29_opt4": "55", // Correct: |P U J| = |P| + |J| - |P ∩ J| = 30 + 25 - 15 = 40
+            "quiz_q2_m29": "Se P(A) = 0.6, P(B) = 0.4, e P(A ∩ B) = 0.2, qual é a probabilidade de A ocorrer dado que B ocorreu, P(A|B)?",
+            "quiz_q2_m29_opt1": "0.2", "quiz_q2_m29_opt2": "0.33", "quiz_q2_m29_opt3": "0.5", "quiz_q2_m29_opt4": "0.8", // Correct: P(A|B) = P(A ∩ B) / P(B) = 0.2 / 0.4 = 0.5
+            "quiz_q3_m29": "Em um baralho padrão de 52 cartas, qual a probabilidade de tirar uma carta que seja um Rei (K) OU uma carta de Copas (♥)?",
+            "quiz_q3_m29_opt1": "16/52", "quiz_q3_m29_opt2": "17/52", "quiz_q3_m29_opt3": "4/52", "quiz_q3_m29_opt4": "13/52", // Correct: P(K) = 4/52, P(♥) = 13/52, P(K ∩ ♥) = 1/52. P(K U ♥) = 4/52 + 13/52 - 1/52 = 16/52
+            "quiz_q4_m29": "Se P(X) = 0.7 e P(Y) = 0.5, e os eventos X e Y são independentes, qual é P(X ∩ Y)?",
+            "quiz_q4_m29_opt1": "0.2", "quiz_q4_m29_opt2": "0.35", "quiz_q4_m29_opt3": "0.7", "quiz_q4_m29_opt4": "1.2", // Correct: P(X ∩ Y) = P(X) * P(Y) = 0.7 * 0.5 = 0.35
+            "quiz_feedback_correct": "Correto! 🎉", "quiz_feedback_incorrect": "Ops! A resposta correta era: {correctAnswerText}",
+            "quiz_final_score_title": "Teste Rápido Completo!",
+            "quiz_final_score_summary": "Você respondeu {score} de {total} perguntas corretamente.",
+            "quiz_final_score_perfect": "Excelente! Você está integrando bem os conceitos de conjuntos e probabilidade.", "quiz_final_score_good": "Bom trabalho! Continue praticando para fortalecer a conexão entre esses tópicos.",
+            "completion_theory_title_m29": "Teoria do Módulo 29 Completa!",
+            "completion_theory_desc_m29": "Excelente! Você aplicou a teoria dos conjuntos e a probabilidade para resolver problemas integrados. Essa habilidade é vital para analisar dados complexos e construir modelos inteligentes em IA.<br> Agora é hora de consolidar seu aprendizado. Vá para a <strong>Zona de Prática</strong> ou a <strong>Prática Avançada</strong> do Módulo 29.",
+            "footer_copyright": "© 2024 Matemática para IA. Todos os direitos reservados."
+        }
+    };
+
+    // --- Global Variables ---
+    let currentQuestionIndex = 0;
+    let score = 0;
+    const lang = 'pt'; // Hardcoded language for this specific module
+
+    // --- DOM Elements (Get them once) ---
+    const navToggleButton = document.getElementById('minimal-nav-toggle');
+    const navPanel = document.getElementById('minimal-nav-panel');
+    const body = document.body;
+    const quizArea = document.getElementById('quiz-area');
+    const feedbackArea = document.getElementById('quiz-feedback');
+    const nextButton = document.getElementById('next-question-btn');
+    // Removed elements specific to Module 3's text demo
+
+    // --- Functions ---
+
+    function getTranslation(key, replacements = {}) {
+         let text = translations[lang]?.[key] ?? `[${key}]`; // Default to key if not found
+         for (const placeholder in replacements) {
+             // Use a more robust regex to avoid issues with special characters in replacements
+             const regex = new RegExp(`\\{${placeholder}\\}`, 'g');
+             text = text.replace(regex, replacements[placeholder]);
+         }
+         return text;
+    }
+
+    function translatePage() {
+         document.querySelectorAll('[data-translate]').forEach(el => {
+             const key = el.getAttribute('data-translate');
+             let translation = getTranslation(key);
+
+             if (el.tagName === 'TITLE') { document.title = translation; }
+             else if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+                 if (el.placeholder) el.placeholder = translation;
+             }
+             else if (el.tagName === 'DIV' && el.classList.contains('placeholder-image')) {
+                 // Handle placeholder text specifically if needed, or just set textContent
+                 el.textContent = translation; // Simple text content for placeholder
+             }
+             else {
+                 // Allow specific HTML tags safely within translations
+                 const safeHtmlTags = /<\/?(code|strong|span|br|i|b|em|ul|li|div|p|h[1-6])(\s+class="[^"]*")?>/gi;
+                 let containsSafeHtml = safeHtmlTags.test(translation);
+
+                 // Check common containers where HTML is expected
+                 const isSafeContainer = el.closest('.concept-details, .solution-steps, .venn-text, .quiz-question, .quiz-feedback, .completion-section p, .main-footer p, .scenario .context, .scenario .data-points, .scenario .questions');
+
+                 if (containsSafeHtml || isSafeContainer) {
+                    el.innerHTML = translation;
+                 } else {
+                    // Fallback to textContent for safety, unless it's likely simple text node
+                    if (el.children.length === 0 || el.textContent.trim() === el.innerHTML.trim()) {
+                       el.textContent = translation.replace(/<[^>]*>?/gm, ''); // Strip tags just in case for pure text nodes
+                    } else {
+                       // If it has complex children not covered, might need manual handling or more specific rules
+                       // For now, attempt innerHTML but be cautious
+                       el.innerHTML = translation;
+                       console.warn("Applied innerHTML to potentially complex element:", el);
+                    }
+                 }
+             }
+         });
+    }
+
+
+    // --- Quiz Data & Functions (Module 29) ---
+    const quizData = [
+         { questionKey: "quiz_q1_m29", optionKeys: ["quiz_q1_m29_opt1", "quiz_q1_m29_opt2", "quiz_q1_m29_opt3", "quiz_q1_m29_opt4"], correctAnswer: 1 }, // 40
+         { questionKey: "quiz_q2_m29", optionKeys: ["quiz_q2_m29_opt1", "quiz_q2_m29_opt2", "quiz_q2_m29_opt3", "quiz_q2_m29_opt4"], correctAnswer: 2 }, // 0.5
+         { questionKey: "quiz_q3_m29", optionKeys: ["quiz_q3_m29_opt1", "quiz_q3_m29_opt2", "quiz_q3_m29_opt3", "quiz_q3_m29_opt4"], correctAnswer: 0 }, // 16/52
+         { questionKey: "quiz_q4_m29", optionKeys: ["quiz_q4_m29_opt1", "quiz_q4_m29_opt2", "quiz_q4_m29_opt3", "quiz_q4_m29_opt4"], correctAnswer: 1 }  // 0.35
+    ];
+
+    function loadQuestion() {
+          if (!quizArea) return; // Ensure quizArea exists
+
+          // If we reached the end, show score
+          if (currentQuestionIndex >= quizData.length) {
+              if (!quizArea.querySelector('[data-translate="quiz_final_score_title"]')) { // Avoid re-rendering score
+                 showFinalScore();
+              }
+              return;
+          }
+
+          const currentQuiz = quizData[currentQuestionIndex];
+          const questionText = getTranslation(currentQuiz.questionKey);
+          // Generate HTML for question and options
+          // Use innerHTML for question to allow formatting like <code>
+          quizArea.innerHTML = `
+              <div class="quiz-question">${currentQuestionIndex + 1}. ${questionText}</div>
+              <div class="quiz-options">
+                  ${currentQuiz.optionKeys.map((optionKey, index) => `
+                      <button class="quiz-option-btn" data-index="${index}">${getTranslation(optionKey).replace(/`(.*?)`/g, '<code>$1</code>')}</button>
+                  `).join('')}
+              </div>
+          `;
+
+          // Reset feedback and next button
+          if (feedbackArea) {
+            feedbackArea.classList.remove('visible', 'correct', 'incorrect');
+            feedbackArea.innerHTML = ''; // Clear previous feedback content
+            feedbackArea.style.height = '0'; // Reset height
+            feedbackArea.style.marginBottom = '0'; // Reset margin
+          }
+          if (nextButton) {
+            nextButton.classList.remove('visible');
+            nextButton.disabled = true;
+          }
+
+          // Add event listeners to the new buttons
+          quizArea.querySelectorAll('.quiz-option-btn').forEach(button => {
+              button.addEventListener('click', handleAnswer);
+          });
+    }
+
+    function handleAnswer(event) {
+         const selectedButton = event.target;
+         const selectedIndex = parseInt(selectedButton.dataset.index);
+         const correctIndex = quizData[currentQuestionIndex].correctAnswer;
+         const correctOptionKey = quizData[currentQuestionIndex].optionKeys[correctIndex];
+
+         // Disable all options
+         quizArea.querySelectorAll('.quiz-option-btn').forEach(btn => {
+            btn.disabled = true;
+            btn.classList.remove('shake'); // Remove shake if present from previous incorrect
+         });
+
+         if (!feedbackArea || !nextButton) return; // Ensure elements exist
+
+         feedbackArea.classList.add('visible');
+
+         if (selectedIndex === correctIndex) {
+             selectedButton.classList.add('correct');
+             feedbackArea.innerHTML = getTranslation('quiz_feedback_correct');
+             feedbackArea.classList.add('correct');
+             feedbackArea.classList.remove('incorrect');
+             score++;
+             selectedButton.classList.add('tada-anim');
+         } else {
+             selectedButton.classList.add('incorrect');
+             const formattedCorrectAnswer = getTranslation(correctOptionKey).replace(/`(.*?)`/g, '<code>$1</code>');
+             feedbackArea.innerHTML = getTranslation('quiz_feedback_incorrect', { correctAnswerText: `<strong>${formattedCorrectAnswer}</strong>` });
+             feedbackArea.classList.add('incorrect');
+             feedbackArea.classList.remove('correct');
+             // Highlight the correct button as well
+             const correctButton = quizArea.querySelector(`.quiz-option-btn[data-index="${correctIndex}"]`);
+             if(correctButton) correctButton.classList.add('correct');
+             selectedButton.classList.add('shake');
+         }
+
+         // Remove animation classes after they finish
+          selectedButton.addEventListener('animationend', () => {
+               selectedButton.classList.remove('tada-anim', 'shake');
+          }, { once: true });
+
+         // Make feedback area adjust height and margin smoothly
+         feedbackArea.style.height = feedbackArea.scrollHeight + 'px';
+         feedbackArea.style.marginBottom = '1rem';
+
+
+         // Show and enable next button
+         nextButton.classList.add('visible');
+         nextButton.disabled = false;
+     }
+
+     function showFinalScore() {
+            if (!quizArea) return;
+            const totalQuestions = quizData.length;
+            // Determine message based on score percentage
+            let resultMessageKey = (score / totalQuestions) >= 0.75 ? 'quiz_final_score_perfect' : 'quiz_final_score_good'; // 75% threshold
+
+            quizArea.innerHTML = `
+               <div class="quiz-question text-center" data-translate="quiz_final_score_title" style="font-size: 1.5rem;">${getTranslation('quiz_final_score_title')}</div>
+               <p class="text-center" style="font-size: 1.2rem; margin-bottom: 1rem;">${getTranslation('quiz_final_score_summary', { score: score, total: totalQuestions })}</p>
+               <p class="text-center" style="color: ${score === totalQuestions ? 'var(--success-color)' : 'var(--primary-color)'}; font-weight: bold;">${getTranslation(resultMessageKey)}</p>
+            `;
+            if (feedbackArea) feedbackArea.classList.remove('visible'); // Hide feedback area
+            if (nextButton) nextButton.style.display = 'none'; // Hide next button
+            // quizArea.scrollIntoView({ behavior: 'smooth', block: 'center' }); // Scroll score into view - Optional
+     }
+
+
+    // --- Intersection Observer Setup ---
+    function setupObservers() {
+        const observerOptions = {
+            root: null, // relative to viewport
+            rootMargin: '0px',
+            threshold: 0.1 // Trigger when 10% of the element is visible
+        };
+
+        const observerCallback = (entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    // Optional: Unobserve after it becomes visible to save resources
+                    // observer.unobserve(entry.target);
+                }
+                // Optional: Remove 'visible' if it scrolls out of view
+                // else {
+                //     entry.target.classList.remove('visible');
+                // }
+            });
+        };
+
+        const animationObserver = new IntersectionObserver(observerCallback, observerOptions);
+
+        // Observe elements with the fade-in class
+        document.querySelectorAll('.fade-in-on-scroll').forEach(el => {
+            animationObserver.observe(el);
+        });
+
+        // Note: The code output simulation from Module 3 example is removed as it's not directly applicable here.
+        // Observers now just handle the general fade-in effects.
+    }
+
+    // --- Event Listeners Setup ---
+    function setupEventListeners() {
+        // Navbar Toggle
+        if (navToggleButton && navPanel) {
+            navToggleButton.addEventListener('click', (event) => {
+                event.stopPropagation();
+                body.classList.toggle('nav-active');
+                navToggleButton.setAttribute('aria-expanded', body.classList.contains('nav-active'));
+            });
+
+            // Close nav if clicking outside
+            document.addEventListener('click', (event) => {
+                if (body.classList.contains('nav-active') && !navPanel.contains(event.target) && event.target !== navToggleButton && !navToggleButton.contains(event.target)) {
+                    body.classList.remove('nav-active');
+                    navToggleButton.setAttribute('aria-expanded', 'false');
+                }
+            });
+
+            // Close nav on link click
+            navPanel.querySelectorAll('a').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    // Check if it's an internal link
+                    if (link.getAttribute('href').startsWith('#')) {
+                         // Allow default scroll behavior
+                        // Close panel slightly delayed
+                        setTimeout(() => {
+                            body.classList.remove('nav-active');
+                            navToggleButton.setAttribute('aria-expanded', 'false');
+                        }, 150);
+                    } else {
+                        // For external links (practice, dashboard etc.), close immediately if needed
+                         body.classList.remove('nav-active');
+                         navToggleButton.setAttribute('aria-expanded', 'false');
+                    }
+                });
+            });
+
+            // Close nav on Escape key
+            document.addEventListener('keydown', (event) => {
+                 if (event.key === 'Escape' && body.classList.contains('nav-active')) {
+                     body.classList.remove('nav-active');
+                     navToggleButton.setAttribute('aria-expanded', 'false');
+                 }
+             });
+        }
+
+        // Quiz Next Button
+        if (nextButton) {
+            nextButton.addEventListener('click', () => {
+                if (!nextButton.disabled) {
+                    currentQuestionIndex++;
+                    loadQuestion(); // Load the next question
+                }
+            });
+        } else {
+            console.error("Elemento #next-question-btn não encontrado.");
+        }
+    }
+
+    // --- Initialization ---
+    document.addEventListener('DOMContentLoaded', () => {
+        // Check if elements needed for quiz exist before proceeding
+        if (!quizArea) console.error("Elemento #quiz-area não encontrado.");
+        if (!feedbackArea) console.error("Elemento #quiz-feedback não encontrado.");
+
+        translatePage();        // Apply translations first
+        setupEventListeners();  // Set up interactive elements
+        setupObservers();       // Set up animations
+
+        if (quizArea && quizArea.querySelector('[data-translate="quiz_loading"]')) { // Check if quiz needs loading
+            loadQuestion();     // Load the first quiz question if container exists and is in loading state
+        } else if (quizArea) {
+            // If quiz area exists but doesn't have loading text, assume it might be pre-rendered or needs re-init
+            currentQuestionIndex = 0; // Reset state
+            score = 0;
+            loadQuestion();
+        }
+    });
+
+    </script>
+
+</body>
+</html>

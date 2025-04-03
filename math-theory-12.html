@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<!-- Language set to Portuguese BR -->
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Title set by JS -->
+    <title data-translate="page_title_m12">Módulo 12: Probabilidade Condicional e Teorema de Bayes</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* --- Reset & Base Styles --- */
+        :root {
+            --primary-color: #007bff; /* Blue */
+            --secondary-color: #6c757d; /* Gray */
+            --background-light: #f8f9fa;
+            --background-dark: #343a40;
+            --text-light: #f8f9fa;
+            --text-dark: #212529;
+            --accent-color: #ffc107; /* Yellow */
+            --success-color: #28a745; /* Green */
+            --error-color: #dc3545; /* Red */
+            --info-color: #17a2b8;  /* Teal */
+            --bayes-color: #6f42c1; /* Indigo */
+            --independence-color: #fd7e14; /* Orange */
+            --probability-color: #20c997; /* Cyan */
+            --border-radius: 8px;
+            --transition-speed: 0.3s;
+            --animation-speed: 0.6s; /* Control fade-in speed */
+            --font-body: 'Roboto', sans-serif;
+            --font-title: 'Orbitron', sans-serif;
+            --nav-primary: #6e48aa;
+            --nav-success: #4cc9f0;
+            --nav-dark: #1a1a2e;
+            --footer-border-color: #495057;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; font-size: 16px; }
+        body {
+            font-family: var(--font-body); line-height: 1.7;
+            background-color: var(--background-light); color: var(--text-dark);
+            overflow-x: hidden; display: flex; flex-direction: column; min-height: 100vh;
+        }
+        main { flex-grow: 1; }
+
+        /* --- Utility Classes --- */
+        .container { max-width: 960px; margin: 0 auto; padding: 0 15px; }
+        .text-center { text-align: center; }
+        .highlight { color: var(--primary-color); font-weight: bold; }
+        .formula {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #e9ecef;
+            padding: 0.8rem 1rem;
+            border-radius: 4px;
+            margin: 1rem auto;
+            font-size: 1.1rem; /* Slightly larger for formulas */
+            color: var(--text-dark);
+            display: block; /* Make it block level */
+            border: 1px solid #ced4da;
+            max-width: fit-content; /* Adjust width to content */
+            text-align: center;
+        }
+        .term-highlight {
+             font-weight: bold;
+             color: var(--bayes-color); /* Use a distinct color */
+        }
+         .placeholder-image {
+            background-color: #e0e0e0;
+            border: 1px dashed var(--secondary-color);
+            padding: 2rem;
+            text-align: center;
+            color: var(--secondary-color);
+            font-style: italic;
+            margin: 1.5rem auto;
+            max-width: 400px;
+            border-radius: var(--border-radius);
+        }
+
+        /* Elements to be animated by observer */
+        .fade-in-on-scroll {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+        }
+        .fade-in-on-scroll.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        /* Add delays for staggering */
+        .delay-1.visible { transition-delay: 0.1s; }
+        .delay-2.visible { transition-delay: 0.2s; }
+        .delay-3.visible { transition-delay: 0.3s; }
+        .delay-4.visible { transition-delay: 0.4s; }
+        .delay-5.visible { transition-delay: 0.5s; }
+        .delay-6.visible { transition-delay: 0.6s; }
+        .delay-7.visible { transition-delay: 0.7s; }
+
+
+        .button-group { margin-top: 2rem; display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; }
+        .action-button {
+             display: inline-flex; align-items: center; justify-content: center; gap: 0.5em;
+             padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold;
+             color: var(--text-light); background-color: var(--primary-color); border: none;
+             border-radius: var(--border-radius); cursor: pointer;
+             transition: background-color var(--transition-speed), transform var(--transition-speed), filter var(--transition-speed), box-shadow var(--transition-speed), opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out; /* Add animation transition */
+             margin-top: 1rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+             text-decoration: none; line-height: 1.2;
+             opacity: 0; /* Start hidden if animated */
+             transform: translateY(20px); /* Start offset if animated */
+        }
+        .action-button.visible { /* Make visible via observer */
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .action-button i.fas {}
+        .action-button:hover:not(:disabled) { background-color: #0056b3; transform: translateY(-2px) !important; box-shadow: 0 4px 8px rgba(0,0,0,0.15); } /* Use !important to override initial transform */
+        .action-button:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none !important; box-shadow: none; opacity: 0.7; }
+        .action-button.success { background-color: var(--success-color); }
+        .action-button.success:hover:not(:disabled) { background-color: #218838; }
+        .action-button.secondary { background-color: var(--secondary-color); }
+        .action-button.secondary:hover:not(:disabled) { background-color: #5a6268; }
+        .action-button:active:not(:disabled) { transform: translateY(1px) scale(0.98) !important; filter: brightness(0.95); }
+
+        /* --- Animations --- */
+        @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); } 50% { transform: scale(1.03); box-shadow: 0 0 15px rgba(0, 123, 255, 0.6); } 100% { transform: scale(1); box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); } }
+        @keyframes tada { from { transform: scale3d(1, 1, 1); } 10%, 20% { transform: scale3d(.9, .9, .9) rotate3d(0, 0, 1, -3deg); } 30%, 50%, 70%, 90% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, 3deg); } 40%, 60%, 80% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, -3deg); } to { transform: scale3d(1, 1, 1); } }
+        .tada-anim { animation: tada 1s ease; }
+        @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
+        @keyframes iconAppearCorrect { 0% { transform: scale(0.5) rotate(-15deg); opacity: 0; } 60% { transform: scale(1.2) rotate(5deg); opacity: 1; } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
+
+        /* --- Minimal Retractable Nav --- */
+        .minimal-nav-button { position: fixed; top: 15px; right: 15px; z-index: 1001; background-color: rgba(52, 58, 64, 0.75); color: var(--text-light); border: none; border-radius: var(--border-radius); padding: 8px 12px; cursor: pointer; transition: background-color var(--transition-speed), opacity var(--transition-speed), transform var(--transition-speed); font-size: 1.1rem; opacity: 0.6; box-shadow: 0 2px 5px rgba(0,0,0,0.2); line-height: 1; }
+        .minimal-nav-button:hover { background-color: rgba(52, 58, 64, 0.95); opacity: 1; transform: scale(1.05); }
+        .minimal-nav { position: fixed; top: 60px; right: 15px; z-index: 1000; background-color: var(--background-dark); border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.3); padding: 0.8rem; opacity: 0; transform: translateY(-15px) scale(0.95); transform-origin: top right; pointer-events: none; transition: opacity var(--transition-speed) ease, transform var(--transition-speed) ease; min-width: 200px; }
+        body.nav-active .minimal-nav { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+        .minimal-nav ul { list-style: none; margin: 0; padding: 0; }
+        .minimal-nav ul li { margin-bottom: 5px; }
+        .minimal-nav ul li:last-child { margin-bottom: 0; }
+        .minimal-nav ul li a { display: flex; align-items: center; color: var(--text-light); text-decoration: none; padding: 0.6rem 1rem; border-radius: 4px; transition: background-color var(--transition-speed), color var(--transition-speed); white-space: nowrap; font-weight: 400; font-size: 0.95rem; }
+        .minimal-nav ul li a i.fas { margin-right: 10px; width: 1.2em; text-align: center; opacity: 0.8; transition: opacity var(--transition-speed); }
+        .minimal-nav ul li a:hover { background-color: var(--primary-color); color: var(--text-light); }
+        .minimal-nav ul li a:hover i.fas { opacity: 1; }
+
+        /* --- Header --- */
+        .main-header { background: linear-gradient(135deg, var(--probability-color), var(--info-color)); color: var(--text-light); padding: 4rem 0 6rem; text-align: center; position: relative; overflow: hidden; }
+        .main-header .container { /* Start visible */ }
+        .main-header h1 { font-family: var(--font-title); font-size: 2.8rem; /* Slightly smaller */ margin-bottom: 0.5rem; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); }
+        .main-header p { font-size: 1.2rem; font-weight: 300; opacity: 0.9; }
+        .header-shape { position: absolute; border-radius: 50%; background-color: rgba(255, 255, 255, 0.1); animation: pulse 5s infinite ease-in-out alternate; }
+        .shape1 { width: 150px; height: 150px; bottom: -50px; left: 10%; animation-duration: 6s; }
+        .shape2 { width: 80px; height: 80px; top: 50px; right: 15%; animation-duration: 4s; }
+        .shape3 { width: 50px; height: 50px; bottom: 20px; right: 30%; animation-duration: 7s; }
+
+        /* --- Section Styling --- */
+        section { padding: 4rem 0; border-bottom: 1px solid #eee; }
+        main section:last-of-type { border-bottom: none; padding-bottom: 0;}
+        section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); margin-bottom: 2rem; text-align: center; position: relative; padding-bottom: 10px; }
+        section h2::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 60px; height: 4px; background-color: var(--accent-color); border-radius: 2px; }
+
+        /* --- Specific Section Styles --- */
+        .concept-box {
+            background-color: #fff;
+            padding: 2rem;
+            border-radius: var(--border-radius);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            margin-top: 2rem;
+            border-left: 5px solid var(--info-color); /* Accent border */
+        }
+        #independence .concept-box { border-left-color: var(--independence-color); }
+        #bayes-theorem .concept-box { border-left-color: var(--bayes-color); }
+
+        .concept-box h3 {
+            font-family: var(--font-body);
+            font-weight: 700;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: var(--text-dark);
+        }
+         .concept-box p, .concept-box ul { margin-bottom: 1rem; }
+         .concept-box ul { list-style: disc; padding-left: 25px; }
+
+        /* --- Bayes Theorem Explanation --- */
+        #bayes-theorem .term-explanation { margin-top: 1.5rem; }
+        #bayes-theorem .term-explanation dt { font-weight: bold; color: var(--bayes-color); }
+        #bayes-theorem .term-explanation dd { margin-left: 1.5em; margin-bottom: 0.5rem; }
+
+        /* --- Application Section --- */
+        #applications-ai .app-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+        .app-card { /* Animated by observer */
+            background-color: #fff;
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.07);
+            text-align: center;
+            border-top: 4px solid var(--success-color);
+            opacity: 0; transform: translateY(20px); /* Start state */
+            transition: transform var(--transition-speed) ease, box-shadow var(--transition-speed) ease, opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+        }
+        .app-card.visible { opacity: 1; transform: translateY(0); }
+        .app-card:hover { transform: translateY(-5px) scale(1.02) !important; box-shadow: 0 8px 20px rgba(0,0,0,0.12); }
+        .app-icon { font-size: 2.5rem; margin-bottom: 1rem; color: var(--success-color); }
+        .app-card h4 { font-size: 1.2rem; margin-bottom: 0.5rem; color: var(--text-dark); }
+        .app-card p { font-size: 0.95rem; color: var(--secondary-color); line-height: 1.6; }
+
+
+        /* --- Knowledge Check Section --- */
+        #knowledge-check-m12 { background-color: #e9ecef; }
+        .quiz-container { /* Animated by observer */
+             background-color: #fff; padding: 2rem; border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.1); max-width: 700px; margin: 2rem auto 0;
+             opacity: 0; transition: opacity var(--animation-speed) ease-out; /* Only fade opacity */
+        }
+        .quiz-container.visible { opacity: 1; }
+        .quiz-question { font-size: 1.2rem; font-weight: bold; margin-bottom: 1.5rem; color: var(--text-dark); }
+        .quiz-options button { display: block; width: 100%; padding: 1rem; margin-bottom: 1rem; text-align: left; font-size: 1rem; background-color: #f8f9fa; border: 1px solid #ced4da; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), border-color var(--transition-speed), transform var(--transition-speed); }
+        .quiz-options button:not(:disabled):hover { background-color: #e2e6ea; border-color: #adb5bd; transform: translateX(5px); }
+        .quiz-options button:disabled { cursor: default; opacity: 0.7; }
+        .quiz-options button.correct { background-color: #d4edda; border-color: var(--success-color); color: #155724; font-weight: bold; }
+        .quiz-options button.incorrect { background-color: #f8d7da; border-color: var(--error-color); color: #721c24; font-weight: bold; }
+        .quiz-options button.incorrect.shake { animation: shake 0.5s ease; }
+        .quiz-feedback { margin-top: 1.5rem; padding: 1rem; border-radius: var(--border-radius); font-weight: bold; text-align: center; opacity: 0; transition: opacity 0.5s ease, height 0.5s ease, margin-bottom 0.5s ease; height: 0; overflow: hidden; margin-bottom: 0;}
+        .quiz-feedback.visible { opacity: 1; height: auto; margin-bottom: 1rem; }
+        .quiz-feedback.correct { background-color: #d4edda; color: #155724; }
+        .quiz-feedback.incorrect { background-color: #f8d7da; color: #721c24; }
+        #next-question-btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5em; margin: 1.5rem auto 0; padding: 0.8rem 1.5rem; font-size: 1rem; font-weight: bold; color: var(--text-light); background-color: var(--primary-color); border: none; border-radius: var(--border-radius); cursor: pointer; transition: background-color var(--transition-speed), transform var(--transition-speed), opacity 0.3s, visibility 0.3s; opacity: 0; visibility: hidden; }
+        #next-question-btn:hover:not(:disabled) { background-color: #0056b3; transform: scale(1.05); }
+        #next-question-btn.visible { opacity: 1; visibility: visible; }
+        #next-question-btn:disabled { background-color: var(--secondary-color); cursor: not-allowed; transform: none; opacity: 0.7; }
+
+
+        /* --- Completion Section Styling --- */
+        .completion-section { padding: 4rem 0; text-align: center; background-color: var(--background-light); }
+        .completion-section .icon { font-size: 4rem; color: var(--success-color); margin-bottom: 1rem; display: inline-block; animation: iconAppearCorrect 1s ease-out 0.5s forwards; opacity: 0; /* Initial state for animation */}
+        /* Ensure completion elements are targeted by observer */
+        .completion-section h2, .completion-section p {
+            opacity: 0; transform: translateY(20px);
+            transition: opacity var(--animation-speed) ease-out, transform var(--animation-speed) ease-out;
+        }
+        .completion-section h2.visible, .completion-section p.visible {
+            opacity: 1; transform: translateY(0);
+        }
+        .completion-section .button-group { margin-top: 2.5rem; }
+        .completion-section h2 { font-family: var(--font-title); font-size: 2.2rem; color: var(--primary-color); margin-bottom: 1rem; }
+        .completion-section h2::after { display: none; }
+        .completion-section p { font-size: 1.1rem; margin-top: 1rem; color: var(--secondary-color); max-width: 700px; margin-left: auto; margin-right: auto; line-height: 1.8; }
+
+
+        /* --- Footer Styling --- */
+        .main-footer {
+            background-color: var(--background-light);
+            color: var(--text-light);
+            text-align: center;
+            padding: 2rem 0;
+            font-size: 0.9rem;
+            margin-top: auto;
+            border-top: 1px solid var(--background-light);
+            opacity: 0.85;
+        }
+        .main-footer p { margin: 0; line-height: 1.5; }
+
+        /* --- Responsive Design --- */
+        @media (max-width: 768px) {
+            html { font-size: 15px; }
+            .main-header h1 { font-size: 2.2rem; } .main-header p { font-size: 1.1rem; }
+            section h2 { font-size: 1.8rem; }
+            .concept-box { padding: 1.5rem; }
+            .concept-box h3 { font-size: 1.3rem; }
+            .formula { font-size: 1rem; padding: 0.6rem 0.8rem;}
+            .app-grid { grid-template-columns: 1fr; }
+            .minimal-nav { min-width: 180px; } .minimal-nav ul li a { padding: 0.6rem 0.8rem; }
+            .completion-section h2 { font-size: 2rem; }
+            .completion-section .button-group { flex-direction: column; align-items: center; gap: 0.8rem; }
+            .completion-section .action-button { width: 80%; max-width: 350px; margin-top: 0; }
+            .main-footer { padding: 1.5rem 0; }
+        }
+        @media (max-width: 480px) {
+            html { font-size: 14px; }
+            .main-header h1 { font-size: 1.9rem; } .main-header p { font-size: 1rem; }
+            section h2 { font-size: 1.6rem; }
+            .quiz-options button { padding: 0.8rem; font-size: 0.95rem; }
+            .minimal-nav-button { top: 10px; right: 10px; padding: 6px 10px; font-size: 1rem; }
+            .minimal-nav { top: 48px; right: 10px; min-width: 160px; }
+            .minimal-nav ul li a { padding: 0.5rem 0.7rem; font-size: 0.9rem;}
+            .minimal-nav ul li a i.fas { margin-right: 8px; }
+            .completion-section .icon { font-size: 3.5rem; }
+            .completion-section h2 { font-size: 1.8rem; } .completion-section p { font-size: 1rem; }
+            .completion-section .action-button { width: 90%; max-width: 300px; }
+            .main-footer { padding: 1rem 0; font-size: 0.85rem; }
+            .formula { font-size: 0.95rem; }
+            .concept-box h3 { font-size: 1.2rem; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- ========= Minimal Nav Handle ========= -->
+    <button id="minimal-nav-toggle" class="minimal-nav-button" aria-label="Alternar Menu de Navegação" aria-expanded="false">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- ========= Minimal Nav Panel ========= -->
+    <nav id="minimal-nav-panel" class="minimal-nav">
+        <ul>
+            <!-- IMPORTANT: Updated links for Module 12 -->
+            <li><a href="math-practice-12.html"><i class="fas fa-pencil-alt fa-fw"></i> <span data-translate="nav_practice">Iniciar Prática</span></a></li>
+            <li><a href="math-advanced-12.html"><i class="fas fa-flask fa-fw"></i> <span data-translate="nav_advanced">Prática Avançada</span></a></li>
+            <li><a href="math-dashboard.html"><i class="fas fa-list fa-fw"></i> <span data-translate="nav_menu">Menu do Curso</span></a></li>
+             <hr style="border: none; border-top: 1px solid var(--secondary-color); margin: 8px 0;">
+             <li><a href="#welcome"><i class="fas fa-door-open fa-fw"></i> <span data-translate="nav_welcome_m12">Boas-vindas M12</span></a></li>
+             <li><a href="#conditional-probability"><i class="fas fa-adjust fa-fw"></i> <span data-translate="nav_cond_prob">Prob. Condicional</span></a></li>
+             <li><a href="#independence"><i class="fas fa-unlink fa-fw"></i> <span data-translate="nav_independence">Independência</span></a></li>
+             <li><a href="#bayes-theorem"><i class="fas fa-brain fa-fw"></i> <span data-translate="nav_bayes">Teorema de Bayes</span></a></li>
+             <li><a href="#applications-ai"><i class="fas fa-robot fa-fw"></i> <span data-translate="nav_apps">Aplicações em IA</span></a></li>
+             <li><a href="#knowledge-check-m12"><i class="fas fa-check-double fa-fw"></i> <span data-translate="nav_quiz">Teste Rápido</span></a></li>
+             <li><a href="#completion-m12"><i class="fas fa-flag-checkered fa-fw"></i> <span data-translate="completion_theory_title_m12">Conclusão</span></a></li>
+        </ul>
+    </nav>
+
+    <header class="main-header">
+        <div class="header-shape shape1"></div>
+        <div class="header-shape shape2"></div>
+        <div class="header-shape shape3"></div>
+        <div class="container"> <!-- Start visible -->
+            <h1 data-translate="header_title_m12">Módulo 12: Probabilidade Condicional e Teorema de Bayes</h1>
+            <p data-translate="header_subtitle_m12">Entendendo como a informação afeta a probabilidade e atualizando nossas crenças.</p>
+        </div>
+    </header>
+
+    <main>
+        <!-- ========= Welcome Section ========= -->
+        <section id="welcome">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="welcome_title_m12">🤔 Probabilidade com Informação Adicional</h2>
+                <p class="fade-in-on-scroll delay-1" data-translate="welcome_p1_m12">
+                    Bem-vindo ao Módulo 12! No módulo anterior, exploramos os fundamentos da probabilidade. Agora, vamos investigar como a probabilidade de um evento muda quando sabemos que outro evento já ocorreu. Isso é chamado de <span class="highlight">Probabilidade Condicional</span>.
+                </p>
+                <p class="fade-in-on-scroll delay-2" data-translate="welcome_p2_m12">
+                    Este conceito é crucial em IA. Pense em um sistema de diagnóstico médico: qual a probabilidade de um paciente ter uma doença <span class="highlight">dado que</span> o resultado do teste foi positivo? Ou em um filtro de spam: qual a probabilidade de um email ser spam <span class="highlight">dado que</span> ele contém certas palavras?
+                </p>
+                 <p class="fade-in-on-scroll delay-3" data-translate="welcome_p3_m12">
+                    Exploraremos a definição formal, o conceito de <span class="highlight">independência</span> entre eventos e o poderoso <span class="highlight">Teorema de Bayes</span>, uma ferramenta fundamental para atualizar crenças com base em evidências - a espinha dorsal de muitos sistemas de IA.
+                </p>
+            </div>
+        </section>
+
+        <!-- ========= Conditional Probability Section ========= -->
+        <section id="conditional-probability">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="cond_prob_title">📊 Probabilidade Condicional: P(A|B)</h2>
+                <p class="text-center fade-in-on-scroll delay-1" data-translate="cond_prob_subtitle">Calculando a chance de A ocorrer, sabendo que B já ocorreu.</p>
+
+                <div class="concept-box fade-in-on-scroll delay-2">
+                    <h3 data-translate="cond_prob_def_title">Definição e Intuição</h3>
+                    <p data-translate="cond_prob_def_p1">
+                        A probabilidade condicional do evento A ocorrer, dado que o evento B ocorreu (com P(B) > 0), é denotada por <code class="highlight">P(A|B)</code> e calculada como:
+                    </p>
+                    <code class="formula" data-translate="cond_prob_formula">P(A|B) = P(A ∩ B) / P(B)</code>
+                    <p data-translate="cond_prob_def_p2">
+                        Onde <code class="highlight">P(A ∩ B)</code> é a probabilidade de ambos A e B ocorrerem (interseção).
+                    </p>
+                    <p data-translate="cond_prob_intuition">
+                        Intuitivamente, saber que B ocorreu <span class="highlight">restringe</span> o nosso espaço amostral original ao conjunto de resultados onde B é verdadeiro. A probabilidade condicional P(A|B) é então a proporção de resultados em B que também pertencem a A.
+                    </p>
+                    <div class="placeholder-image fade-in-on-scroll delay-3" data-translate="cond_prob_diagram">Diagrama de Venn: Espaço Amostral reduzido para B</div>
+                </div>
+
+                <div class="concept-box fade-in-on-scroll delay-4">
+                     <h3 data-translate="cond_prob_example_title">Exemplo: Cartas de Baralho</h3>
+                     <p data-translate="cond_prob_example_p1">
+                         Considere um baralho padrão de 52 cartas. Seja A o evento "retirar um Rei" e B o evento "retirar uma carta de Copas".
+                     </p>
+                     <ul>
+                         <li data-translate="cond_prob_example_p_a">P(A) = 4/52 = 1/13 (Existem 4 Reis)</li>
+                         <li data-translate="cond_prob_example_p_b">P(B) = 13/52 = 1/4 (Existem 13 cartas de Copas)</li>
+                         <li data-translate="cond_prob_example_p_a_inter_b">P(A ∩ B) = 1/52 (Existe apenas 1 Rei de Copas)</li>
+                     </ul>
+                     <p data-translate="cond_prob_example_p_a_given_b_q">
+                         Qual a probabilidade de retirar um Rei, <span class="highlight">dado que</span> a carta retirada é de Copas? (P(A|B))
+                     </p>
+                     <p data-translate="cond_prob_example_p_a_given_b_a">
+                         Usando a fórmula: P(A|B) = P(A ∩ B) / P(B) = (1/52) / (13/52) = 1/13.
+                     </p>
+                     <p data-translate="cond_prob_example_intuition">
+                         Intuitivamente: Se sabemos que a carta é de Copas, nosso espaço amostral se reduz às 13 cartas de Copas. Dentro desse espaço reduzido, apenas uma carta é um Rei. Portanto, a probabilidade é 1/13.
+                     </p>
+                </div>
+
+                 <p class="text-center fade-in-on-scroll delay-5" data-translate="cond_prob_relevance">
+                    Em IA, P(A|B) é fundamental para avaliar como características (B) influenciam uma previsão (A), como em sistemas de recomendação ou diagnóstico.
+                 </p>
+            </div>
+        </section>
+
+        <!-- ========= Independence Section ========= -->
+        <section id="independence">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="independence_title">🔗 Independência de Eventos</h2>
+                <p class="text-center fade-in-on-scroll delay-1" data-translate="independence_subtitle">Quando a ocorrência de um evento não afeta a probabilidade do outro.</p>
+
+                <div class="concept-box fade-in-on-scroll delay-2" style="border-left-color: var(--independence-color);">
+                    <h3 data-translate="independence_def_title">Definição</h3>
+                    <p data-translate="independence_def_p1">
+                        Dois eventos A e B são considerados <span class="highlight">independentes</span> se a ocorrência de um não altera a probabilidade de ocorrência do outro. Matematicamente, isso significa:
+                    </p>
+                    <code class="formula" data-translate="independence_formula">P(A ∩ B) = P(A) * P(B)</code>
+                    <p data-translate="independence_cond_prob_relation">
+                        Uma consequência direta (assumindo P(A)>0 e P(B)>0) é que, se A e B são independentes:
+                    </p>
+                    <ul>
+                        <li data-translate="independence_cond_prob_a_given_b"><code>P(A|B) = P(A)</code> (Saber B não muda a probabilidade de A)</li>
+                        <li data-translate="independence_cond_prob_b_given_a"><code>P(B|A) = P(B)</code> (Saber A não muda a probabilidade de B)</li>
+                    </ul>
+                     <p data-translate="independence_intuition">
+                        Se os eventos não são independentes, eles são chamados de <span class="highlight">dependentes</span>.
+                    </p>
+                </div>
+
+                <div class="concept-box fade-in-on-scroll delay-3" style="border-left-color: var(--independence-color);">
+                     <h3 data-translate="independence_example_title">Exemplo: Lançamento de Dados</h3>
+                     <p data-translate="independence_example_p1">
+                         Considere o lançamento de dois dados justos de seis faces (um vermelho e um azul).
+                     </p>
+                     <ul>
+                         <li data-translate="independence_example_event_a">Evento A: O dado vermelho mostra '4'. P(A) = 1/6.</li>
+                         <li data-translate="independence_example_event_b">Evento B: O dado azul mostra 'ímpar' (1, 3 ou 5). P(B) = 3/6 = 1/2.</li>
+                     </ul>
+                     <p data-translate="independence_example_p_inter">
+                         O evento (A ∩ B) é "dado vermelho 4 E dado azul ímpar". Como os lançamentos são independentes, a probabilidade é P(A ∩ B) = P(A) * P(B) = (1/6) * (1/2) = 1/12.
+                     </p>
+                     <p data-translate="independence_example_check">
+                         Podemos verificar P(A|B). Se sabemos que o dado azul é ímpar (B), isso muda a probabilidade do dado vermelho ser 4 (A)? Não. P(A|B) continua sendo 1/6, que é igual a P(A). Portanto, A e B são independentes.
+                     </p>
+                      <p data-translate="independence_example_dependent">
+                        Compare com o exemplo das cartas: P(A|B) = 1/13 e P(A) = 1/13. Nesse caso específico, retirar um Rei e retirar uma carta de Copas também são eventos independentes! (Isso nem sempre é óbvio sem calcular). No entanto, se A = "retirar um Rei" e C = "retirar uma carta de figura (Rei, Dama, Valete)", P(A) = 1/13, P(C) = 12/52 = 3/13. P(A ∩ C) = P(A) = 1/13 (todo Rei é uma figura). P(A|C) = P(A ∩ C) / P(C) = (1/13) / (3/13) = 1/3. Como P(A|C) ≠ P(A), os eventos A e C são dependentes.
+                     </p>
+                </div>
+
+                 <p class="text-center fade-in-on-scroll delay-4" data-translate="independence_relevance">
+                     A suposição de independência, mesmo que nem sempre perfeitamente verdadeira na realidade, é crucial para simplificar modelos de IA, como no classificador <span class="highlight">Naive Bayes</span> (que veremos em breve).
+                 </p>
+            </div>
+        </section>
+
+        <!-- ========= Bayes' Theorem Section ========= -->
+        <section id="bayes-theorem">
+            <div class="container">
+                 <h2 class="fade-in-on-scroll" data-translate="bayes_title">🧠 Teorema de Bayes: Atualizando Crenças</h2>
+                 <p class="text-center fade-in-on-scroll delay-1" data-translate="bayes_subtitle">Uma fórmula para inverter probabilidades condicionais e refinar hipóteses com evidências.</p>
+
+                 <div class="concept-box fade-in-on-scroll delay-2" style="border-left-color: var(--bayes-color);">
+                     <h3 data-translate="bayes_formula_title">A Fórmula</h3>
+                     <p data-translate="bayes_formula_intro">
+                        O Teorema de Bayes fornece uma maneira de calcular a probabilidade condicional P(A|B) a partir de P(B|A), P(A) e P(B):
+                     </p>
+                     <code class="formula" data-translate="bayes_formula">P(A|B) = [P(B|A) * P(A)] / P(B)</code>
+                     <p data-translate="bayes_formula_note">
+                         Este teorema é extremamente útil quando P(A|B) é difícil de calcular diretamente, mas P(B|A) (a "probabilidade inversa") é mais fácil de determinar ou estimar.
+                     </p>
+                 </div>
+
+                 <div class="concept-box fade-in-on-scroll delay-3" style="border-left-color: var(--bayes-color);">
+                    <h3 data-translate="bayes_terms_title">Interpretando os Termos</h3>
+                    <p data-translate="bayes_terms_intro">
+                        No contexto de atualização de crenças ou hipóteses (A) com base em evidências (B):
+                    </p>
+                    <dl class="term-explanation">
+                        <dt>P(A|B) - Probabilidade Posterior (Posterior)</dt>
+                        <dd data-translate="bayes_term_posterior">A probabilidade da hipótese A ser verdadeira <span class="term-highlight">após</span> observar a evidência B. É o que queremos calcular.</dd>
+
+                        <dt>P(B|A) - Verossimilhança (Likelihood)</dt>
+                        <dd data-translate="bayes_term_likelihood">A probabilidade de observar a evidência B <span class="term-highlight">se</span> a hipótese A for verdadeira.</dd>
+
+                        <dt>P(A) - Probabilidade a Priori (Prior)</dt>
+                        <dd data-translate="bayes_term_prior">A probabilidade da hipótese A ser verdadeira <span class="term-highlight">antes</span> de observar a evidência B. Nossa crença inicial.</dd>
+
+                        <dt>P(B) - Evidência Marginal (Evidence)</dt>
+                        <dd data-translate="bayes_term_evidence">A probabilidade total de observar a evidência B, considerando todas as hipóteses possíveis. Atua como um fator de normalização. Frequentemente calculado usando a Lei da Probabilidade Total: P(B) = P(B|A)P(A) + P(B|¬A)P(¬A), onde ¬A é "não A".</dd>
+                    </dl>
+                 </div>
+
+                <div class="concept-box fade-in-on-scroll delay-4" style="border-left-color: var(--bayes-color);">
+                     <h3 data-translate="bayes_example_title">Exemplo: Teste Médico</h3>
+                     <p data-translate="bayes_example_p1">
+                         Suponha que uma doença (D) afeta 1% da população (P(D) = 0.01). Existe um teste para essa doença.
+                     </p>
+                     <ul>
+                         <li data-translate="bayes_example_sensitivity">Sensibilidade: Se uma pessoa tem a doença, o teste dá positivo (+) 95% das vezes. P(+|D) = 0.95 (Verossimilhança).</li>
+                         <li data-translate="bayes_example_specificity">Especificidade: Se uma pessoa NÃO tem a doença (¬D), o teste dá negativo (-) 98% das vezes. Isso significa que P(-|¬D) = 0.98. A taxa de falso positivo é P(+|¬D) = 1 - P(-|¬D) = 1 - 0.98 = 0.02.</li>
+                         <li data-translate="bayes_example_prior_not_d">Sabemos que P(D) = 0.01, então P(¬D) = 1 - P(D) = 0.99.</li>
+                     </ul>
+                     <p data-translate="bayes_example_question">
+                         Uma pessoa testa positivo. Qual a probabilidade dela realmente ter a doença? Queremos calcular <code class="highlight">P(D|+)</code>.
+                     </p>
+                     <p data-translate="bayes_example_calc_pb">
+                         Primeiro, calculamos P(+) usando a Lei da Probabilidade Total: <br>
+                         P(+) = P(+|D)P(D) + P(+|¬D)P(¬D) <br>
+                         P(+) = (0.95 * 0.01) + (0.02 * 0.99) <br>
+                         P(+) = 0.0095 + 0.0198 = 0.0293
+                     </p>
+                     <p data-translate="bayes_example_calc_pd_given_plus">
+                         Agora, aplicamos o Teorema de Bayes: <br>
+                         P(D|+) = [P(+|D) * P(D)] / P(+) <br>
+                         P(D|+) = (0.95 * 0.01) / 0.0293 <br>
+                         P(D|+) = 0.0095 / 0.0293 ≈ 0.324 (ou 32.4%)
+                     </p>
+                     <p data-translate="bayes_example_conclusion">
+                         Surpreendentemente, mesmo com um teste positivo, a chance da pessoa ter a doença é de apenas 32.4%! Isso ocorre devido à baixa prevalência da doença (baixo P(D) a priori) e à existência de falsos positivos. O Teorema de Bayes quantifica essa atualização de crença.
+                     </p>
+                </div>
+            </div>
+        </section>
+
+         <!-- ========= Applications in AI Section ========= -->
+        <section id="applications-ai">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="apps_title">🤖 Aplicações em Inteligência Artificial</h2>
+                <p class="text-center fade-in-on-scroll delay-1" data-translate="apps_subtitle">Como a probabilidade condicional e Bayes impulsionam sistemas inteligentes.</p>
+
+                <div class="app-grid">
+                    <div class="app-card fade-in-on-scroll delay-2">
+                        <div class="app-icon"><i class="fas fa-filter"></i></div>
+                        <h4 data-translate="app_spam_title">Filtros de Spam</h4>
+                        <p data-translate="app_spam_desc">Calculam P(Spam | Palavras no email) usando o Teorema de Bayes e (frequentemente) a suposição Naive (ingênua) de independência entre as palavras.</p>
+                    </div>
+                    <div class="app-card fade-in-on-scroll delay-3">
+                         <div class="app-icon"><i class="fas fa-stethoscope"></i></div>
+                         <h4 data-translate="app_diagnosis_title">Diagnóstico Médico</h4>
+                         <p data-translate="app_diagnosis_desc">Sistemas especialistas usam P(Doença | Sintomas, Resultados de Testes) para auxiliar médicos, como no exemplo do Teorema de Bayes.</p>
+                    </div>
+                    <div class="app-card fade-in-on-scroll delay-4">
+                         <div class="app-icon"><i class="fas fa-cogs"></i></div>
+                         <h4 data-translate="app_ml_title">Machine Learning (Naive Bayes)</h4>
+                         <p data-translate="app_ml_desc">O classificador Naive Bayes é um algoritmo simples e eficaz para classificação de texto, detecção de fraude, etc., baseado diretamente no Teorema de Bayes com a suposição de independência das features.</p>
+                    </div>
+                     <div class="app-card fade-in-on-scroll delay-5">
+                         <div class="app-icon"><i class="fas fa-search"></i></div>
+                         <h4 data-translate="app_ir_title">Recuperação de Informação</h4>
+                         <p data-translate="app_ir_desc">Modelos probabilísticos avaliam P(Documento Relevante | Consulta do Usuário) para rankear resultados de busca.</p>
+                    </div>
+                     <div class="app-card fade-in-on-scroll delay-6">
+                         <div class="app-icon"><i class="fas fa-chart-line"></i></div>
+                         <h4 data-translate="app_risk_title">Análise de Risco</h4>
+                         <p data-translate="app_risk_desc">Avaliar P(Falha | Condições Operacionais) ou P(Inadimplência | Histórico Financeiro) em finanças e engenharia.</p>
+                    </div>
+                     <div class="app-card fade-in-on-scroll delay-7">
+                         <div class="app-icon"><i class="fas fa-brain"></i></div>
+                         <h4 data-translate="app_belief_title">Redes Bayesianas</h4>
+                         <p data-translate="app_belief_desc">Modelos gráficos que representam dependências (e independências) condicionais entre múltiplas variáveis, permitindo raciocínio probabilístico complexo.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========= Knowledge Check Section ========= -->
+        <section id="knowledge-check-m12">
+            <div class="container">
+                <h2 class="fade-in-on-scroll" data-translate="quiz_title_m12">🧠 Teste Rápido! (M12)</h2>
+                <div class="quiz-container fade-in-on-scroll delay-1"> <!-- Observe container -->
+                    <div id="quiz-area">
+                         <p style="text-align: center; padding: 2rem 0;">Carregando quiz...</p>
+                    </div>
+                    <div id="quiz-feedback" class="quiz-feedback"></div>
+                    <button id="next-question-btn" data-translate="quiz_next_button">Próxima Pergunta</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========= Completion Section ========= -->
+        <section id="completion-m12" class="completion-section"> <!-- Added ID for nav link -->
+            <div class="container">
+                 <div class="icon">
+                     <i class="fas fa-check-double"></i>
+                     <i class="fas fa-calculator"></i>
+                     <i class="fas fa-lightbulb"></i>
+                </div>
+                <h2 class="fade-in-on-scroll delay-1" data-translate="completion_theory_title_m12">Teoria do Módulo 12 Completa!</h2>
+                <p class="fade-in-on-scroll delay-2" data-translate="completion_theory_desc_m12">
+                    Excelente! Você explorou a probabilidade condicional, a independência de eventos e o fundamental Teorema de Bayes. Entender como atualizar probabilidades com novas informações é essencial para construir sistemas de IA que aprendem e raciocinam.<br>
+                    Agora é hora de solidificar esses conceitos. Avance para a <strong>Zona de Prática</strong> ou para a <strong>Prática Avançada</strong> do Módulo 12.
+                </p>
+                <div class="button-group">
+                    <!-- Buttons observed -->
+                    <!-- IMPORTANT: Updated links for Module 12 -->
+                    <a href="math-dashboard.html" class="action-button secondary fade-in-on-scroll delay-3"><i class="fas fa-list"></i> <span data-translate="nav_menu">Menu do Curso</span></a>
+                    <a href="math-practice-12.html" class="action-button success fade-in-on-scroll delay-4"><i class="fas fa-pencil-alt"></i> <span data-translate="nav_practice">Iniciar Prática</span></a>
+                    <a href="math-advanced-12.html" class="action-button secondary fade-in-on-scroll delay-5"><i class="fas fa-flask"></i> <span data-translate="nav_advanced">Prática Avançada</span></a>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="main-footer">
+        <div class="container">
+            <p data-translate="footer_copyright"></p>
+        </div>
+    </footer>
+
+    <script>
+    // --- Translations Object (Portuguese Only for Module 12) ---
+    const translations = {
+        pt: {
+            "page_title_m12": "Módulo 12: Probabilidade Condicional e Teorema de Bayes",
+            "nav_practice": "Iniciar Prática",
+            "nav_advanced": "Prática Avançada",
+            "nav_menu": "Menu do Curso",
+            "nav_welcome_m12": "Boas-vindas M12", "nav_cond_prob": "Prob. Condicional", "nav_independence": "Independência", "nav_bayes": "Teorema de Bayes", "nav_apps": "Aplicações em IA", "nav_quiz": "Teste Rápido",
+            "header_title_m12": "Módulo 12: Probabilidade Condicional e Teorema de Bayes", "header_subtitle_m12": "Entendendo como a informação afeta a probabilidade e atualizando nossas crenças.",
+            "welcome_title_m12": "🤔 Probabilidade com Informação Adicional",
+            "welcome_p1_m12": "Bem-vindo ao Módulo 12! No módulo anterior, exploramos os fundamentos da probabilidade. Agora, vamos investigar como a probabilidade de um evento muda quando sabemos que outro evento já ocorreu. Isso é chamado de Probabilidade Condicional.",
+            "welcome_p2_m12": "Este conceito é crucial em IA. Pense em um sistema de diagnóstico médico: qual a probabilidade de um paciente ter uma doença <span class=\"highlight\">dado que</span> o resultado do teste foi positivo? Ou em um filtro de spam: qual a probabilidade de um email ser spam <span class=\"highlight\">dado que</span> ele contém certas palavras?",
+            "welcome_p3_m12": "Exploraremos a definição formal, o conceito de <span class=\"highlight\">independência</span> entre eventos e o poderoso <span class=\"highlight\">Teorema de Bayes</span>, uma ferramenta fundamental para atualizar crenças com base em evidências - a espinha dorsal de muitos sistemas de IA.",
+
+            "cond_prob_title": "📊 Probabilidade Condicional: P(A|B)", "cond_prob_subtitle": "Calculando a chance de A ocorrer, sabendo que B já ocorreu.",
+            "cond_prob_def_title": "Definição e Intuição",
+            "cond_prob_def_p1": "A probabilidade condicional do evento A ocorrer, dado que o evento B ocorreu (com P(B) > 0), é denotada por <code class=\"highlight\">P(A|B)</code> e calculada como:",
+            "cond_prob_formula": "P(A|B) = P(A ∩ B) / P(B)",
+            "cond_prob_def_p2": "Onde <code class=\"highlight\">P(A ∩ B)</code> é a probabilidade de ambos A e B ocorrerem (interseção).",
+            "cond_prob_intuition": "Intuitivamente, saber que B ocorreu <span class=\"highlight\">restringe</span> o nosso espaço amostral original ao conjunto de resultados onde B é verdadeiro. A probabilidade condicional P(A|B) é então a proporção de resultados em B que também pertencem a A.",
+            "cond_prob_diagram": "Diagrama de Venn: Espaço Amostral reduzido para B",
+            "cond_prob_example_title": "Exemplo: Cartas de Baralho",
+            "cond_prob_example_p1": "Considere um baralho padrão de 52 cartas. Seja A o evento \"retirar um Rei\" e B o evento \"retirar uma carta de Copas\".",
+            "cond_prob_example_p_a": "P(A) = 4/52 = 1/13 (Existem 4 Reis)",
+            "cond_prob_example_p_b": "P(B) = 13/52 = 1/4 (Existem 13 cartas de Copas)",
+            "cond_prob_example_p_a_inter_b": "P(A ∩ B) = 1/52 (Existe apenas 1 Rei de Copas)",
+            "cond_prob_example_p_a_given_b_q": "Qual a probabilidade de retirar um Rei, <span class=\"highlight\">dado que</span> a carta retirada é de Copas? (P(A|B))",
+            "cond_prob_example_p_a_given_b_a": "Usando a fórmula: P(A|B) = P(A ∩ B) / P(B) = (1/52) / (13/52) = 1/13.",
+            "cond_prob_example_intuition": "Intuitivamente: Se sabemos que a carta é de Copas, nosso espaço amostral se reduz às 13 cartas de Copas. Dentro desse espaço reduzido, apenas uma carta é um Rei. Portanto, a probabilidade é 1/13.",
+            "cond_prob_relevance": "Em IA, P(A|B) é fundamental para avaliar como características (B) influenciam uma previsão (A), como em sistemas de recomendação ou diagnóstico.",
+
+            "independence_title": "🔗 Independência de Eventos", "independence_subtitle": "Quando a ocorrência de um evento não afeta a probabilidade do outro.",
+            "independence_def_title": "Definição",
+            "independence_def_p1": "Dois eventos A e B são considerados <span class=\"highlight\">independentes</span> se a ocorrência de um não altera a probabilidade de ocorrência do outro. Matematicamente, isso significa:",
+            "independence_formula": "P(A ∩ B) = P(A) * P(B)",
+            "independence_cond_prob_relation": "Uma consequência direta (assumindo P(A)>0 e P(B)>0) é que, se A e B são independentes:",
+            "independence_cond_prob_a_given_b": "<code>P(A|B) = P(A)</code> (Saber B não muda a probabilidade de A)",
+            "independence_cond_prob_b_given_a": "<code>P(B|A) = P(B)</code> (Saber A não muda a probabilidade de B)",
+            "independence_intuition": "Se os eventos não são independentes, eles são chamados de <span class=\"highlight\">dependentes</span>.",
+            "independence_example_title": "Exemplo: Lançamento de Dados",
+            "independence_example_p1": "Considere o lançamento de dois dados justos de seis faces (um vermelho e um azul).",
+            "independence_example_event_a": "Evento A: O dado vermelho mostra '4'. P(A) = 1/6.",
+            "independence_example_event_b": "Evento B: O dado azul mostra 'ímpar' (1, 3 ou 5). P(B) = 3/6 = 1/2.",
+            "independence_example_p_inter": "O evento (A ∩ B) é \"dado vermelho 4 E dado azul ímpar\". Como os lançamentos são independentes, a probabilidade é P(A ∩ B) = P(A) * P(B) = (1/6) * (1/2) = 1/12.",
+            "independence_example_check": "Podemos verificar P(A|B). Se sabemos que o dado azul é ímpar (B), isso muda a probabilidade do dado vermelho ser 4 (A)? Não. P(A|B) continua sendo 1/6, que é igual a P(A). Portanto, A e B são independentes.",
+            "independence_example_dependent": "Compare com o exemplo das cartas: P(A|B) = 1/13 e P(A) = 1/13. Nesse caso específico, retirar um Rei e retirar uma carta de Copas também são eventos independentes! (Isso nem sempre é óbvio sem calcular). No entanto, se A = \"retirar um Rei\" e C = \"retirar uma carta de figura (Rei, Dama, Valete)\", P(A) = 1/13, P(C) = 12/52 = 3/13. P(A ∩ C) = P(A) = 1/13 (todo Rei é uma figura). P(A|C) = P(A ∩ C) / P(C) = (1/13) / (3/13) = 1/3. Como P(A|C) ≠ P(A), os eventos A e C são dependentes.",
+            "independence_relevance": "A suposição de independência, mesmo que nem sempre perfeitamente verdadeira na realidade, é crucial para simplificar modelos de IA, como no classificador <span class=\"highlight\">Naive Bayes</span> (que veremos em breve).",
+
+            "bayes_title": "🧠 Teorema de Bayes: Atualizando Crenças", "bayes_subtitle": "Uma fórmula para inverter probabilidades condicionais e refinar hipóteses com evidências.",
+            "bayes_formula_title": "A Fórmula",
+            "bayes_formula_intro": "O Teorema de Bayes fornece uma maneira de calcular a probabilidade condicional P(A|B) a partir de P(B|A), P(A) e P(B):",
+            "bayes_formula": "P(A|B) = [P(B|A) * P(A)] / P(B)",
+            "bayes_formula_note": "Este teorema é extremamente útil quando P(A|B) é difícil de calcular diretamente, mas P(B|A) (a \"probabilidade inversa\") é mais fácil de determinar ou estimar.",
+            "bayes_terms_title": "Interpretando os Termos",
+            "bayes_terms_intro": "No contexto de atualização de crenças ou hipóteses (A) com base em evidências (B):",
+            "bayes_term_posterior": "A probabilidade da hipótese A ser verdadeira <span class=\"term-highlight\">após</span> observar a evidência B. É o que queremos calcular.",
+            "bayes_term_likelihood": "A probabilidade de observar a evidência B <span class=\"term-highlight\">se</span> a hipótese A for verdadeira.",
+            "bayes_term_prior": "A probabilidade da hipótese A ser verdadeira <span class=\"term-highlight\">antes</span> de observar a evidência B. Nossa crença inicial.",
+            "bayes_term_evidence": "A probabilidade total de observar a evidência B, considerando todas as hipóteses possíveis. Atua como um fator de normalização. Frequentemente calculado usando a Lei da Probabilidade Total: P(B) = P(B|A)P(A) + P(B|¬A)P(¬A), onde ¬A é \"não A\".",
+            "bayes_example_title": "Exemplo: Teste Médico",
+            "bayes_example_p1": "Suponha que uma doença (D) afeta 1% da população (P(D) = 0.01). Existe um teste para essa doença.",
+            "bayes_example_sensitivity": "Sensibilidade: Se uma pessoa tem a doença, o teste dá positivo (+) 95% das vezes. P(+|D) = 0.95 (Verossimilhança).",
+            "bayes_example_specificity": "Especificidade: Se uma pessoa NÃO tem a doença (¬D), o teste dá negativo (-) 98% das vezes. Isso significa que P(-|¬D) = 0.98. A taxa de falso positivo é P(+|¬D) = 1 - P(-|¬D) = 1 - 0.98 = 0.02.",
+            "bayes_example_prior_not_d": "Sabemos que P(D) = 0.01, então P(¬D) = 1 - P(D) = 0.99.",
+            "bayes_example_question": "Uma pessoa testa positivo. Qual a probabilidade dela realmente ter a doença? Queremos calcular <code class=\"highlight\">P(D|+)</code>.",
+            "bayes_example_calc_pb": "Primeiro, calculamos P(+) usando a Lei da Probabilidade Total: <br> P(+) = P(+|D)P(D) + P(+|¬D)P(¬D) <br> P(+) = (0.95 * 0.01) + (0.02 * 0.99) <br> P(+) = 0.0095 + 0.0198 = 0.0293",
+            "bayes_example_calc_pd_given_plus": "Agora, aplicamos o Teorema de Bayes: <br> P(D|+) = [P(+|D) * P(D)] / P(+) <br> P(D|+) = (0.95 * 0.01) / 0.0293 <br> P(D|+) = 0.0095 / 0.0293 ≈ 0.324 (ou 32.4%)",
+            "bayes_example_conclusion": "Surpreendentemente, mesmo com um teste positivo, a chance da pessoa ter a doença é de apenas 32.4%! Isso ocorre devido à baixa prevalência da doença (baixo P(D) a priori) e à existência de falsos positivos. O Teorema de Bayes quantifica essa atualização de crença.",
+
+            "apps_title": "🤖 Aplicações em Inteligência Artificial", "apps_subtitle": "Como a probabilidade condicional e Bayes impulsionam sistemas inteligentes.",
+            "app_spam_title": "Filtros de Spam", "app_spam_desc": "Calculam P(Spam | Palavras no email) usando o Teorema de Bayes e (frequentemente) a suposição Naive (ingênua) de independência entre as palavras.",
+            "app_diagnosis_title": "Diagnóstico Médico", "app_diagnosis_desc": "Sistemas especialistas usam P(Doença | Sintomas, Resultados de Testes) para auxiliar médicos, como no exemplo do Teorema de Bayes.",
+            "app_ml_title": "Machine Learning (Naive Bayes)", "app_ml_desc": "O classificador Naive Bayes é um algoritmo simples e eficaz para classificação de texto, detecção de fraude, etc., baseado diretamente no Teorema de Bayes com a suposição de independência das features.",
+            "app_ir_title": "Recuperação de Informação", "app_ir_desc": "Modelos probabilísticos avaliam P(Documento Relevante | Consulta do Usuário) para rankear resultados de busca.",
+            "app_risk_title": "Análise de Risco", "app_risk_desc": "Avaliar P(Falha | Condições Operacionais) ou P(Inadimplência | Histórico Financeiro) em finanças e engenharia.",
+            "app_belief_title": "Redes Bayesianas", "app_belief_desc": "Modelos gráficos que representam dependências (e independências) condicionais entre múltiplas variáveis, permitindo raciocínio probabilístico complexo.",
+
+            "quiz_title_m12": "🧠 Teste Rápido! (M12)",
+            "quiz_next_button": "Próxima Pergunta",
+            "quiz_q1_m12": "Se P(A)=0.5, P(B)=0.4 e P(A ∩ B)=0.2, qual é P(A|B)?",
+            "quiz_q1_m12_opt1": "0.4", "quiz_q1_m12_opt2": "0.5", "quiz_q1_m12_opt3": "0.8", "quiz_q1_m12_opt4": "1.0", /* Correct: P(A|B) = P(A ∩ B) / P(B) = 0.2 / 0.4 = 0.5 */
+            "quiz_q2_m12": "Se os eventos C e D são independentes, com P(C)=0.3 e P(D)=0.6, qual é P(C ∩ D)?",
+            "quiz_q2_m12_opt1": "0.9", "quiz_q2_m12_opt2": "0.3", "quiz_q2_m12_opt3": "0.18", "quiz_q2_m12_opt4": "0.5", /* Correct: P(C ∩ D) = P(C) * P(D) = 0.3 * 0.6 = 0.18 */
+            "quiz_q3_m12": "No Teorema de Bayes, P(A|B) = [P(B|A) * P(A)] / P(B). Qual termo representa a 'Probabilidade a Priori' da hipótese A?",
+            "quiz_q3_m12_opt1": "P(A|B)", "quiz_q3_m12_opt2": "P(B|A)", "quiz_q3_m12_opt3": "P(A)", "quiz_q3_m12_opt4": "P(B)", /* Correct: P(A) */
+            "quiz_q4_m12": "Se P(Doença)=0.02, P(Positivo|Doença)=0.9, e P(Positivo|¬Doença)=0.1. Qual é P(Doença|Positivo)? (Dica: Calcule P(Positivo) primeiro)",
+            "quiz_q4_m12_opt1": "≈ 0.155", "quiz_q4_m12_opt2": "≈ 0.9", "quiz_q4_m12_opt3": "≈ 0.018", "quiz_q4_m12_opt4": "≈ 0.5", /* Correct: P(¬Doença)=0.98. P(Positivo) = P(Pos|Doença)P(Doença) + P(Pos|¬Doença)P(¬Doença) = (0.9*0.02) + (0.1*0.98) = 0.018 + 0.098 = 0.116. P(Doença|Pos) = [P(Pos|Doença)P(Doença)] / P(Pos) = (0.9*0.02) / 0.116 = 0.018 / 0.116 ≈ 0.155 */
+            "quiz_feedback_correct": "Correto! 🎉",
+            "quiz_feedback_incorrect": "Não foi bem assim! A resposta correta era: {correctAnswerText}",
+            "quiz_final_score_title": "Teste Rápido Completo!",
+            "quiz_final_score_summary": "Você respondeu {score} de {total} perguntas corretamente.",
+            "quiz_final_score_perfect": "Excelente! Você compreendeu bem os conceitos de probabilidade condicional e Bayes.",
+            "quiz_final_score_good": "Bom trabalho! Continue praticando para solidificar seu entendimento.",
+
+            "completion_theory_title_m12": "Teoria do Módulo 12 Completa!",
+            "completion_theory_desc_m12": "Excelente! Você explorou a probabilidade condicional, a independência de eventos e o fundamental Teorema de Bayes. Entender como atualizar probabilidades com novas informações é essencial para construir sistemas de IA que aprendem e raciocinam.<br> Agora é hora de solidificar esses conceitos. Avance para a <strong>Zona de Prática</strong> ou para a <strong>Prática Avançada</strong> do Módulo 12.",
+            "footer_copyright": "© 2024 Matemática para IA. Todos os direitos reservados."
+        }
+    };
+
+    // --- Global Variables ---
+    let currentQuestionIndex = 0;
+    let score = 0;
+    const lang = 'pt'; // Hardcoded language
+
+    // --- DOM Elements (Get them once) ---
+    const navToggleButton = document.getElementById('minimal-nav-toggle');
+    const navPanel = document.getElementById('minimal-nav-panel');
+    const body = document.body;
+    const quizArea = document.getElementById('quiz-area');
+    const feedbackArea = document.getElementById('quiz-feedback');
+    const nextButton = document.getElementById('next-question-btn');
+
+    // --- Functions ---
+
+    function getTranslation(key, replacements = {}) {
+         let text = translations[lang]?.[key] ?? `[${key}]`;
+         for (const placeholder in replacements) {
+             const regex = new RegExp(`\\{${placeholder}\\}`, 'g');
+             text = text.replace(regex, replacements[placeholder]);
+         }
+         return text;
+    }
+
+    function translatePage() {
+         document.querySelectorAll('[data-translate]').forEach(el => {
+             const key = el.getAttribute('data-translate');
+             let translation = getTranslation(key);
+
+              if (el.tagName === 'TITLE') { document.title = translation; }
+              else if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') { /* Skip */ }
+              else {
+                   // Allow specific HTML tags safely
+                   const safeHtmlRegex = /<\/?(code|strong|span|br|i|b|em|strong|div|ul|li|dt|dd|dl)>/gi;
+                   let containsSafeHtml = safeHtmlRegex.test(translation);
+
+                   // Allow innerHTML if it contains only safe tags OR if it's in an allowed container
+                   // Added .concept-box and list elements to safe containers
+                   if (containsSafeHtml || el.closest('.concept-box, .term-explanation, .app-card p, .formula, .completion-section p, .main-footer p, .welcome p, .quiz-feedback, .text-center')) {
+                      el.innerHTML = translation;
+                   } else {
+                      el.textContent = translation; // Default to textContent for safety
+                   }
+              }
+         });
+    }
+
+    // --- Quiz Data & Functions (Module 12) ---
+    const quizData = [
+        { questionKey: "quiz_q1_m12", optionKeys: ["quiz_q1_m12_opt1", "quiz_q1_m12_opt2", "quiz_q1_m12_opt3", "quiz_q1_m12_opt4"], correctAnswer: 1 }, // P(A|B) = 0.2 / 0.4 = 0.5
+        { questionKey: "quiz_q2_m12", optionKeys: ["quiz_q2_m12_opt1", "quiz_q2_m12_opt2", "quiz_q2_m12_opt3", "quiz_q2_m12_opt4"], correctAnswer: 2 }, // P(C ∩ D) = 0.3 * 0.6 = 0.18
+        { questionKey: "quiz_q3_m12", optionKeys: ["quiz_q3_m12_opt1", "quiz_q3_m12_opt2", "quiz_q3_m12_opt3", "quiz_q3_m12_opt4"], correctAnswer: 2 }, // P(A) is Prior
+        { questionKey: "quiz_q4_m12", optionKeys: ["quiz_q4_m12_opt1", "quiz_q4_m12_opt2", "quiz_q4_m12_opt3", "quiz_q4_m12_opt4"], correctAnswer: 0 }  // ~0.155
+    ];
+
+    function loadQuestion() {
+          if (!quizArea) return; // Ensure quizArea exists
+
+          // If we reached the end, show score
+          if (currentQuestionIndex >= quizData.length) {
+              if (!quizArea.querySelector('[data-translate="quiz_final_score_title"]')) { // Avoid re-rendering score
+                 showFinalScore();
+              }
+              return;
+          }
+
+          const currentQuiz = quizData[currentQuestionIndex];
+          const questionText = getTranslation(currentQuiz.questionKey);
+          // Generate HTML for question and options
+          quizArea.innerHTML = `
+              <div class="quiz-question">${currentQuestionIndex + 1}. ${questionText.replace(/`(.*?)`/g, '<code>$1</code>')}</div>
+              <div class="quiz-options">
+                  ${currentQuiz.optionKeys.map((optionKey, index) => `
+                      <button class="quiz-option-btn" data-index="${index}">${getTranslation(optionKey).replace(/`(.*?)`/g, '<code>$1</code>')}</button>
+                  `).join('')}
+              </div>
+          `;
+
+          // Reset feedback and next button
+          if (feedbackArea) {
+            feedbackArea.classList.remove('visible', 'correct', 'incorrect');
+            feedbackArea.textContent = '';
+            feedbackArea.style.height = '0'; // Reset height
+            feedbackArea.style.marginBottom = '0'; // Reset margin
+          }
+          if (nextButton) {
+            nextButton.classList.remove('visible');
+            nextButton.disabled = true;
+          }
+
+          // Add event listeners to the new buttons
+          quizArea.querySelectorAll('.quiz-option-btn').forEach(button => {
+              button.addEventListener('click', handleAnswer);
+          });
+    }
+
+    function handleAnswer(event) {
+         const selectedButton = event.target;
+         const selectedIndex = parseInt(selectedButton.dataset.index);
+         const correctIndex = quizData[currentQuestionIndex].correctAnswer;
+         const correctOptionKey = quizData[currentQuestionIndex].optionKeys[correctIndex];
+
+         // Disable all options
+         quizArea.querySelectorAll('.quiz-option-btn').forEach(btn => {
+            btn.disabled = true;
+            btn.classList.remove('shake'); // Remove shake if present from previous incorrect
+         });
+
+         if (!feedbackArea || !nextButton) return; // Ensure elements exist
+
+         feedbackArea.classList.add('visible');
+
+         if (selectedIndex === correctIndex) {
+             selectedButton.classList.add('correct');
+             feedbackArea.innerHTML = getTranslation('quiz_feedback_correct');
+             feedbackArea.classList.add('correct');
+             feedbackArea.classList.remove('incorrect');
+             score++;
+             selectedButton.classList.add('tada-anim');
+         } else {
+             selectedButton.classList.add('incorrect');
+             const formattedCorrectAnswer = getTranslation(correctOptionKey).replace(/`(.*?)`/g, '<code>$1</code>');
+             feedbackArea.innerHTML = getTranslation('quiz_feedback_incorrect', { correctAnswerText: `<strong>${formattedCorrectAnswer}</strong>` });
+             feedbackArea.classList.add('incorrect');
+             feedbackArea.classList.remove('correct');
+             // Highlight the correct button as well
+             const correctButton = quizArea.querySelector(`.quiz-option-btn[data-index="${correctIndex}"]`);
+             if(correctButton) correctButton.classList.add('correct');
+             selectedButton.classList.add('shake');
+         }
+
+         // Remove animation classes after they finish
+          selectedButton.addEventListener('animationend', () => {
+               selectedButton.classList.remove('tada-anim', 'shake');
+          }, { once: true });
+
+         // Make feedback area adjust height and margin smoothly
+         feedbackArea.style.height = feedbackArea.scrollHeight + 'px';
+         feedbackArea.style.marginBottom = '1rem';
+
+
+         // Show and enable next button
+         nextButton.classList.add('visible');
+         nextButton.disabled = false;
+     }
+
+     function showFinalScore() {
+            if (!quizArea) return;
+            const totalQuestions = quizData.length;
+            // Determine message based on score percentage
+            let resultMessageKey = (score / totalQuestions) >= 0.75 ? 'quiz_final_score_perfect' : 'quiz_final_score_good'; // 75% threshold
+
+            quizArea.innerHTML = `
+               <div class="quiz-question text-center" data-translate="quiz_final_score_title" style="font-size: 1.5rem;">${getTranslation('quiz_final_score_title')}</div>
+               <p class="text-center" style="font-size: 1.2rem; margin-bottom: 1rem;">${getTranslation('quiz_final_score_summary', { score: score, total: totalQuestions })}</p>
+               <p class="text-center" style="color: ${score / totalQuestions >= 0.75 ? 'var(--success-color)' : 'var(--primary-color)'}; font-weight: bold;">${getTranslation(resultMessageKey)}</p>
+            `;
+            if (feedbackArea) feedbackArea.classList.remove('visible'); // Hide feedback area
+            if (nextButton) nextButton.style.display = 'none'; // Hide next button
+            quizArea.scrollIntoView({ behavior: 'smooth', block: 'center' }); // Scroll score into view
+     }
+
+
+    // --- Intersection Observer Setup ---
+    function setupObservers() {
+        const observerOptions = {
+            root: null, // relative to viewport
+            rootMargin: '0px',
+            threshold: 0.1 // Trigger when 10% of the element is visible
+        };
+
+        const observerCallback = (entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    // Optional: Unobserve after it becomes visible to save resources
+                    // observer.unobserve(entry.target);
+                }
+                // Optional: Remove 'visible' if it scrolls out of view
+                // else {
+                //     entry.target.classList.remove('visible');
+                // }
+            });
+        };
+
+        const animationObserver = new IntersectionObserver(observerCallback, observerOptions);
+
+        // Observe elements with the fade-in class
+        document.querySelectorAll('.fade-in-on-scroll').forEach(el => {
+            animationObserver.observe(el);
+        });
+    }
+
+    // --- Event Listeners Setup ---
+    function setupEventListeners() {
+        // Navbar Toggle
+        if (navToggleButton && navPanel) {
+            navToggleButton.addEventListener('click', (event) => {
+                event.stopPropagation();
+                body.classList.toggle('nav-active');
+                navToggleButton.setAttribute('aria-expanded', body.classList.contains('nav-active'));
+            });
+
+            // Close nav if clicking outside
+            document.addEventListener('click', (event) => {
+                if (body.classList.contains('nav-active') && !navPanel.contains(event.target) && event.target !== navToggleButton && !navToggleButton.contains(event.target)) {
+                    body.classList.remove('nav-active');
+                    navToggleButton.setAttribute('aria-expanded', 'false');
+                }
+            });
+
+            // Close nav on link click
+            navPanel.querySelectorAll('a').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    // Check if it's an internal link
+                    if (link.getAttribute('href').startsWith('#')) {
+                         // Allow default scroll behavior
+                        // Close panel slightly delayed
+                        setTimeout(() => {
+                            body.classList.remove('nav-active');
+                            navToggleButton.setAttribute('aria-expanded', 'false');
+                        }, 150);
+                    }
+                    // External links will navigate away anyway
+                });
+            });
+
+            // Close nav on Escape key
+            document.addEventListener('keydown', (event) => {
+                 if (event.key === 'Escape' && body.classList.contains('nav-active')) {
+                     body.classList.remove('nav-active');
+                     navToggleButton.setAttribute('aria-expanded', 'false');
+                 }
+             });
+        }
+
+        // Quiz Next Button
+        if (nextButton) {
+            nextButton.addEventListener('click', () => {
+                if (!nextButton.disabled) {
+                    currentQuestionIndex++;
+                    loadQuestion(); // Load the next question
+                }
+            });
+        } else {
+            console.error("Elemento #next-question-btn não encontrado.");
+        }
+    }
+
+    // --- Initialization ---
+    document.addEventListener('DOMContentLoaded', () => {
+        // Check if elements needed for quiz exist before proceeding
+        if (!quizArea) console.error("Elemento #quiz-area não encontrado.");
+        if (!feedbackArea) console.error("Elemento #quiz-feedback não encontrado.");
+
+        translatePage();        // Apply translations first
+        setupEventListeners();  // Set up interactive elements
+        setupObservers();       // Set up animations
+
+        if (quizArea) {
+            loadQuestion();     // Load the first quiz question if container exists
+        }
+    });
+
+    </script>
+
+</body>
+</html>
