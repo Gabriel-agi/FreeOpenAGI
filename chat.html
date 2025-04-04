@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arcane Tome</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- ### ADD IDB LIBRARY ### -->
+    <script src="https://cdn.jsdelivr.net/npm/idb@7/build/umd.js"></script>
+    <!-- Optional: Add DOMPurify for security -->
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/2.3.8/purify.min.js"></script> -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Georgia&display=swap');
+
+        /* --- Styles (Unchanged) --- */
+        :root { --parchment: #f5e7d0; --parchment-dark: #e3d5b8; --ink: #3a3129; --ink-light: #5a4e42; --gold: #c9a227; --crimson: #8b0000; --sapphire: #1e3a8a; --amethyst: #6b21a8; --shadow: 0 4px 8px rgba(0, 0, 0, 0.3); --glow: 0 0 10px rgba(201, 162, 39, 0.7); --fade: all 0.5s ease; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Georgia, 'Times New Roman', Times, serif; font-size: 1.2rem; line-height: 1.6; background-color: var(--parchment); color: var(--ink); height: 100vh; width: 100vw; overflow: hidden; }
+        .tome { width: 100%; height: 100vh; display: flex; flex-direction: column; position: relative; }
+        .tome::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: url('https://www.transparenttextures.com/patterns/old-map.png'); opacity: 0.15; pointer-events: none; }
+        .pages { flex: 1; padding: 25px; overflow-y: auto; scrollbar-width: none; /* Firefox */ display: flex; flex-direction: column; gap: 20px; }
+        .pages::-webkit-scrollbar { display: none; /* Safari and Chrome */ }
+        .message { display: flex; gap: 15px; max-width: 85%; animation: appear 0.8s ease-out; }
+        .message-user { align-self: flex-end; flex-direction: row-reverse; }
+        .message-spirit { align-self: flex-start; }
+        .avatar { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; flex-shrink: 0; border: 2px solid var(--parchment-dark); box-shadow: var(--shadow); display: flex; align-items: center; justify-content: center; font-family: 'Cinzel Decorative', cursive; font-size: 1.5rem; transition: var(--fade); cursor: pointer; }
+        .spirit-avatar:hover { transform: scale(1.1); box-shadow: var(--glow); }
+        .user-avatar:hover { transform: scale(1.1); box-shadow: 0 0 10px rgba(30, 58, 138, 0.7); }
+        .message-content { padding: 18px 22px; border-radius: 8px; line-height: 1.6; position: relative; word-break: break-word; box-shadow: var(--shadow); max-width: 100%; }
+        .message-content p { margin-bottom: 1em; } .message-content p:last-child { margin-bottom: 0; } .message-content strong { font-weight: bold; color: var(--ink); } .message-content em { font-style: italic; } .message-content ul, .message-content ol { margin-left: 1.5em; margin-bottom: 1em; } .message-content li { margin-bottom: 0.5em; } .message-content code { font-family: monospace; background-color: rgba(0,0,0,0.1); padding: 0.2em 0.4em; border-radius: 3px; }
+        .message-content pre { position: relative; background-color: rgba(0,0,0,0.1); padding: 1em; border-radius: 5px; overflow-x: auto; margin-bottom: 1em; }
+        .copy-code-btn { position: absolute; top: 5px; right: 5px; background-color: var(--gold); color: var(--ink); border: none; border-radius: 3px; padding: 3px 8px; font-size: 0.8rem; cursor: pointer; opacity: 0; transition: opacity 0.3s ease; }
+        .message-content pre:hover .copy-code-btn { opacity: 1; } .copy-code-btn:hover { background-color: var(--crimson); color: white; } .copy-code-btn.copied { background-color: var(--sapphire); color: white; }
+        .message-content blockquote { border-left: 3px solid var(--gold); padding-left: 1em; margin-left: 0; margin-bottom: 1em; color: var(--ink-light); }
+        .user-message { background-color: var(--sapphire); color: white; border-top-right-radius: 0; }
+        .spirit-message { background-color: white; color: var(--ink); border: 1px solid var(--ink-light); border-top-left-radius: 0; }
+        .typing-indicator { display: inline-flex; align-items: center; gap: 8px; padding: 15px 20px; background-color: var(--parchment-dark); border-radius: 8px; box-shadow: var(--shadow); align-self: flex-start; color: var(--ink-light); font-style: italic; border: 1px dashed var(--ink-light); position: relative; overflow: hidden; font-size: 1.1rem; }
+        .typing-indicator::after { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(201, 162, 39, 0.2), transparent); animation: shimmer 2s infinite; }
+        .rune { font-family: 'Cinzel Decorative', cursive; font-size: 1.4rem; animation: float 2s infinite ease-in-out; }
+        .writing-area { padding: 18px; background-color: var(--parchment-dark); border-top: 2px solid var(--ink-light); display: flex; gap: 12px; align-items: center; }
+        .message-input { flex: 1; padding: 18px; background-color: var(--parchment); border: 2px solid var(--ink-light); border-radius: 5px; font-family: inherit; font-size: 1.2rem; resize: none; outline: none; color: var(--ink); min-height: 70px; max-height: 200px; }
+        .message-input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(201, 162, 39, 0.3); }
+        .send-button { background-color: var(--gold); color: var(--ink); border: none; border-radius: 5px; padding: 0 24px; height: 60px; font-family: 'Cinzel Decorative', cursive; font-weight: bold; cursor: pointer; transition: var(--fade); box-shadow: var(--shadow); display: flex; align-items: center; gap: 10px; font-size: 1.2rem; }
+        .send-button:hover:not(:disabled) { background-color: var(--crimson); color: white; } .send-button:disabled { opacity: 0.7; cursor: not-allowed; }
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 100; opacity: 0; pointer-events: none; transition: var(--fade); } .modal-overlay.active { opacity: 1; pointer-events: all; }
+        .modal-content { background-color: var(--parchment); border-radius: 8px; width: 90%; max-width: 600px; padding: 28px; box-shadow: var(--shadow); transform: translateY(20px); transition: var(--fade); border: 1px solid var(--ink-light); } .modal-overlay.active .modal-content { transform: translateY(0); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--ink-light); padding-bottom: 15px; } .modal-title { font-family: 'Cinzel Decorative', cursive; font-size: 1.5rem; color: var(--ink); } .close-btn { background: none; border: none; cursor: pointer; color: var(--ink-light); font-size: 1.8rem; transition: var(--fade); } .close-btn:hover { color: var(--crimson); }
+        .modal-body { margin-bottom: 28px; } .settings-section { margin-bottom: 25px; } .settings-section-title { font-family: 'Cinzel Decorative', cursive; font-size: 1.2rem; margin-bottom: 12px; color: var(--ink); display: flex; align-items: center; gap: 8px; } .settings-section-title svg { width: 20px; height: 20px; }
+        .guidance-controls { display: flex; gap: 10px; margin-bottom: 15px; } .guidance-select { flex: 1; padding: 10px; border: 1px solid var(--ink-light); border-radius: 5px; font-family: inherit; font-size: 1rem; background-color: var(--parchment); color: var(--ink); } .small-button { padding: 8px 12px; border-radius: 5px; font-family: 'Cinzel Decorative', cursive; font-weight: bold; cursor: pointer; transition: var(--fade); border: none; font-size: 0.9rem; } .button-primary { background-color: var(--gold); color: var(--ink); } .button-primary:hover { background-color: var(--crimson); color: white; } .button-danger { background-color: var(--crimson); color: white; } .button-danger:hover { background-color: #6b0000; }
+        .system-prompt-input { width: 100%; padding: 15px; border: 1px solid var(--ink-light); border-radius: 5px; min-height: 150px; font-family: Georgia, serif; font-size: 1.1rem; resize: vertical; transition: var(--fade); background-color: var(--parchment); color: var(--ink); line-height: 1.6; margin-bottom: 15px; } .system-prompt-input:focus { border-color: var(--gold); outline: none; box-shadow: 0 0 0 3px rgba(201, 162, 39, 0.3); }
+        .avatar-preview-container { display: flex; gap: 25px; margin-top: 25px; } .avatar-preview { text-align: center; } .avatar-preview-label { display: block; margin-bottom: 10px; font-size: 1.1rem; color: var(--ink-light); } .avatar-img { width: 70px; height: 70px; border-radius: 50%; object-fit: cover; border: 2px solid var(--ink-light); cursor: pointer; transition: var(--fade); } .avatar-img:hover { transform: scale(1.05); border-color: var(--gold); }
+        .modal-footer { display: flex; justify-content: space-between; gap: 15px; } .modal-btn { padding: 12px 24px; border-radius: 5px; font-family: 'Cinzel Decorative', cursive; font-weight: bold; cursor: pointer; transition: var(--fade); border: none; font-size: 1.1rem; } .modal-btn-primary { background-color: var(--gold); color: var(--ink); } .modal-btn-primary:hover { background-color: var(--crimson); color: white; } .modal-btn-secondary { background-color: var(--parchment-dark); color: var(--ink); } .modal-btn-secondary:hover { background-color: var(--ink-light); color: white; }
+        .pfp-upload { display: none; }
+        #saved-chats-section { margin-top: 15px; padding-top: 10px; border-top: 1px solid var(--ink-light); } #saved-chats-list-items { max-height: 120px; overflow-y: auto; border: 1px solid #5a4e42; padding: 5px; background: #f5e7d0; border-radius: 3px; margin-top: 5px; }
+        .saved-chat-item { display: flex; justify-content: space-between; align-items: center; padding: 4px 5px; margin-bottom: 3px; font-size: 0.85rem; border-bottom: 1px dashed var(--ink-light); } .saved-chat-item:last-child { border-bottom: none; margin-bottom: 0; } .saved-chat-item span { flex-grow: 1; margin-right: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; word-break: break-all; } .saved-chat-item button { padding: 2px 5px; font-size: 0.8rem; cursor: pointer; border: none; border-radius: 2px; margin-left: 5px; flex-shrink: 0; }
+        .load-chat-btn { background-color: var(--gold); color: var(--ink); } .delete-chat-btn { background-color: var(--crimson); color: white; }
+        #api-key-menu label { display: block; margin-bottom: 3px; font-weight: bold; font-size: 0.85rem; color: var(--ink-light); }
+        #api-key-menu select,
+        #api-key-menu input[type="text"] { width: 100%; padding: 6px; margin-bottom: 8px; border: 1px solid var(--ink-light); border-radius: 3px; font-size: 0.9rem; background: var(--parchment); color: var(--ink); }
+        #api-key-menu select { margin-bottom: 12px; }
+        #api-key-menu .api-key-controls { display: flex; gap: 5px; margin-bottom: 5px; }
+        #api-key-menu .api-key-controls input { flex-grow: 1; }
+        #api-key-menu .api-key-controls button { padding: 5px 10px; background-color: var(--gold); border: none; cursor: pointer; color: var(--ink); font-size: 0.9rem; border-radius: 3px; font-family: 'Cinzel Decorative', cursive; flex-shrink: 0;}
+        #api-key-menu #api-key-list { margin-bottom: 10px; max-height: 100px; overflow-y: auto; border: 1px solid #5a4e42; padding: 5px; background: #f5e7d0; border-radius: 3px; }
+        #api-key-menu #current-active-key-display { font-weight: normal; color: var(--amethyst); word-break: break-all; display: inline-block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: middle; }
+        #api-key-menu .active-key-line { font-size: 0.8rem; color: #5a4e42; }
+
+        @keyframes appear { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } } @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } } @keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+        @media (max-width: 768px) { body { font-size: 1.1rem; } .pages { padding: 18px; } .message-content { padding: 15px 18px; } .writing-area { padding: 15px; } .message-input { padding: 15px; min-height: 60px; font-size: 1.1rem; } .send-button { height: 55px; padding: 0 18px; font-size: 1.1rem; } .avatar { width: 45px; height: 45px; font-size: 1.3rem; } #api-key-menu { min-width: 280px; } }
+    </style>
+</head>
+<body>
+    <div class="tome">
+        <div class="pages" id="pages"></div>
+        <div class="writing-area">
+            <textarea class="message-input" id="message-input" placeholder="Write your message here..." rows="1"></textarea>
+            <button class="send-button" id="send-button"><span>Send</span><span>✒</span></button>
+        </div>
+    </div>
+
+    <!-- Settings Modal (Unchanged) -->
+    <div class="modal-overlay" id="settings-modal"> <div class="modal-content"> <div class="modal-header"> <h3 class="modal-title">Tome Settings</h3> <button class="close-btn" id="close-modal">×</button> </div> <div class="modal-body"> <!-- Guidance --> <div class="settings-section"> <h4 class="settings-section-title"> <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg> Spirit Guidance </h4> <div class="guidance-controls"> <select class="guidance-select" id="guidance-select"><option value="">Select saved guidance...</option></select> <button class="small-button button-primary" id="save-guidance-btn">Save</button> <button class="small-button button-danger" id="remove-guidance-btn">Remove</button> </div> <textarea class="system-prompt-input" id="system-prompt-input" placeholder="How should the spirit behave?"></textarea> </div> <!-- Tools --> <div class="settings-section"> <h4 class="settings-section-title"> <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg> Conversation Tools </h4> <div style="display: flex; gap: 10px;"> <button class="small-button button-danger" id="new-chat-btn">Start New Chat</button> <button class="small-button button-primary" id="undo-btn">Undo Last Message</button> </div> </div> <!-- Avatars --> <div class="settings-section"> <h4 class="settings-section-title"> <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> Avatar Settings </h4> <div class="avatar-preview-container"> <div class="avatar-preview"><span class="avatar-preview-label">Your Sigil</span><img src="" class="avatar-img" id="user-avatar-preview"></div> <div class="avatar-preview"><span class="avatar-preview-label">Spirit's Sigil</span><img src="" class="avatar-img" id="spirit-avatar-preview"></div> </div> </div> </div> <div class="modal-footer"> <button class="modal-btn modal-btn-secondary" id="cancel-btn">Cancel</button> <button class="modal-btn modal-btn-primary" id="save-btn">Save</button> </div> </div> </div>
+    <!-- Hidden File Input (Unchanged) -->
+    <input type="file" class="pfp-upload" id="pfp-upload" accept="image/*">
+
+    <!-- Secret Menu (Delete Button REMOVED) -->
+    <div id="api-key-menu" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #e3d5b8; border: 1px solid #3a3129; padding: 15px; font-size: 0.9rem; z-index: 200; box-shadow: 0 5px 15px rgba(0,0,0,0.4); border-radius: 4px; min-width: 350px; max-width: 90%; max-height: 80vh; overflow-y: auto; color: var(--ink);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;"> <span style="font-weight: bold; font-family: 'Cinzel Decorative', cursive;">Secrets & Providers</span> <button id="close-api-menu" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; padding: 0 5px; color: var(--ink-light);">×</button> </div>
+        <div style="margin-bottom: 15px; border-bottom: 1px dashed var(--ink-light); padding-bottom: 15px;"> <label for="provider-select">API Provider:</label> <select id="provider-select"></select> <label for="model-select">Model:</label> <select id="model-select"></select> </div>
+        <div style="margin-bottom: 15px;"> <span style="font-weight: bold; display: block; margin-bottom: 5px; font-family: 'Cinzel Decorative', cursive; font-size: 1rem;" id="api-key-section-title">API Keys for [Provider]</span> <div id="api-key-list"> <p style="font-style: italic; color: #5a4e42; text-align: center; padding: 5px 0;">Select a provider.</p> </div> <div class="api-key-controls"> <input type="text" id="new-api-key-input" placeholder="Add API Key for selected provider"> <button id="add-api-key-btn">Add</button> </div> <p class="active-key-line">Active Key: <strong id="current-active-key-display">None</strong></p> </div>
+        <div id="saved-chats-section"> <span style="font-weight: bold; display: block; margin-bottom: 5px; font-family: 'Cinzel Decorative', cursive; font-size: 1rem;">Saved Chats</span> <div id="saved-chats-list-items"> <p style="font-style: italic; color: #5a4e42; text-align: center; padding: 10px 0;" id="chats-loading-msg">Checking storage...</p> </div> </div>
+        <!-- Danger Zone Section REMOVED -->
+    </div>
+
+    <!-- Reference to the external script file -->
+    <script src="api_providers.js"></script>
+
+    <!-- Your main script with IndexedDB -->
+    <script>
+        // Ensure PROVIDERS is available
+        if (typeof PROVIDERS === 'undefined') { alert("Critical Error: api_providers.js failed to load."); }
+        // Ensure idb library is available
+        if (typeof idb === 'undefined') { alert("Critical Error: idb library failed to load."); }
+
+        // Configure marked.js
+        marked.setOptions({ breaks: true, gfm: true, smartypants: true });
+
+        // State Management
+        const state = { conversationHistory: [], userPfp: '', botPfp: '', currentAvatarBeingEdited: null, isWaitingForResponse: false, savedPrompts: {}, currentChatId: null, selectedProvider: null, selectedModel: null };
+        const apiKeyManagement = { providerKeys: {}, activeKeys: {} };
+
+        // --- REMOVED Android Interface Check ---
+
+        // DOM Elements (Unchanged)
+        const pages = document.getElementById('pages'); const messageInput = document.getElementById('message-input'); const sendButton = document.getElementById('send-button'); const settingsModal = document.getElementById('settings-modal'); const systemPromptInput = document.getElementById('system-prompt-input'); const userAvatarPreview = document.getElementById('user-avatar-preview'); const spiritAvatarPreview = document.getElementById('spirit-avatar-preview'); const closeModalBtn = document.getElementById('close-modal'); const cancelBtn = document.getElementById('cancel-btn'); const saveBtn = document.getElementById('save-btn'); const pfpUpload = document.getElementById('pfp-upload'); const guidanceSelect = document.getElementById('guidance-select'); const saveGuidanceBtn = document.getElementById('save-guidance-btn'); const removeGuidanceBtn = document.getElementById('remove-guidance-btn'); const newChatBtn = document.getElementById('new-chat-btn'); const undoBtn = document.getElementById('undo-btn'); const apiKeyMenu = document.getElementById('api-key-menu'); const closeApiMenuBtn = document.getElementById('close-api-menu'); const providerSelect = document.getElementById('provider-select'); const modelSelect = document.getElementById('model-select'); const apiKeySectionTitle = document.getElementById('api-key-section-title'); const apiKeyListDiv = document.getElementById('api-key-list'); const newApiKeyInput = document.getElementById('new-api-key-input'); const addApiKeyBtn = document.getElementById('add-api-key-btn'); const currentActiveKeyDisplay = document.getElementById('current-active-key-display'); const savedChatsListItems = document.getElementById('saved-chats-list-items'); const chatsLoadingMsg = document.getElementById('chats-loading-msg');
+
+        // === IndexedDB Setup and Helpers ===
+        const DB_NAME = 'ArcaneTomeDB';
+        const DB_VERSION = 1;
+        const CHAT_STORE_NAME = 'chats';
+
+        async function openArcaneTomeDB() {
+            return idb.openDB(DB_NAME, DB_VERSION, {
+                upgrade(db, oldVersion, newVersion, transaction) {
+                    console.log(`Upgrading DB from version ${oldVersion} to ${newVersion}`);
+                    if (oldVersion < 1) {
+                        // Create the 'chats' object store
+                        const store = db.createObjectStore(CHAT_STORE_NAME, { keyPath: 'id' });
+                        // Create an index on 'timestamp' for sorting
+                        store.createIndex('timestamp', 'timestamp');
+                        console.log('Created chats object store and timestamp index.');
+                    }
+                    // Add future upgrade logic here based on oldVersion
+                },
+            });
+        }
+
+        async function saveChatDB(chatData) {
+            try {
+                const db = await openArcaneTomeDB();
+                await db.put(CHAT_STORE_NAME, chatData);
+                console.log(`[DB] Chat saved/updated: ${chatData.id}`);
+            } catch (error) {
+                console.error(`[DB] Error saving chat ${chatData.id}:`, error);
+                alert(`Failed to save chat: ${error.message}`); // Inform user
+                throw error; // Re-throw for calling function if needed
+            }
+        }
+
+        async function loadChatHistoryDB(chatId) {
+            try {
+                const db = await openArcaneTomeDB();
+                const chatData = await db.get(CHAT_STORE_NAME, chatId);
+                console.log(`[DB] Loaded chat data for ${chatId}:`, chatData ? 'Found' : 'Not Found');
+                return chatData ? chatData.history : null; // Return only the history array
+            } catch (error) {
+                console.error(`[DB] Error loading chat ${chatId}:`, error);
+                return null; // Return null on error
+            }
+        }
+
+        async function deleteChatDB(chatId) {
+            try {
+                const db = await openArcaneTomeDB();
+                await db.delete(CHAT_STORE_NAME, chatId);
+                console.log(`[DB] Chat deleted: ${chatId}`);
+            } catch (error) {
+                console.error(`[DB] Error deleting chat ${chatId}:`, error);
+                alert(`Failed to delete chat: ${error.message}`); // Inform user
+                throw error; // Re-throw
+            }
+        }
+
+        async function getChatListDB() {
+            try {
+                const db = await openArcaneTomeDB();
+                // Use the timestamp index to get all records, sorted by timestamp descending
+                // getAll() is simpler if getting all, then sorting in JS
+                const allChats = await db.getAllFromIndex(CHAT_STORE_NAME, 'timestamp');
+                // Sort descending (newest first)
+                allChats.sort((a, b) => b.timestamp - a.timestamp);
+                // Map to the format needed by the UI
+                const chatListMeta = allChats.map(chat => ({ id: chat.id, timestamp: chat.timestamp }));
+                console.log(`[DB] Retrieved chat list meta: ${chatListMeta.length} items`);
+                return chatListMeta;
+            } catch (error) {
+                console.error('[DB] Error getting chat list:', error);
+                return []; // Return empty array on error
+            }
+        }
+        // === END IndexedDB Helpers ===
+
+
+        // === API Key and Provider/Model Management (Unchanged) ===
+        function loadApiAndProviderState() { /* ... Unchanged ... */ console.log("[DEBUG] loadApiAndProviderState: Starting."); const storedProviderKeys = localStorage.getItem('providerApiKeys'); if (storedProviderKeys) { try { apiKeyManagement.providerKeys = JSON.parse(storedProviderKeys); if (typeof apiKeyManagement.providerKeys !== 'object' || apiKeyManagement.providerKeys === null) { apiKeyManagement.providerKeys = {}; } Object.keys(apiKeyManagement.providerKeys).forEach(prov => { if (!Array.isArray(apiKeyManagement.providerKeys[prov])) { apiKeyManagement.providerKeys[prov] = []; } }); } catch (e) { console.error("[DEBUG] Error parsing stored provider API keys:", e); apiKeyManagement.providerKeys = {}; localStorage.removeItem('providerApiKeys'); } } else { apiKeyManagement.providerKeys = {}; } const storedActiveKeys = localStorage.getItem('activeApiKeys'); if (storedActiveKeys) { try { apiKeyManagement.activeKeys = JSON.parse(storedActiveKeys); if (typeof apiKeyManagement.activeKeys !== 'object' || apiKeyManagement.activeKeys === null) { apiKeyManagement.activeKeys = {}; } Object.keys(apiKeyManagement.activeKeys).forEach(prov => { const active = apiKeyManagement.activeKeys[prov]; const keysForProvider = apiKeyManagement.providerKeys[prov] || []; if (!keysForProvider.includes(active)) { delete apiKeyManagement.activeKeys[prov]; } }); } catch (e) { console.error("[DEBUG] Error parsing stored active API keys:", e); apiKeyManagement.activeKeys = {}; localStorage.removeItem('activeApiKeys'); } } else { apiKeyManagement.activeKeys = {}; } const savedProvider = localStorage.getItem('selectedProvider'); const savedModel = localStorage.getItem('selectedModel'); if (savedProvider && PROVIDERS[savedProvider]) { state.selectedProvider = savedProvider; } else { state.selectedProvider = Object.keys(PROVIDERS)[0]; } const providerConf = PROVIDERS[state.selectedProvider]; if (savedModel && providerConf && providerConf.availableModels.includes(savedModel)) { state.selectedModel = savedModel; } else { state.selectedModel = providerConf?.defaultModel || null; } Object.keys(apiKeyManagement.providerKeys).forEach(prov => { if (!apiKeyManagement.activeKeys[prov] && apiKeyManagement.providerKeys[prov]?.length > 0) { apiKeyManagement.activeKeys[prov] = apiKeyManagement.providerKeys[prov][0]; } }); saveApiAndProviderState(); console.log(`[DEBUG] Initial provider: ${state.selectedProvider}, model: ${state.selectedModel}`); console.log("[DEBUG] loadApiAndProviderState: Finished."); }
+        function saveApiAndProviderState() { localStorage.setItem('providerApiKeys', JSON.stringify(apiKeyManagement.providerKeys)); localStorage.setItem('activeApiKeys', JSON.stringify(apiKeyManagement.activeKeys)); localStorage.setItem('selectedProvider', state.selectedProvider || ''); localStorage.setItem('selectedModel', state.selectedModel || ''); }
+        function populateProviderDropdown() { /* ... Unchanged ... */ providerSelect.innerHTML = ''; Object.keys(PROVIDERS).forEach(providerKey => { const option = document.createElement('option'); option.value = providerKey; option.textContent = PROVIDERS[providerKey].name; providerSelect.appendChild(option); }); providerSelect.value = state.selectedProvider; }
+        function updateModelDropdown() { /* ... Unchanged ... */ modelSelect.innerHTML = ''; if (!state.selectedProvider || !PROVIDERS[state.selectedProvider]) { modelSelect.disabled = true; return; } const providerConf = PROVIDERS[state.selectedProvider]; if (!providerConf.availableModels || providerConf.availableModels.length === 0) { const option = document.createElement('option'); option.value = ""; option.textContent = "No models available"; modelSelect.appendChild(option); modelSelect.disabled = true; state.selectedModel = null; return; } modelSelect.disabled = false; providerConf.availableModels.forEach(modelName => { const option = document.createElement('option'); option.value = modelName; option.textContent = modelName; modelSelect.appendChild(option); }); if (state.selectedModel && providerConf.availableModels.includes(state.selectedModel)) { modelSelect.value = state.selectedModel; } else { state.selectedModel = providerConf.defaultModel; modelSelect.value = state.selectedModel; saveApiAndProviderState(); } }
+        function renderApiKeysForSelectedProvider() { /* ... Unchanged ... */ apiKeyListDiv.innerHTML = ''; if (!state.selectedProvider) { apiKeyListDiv.innerHTML = '<p style="font-style: italic; color: #5a4e42; text-align: center; padding: 5px 0;">Select a provider.</p>'; apiKeySectionTitle.textContent = "API Keys"; updateActiveKeyDisplay(); return; } apiKeySectionTitle.textContent = `API Keys for ${PROVIDERS[state.selectedProvider]?.name || state.selectedProvider}`; const keys = apiKeyManagement.providerKeys[state.selectedProvider] || []; const activeKey = apiKeyManagement.activeKeys[state.selectedProvider] || null; if (keys.length === 0) { apiKeyListDiv.innerHTML = '<p style="font-style: italic; color: #5a4e42; text-align: center; padding: 5px 0;">No keys added for this provider.</p>'; } else { keys.forEach((key) => { const isKeyActive = (key === activeKey); const kdiv = document.createElement('div'); kdiv.className = 'saved-chat-item'; if(isKeyActive) kdiv.style.backgroundColor = 'rgba(107, 33, 168, 0.1)'; const kspan = document.createElement('span'); kspan.textContent = key; kspan.title = key; if (isKeyActive) { kspan.style.fontWeight = 'bold'; kspan.style.color = 'var(--amethyst)'; } const cdiv = document.createElement('div'); cdiv.style.display = 'flex'; cdiv.style.gap = '5px'; cdiv.style.flexShrink = '0'; const ubtn = document.createElement('button'); ubtn.textContent = 'Use'; ubtn.className = 'load-chat-btn'; ubtn.style.backgroundColor = isKeyActive ? 'var(--parchment-dark)' : 'var(--gold)'; ubtn.style.color = isKeyActive ? 'var(--ink-light)' : 'var(--ink)'; ubtn.disabled = isKeyActive; ubtn.onclick = () => setActiveApiKey(state.selectedProvider, key); const dbtn = document.createElement('button'); dbtn.textContent = 'Del'; dbtn.className = 'delete-chat-btn'; dbtn.onclick = () => deleteChat(key); /* Use deleteChat now */ cdiv.appendChild(ubtn); cdiv.appendChild(dbtn); kdiv.appendChild(kspan); kdiv.appendChild(cdiv); apiKeyListDiv.appendChild(kdiv); }); } updateActiveKeyDisplay(); }
+        function setActiveApiKey(provider, key) { /* ... Unchanged ... */ if (!apiKeyManagement.providerKeys[provider]?.includes(key)) { return; } apiKeyManagement.activeKeys[provider] = key; saveApiAndProviderState(); renderApiKeysForSelectedProvider(); }
+        function deleteApiKey(provider, keyToDelete) { /* ... Unchanged ... */ if (!apiKeyManagement.providerKeys[provider]) return; apiKeyManagement.providerKeys[provider] = apiKeyManagement.providerKeys[provider].filter(k => k !== keyToDelete); if (apiKeyManagement.activeKeys[provider] === keyToDelete) { const remainingKeys = apiKeyManagement.providerKeys[provider]; apiKeyManagement.activeKeys[provider] = remainingKeys.length > 0 ? remainingKeys[0] : null; } if (apiKeyManagement.providerKeys[provider].length === 0) { delete apiKeyManagement.providerKeys[provider]; delete apiKeyManagement.activeKeys[provider]; } saveApiAndProviderState(); renderApiKeysForSelectedProvider(); }
+        function addApiKey() { /* ... Unchanged ... */ if (!state.selectedProvider) { alert("Please select an API provider first."); return; } const newKey = newApiKeyInput.value.trim(); if (!newKey) return; if (!apiKeyManagement.providerKeys[state.selectedProvider]) { apiKeyManagement.providerKeys[state.selectedProvider] = []; } const currentKeys = apiKeyManagement.providerKeys[state.selectedProvider]; if (!currentKeys.includes(newKey)) { currentKeys.push(newKey); if (!apiKeyManagement.activeKeys[state.selectedProvider]) { apiKeyManagement.activeKeys[state.selectedProvider] = newKey; } saveApiAndProviderState(); renderApiKeysForSelectedProvider(); newApiKeyInput.value = ''; } else { alert(`Key already exists for ${PROVIDERS[state.selectedProvider].name}.`); newApiKeyInput.value = ''; } }
+        function updateActiveKeyDisplay() { /* ... Unchanged ... */ const activeKey = state.selectedProvider ? apiKeyManagement.activeKeys[state.selectedProvider] : null; currentActiveKeyDisplay.textContent = activeKey || 'None'; currentActiveKeyDisplay.title = activeKey || ''; }
+        function handleProviderChange() { /* ... Unchanged ... */ const newProvider = providerSelect.value; state.selectedProvider = newProvider; state.selectedModel = PROVIDERS[newProvider]?.defaultModel || null; saveApiAndProviderState(); updateModelDropdown(); renderApiKeysForSelectedProvider(); }
+        function handleModelChange() { /* ... Unchanged ... */ const newModel = modelSelect.value; state.selectedModel = newModel; saveApiAndProviderState(); }
+
+
+        // === Saved Chats Management (Using IndexedDB) ===
+        async function populateChatList() { // Now async
+            savedChatsListItems.innerHTML = '';
+            chatsLoadingMsg.textContent = 'Loading chats from DB...';
+            chatsLoadingMsg.style.display = 'block';
+            try {
+                // Use the new DB helper
+                const chatList = await getChatListDB(); // Returns sorted array {id, timestamp}
+                console.log("[DB] Retrieved chat list:", chatList);
+
+                if (chatList.length === 0) {
+                    chatsLoadingMsg.textContent = 'No saved chats found.';
+                } else {
+                    chatsLoadingMsg.style.display = 'none';
+                    chatList.forEach(chatMeta => {
+                        // Create list item elements (similar to before)
+                        const itemDiv = document.createElement('div');
+                        itemDiv.className = 'saved-chat-item';
+                        const tsSpan = document.createElement('span');
+                        const date = new Date(chatMeta.timestamp);
+                        tsSpan.textContent = date.toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' });
+                        tsSpan.title = `ID: ${chatMeta.id}\nSaved: ${date.toISOString()}`;
+                        const ctrlDiv = document.createElement('div');
+                        const loadBtn = document.createElement('button');
+                        loadBtn.textContent = 'Load';
+                        loadBtn.className = 'load-chat-btn';
+                        loadBtn.onclick = (e) => { e.stopPropagation(); loadChat(chatMeta.id); }; // Call new loadChat
+                        const delBtn = document.createElement('button');
+                        delBtn.textContent = 'Del';
+                        delBtn.className = 'delete-chat-btn';
+                        delBtn.onclick = (e) => { e.stopPropagation(); deleteChat(chatMeta.id); }; // Call new deleteChat
+                        ctrlDiv.appendChild(loadBtn);
+                        ctrlDiv.appendChild(delBtn);
+                        itemDiv.appendChild(tsSpan);
+                        itemDiv.appendChild(ctrlDiv);
+                        savedChatsListItems.appendChild(itemDiv);
+                    });
+                }
+            } catch (error) {
+                console.error("Error populating chat list from DB:", error);
+                savedChatsListItems.innerHTML = '';
+                chatsLoadingMsg.style.display = 'block';
+                chatsLoadingMsg.textContent = 'Error loading chats.';
+            }
+        }
+
+        async function loadChat(chatId) { // Renamed and async
+             console.log(`JS: Attempting to load ${chatId} from DB`);
+             try {
+                 // Use the new DB helper - it returns history or null
+                 const loadedHistory = await loadChatHistoryDB(chatId);
+
+                 if (loadedHistory) {
+                     // Validate basic structure (optional but good)
+                     if (Array.isArray(loadedHistory) && loadedHistory.length > 0 && loadedHistory[0]?.role === 'system') {
+                         state.conversationHistory = loadedHistory;
+                         state.currentChatId = chatId;
+                         // No need to save lastChatId to localStorage anymore if we always start fresh
+                         // localStorage.setItem('lastChatId', chatId);
+
+                         renderChatHistory();
+                         systemPromptInput.value = state.conversationHistory[0].content;
+                         console.log(`JS: Successfully loaded chat history for ${chatId} from DB.`);
+                         closeApiMenu();
+                     } else {
+                         console.error("[DEBUG] Loaded data from DB is not a valid chat history array:", loadedHistory);
+                         throw new Error("Invalid format in loaded chat data");
+                     }
+                 } else {
+                     // loadChatHistoryDB returned null (not found or error reading)
+                     console.warn(`JS: Chat ${chatId} not found in DB or error loading.`);
+                     alert(`Could not load chat "${chatId}". Data not found.`);
+                     await populateChatList(); // Refresh list in case it was deleted
+                 }
+
+             } catch (error) {
+                 console.error(`JS: Error loading or processing ${chatId} from DB:`, error);
+                 alert(`Error loading chat: ${error.message}`);
+                 await populateChatList(); // Refresh list
+             }
+         }
+
+        async function deleteChat(chatId) { // Renamed and async
+             if (!confirm(`Delete chat saved around ${document.querySelector(`.saved-chat-item span[title*='ID: ${chatId}']`)?.textContent || chatId}?`)) return;
+             console.log(`JS: Deleting ${chatId} from DB`);
+             try {
+                 await deleteChatDB(chatId); // Call the DB helper
+                 console.log(`JS: Delete ${chatId} command sent to DB.`);
+                 await populateChatList(); // Refresh the UI list
+
+                 // If the deleted chat was the currently active one, start a new chat
+                 if (state.currentChatId === chatId) {
+                     console.log("Active chat deleted.");
+                     await startNewChat(false); // Use await as startNewChat is now async
+                 }
+             } catch (error) {
+                 console.error(`JS: Error deleting ${chatId} from DB:`, error);
+                 // Error already alerted in deleteChatDB helper
+             }
+         }
+
+
+        // Open/Close Secret Menu (Calls async populateChatList)
+        async function openApiMenu() { // Now async
+             loadApiAndProviderState();
+             populateProviderDropdown();
+             updateModelDropdown();
+             renderApiKeysForSelectedProvider();
+             await populateChatList(); // Await the list population
+             apiKeyMenu.style.display = 'block';
+        }
+        function closeApiMenu() { apiKeyMenu.style.display = 'none'; }
+
+        // === App Initialization and Core Logic ===
+        // initializeChat: Always starts new, no DB load attempt here
+        function initializeChat() {
+             console.log("[DEBUG] initializeChat: Starting new chat session.");
+             state.currentChatId = `chat_${Date.now()}`;
+             state.conversationHistory = [ { role: 'system', content: localStorage.getItem('systemPrompt') || 'You are a mystical spirit...' } ];
+             // No need to manage lastChatId in localStorage for auto-load
+             // localStorage.removeItem('lastChatId');
+             systemPromptInput.value = state.conversationHistory[0].content;
+             console.log("[DEBUG] initializeChat: New chat session initialized with ID:", state.currentChatId);
+             console.log(`[DEBUG] Using Provider: ${state.selectedProvider}, Model: ${state.selectedModel}`);
+        }
+
+        // init: Main setup function
+        function init() {
+             console.log("[DEBUG] init: Starting Initialization...");
+             try {
+                 // Load basic settings
+                 state.savedPrompts = JSON.parse(localStorage.getItem('savedPrompts')) || {};
+                 state.userPfp = localStorage.getItem('userPfp') || 'https://ui-avatars.com/api/?name=User&background=1e3a8a&color=fff&bold=true';
+                 state.botPfp = localStorage.getItem('botPfp') || 'https://ui-avatars.com/api/?name=Spirit&background=6b21a8&color=fff&bold=true';
+                 userAvatarPreview.src = state.userPfp; spiritAvatarPreview.src = state.botPfp;
+                 updateGuidanceSelect();
+
+                 // Load API/Provider state
+                 loadApiAndProviderState();
+                 initializeChat(); // Initialize chat state (ALWAYS STARTS NEW)
+
+                 // Check DOM elements
+                 if (!sendButton /* etc. */) { throw new Error("Core DOM elements not found!"); }
+
+                 console.log("[DEBUG] init: Attaching event listeners...");
+                 // --- Attach Event Listeners (No Delete All listener) ---
+                 closeApiMenuBtn.addEventListener('click', closeApiMenu);
+                 providerSelect.addEventListener('change', handleProviderChange);
+                 modelSelect.addEventListener('change', handleModelChange);
+                 addApiKeyBtn.addEventListener('click', addApiKey);
+                 newApiKeyInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); addApiKey(); } });
+                 document.addEventListener('click', (event) => { if (apiKeyMenu.style.display === 'block' && !apiKeyMenu.contains(event.target) && !event.target.closest('.user-avatar') && !event.target.closest('#user-avatar-preview')) { closeApiMenu(); } }, true);
+                 sendButton.addEventListener('click', sendMessage);
+                 messageInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } });
+                 messageInput.addEventListener('input', () => { messageInput.style.height = 'auto'; messageInput.style.height = (messageInput.scrollHeight) + 'px'; });
+                 closeModalBtn.addEventListener('click', closeSettings);
+                 cancelBtn.addEventListener('click', closeSettings);
+                 saveBtn.addEventListener('click', saveSettings); // saveSettings is now async
+                 pfpUpload.addEventListener('change', handlePfpUpload);
+                 guidanceSelect.addEventListener('change', loadGuidance);
+                 saveGuidanceBtn.addEventListener('click', saveCurrentGuidance);
+                 removeGuidanceBtn.addEventListener('click', removeSelectedGuidance);
+                 newChatBtn.addEventListener('click', () => startNewChat(true)); // startNewChat is now async
+                 undoBtn.addEventListener('click', undoLastMessage); // undoLastMessage is now async
+                 userAvatarPreview.addEventListener('click', () => { state.currentAvatarBeingEdited = 'user'; pfpUpload.click(); });
+                 spiritAvatarPreview.addEventListener('click', () => { state.currentAvatarBeingEdited = 'spirit'; pfpUpload.click(); });
+                 pages.addEventListener('click', (event) => { if (event.target.matches('.user-avatar') && event.target.closest('.message-user')) { openApiMenu(); } else if (event.target.matches('.spirit-avatar') && event.target.closest('.message-spirit')) { openSettings(); } });
+
+                 renderChatHistory(); // Render the initial empty chat
+                 console.log("[DEBUG] init: Initialization flow complete.");
+
+             } catch (error) {
+                 console.error("[DEBUG] CRITICAL ERROR DURING INIT:", error);
+                 alert("A critical error occurred during initialization: " + error.message + ". Check the debug console.");
+             }
+         }
+
+        // renderChatHistory (Unchanged)
+        function renderChatHistory() { /* ... */ pages.innerHTML = ''; state.conversationHistory.slice(1).forEach(msg => { if (!msg || !msg.role || typeof msg.content === 'undefined') { console.warn("Skipping invalid message:", msg); return; } const sender = msg.role === 'user' ? 'user' : 'spirit'; const pfp = sender === 'user' ? state.userPfp : state.botPfp; const isMarkdown = msg.role === 'assistant'; displayMessage(msg.content, sender, pfp, isMarkdown); }); requestAnimationFrame(() => { pages.scrollTop = pages.scrollHeight; }); }
+
+        // startNewChat (Uses IndexedDB save)
+        async function startNewChat(confirmFirst = true) { // Now async
+             if (confirmFirst && !confirm('Start a new chat?\n(Current chat will be saved if possible)')) return;
+
+             // Save current chat history before starting new one
+             if (state.currentChatId && state.conversationHistory.length > 1) { // Only save if there's actually content
+                 console.log(`JS: Saving current ${state.currentChatId} to DB`);
+                 const chatData = {
+                     id: state.currentChatId,
+                     timestamp: Date.now(), // Use current time for saving
+                     history: state.conversationHistory
+                 };
+                 try {
+                      await saveChatDB(chatData); // Use await with the DB helper
+                      console.log(`JS: Save ${state.currentChatId} to DB successful.`);
+                 } catch (error) {
+                      console.error(`JS: Error saving ${state.currentChatId} to DB:`, error);
+                      // Alert happened in saveChatDB helper
+                 }
+             }
+
+             // Reset state for new chat (ID generated in initializeChat now, just reset history)
+             const currentSystemPrompt = state.conversationHistory[0]?.content || localStorage.getItem('systemPrompt') || 'You are a mystical spirit...';
+             const newChatId = `chat_${Date.now()}`;
+             console.log("Starting new chat:", newChatId);
+
+             state.currentChatId = newChatId;
+             state.conversationHistory = [ { role: 'system', content: currentSystemPrompt } ];
+
+             systemPromptInput.value = currentSystemPrompt;
+             renderChatHistory(); // Clear the page
+             closeSettings();
+             closeApiMenu();
+             messageInput.focus();
+        }
+
+
+        // sendMessage (Unchanged - still uses selected provider/model/key)
+        async function sendMessage() { /* ... Unchanged ... */ console.log("[DEBUG] sendMessage: Called."); if (state.isWaitingForResponse) { console.log("[DEBUG] sendMessage: Aborted, waiting."); return; } const userInput = messageInput.value.trim(); if (!userInput) { console.log("[DEBUG] sendMessage: Aborted, empty input."); return; } const userMessage = { role: 'user', content: userInput }; state.conversationHistory.push(userMessage); displayMessage(userInput, 'user', state.userPfp, false); messageInput.value = ''; messageInput.style.height = 'auto'; requestAnimationFrame(() => { messageInput.style.height = (messageInput.scrollHeight) + 'px'; }); state.isWaitingForResponse = true; sendButton.disabled = true; const provider = state.selectedProvider; const model = state.selectedModel; const apiKey = provider ? apiKeyManagement.activeKeys[provider] : null; console.log(`[DEBUG] sendMessage: Provider=${provider}, Model=${model}, Key=${apiKey ? 'Exists' : 'Missing'}`); if (!provider || !model) { console.error("[DEBUG] sendMessage: Provider or Model not selected."); displayMessage("Cannot contact the spirit: Please select a valid API Provider and Model in the User Sigil menu.", 'spirit', state.botPfp, false); state.isWaitingForResponse = false; sendButton.disabled = false; return; } if (!apiKey) { console.error(`[DEBUG] sendMessage: No active API key set for provider ${provider}.`); displayMessage(`Cannot contact the spirit: No API Key is active for ${PROVIDERS[provider]?.name || provider}. Please set one via the User Sigil menu.`, 'spirit', state.botPfp, false); state.isWaitingForResponse = false; sendButton.disabled = false; messageInput.focus(); return; } displayTypingIndicator(); try { if (typeof getApiResponse !== 'function') throw new Error("API provider functions not loaded."); console.log(`[DEBUG] sendMessage: Calling getApiResponse for ${provider}...`); const botResponse = await getApiResponse( provider, model, state.conversationHistory, apiKey ); console.log("[DEBUG] sendMessage: getApiResponse successful."); removeTypingIndicator(); const assistantMessage = { role: 'assistant', content: botResponse }; state.conversationHistory.push(assistantMessage); displayMessage(botResponse, 'spirit', state.botPfp, true); } catch (error) { console.error('[DEBUG] Error during API call execution:', error); removeTypingIndicator(); displayMessage(`The connection falters...\n(${error.message || 'Unknown error'})`, 'spirit', state.botPfp, false); } finally { console.log("[DEBUG] sendMessage: Entering finally block."); removeTypingIndicator(); state.isWaitingForResponse = false; sendButton.disabled = false; if (!settingsModal.classList.contains('active') && apiKeyMenu.style.display === 'none') { messageInput.focus(); } } }
+
+        // Display a message (Unchanged)
+        function displayMessage(content, sender, pfp, isMarkdown = false) { /* ... Unchanged ... */ const msgDiv = document.createElement('div'); msgDiv.className = `message message-${sender}`; const avImg = document.createElement('img'); avImg.className = `avatar ${sender}-avatar`; avImg.src = pfp; avImg.alt = `${sender} avatar`; const cntDiv = document.createElement('div'); cntDiv.className = `message-content ${sender}-message`; if (isMarkdown) { if (typeof DOMPurify !== 'undefined') { cntDiv.innerHTML = DOMPurify.sanitize(marked.parse(content)); } else { cntDiv.innerHTML = marked.parse(content); if (cntDiv.innerHTML.includes('<script')) { console.warn("Potential XSS vector detected without DOMPurify."); cntDiv.innerHTML = cntDiv.innerHTML.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, ''); } } setTimeout(() => { cntDiv.querySelectorAll('pre').forEach(pre => { if (pre.querySelector('.copy-code-btn')) return; const btn = document.createElement('button'); btn.className = 'copy-code-btn'; btn.textContent = 'Copy'; btn.title = 'Copy code'; btn.addEventListener('click', (e) => { e.stopPropagation(); const code = pre.querySelector('code') || pre; navigator.clipboard.writeText(code.textContent).then(() => { btn.textContent = 'Copied!'; btn.classList.add('copied'); setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1500); }).catch(err => { console.error('Failed to copy code:', err); btn.textContent = 'Error'; setTimeout(() => { btn.textContent = 'Copy'; }, 1500); }); }); pre.style.position = 'relative'; pre.appendChild(btn); }); }, 0); } else { cntDiv.textContent = content; } if (sender === 'user') { msgDiv.appendChild(cntDiv); msgDiv.appendChild(avImg); } else { msgDiv.appendChild(avImg); msgDiv.appendChild(cntDiv); } pages.appendChild(msgDiv); requestAnimationFrame(() => { pages.scrollTo({ top: pages.scrollHeight, behavior: 'smooth' }); }); }
+        // Show/Remove typing indicator (Unchanged)
+        function displayTypingIndicator() { /* ... Unchanged ... */ if(document.getElementById('typing-indicator'))return;const typDiv=document.createElement('div');typDiv.className='message message-spirit';typDiv.id='typing-indicator';typDiv.style.opacity='0.8';const avImg=document.createElement('img');avImg.className='avatar spirit-avatar';avImg.src=state.botPfp;avImg.alt='spirit avatar';avImg.style.cursor='default';const cntDiv=document.createElement('div');cntDiv.className='typing-indicator';cntDiv.innerHTML=`<span>The spirit is responding</span><span class="rune" style="animation-delay: 0s;">ᛟ</span><span class="rune" style="animation-delay: 0.2s;">ᛞ</span><span class="rune" style="animation-delay: 0.4s;">ᛝ</span>`;typDiv.appendChild(avImg);typDiv.appendChild(cntDiv);pages.appendChild(typDiv);requestAnimationFrame(()=>{pages.scrollTo({ top: pages.scrollHeight, behavior: 'smooth' });});}
+        function removeTypingIndicator() { /* ... Unchanged ... */ const ti=document.getElementById('typing-indicator');if(ti)ti.remove();}
+
+        // --- Settings Modal / Guidance / PFP Logic (saveSettings uses IndexedDB) ---
+        function openSettings() { /* ... Unchanged ... */ systemPromptInput.value = state.conversationHistory[0]?.content || ''; userAvatarPreview.src = state.userPfp; spiritAvatarPreview.src = state.botPfp; updateGuidanceSelect(); const currentPromptName = Object.keys(state.savedPrompts).find(name => state.savedPrompts[name] === systemPromptInput.value); guidanceSelect.value = currentPromptName || ""; settingsModal.classList.add('active'); document.body.style.overflow = 'hidden'; }
+        function closeSettings() { /* ... Unchanged ... */ settingsModal.classList.remove('active'); document.body.style.overflow = ''; }
+        async function saveSettings() { // Now async
+             console.log("[DEBUG] saveSettings called.");
+             const newSysPrompt = systemPromptInput.value.trim();
+             const defaultPrompt = 'You are a mystical spirit...';
+             const finalPrompt = newSysPrompt || defaultPrompt;
+             let promptChanged = false;
+
+             if (!state.conversationHistory || state.conversationHistory.length === 0) { state.conversationHistory = [{ role: 'system', content: finalPrompt }]; promptChanged = true; }
+             else if (state.conversationHistory[0]?.content !== finalPrompt) { state.conversationHistory[0] = { role: 'system', content: finalPrompt }; promptChanged = true; }
+
+             if (promptChanged) { console.log("[DEBUG] System prompt changed."); localStorage.setItem('systemPrompt', finalPrompt); }
+
+             localStorage.setItem('userPfp', state.userPfp); localStorage.setItem('botPfp', state.botPfp);
+             document.querySelectorAll('.user-avatar').forEach(img => { if(img.closest('.message') || img.id === 'user-avatar-preview') img.src = state.userPfp; });
+             document.querySelectorAll('.spirit-avatar').forEach(img => { if(img.closest('.message') || img.closest('#typing-indicator') || img.id === 'spirit-avatar-preview') img.src = state.botPfp; });
+
+             // Save updated history to DB if prompt changed and chat exists
+             if (promptChanged && state.currentChatId) {
+                 const chatData = {
+                     id: state.currentChatId,
+                     timestamp: Date.now(),
+                     history: state.conversationHistory
+                 };
+                 try {
+                     await saveChatDB(chatData); // Use await
+                     console.log(`[DEBUG] Saved chat ${state.currentChatId} to DB after settings save.`);
+                 } catch (e) { console.error("[DEBUG] Save error after settings save:", e); /* Alert handled in helper */ }
+             }
+             closeSettings();
+         }
+        function updateGuidanceSelect() { /* ... Unchanged ... */ guidanceSelect.innerHTML = '<option value="">Select saved guidance...</option>'; Object.entries(state.savedPrompts).forEach(([name, prompt]) => { const opt = document.createElement('option'); opt.value = name; opt.textContent = name; guidanceSelect.appendChild(opt); }); }
+        function loadGuidance() { /* ... Unchanged ... */ const selName = guidanceSelect.value; if (selName && state.savedPrompts[selName]) { systemPromptInput.value = state.savedPrompts[selName]; } }
+        function saveCurrentGuidance() { /* ... Unchanged ... */ const currentPrompt = systemPromptInput.value.trim(); if (!currentPrompt) { alert("Guidance cannot be empty."); return; } const pName = prompt('Enter a name for this guidance:', Object.keys(state.savedPrompts).find(name => state.savedPrompts[name] === currentPrompt) || ''); if (pName) { state.savedPrompts[pName] = currentPrompt; localStorage.setItem('savedPrompts', JSON.stringify(state.savedPrompts)); updateGuidanceSelect(); guidanceSelect.value = pName; } }
+        function removeSelectedGuidance() { /* ... Unchanged ... */ const selName = guidanceSelect.value; if (selName && state.savedPrompts[selName]) { if (confirm(`Delete guidance "${selName}"?`)) { const promptVal = state.savedPrompts[selName]; delete state.savedPrompts[selName]; localStorage.setItem('savedPrompts', JSON.stringify(state.savedPrompts)); updateGuidanceSelect(); if (systemPromptInput.value === promptVal) { systemPromptInput.value = ''; } guidanceSelect.value = ''; } } }
+        function handlePfpUpload(event) { /* ... Unchanged ... */ const file = event.target.files[0]; if (!file || !file.type.startsWith('image/')) return; const reader = new FileReader(); reader.onload = (e) => { const url = e.target.result; if (state.currentAvatarBeingEdited === 'user') { state.userPfp = url; userAvatarPreview.src = url; } else if (state.currentAvatarBeingEdited === 'spirit') { state.botPfp = url; spiritAvatarPreview.src = url; } }; reader.onerror = (e) => console.error("PFP Read Err:", e); reader.readAsDataURL(file); pfpUpload.value = null; }
+        async function undoLastMessage() { // Now async
+             if (state.conversationHistory.length <= 1) return;
+             let removed = 0; const last = state.conversationHistory.pop(); removed = 1;
+             if (last?.role === 'assistant' && state.conversationHistory[state.conversationHistory.length - 1]?.role === 'user') { state.conversationHistory.pop(); removed = 2; }
+
+             if (removed > 0) {
+                  console.log(`[DEBUG] Undo removed ${removed} message(s).`);
+                 renderChatHistory();
+                 if(state.isWaitingForResponse){ console.log("[DEBUG] Undo while waiting - cancelling response."); state.isWaitingForResponse = false; sendButton.disabled = false; removeTypingIndicator(); }
+                 // Save updated history to DB
+                 if (state.currentChatId) {
+                     const chatData = {
+                         id: state.currentChatId,
+                         timestamp: Date.now(),
+                         history: state.conversationHistory
+                     };
+                     try {
+                         await saveChatDB(chatData); // Use await
+                         console.log(`[DEBUG] Saved chat ${state.currentChatId} to DB after undo.`);
+                     } catch(e) { console.error("Save error after undo:", e); /* Alert handled in helper */ }
+                 }
+             } else { console.log("[DEBUG] Undo called but no messages to remove."); }
+         }
+
+        // --- Initialization ---
+        document.addEventListener('DOMContentLoaded', init);
+
+    </script>
+
+</body>
+</html>
