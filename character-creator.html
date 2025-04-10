@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Title changed to reflect its role when embedded -->
+    <title>Character Appearance Editor</title>
+    <style>
+        :root {
+            --skin-tone: #fbe5d6;
+            --default-outline: #222; /* Keep dark outline consistent */
+            --swatch-size: 20px;
+            /* Theme colors matching parent app */
+            --bg-dark: #2D3250;
+            --bg-medium: #424769;
+            --bg-light: #7077A1;
+            --accent: #F6B17A;
+            --text-light: #e0e0e0;
+            --text-dark: #2D3250;
+            --border-color: #7077A1;
+        }
+
+/* Adjusted body/container for dark theme */
+    body {
+        font-family: 'Tahoma', 'Verdana', sans-serif; /* Match parent */
+        background-color: var(--bg-medium); /* Match parent modal internal */
+        color: var(--text-light);
+        /* Remove flex centering if embedded, let parent control layout */
+        padding: 15px; /* Add padding around the content */
+        margin: 0;
+        box-sizing: border-box;
+        min-height: 100vh; /* Ensure body fills iframe height */
+    }
+    #container {
+        display: flex; gap: 20px; /* Slightly reduced gap */
+        background-color: var(--bg-dark); /* Darker container bg */
+        padding: 15px;
+        border-radius: 6px;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.4);
+        align-items: flex-start; flex-wrap: nowrap;
+         /* Let container width be determined by content or iframe width */
+        max-width: 100%;
+    }
+
+    /* Character Preview Area - Minor theme tweaks */
+    #preview-area {
+         text-align: center; display: flex; flex-direction: column;
+         align-items: center; min-width: 180px; /* Slightly smaller min-width */
+         padding-right: 15px; flex-shrink: 0;
+         border-right: 1px solid var(--border-color); /* Add separator */
+    }
+     #preview-area h3 { /* Style the "Preview" heading */
+         margin-top: 0; margin-bottom: 15px; color: var(--accent);
+         font-size: 1.1em; border-bottom: 1px solid var(--border-color);
+         padding-bottom: 5px; width: 100%; text-align: center;
+    }
+    #preview-wrapper { width: 180px; height: 270px; margin-bottom: 15px; /* Reduced margin */ display: flex; justify-content: center; align-items: flex-start; }
+    #character-preview { width: 24px; height: 36px; position: relative; background-color: transparent; border: none; transform: scale(7); transform-origin: top center; margin-top: 10px; image-rendering: pixelated; image-rendering: crisp-edges; }
+
+    /* --- Walk Animations --- (Keep for potential local preview if needed) */
+    /* (Animations unchanged, but controls are removed) */
+    @keyframes bobbing { 0%, 100% { transform: translateY(0) scale(7); } 50% { transform: translateY(-1px) scale(7); } }
+    @keyframes walkArmLeft { 0%, 100% { transform: rotate(-10deg) translateX(0px); } 50% { transform: rotate(8deg) translateX(0px); } }
+    @keyframes walkArmRight { 0%, 100% { transform: rotate(8deg) translateX(0px); } 50% { transform: rotate(-10deg) translateX(0px); } }
+    @keyframes walkLegs { 0%, 100% { transform: translateX(0px); } 50% { transform: translateX(-0.5px); } }
+    #character-preview.is-walking { animation: bobbing 0.5s infinite ease-in-out; }
+    #character-preview.is-walking .part.arm-left { animation: walkArmLeft 0.5s infinite ease-in-out; transform-origin: 2px 1px; }
+    #character-preview.is-walking .part.arm-right { animation: walkArmRight 0.5s infinite ease-in-out; transform-origin: 1px 1px; }
+    #character-preview.is-walking .part.legs { animation: walkLegs 0.5s infinite ease-in-out; }
+
+
+    /* Base Part Styling (Unchanged - Crucial for consistency) */
+    .part { position: absolute; box-sizing: border-box; transition: background-color 0.1s ease, border-color 0.1s ease; display: none; background-color: transparent; image-rendering: pixelated; image-rendering: crisp-edges;}
+    .part.head, .part.torso, .part.legs, .part.arm-left, .part.arm-right, .part.detail1 { border: 1px solid var(--default-outline); }
+    .part.head { z-index: 10; background-color: var(--skin-tone); }
+    .part.torso { z-index: 5; } .part.legs { z-index: 4; } .part.arm-left { z-index: 6; transform-origin: 2px 1px; } .part.arm-right { z-index: 6; transform-origin: 1px 1px; }
+    .part.detail1 { z-index: 7; } .part.detail2 { z-index: 11; } .part.detail3 { z-index: 3; }
+    .part.detail4 { z-index: 12; border: none; } .part.detail5 { z-index: 12; border: none; }
+
+    /* === MALE STYLES === (Unchanged - Crucial) */
+    .gender-male .part.head { top: 1px; left: 7px; width: 10px; height: 9px; border-radius: 2px 2px 0 0; }
+    .gender-male .part.detail2 { display: block; top: 0px; left: 5px; width: 14px; height: 6px; border-radius: 3px 3px 1px 1px; z-index: 11; border: 1px solid var(--default-outline); }
+    .gender-male .part.detail3 { display: block; top: 5px; left: 6px; width: 12px; height: 6px; border-radius: 0 0 2px 2px; z-index: 3; border: 1px solid var(--default-outline); }
+    /* --- Male Citizen --- (Unchanged) */
+    .gender-male.outfit-citizen .part.head, .gender-male.outfit-citizen .part.torso, .gender-male.outfit-citizen .part.legs,
+    .gender-male.outfit-citizen .part.detail2, .gender-male.outfit-citizen .part.detail3, /* Hair */
+    .gender-male.outfit-citizen .part.arm-left, .gender-male.outfit-citizen .part.arm-right { display: block; }
+    .gender-male.outfit-citizen .part.torso { top: 9px; left: 5px; width: 14px; height: 12px; border-top-width: 2px; border-bottom: none;}
+    .gender-male.outfit-citizen .part.legs { top: 21px; left: 6px; width: 12px; height: 9px; border-bottom-width: 3px; border-top: none; }
+    .gender-male.outfit-citizen .part.arm-left { top: 10px; left: 2px; width: 3px; height: 10px; border-radius: 1px; }
+    .gender-male.outfit-citizen .part.arm-right { top: 10px; left: 19px; width: 3px; height: 10px; border-radius: 1px; }
+    /* --- Male Mage --- (Unchanged) */
+    .gender-male.outfit-mage .part.head, .gender-male.outfit-mage .part.torso, .gender-male.outfit-mage .part.legs,
+    .gender-male.outfit-mage .part.detail1, .gender-male.outfit-mage .part.detail4,
+    .gender-male.outfit-mage .part.arm-left, .gender-male.outfit-mage .part.arm-right { display: block; }
+    .gender-male.outfit-mage .part.detail2, .gender-male.outfit-mage .part.detail3 { display: none; }
+    .gender-male.outfit-mage .part.detail4 { top: -4px; left: 4px; width: 16px; height: 10px; border-radius: 50% 50% 0 0 / 40% 40% 0 0; border: 1px solid var(--default-outline); border-bottom: none; z-index: 12; clip-path: polygon(50% 0%, 100% 100%, 0% 100%); }
+    .gender-male.outfit-mage .part.torso { top: 9px; left: 4px; width: 16px; height: 18px; }
+    .gender-male.outfit-mage .part.legs { top: 27px; left: 6px; width: 12px; height: 6px; border-bottom-width: 3px; border-top: none; }
+    .gender-male.outfit-mage .part.detail1 { top: 18px; left: 4px; width: 16px; height: 3px; }
+    .gender-male.outfit-mage .part.arm-left { top: 11px; left: 1px; width: 4px; height: 10px; }
+    .gender-male.outfit-mage .part.arm-right { top: 11px; left: 19px; width: 4px; height: 10px; }
+    /* --- Male Warrior --- (Unchanged) */
+    .gender-male.outfit-warrior .part.head, .gender-male.outfit-warrior .part.torso, .gender-male.outfit-warrior .part.legs,
+    .gender-male.outfit-warrior .part.detail1, .gender-male.outfit-warrior .part.detail2, .gender-male.outfit-warrior .part.detail3,
+    .gender-male.outfit-warrior .part.detail4, .gender-male.outfit-warrior .part.detail5,
+    .gender-male.outfit-warrior .part.arm-left, .gender-male.outfit-warrior .part.arm-right { display: block; }
+    .gender-male.outfit-warrior .part.detail4 { top: 0px; left: 1px; width: 7px; height: 10px; border-radius: 3px 0 0 0; border-width: 1px; border-style: outset; z-index: 12; }
+    .gender-male.outfit-warrior .part.detail5 { top: 0px; left: 16px; width: 7px; height: 10px; border-radius: 0 3px 0 0; border-width: 1px; border-style: outset; z-index: 12; }
+    .gender-male.outfit-warrior .part.head { border-radius: 1px; z-index: 10;}
+    .gender-male.outfit-warrior .part.torso { top: 9px; left: 4px; width: 16px; height: 13px; border-width: 2px; border-style: outset; }
+    .gender-male.outfit-warrior .part.legs { top: 22px; left: 5px; width: 14px; height: 8px; border-bottom-width: 4px; border-style: outset; border-top: none;}
+    .gender-male.outfit-warrior .part.detail1 { top: 18px; left: 4px; width: 16px; height: 4px; }
+    .gender-male.outfit-warrior .part.arm-left { top: 11px; left: 1px; width: 4px; height: 10px; }
+    .gender-male.outfit-warrior .part.arm-right { top: 11px; left: 19px; width: 4px; height: 10px; }
+    /* --- Male SciFi --- (Unchanged) */
+    .gender-male.outfit-scifi .part.head, .gender-male.outfit-scifi .part.torso, .gender-male.outfit-scifi .part.legs,
+    .gender-male.outfit-scifi .part.detail1, .gender-male.outfit-scifi .part.detail2, .gender-male.outfit-scifi .part.detail3,
+    .gender-male.outfit-scifi .part.arm-left, .gender-male.outfit-scifi .part.arm-right { display: block; }
+    .gender-male.outfit-scifi .part.head { top: 1px; left: 7px; width: 10px; height: 9px; border-radius: 2px; }
+    .gender-male.outfit-scifi .part.torso { top: 9px; left: 5px; width: 14px; height: 13px; border-style: solid; border-width: 1px 2px;}
+    .gender-male.outfit-scifi .part.legs { top: 22px; left: 6px; width: 12px; height: 9px; border-bottom-width: 3px; border-style: solid; border-width: 1px 2px;}
+    .gender-male.outfit-scifi .part.detail1 { top: 11px; left: 8px; width: 8px; height: 5px; border-radius: 1px; z-index: 7; }
+    .gender-male.outfit-scifi .part.arm-left { top: 10px; left: 2px; width: 4px; height: 11px; border-radius: 1px;}
+    .gender-male.outfit-scifi .part.arm-right { top: 10px; left: 18px; width: 4px; height: 11px; border-radius: 1px;}
+    /* --- Male Ranger --- (Unchanged) */
+    .gender-male.outfit-ranger .part.head, .gender-male.outfit-ranger .part.torso, .gender-male.outfit-ranger .part.legs,
+    .gender-male.outfit-ranger .part.detail1, .gender-male.outfit-ranger .part.detail2, .gender-male.outfit-ranger .part.detail3,
+    .gender-male.outfit-ranger .part.arm-left, .gender-male.outfit-ranger .part.arm-right { display: block; }
+    .gender-male.outfit-ranger .part.torso { top: 9px; left: 5px; width: 14px; height: 13px; }
+    .gender-male.outfit-ranger .part.legs { top: 22px; left: 6px; width: 12px; height: 9px; border-bottom-width: 3px; }
+    .gender-male.outfit-ranger .part.detail1 { top: 18px; left: 5px; width: 14px; height: 4px; }
+    .gender-male.outfit-ranger .part.arm-left { top: 10px; left: 2px; width: 4px; height: 11px; }
+    .gender-male.outfit-ranger .part.arm-right { top: 10px; left: 18px; width: 4px; height: 11px; }
+    /* --- Male Kimono --- (Unchanged) */
+    .gender-male.outfit-kimono .part.head, .gender-male.outfit-kimono .part.torso, .gender-male.outfit-kimono .part.legs,
+    .gender-male.outfit-kimono .part.detail1, .gender-male.outfit-kimono .part.detail2, .gender-male.outfit-kimono .part.detail3,
+    .gender-male.outfit-kimono .part.arm-left, .gender-male.outfit-kimono .part.arm-right { display: block; }
+    .gender-male.outfit-kimono .part.torso { top: 9px; left: 4px; width: 16px; height: 18px; border-radius: 1px; border-right-width: 2px; border-left-width: 2px;}
+    .gender-male.outfit-kimono .part.legs { top: 27px; left: 6px; width: 12px; height: 6px; border-bottom-width: 3px; border-top: none; }
+    .gender-male.outfit-kimono .part.detail1 { top: 16px; left: 4px; width: 16px; height: 5px; z-index: 7; }
+    .gender-male.outfit-kimono .part.arm-left { top: 10px; left: 0px; width: 6px; height: 15px; border-radius: 0 0 2px 2px; }
+    .gender-male.outfit-kimono .part.arm-right { top: 10px; left: 18px; width: 6px; height: 15px; border-radius: 0 0 2px 2px; }
+
+    /* === FEMALE STYLES === (Unchanged - Crucial) */
+    .gender-female .part.head { width: 12px; height: 11px; left: 6px; top: 1px; border-radius: 40% 40% 35% 35%; z-index: 10;}
+    .gender-female .part.detail3 { display: block; top: 4px; left: 4px; width: 16px; height: 20px; z-index: 3; border-radius: 0 0 10px 10px; border: none; }
+    .gender-female .part.detail2 { display: block; top: 1px; left: 5px; width: 14px; height: 8px; z-index: 11; border-radius: 5px 5px 2px 2px; border: none; border-bottom: 1px solid #111;}
+    /* --- Female Citizen --- (Unchanged) */
+    .gender-female.outfit-citizen .part.head, .gender-female.outfit-citizen .part.torso, .gender-female.outfit-citizen .part.legs, .gender-female.outfit-citizen .part.detail1, .gender-female.outfit-citizen .part.detail2, .gender-female.outfit-citizen .part.detail3, .gender-female.outfit-citizen .part.arm-left, .gender-female.outfit-citizen .part.arm-right { display: block; }
+    .gender-female.outfit-citizen .part.torso { top: 10px; left: 7px; width: 10px; height: 11px; border-radius: 2px; }
+    .gender-female.outfit-citizen .part.detail1 { top: 18px; left: 6px; width: 12px; height: 3px; z-index: 7; border-radius: 1px; }
+    .gender-female.outfit-citizen .part.legs { top: 21px; left: 5px; width: 14px; height: 10px; border-bottom-width: 3px; border-top: none; border-radius: 0 0 5px 5px; }
+    .gender-female.outfit-citizen .part.arm-left { top: 11px; left: 4px; width: 3px; height: 6px; border-radius: 1px; }
+    .gender-female.outfit-citizen .part.arm-right { top: 11px; left: 17px; width: 3px; height: 6px; border-radius: 1px; }
+    /* --- Female Mage --- (Unchanged) */
+    .gender-female.outfit-mage .part.head, .gender-female.outfit-mage .part.torso, .gender-female.outfit-mage .part.legs, .gender-female.outfit-mage .part.detail1, .gender-female.outfit-mage .part.detail2, .gender-female.outfit-mage .part.arm-left, .gender-female.outfit-mage .part.arm-right, .gender-female.outfit-mage .part.detail3 { display: block; }
+    .gender-female.outfit-mage .part.head { top: 2px; }
+    .gender-female.outfit-mage .part.detail2 { top: 1px; left: 4px; width: 16px; height: 9px; border-radius: 6px 6px 3px 3px; }
+    .gender-female.outfit-mage .part.detail3 { top: 5px; left: 4px; width: 16px; height: 22px; border-radius: 0 0 10px 10px;}
+    .gender-female.outfit-mage .part.torso { top: 11px; left: 5px; width: 14px; height: 18px; border-radius: 2px; }
+    .gender-female.outfit-mage .part.detail1 { top: 14px; left: 9px; width: 6px; height: 4px; border-radius: 50%; z-index: 7; }
+    .gender-female.outfit-mage .part.legs { top: 29px; left: 6px; width: 12px; height: 5px; border-bottom-width: 2px; border-top: none; border-radius: 0 0 3px 3px;}
+    .gender-female.outfit-mage .part.arm-left { top: 12px; left: 1px; width: 5px; height: 15px; border-radius: 0 0 3px 3px; }
+    .gender-female.outfit-mage .part.arm-right { top: 12px; left: 18px; width: 5px; height: 15px; border-radius: 0 0 3px 3px; }
+    /* --- Female Warrior (Unchanged) --- */
+    .gender-female.outfit-warrior .part.head, .gender-female.outfit-warrior .part.torso, .gender-female.outfit-warrior .part.legs, .gender-female.outfit-warrior .part.detail1, .gender-female.outfit-warrior .part.detail2, .gender-female.outfit-warrior .part.arm-left, .gender-female.outfit-warrior .part.arm-right, .gender-female.outfit-warrior .part.detail3 { display: block; }
+    .gender-female.outfit-warrior .part.torso { top: 10px; left: 6px; width: 12px; height: 11px; border-radius: 3px 3px 1px 1px; border-style: solid; border-width: 1px; }
+    .gender-female.outfit-warrior .part.detail1 { top: 20px; left: 4px; width: 16px; height: 7px; border-radius: 0 0 4px 4px; z-index: 7; border-style: outset; }
+    .gender-female.outfit-warrior .part.legs { top: 27px; left: 7px; width: 10px; height: 6px; border-bottom-width: 3px; border-top: none; }
+    .gender-female.outfit-warrior .part.arm-left { top: 11px; left: 3px; width: 3px; height: 9px; border-radius: 1px; border-style: outset; border-width: 1px; }
+    .gender-female.outfit-warrior .part.arm-right { top: 11px; left: 18px; width: 3px; height: 9px; border-radius: 1px; border-style: outset; border-width: 1px; }
+    .gender-female.outfit-warrior .part.detail2 { top: 1px; height: 7px; left: 4px; width: 16px;}
+    .gender-female.outfit-warrior .part.detail3 { height: 22px;}
+    /* --- Female SciFi (Unchanged) --- */
+    .gender-female.outfit-scifi .part.head, .gender-female.outfit-scifi .part.torso, .gender-female.outfit-scifi .part.legs, .gender-female.outfit-scifi .part.detail1, .gender-female.outfit-scifi .part.detail2, .gender-female.outfit-scifi .part.detail3, .gender-female.outfit-scifi .part.arm-left, .gender-female.outfit-scifi .part.arm-right { display: block; }
+    .gender-female.outfit-scifi .part.torso { top: 10px; left: 6px; width: 12px; height: 12px; border-style: solid; border-width: 1px; border-radius: 2px; }
+    .gender-female.outfit-scifi .part.legs { top: 22px; left: 7px; width: 10px; height: 9px; border-bottom-width: 3px; border-style: solid; border-width: 1px; }
+    .gender-female.outfit-scifi .part.detail1 { top: 11px; left: 9px; width: 6px; height: 4px; border-radius: 1px; z-index: 7;}
+    .gender-female.outfit-scifi .part.arm-left { top: 11px; left: 3px; width: 3px; height: 11px; border-radius: 1px; }
+    .gender-female.outfit-scifi .part.arm-right { top: 11px; left: 18px; width: 3px; height: 11px; border-radius: 1px; }
+    /* --- Female Ranger (Unchanged) --- */
+    .gender-female.outfit-ranger .part.head, .gender-female.outfit-ranger .part.torso, .gender-female.outfit-ranger .part.legs, .gender-female.outfit-ranger .part.detail1, .gender-female.outfit-ranger .part.detail2, .gender-female.outfit-ranger .part.detail3, .gender-female.outfit-ranger .part.arm-left, .gender-female.outfit-ranger .part.arm-right { display: block; }
+    .gender-female.outfit-ranger .part.torso { top: 10px; left: 6px; width: 12px; height: 13px; border-radius: 1px; }
+    .gender-female.outfit-ranger .part.legs { top: 23px; left: 7px; width: 10px; height: 8px; border-bottom-width: 3px;}
+    .gender-female.outfit-ranger .part.detail1 { top: 19px; left: 6px; width: 12px; height: 4px; z-index: 7;}
+    .gender-female.outfit-ranger .part.arm-left { top: 11px; left: 3px; width: 3px; height: 11px; }
+    .gender-female.outfit-ranger .part.arm-right { top: 11px; left: 18px; width: 3px; height: 11px; }
+    /* --- Female Kimono (Unchanged) --- */
+    .gender-female.outfit-kimono .part.head, .gender-female.outfit-kimono .part.torso, .gender-female.outfit-kimono .part.legs, .gender-female.outfit-kimono .part.detail1, .gender-female.outfit-kimono .part.detail2, .gender-female.outfit-kimono .part.detail3, .gender-female.outfit-kimono .part.arm-left, .gender-female.outfit-kimono .part.arm-right { display: block; }
+    .gender-female.outfit-kimono .part.torso { top: 10px; left: 4px; width: 16px; height: 17px; border-radius: 1px; border-right-width: 2px; border-left-width: 2px; border-style: solid;}
+    .gender-female.outfit-kimono .part.legs { top: 27px; left: 7px; width: 10px; height: 7px; border-bottom-width: 2px; border-top: none;}
+    .gender-female.outfit-kimono .part.detail1 { top: 17px; left: 4px; width: 16px; height: 7px; z-index: 7; border-radius: 1px;}
+    .gender-female.outfit-kimono .part.arm-left { top: 11px; left: 0px; width: 6px; height: 18px; border-radius: 0 0 6px 2px; }
+    .gender-female.outfit-kimono .part.arm-right { top: 11px; left: 18px; width: 6px; height: 18px; border-radius: 0 0 2px 6px; }
+
+    /* --- Controls Area --- Themed */
+    #controls { display: flex; flex-direction: column; gap: 15px; /* max-width: 500px; */ flex-grow: 1; }
+    .control-section { margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px dashed var(--border-color); }
+    .control-section:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+    .control-section h4 { margin: 0 0 10px 0; color: var(--accent); /* Accent color for subheadings */ font-size: 1em; text-align: left; font-weight: bold; }
+    .control-group { display: flex; flex-wrap: wrap; align-items: center; gap: 5px 15px; margin-bottom: 8px; }
+    /* Style radio buttons/labels for dark theme */
+    .radio-option { display: inline-flex; align-items: center; margin-right: 10px; color: var(--text-light); cursor: pointer;}
+    .radio-option input[type="radio"] { margin-right: 5px; accent-color: var(--accent); } /* Color the radio button itself */
+    .radio-option span { font-size: 0.95em; }
+    /* Main heading style */
+    h3 { margin-top: 0; margin-bottom: 15px; color: var(--accent); border-bottom: 1px solid var(--border-color); padding-bottom: 5px; text-align: left; font-size: 1.1em;}
+    /* Walk controls removed */
+
+    /* --- Color Palette Styles --- Themed */
+    #color-controls { display: flex; gap: 15px; align-items: flex-start; }
+    #color-categories { display: flex; flex-direction: column; gap: 5px; flex-shrink: 0; }
+    .category-selector {
+        padding: 5px 10px;
+        border: 1px solid var(--border-color); /* Use theme border */
+        background-color: var(--bg-medium); /* Default bg */
+        color: var(--text-light); /* Default text */
+        cursor: pointer;
+        border-radius: 4px;
+        font-size: 0.9em;
+        text-align: center;
+        min-width: 80px;
+        transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .category-selector.active {
+        border-color: var(--accent); /* Highlight active with accent */
+        box-shadow: 0 0 5px rgba(246, 177, 122, 0.6); /* Accent glow */
+        font-weight: bold;
+    }
+    .category-selector:hover:not(.active) {
+         background-color: var(--bg-light);
+         border-color: #aaa;
+    }
+
+    /* Rule for light backgrounds (from luminance check) */
+    .category-selector[data-light-bg="true"] {
+        color: var(--text-dark); /* Dark text for light background */
+         border-color: #555; /* Darker border for contrast on light bg */
+    }
+     .category-selector[data-light-bg="true"].active {
+         color: var(--text-dark); /* Ensure dark text on active light bg */
+         border-color: var(--accent); /* Keep accent border */
+     }
+
+
+    #color-palette-grid { display: grid; grid-template-columns: repeat(auto-fit, var(--swatch-size)); /* Allow wrapping */ gap: 3px; background-color: var(--bg-medium); padding: 5px; border: 1px solid var(--border-color); border-radius: 4px; max-width: 100%; /* Fit width */ overflow-y: auto; max-height: 150px; /* Reduced height */ }
+    .swatch { width: var(--swatch-size); height: var(--swatch-size); border: 1px solid #111; /* Keep dark inner border */ cursor: pointer; box-shadow: inset 1px 1px 2px rgba(0,0,0,0.4), inset -1px -1px 2px rgba(255,255,255,0.2); transition: transform 0.1s ease, box-shadow 0.1s ease, outline 0.1s ease; }
+    .swatch:hover { transform: scale(1.15); box-shadow: 0 0 4px rgba(255, 255, 255, 0.8); z-index: 1; position: relative; }
+    .swatch.selected-swatch {
+        outline: 2px solid var(--accent); /* Accent outline */
+        outline-offset: -2px;
+        box-shadow: 0 0 6px rgba(246, 177, 122, 0.9), inset 1px 1px 2px rgba(0,0,0,0.4), inset -1px -1px 2px rgba(255,255,255,0.2); /* Brighter accent glow */
+        transform: scale(1.15);
+        z-index: 2;
+        position: relative;
+    }
+
+    /* NEW Apply Button Style */
+    #applyAppearanceBtn {
+         padding: 10px 15px;
+         width: 100%;
+         background: var(--accent);
+         color: var(--text-dark);
+         border: none;
+         border-radius: 5px;
+         cursor: pointer;
+         font-weight: bold;
+         font-size: 1em;
+         text-align: center;
+         transition: background-color 0.2s ease, transform 0.1s ease;
+         margin-top: 10px; /* Add space above */
+    }
+    #applyAppearanceBtn:hover {
+        background-color: #f8c59a; /* Lighter accent on hover */
+        transform: translateY(-1px);
+    }
+     #applyAppearanceBtn:active {
+         transform: translateY(0px);
+     }
+
+</style>
+
+</head>
+<body>
+
+<div id="container">
+    <!-- Character Preview Area -->
+    <div id="preview-area">
+         <h3>Preview</h3>
+         <div id="preview-wrapper">
+             <div id="character-preview" class="outfit-citizen gender-male">
+                 <!-- Parts Structure (Unchanged) -->
+                 <div class="part detail5"></div> <div class="part detail4"></div>
+                 <div class="part detail3"></div> <div class="part legs"></div>
+                 <div class="part arm-left"></div> <div class="part arm-right"></div>
+                 <div class="part torso"></div> <div class="part detail1"></div>
+                 <div class="part detail2"></div> <div class="part head"></div>
+             </div>
+         </div>
+         <!-- Walk controls removed -->
+    </div>
+
+    <!-- Controls -->
+    <div id="controls">
+        <h3>Customize Style</h3>
+         <div class="control-section">
+             <h4>Outfit</h4>
+             <div class="control-group">
+                 <label class="radio-option"><input type="radio" id="outfitCitizen" name="outfit" value="citizen" checked> <span>Citizen</span></label>
+                 <label class="radio-option"><input type="radio" id="outfitMage" name="outfit" value="mage"> <span>Mage</span></label>
+                 <label class="radio-option"><input type="radio" id="outfitWarrior" name="outfit" value="warrior"> <span>Warrior</span></label>
+                 <label class="radio-option"><input type="radio" id="outfitScifi" name="outfit" value="scifi"> <span>SciFi</span></label>
+                 <label class="radio-option"><input type="radio" id="outfitRanger" name="outfit" value="ranger"> <span>Ranger</span></label>
+                 <label class="radio-option"><input type="radio" id="outfitKimono" name="outfit" value="kimono"> <span>Kimono</span></label>
+             </div>
+         </div>
+         <div class="control-section">
+             <h4>Gender</h4>
+             <div class="control-group">
+                 <label class="radio-option"><input type="radio" id="genderMale" name="gender" value="male" checked> <span>Male</span></label>
+                 <label class="radio-option"><input type="radio" id="genderFemale" name="gender" value="female"> <span>Female</span></label>
+             </div>
+         </div>
+         <div class="control-section">
+             <h4>Colors</h4>
+             <div id="color-controls">
+                 <div id="color-categories">
+                     <button class="category-selector" data-category="hair">Hair</button>
+                     <button class="category-selector" data-category="primary">Primary</button>
+                     <button class="category-selector" data-category="secondary">Secondary</button>
+                     <button class="category-selector" data-category="detail1">Detail 1</button>
+                     <button class="category-selector" data-category="legs">Legs</button>
+                     <button class="category-selector" data-category="feet">Feet/Boots</button>
+                 </div>
+                 <div id="color-palette-grid">
+                     <!-- Swatches populated by JS -->
+                 </div>
+             </div>
+         </div>
+         <!-- NEW Apply Button Section -->
+         <div class="control-section">
+             <button id="applyAppearanceBtn">Apply Appearance</button>
+         </div>
+    </div>
+</div>
+
+<script>
+    // --- Character Style Data Structure (Unchanged) ---
+    let currentCharacterStyle = {
+        outfit: 'citizen', gender: 'male',
+        colors: { hair: '#4a3021', primary: '#5d7a8a', secondary: '#d1c6b0', detail1: '#8b4513', legs: '#444450', feet: '#2a2a30' }
+    };
+    const FIXED_SKIN_TONE = '#fbe5d6'; // Keep accessible
+
+    // --- Tibia-inspired Color Palette (Unchanged) ---
+    const PALETTE = [ '#ffffff', '#f0f0f0', '#e0e0e0', '#d1d1d1', '#c2c2c2', '#b3b3b3', '#a4a4a4', '#f5f5dc', '#fffafa', '#f8f8ff', '#faf0e6', '#faebd7', '#fffacd', '#eee8aa', '#fff8dc', '#ffe4c4', '#fbe5d6', '#f5deb3', '#deb887', '#d2b48c', '#bc8f8f', '#cd853f', '#d2691e', '#b8860b', '#daa520', '#ffd700', '#ffff00', '#fafa37', '#adff2f', '#7fff00', '#ffdead', '#ffdab9', '#ffebcd', '#ffe4b5', '#ff8c00', '#ffa500', '#ff7f50', '#ff6347', '#ff4500', '#ff0000', '#dc143c', '#b22222', '#8b0000', '#800000', '#cd5c5c', '#ffc0cb', '#ffb6c1', '#ffa07a', '#ff69b4', '#ff1493', '#db7093', '#c71585', '#ee82ee', '#da70d6', '#ff00ff', '#ba55d3', '#9932cc', '#9400d3', '#8a2be2', '#8b008b', '#e6e6fa', '#d8bfd8', '#dda0dd', '#add8e6', '#b0e0e6', '#afeeee', '#87cefa', '#87ceeb', '#00bfff', '#1e90ff', '#4169e1', '#0000ff', '#0000cd', '#00008b', '#000080', '#f0ffff', '#e0ffff', '#afeeee', '#7fffd4', '#40e0d0', '#48d1cc', '#00ced1', '#20b2aa', '#00ffff', '#00fa9a', '#98fb98', '#90ee90', '#3cb371', '#2e8b57', '#008000', '#006400', '#556b2f', '#8fbc8f', '#66cdaa', '#808000', '#6b8e23', '#2f4f4f', '#4682b4', '#483d8b', '#191970', '#708090', '#778899', '#696969', '#222222', '#000000', ];
+
+    // --- Get Element References (Updated: Removed walk buttons, added apply button) ---
+    const characterPreview = document.getElementById('character-preview');
+    const parts = { head: characterPreview.querySelector('.part.head'), torso: characterPreview.querySelector('.part.torso'), legs: characterPreview.querySelector('.part.legs'), armLeft: characterPreview.querySelector('.part.arm-left'), armRight: characterPreview.querySelector('.part.arm-right'), detail1: characterPreview.querySelector('.part.detail1'), detail2: characterPreview.querySelector('.part.detail2'), detail3: characterPreview.querySelector('.part.detail3'), detail4: characterPreview.querySelector('.part.detail4'), detail5: characterPreview.querySelector('.part.detail5') };
+    const outfitRadios = document.querySelectorAll('input[name="outfit"]');
+    const genderRadios = document.querySelectorAll('input[name="gender"]');
+    const colorCategoriesContainer = document.getElementById('color-categories');
+    const colorPaletteGrid = document.getElementById('color-palette-grid');
+    const categorySelectors = document.querySelectorAll('.category-selector');
+    const applyBtn = document.getElementById('applyAppearanceBtn'); // Get the apply button
+
+    let selectedCategory = 'hair'; // Default
+
+    // --- Populate Color Palette Grid (Unchanged) ---
+    function populatePalette() { colorPaletteGrid.innerHTML = ''; PALETTE.forEach(color => { const swatch = document.createElement('div'); swatch.classList.add('swatch'); swatch.style.backgroundColor = color; swatch.dataset.color = color.toLowerCase(); colorPaletteGrid.appendChild(swatch); }); }
+
+    // --- Luminance Check (Unchanged) ---
+    function getLuminance(hex) {
+        hex = hex.replace('#', ''); let r, g, b;
+        if (hex.length === 3) { r = parseInt(hex[0] + hex[0], 16); g = parseInt(hex[1] + hex[1], 16); b = parseInt(hex[2] + hex[2], 16); }
+        else if (hex.length === 6) { r = parseInt(hex.substring(0, 2), 16); g = parseInt(hex.substring(2, 4), 16); b = parseInt(hex.substring(4, 6), 16); }
+        else { return 0; }
+        r /= 255; g /= 255; b /= 255;
+        r = r <= 0.03928 ? r / 12.92 : Math.pow((r + 0.055) / 1.055, 2.4);
+        g = g <= 0.03928 ? g / 12.92 : Math.pow((g + 0.055) / 1.055, 2.4);
+        b = b <= 0.03928 ? b / 12.92 : Math.pow((b + 0.055) / 1.055, 2.4);
+        return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    }
+
+    // --- Update Palette Highlight (Unchanged) ---
+    function updatePaletteHighlight() {
+        const currentColor = currentCharacterStyle.colors[selectedCategory]?.toLowerCase();
+        colorPaletteGrid.querySelectorAll('.swatch').forEach(s => { s.classList.remove('selected-swatch'); });
+        if (currentColor) { const selectedSwatch = colorPaletteGrid.querySelector(`.swatch[data-color="${currentColor}"]`); if (selectedSwatch) { selectedSwatch.classList.add('selected-swatch'); } }
+    }
+
+    // --- Update Category Button Visuals (Unchanged) ---
+    function updateCategoryButtons() {
+        categorySelectors.forEach(button => {
+            const category = button.dataset.category;
+            const currentBgColor = currentCharacterStyle.colors[category];
+            if (currentBgColor) {
+                button.style.backgroundColor = currentBgColor;
+                const luminance = getLuminance(currentBgColor);
+                if (luminance > 0.5) { button.dataset.lightBg = 'true'; }
+                else { delete button.dataset.lightBg; }
+            } else {
+                button.style.backgroundColor = 'var(--bg-medium)'; // Use theme variable
+                 delete button.dataset.lightBg;
+            }
+            if (category === selectedCategory) { button.classList.add('active'); } else { button.classList.remove('active'); }
+        });
+        updatePaletteHighlight(); // Also update palette highlight
+    }
+
+    // --- Apply Style Locally (Unchanged core logic) ---
+    function applyStyle(styleData) {
+        if (!characterPreview || !styleData || !styleData.colors) {
+             console.warn("Cannot apply local style, missing data:", characterPreview, styleData);
+             return; // Add guards
+        }
+        // Apply classes for outfit/gender to the local preview div
+        let currentClasses = `outfit-${styleData.outfit} gender-${styleData.gender}`;
+        // Preserve walking class only if it exists locally (unlikely now)
+        if (characterPreview.classList.contains('is-walking')) { currentClasses += ' is-walking'; }
+        characterPreview.className = currentClasses;
+
+        // Apply colors to the local parts
+        applyColors(styleData.outfit, styleData.gender, styleData.colors);
+
+        // Update radio buttons to reflect current state
+        const outfitCheckId = `outfit${capitalize(styleData.outfit)}`;
+        const genderCheckId = `gender${capitalize(styleData.gender)}`;
+        const outfitRadio = document.getElementById(outfitCheckId);
+        const genderRadio = document.getElementById(genderCheckId);
+        if(outfitRadio) outfitRadio.checked = true; else console.warn("Local outfit radio not found:", outfitCheckId);
+        if(genderRadio) genderRadio.checked = true; else console.warn("Local gender radio not found:", genderCheckId);
+
+        // Update color UI (buttons + palette highlight) reflecting the potentially new styleData
+        updateCategoryButtons();
+    }
+
+
+    // --- Apply Colors Locally (Unchanged core logic) ---
+    function applyColors(outfit, gender, colors) {
+         // Ensure parts are accessible
+         if (!parts.head) { console.error("Local parts not found!"); return; }
+
+         // Reset part styles
+         Object.values(parts).forEach(p => {
+             if(p) {
+                 p.style.backgroundColor=''; p.style.borderColor='var(--default-outline)';
+                 p.style.borderTopColor=''; p.style.borderBottomColor='';
+                 p.style.borderLeftColor=''; p.style.borderRightColor='';
+                 p.style.outlineColor=''; p.style.clipPath = '';
+                 p.style.borderStyle = ''; // Reset border style
+                 p.style.borderWidth = ''; // Reset border width
+             }
+         });
+
+         // Apply base skin/hair colors and outlines
+         parts.head.style.backgroundColor = FIXED_SKIN_TONE;
+         parts.head.style.borderColor = darkenHexColor(FIXED_SKIN_TONE, 0.2);
+         if (parts.legs) parts.legs.style.borderBottomColor = colors.feet; // Apply feet color early
+
+        // Clear specific borders that might interfere
+         if (parts.detail2) parts.detail2.style.borderBottomColor = ''; // Reset potential female hair bottom border
+         if (parts.detail2) parts.detail2.style.borderColor = 'var(--default-outline)'; // Reset potential male hair border
+         if (parts.detail3) parts.detail3.style.borderColor = 'var(--default-outline)'; // Reset potential male hair border
+         if (parts.detail3) parts.detail3.style.backgroundColor = ''; // Reset hair bg
+         if (parts.detail2) parts.detail2.style.backgroundColor = ''; // Reset hair bg
+
+
+        // --- START: Specific Color Application Logic (Identical to Player version) ---
+        // (Make sure darkenHexColor is available - it is defined below)
+        if (gender === 'male') {
+            if (outfit !== 'mage') { // Apply hair colors to detail2/3 if not mage
+                if(parts.detail2) { parts.detail2.style.backgroundColor = colors.hair; parts.detail2.style.borderColor = darkenHexColor(colors.hair, 0.3); }
+                if(parts.detail3) { parts.detail3.style.backgroundColor = colors.hair; parts.detail3.style.borderColor = darkenHexColor(colors.hair, 0.3); }
+            } else { // Reset hair colors/borders if mage (hat replaces them)
+                if(parts.detail2) { parts.detail2.style.backgroundColor = ''; parts.detail2.style.borderColor = 'var(--default-outline)'; }
+                if(parts.detail3) { parts.detail3.style.backgroundColor = ''; parts.detail3.style.borderColor = 'var(--default-outline)'; }
+            }
+            switch (outfit) {
+                case 'citizen':
+                    if(parts.torso) { parts.torso.style.backgroundColor=colors.primary; parts.torso.style.borderTopColor=colors.secondary; parts.torso.style.borderTopWidth='2px'; parts.torso.style.borderBottomStyle='none';}
+                    if(parts.legs) { parts.legs.style.backgroundColor=colors.legs; parts.legs.style.borderBottomWidth='3px'; parts.legs.style.borderTopStyle='none';}
+                    if(parts.armLeft) parts.armLeft.style.backgroundColor=FIXED_SKIN_TONE;
+                    if(parts.armRight) parts.armRight.style.backgroundColor=FIXED_SKIN_TONE;
+                    break;
+                case 'mage':
+                    if(parts.torso) parts.torso.style.backgroundColor=colors.primary;
+                    if(parts.armLeft) parts.armLeft.style.backgroundColor=colors.primary;
+                    if(parts.armRight) parts.armRight.style.backgroundColor=colors.primary;
+                    if(parts.detail1) { parts.detail1.style.backgroundColor=colors.detail1; parts.detail1.style.borderColor=darkenHexColor(colors.detail1, 0.3); } // Sash
+                    if(parts.detail4) { parts.detail4.style.backgroundColor=colors.hair; parts.detail4.style.borderColor=darkenHexColor(colors.hair, 0.3); parts.detail4.style.borderBottomStyle='none';} // Hat
+                    if(parts.legs) { parts.legs.style.backgroundColor=darkenHexColor(colors.primary, 0.1); parts.legs.style.borderBottomWidth='3px'; parts.legs.style.borderTopStyle='none';}
+                    break;
+                case 'warrior':
+                     if(parts.torso) { parts.torso.style.backgroundColor=colors.primary; parts.torso.style.borderColor=colors.secondary; parts.torso.style.borderStyle='outset'; parts.torso.style.borderWidth='2px'; }
+                     if(parts.legs) { parts.legs.style.backgroundColor=colors.legs; parts.legs.style.borderColor=colors.secondary; parts.legs.style.borderBottomColor = colors.feet; parts.legs.style.borderStyle='outset'; parts.legs.style.borderBottomWidth='4px'; parts.legs.style.borderTopStyle='none';}
+                     if(parts.detail1) { parts.detail1.style.backgroundColor=colors.detail1; parts.detail1.style.borderColor=darkenHexColor(colors.detail1, 0.3); } // Belt
+                     if(parts.detail4) { parts.detail4.style.backgroundColor=colors.secondary; parts.detail4.style.borderColor=darkenHexColor(colors.secondary, 0.3); parts.detail4.style.borderStyle='outset'; parts.detail4.style.borderWidth='1px'; } // Helm L
+                     if(parts.detail5) { parts.detail5.style.backgroundColor=colors.secondary; parts.detail5.style.borderColor=darkenHexColor(colors.secondary, 0.3); parts.detail5.style.borderStyle='outset'; parts.detail5.style.borderWidth='1px'; } // Helm R
+                     if(parts.armLeft) { parts.armLeft.style.backgroundColor=colors.secondary; parts.armLeft.style.borderColor=darkenHexColor(colors.secondary, 0.3);}
+                     if(parts.armRight) { parts.armRight.style.backgroundColor=colors.secondary; parts.armRight.style.borderColor=darkenHexColor(colors.secondary, 0.3);}
+                    break;
+                case 'scifi':
+                     if(parts.torso) { parts.torso.style.backgroundColor=colors.primary; parts.torso.style.borderColor=colors.secondary; parts.torso.style.borderStyle='solid'; parts.torso.style.borderWidth='1px 2px';}
+                     if(parts.legs) { parts.legs.style.backgroundColor=colors.legs; parts.legs.style.borderColor=colors.secondary; parts.legs.style.borderBottomColor = colors.feet; parts.legs.style.borderStyle='solid'; parts.legs.style.borderWidth='1px 2px'; parts.legs.style.borderBottomWidth='3px';}
+                     if(parts.armLeft) parts.armLeft.style.backgroundColor=colors.primary;
+                     if(parts.armRight) parts.armRight.style.backgroundColor=colors.primary;
+                     if(parts.detail1) { parts.detail1.style.backgroundColor=colors.detail1; parts.detail1.style.borderColor=darkenHexColor(colors.detail1, 0.3); } // Chest Plate
+                    break;
+                case 'ranger':
+                     if(parts.torso) parts.torso.style.backgroundColor=colors.primary;
+                     if(parts.armLeft) parts.armLeft.style.backgroundColor=colors.primary;
+                     if(parts.armRight) parts.armRight.style.backgroundColor=colors.primary;
+                     if(parts.detail1) { parts.detail1.style.backgroundColor=colors.detail1; parts.detail1.style.borderColor=darkenHexColor(colors.detail1, 0.3); } // Tunic Bottom
+                     if(parts.legs) { parts.legs.style.backgroundColor=colors.legs; parts.legs.style.borderBottomWidth='3px';}
+                    break;
+                case 'kimono':
+                     if(parts.torso) { parts.torso.style.backgroundColor=colors.primary; parts.torso.style.borderColor=colors.secondary; parts.torso.style.borderLeftWidth='2px'; parts.torso.style.borderRightWidth='2px';}
+                     if(parts.armLeft) parts.armLeft.style.backgroundColor=colors.primary;
+                     if(parts.armRight) parts.armRight.style.backgroundColor=colors.primary;
+                     if(parts.detail1) { parts.detail1.style.backgroundColor=colors.detail1; parts.detail1.style.borderColor=darkenHexColor(colors.detail1, 0.3); } // Obi
+                     if(parts.legs) { parts.legs.style.backgroundColor=darkenHexColor(colors.primary, 0.1); parts.legs.style.borderBottomWidth='3px'; parts.legs.style.borderTopStyle='none';}
+                    break;
+            }
+        } else { // FEMALE
+            if(parts.detail2) { // Hair Front
+                parts.detail2.style.backgroundColor = colors.hair;
+                parts.detail2.style.border = 'none'; // Override default border
+                parts.detail2.style.borderBottom = `1px solid ${darkenHexColor(colors.hair, 0.2)}`;
+            }
+            if(parts.detail3) { // Hair Back
+                parts.detail3.style.backgroundColor = colors.hair;
+                parts.detail3.style.border = 'none'; // No border on back hair
+            }
+            switch (outfit) {
+                 case 'citizen':
+                    if(parts.torso) { parts.torso.style.backgroundColor=colors.primary; parts.torso.style.borderTopColor=colors.secondary; parts.torso.style.borderBottomColor=colors.secondary;}
+                    if(parts.legs) { parts.legs.style.backgroundColor=colors.legs; parts.legs.style.borderLeftColor=colors.secondary; parts.legs.style.borderRightColor=colors.secondary; parts.legs.style.borderBottomWidth='3px'; parts.legs.style.borderTopStyle='none';}
+                    if(parts.detail1) { parts.detail1.style.backgroundColor=colors.detail1; parts.detail1.style.borderColor=darkenHexColor(colors.detail1, 0.3); } // Belt
+                    if(parts.armLeft) parts.armLeft.style.backgroundColor=colors.primary;
+                    if(parts.armRight) parts.armRight.style.backgroundColor=colors.primary;
+                    break;
+                 case 'mage':
+                    if(parts.torso) parts.torso.style.backgroundColor=colors.primary;
+                    if(parts.armLeft) parts.armLeft.style.backgroundColor=colors.primary;
+                    if(parts.armRight) parts.armRight.style.backgroundColor=colors.primary;
+                    if(parts.detail1) { parts.detail1.style.backgroundColor=colors.detail1; parts.detail1.style.borderColor=colors.secondary; } // Brooch
+                    if(parts.legs) { parts.legs.style.backgroundColor=darkenHexColor(colors.primary, 0.1); parts.legs.style.borderBottomWidth='2px'; parts.legs.style.borderTopStyle='none';}
+                    break;
+                 case 'warrior':
+                     if(parts.torso) { parts.torso.style.backgroundColor=colors.primary; parts.torso.style.borderColor=colors.secondary; parts.torso.style.borderStyle='solid'; parts.torso.style.borderWidth='1px'; }
+                     if(parts.legs) { parts.legs.style.backgroundColor=colors.legs; parts.legs.style.borderColor=colors.secondary; parts.legs.style.borderBottomColor = colors.feet; parts.legs.style.borderBottomWidth='3px'; parts.legs.style.borderTopStyle='none';}
+                     if(parts.detail1) { parts.detail1.style.backgroundColor=colors.detail1; parts.detail1.style.borderColor=darkenHexColor(colors.detail1, 0.3); parts.detail1.style.borderStyle='outset'; } // Skirt Plate
+                     if(parts.armLeft) { parts.armLeft.style.backgroundColor=colors.secondary; parts.armLeft.style.borderColor=darkenHexColor(colors.secondary, 0.3); parts.armLeft.style.borderStyle='outset'; parts.armLeft.style.borderWidth='1px';}
+                     if(parts.armRight) { parts.armRight.style.backgroundColor=colors.secondary; parts.armRight.style.borderColor=darkenHexColor(colors.secondary, 0.3); parts.armRight.style.borderStyle='outset'; parts.armRight.style.borderWidth='1px';}
+                    break;
+                 case 'scifi':
+                     if(parts.torso) { parts.torso.style.backgroundColor=colors.primary; parts.torso.style.borderColor=colors.secondary; parts.torso.style.borderStyle='solid'; parts.torso.style.borderWidth='1px'; }
+                     if(parts.legs) { parts.legs.style.backgroundColor=colors.legs; parts.legs.style.borderColor=colors.secondary; parts.legs.style.borderBottomColor = colors.feet; parts.legs.style.borderBottomWidth='3px'; parts.legs.style.borderStyle='solid'; parts.legs.style.borderWidth='1px'; }
+                     if(parts.armLeft) { parts.armLeft.style.backgroundColor=colors.primary; parts.armLeft.style.borderColor=colors.secondary;}
+                     if(parts.armRight) { parts.armRight.style.backgroundColor=colors.primary; parts.armRight.style.borderColor=colors.secondary;}
+                     if(parts.detail1) { parts.detail1.style.backgroundColor=colors.detail1; parts.detail1.style.borderColor=darkenHexColor(colors.detail1, 0.3); } // Chest Plate
+                    break;
+                 case 'ranger':
+                     if(parts.torso) parts.torso.style.backgroundColor=colors.primary;
+                     if(parts.armLeft) parts.armLeft.style.backgroundColor=colors.primary;
+                     if(parts.armRight) parts.armRight.style.backgroundColor=colors.primary;
+                     if(parts.detail1) { parts.detail1.style.backgroundColor=colors.detail1; parts.detail1.style.borderColor=darkenHexColor(colors.detail1, 0.3); } // Tunic Bottom
+                     if(parts.legs) { parts.legs.style.backgroundColor=colors.legs; parts.legs.style.borderBottomWidth='3px';}
+                    break;
+                 case 'kimono':
+                     if(parts.torso) { parts.torso.style.backgroundColor=colors.primary; parts.torso.style.borderColor=colors.secondary; parts.torso.style.borderLeftWidth='2px'; parts.torso.style.borderRightWidth='2px'; parts.torso.style.borderStyle='solid';}
+                     if(parts.armLeft) parts.armLeft.style.backgroundColor=colors.primary;
+                     if(parts.armRight) parts.armRight.style.backgroundColor=colors.primary;
+                     if(parts.detail1) { parts.detail1.style.backgroundColor=colors.detail1; parts.detail1.style.borderColor=colors.secondary; } // Obi
+                     if(parts.legs) { parts.legs.style.backgroundColor=darkenHexColor(colors.primary, 0.1); parts.legs.style.borderBottomWidth='2px'; parts.legs.style.borderTopStyle='none';}
+                    break;
+            }
+        }
+        // --- END: Specific Color Application Logic ---
+    }
+
+
+    // --- Event Listeners (Updated) ---
+    outfitRadios.forEach(radio => { radio.addEventListener('change', (e) => { if (e.target.checked) { currentCharacterStyle.outfit = e.target.value; applyStyle(currentCharacterStyle); } }); });
+    genderRadios.forEach(radio => { radio.addEventListener('change', (e) => { if (e.target.checked) { currentCharacterStyle.gender = e.target.value; applyStyle(currentCharacterStyle); } }); });
+    colorCategoriesContainer.addEventListener('click', (e) => { if (e.target.classList.contains('category-selector')) { selectedCategory = e.target.dataset.category; updateCategoryButtons(); } });
+    colorPaletteGrid.addEventListener('click', (e) => { if (e.target.classList.contains('swatch')) { const chosenColor = e.target.dataset.color; if (selectedCategory && currentCharacterStyle.colors.hasOwnProperty(selectedCategory)) { currentCharacterStyle.colors[selectedCategory] = chosenColor; applyColors(currentCharacterStyle.outfit, currentCharacterStyle.gender, currentCharacterStyle.colors); updateCategoryButtons(); } } }); // Apply locally + update UI
+
+    // REMOVED Walk button listeners
+
+    // --- NEW: Listener for Apply Button ---
+    if (applyBtn) {
+        applyBtn.addEventListener('click', () => {
+            console.log("Creator sending style update:", currentCharacterStyle);
+            // Send the current style object to the parent window (index.html)
+            // IMPORTANT: Replace '*' with the actual origin of your parent app in production for security.
+            // Example: window.parent.postMessage(..., "http://localhost:8000");
+            try {
+                window.parent.postMessage({
+                    type: 'CHARACTER_STYLE_UPDATE', // Add a type for clarity
+                    payload: currentCharacterStyle
+                }, '*'); // Use '*' for local dev, specify origin for production
+            } catch (error) {
+                 console.error("Error sending message to parent:", error);
+                 // You might want to display an error to the user in the iframe
+                 alert("Could not apply changes to the main application. Make sure it's loaded correctly.");
+            }
+        });
+    } else {
+        console.error("Apply button not found!");
+    }
+
+    // --- NEW: Listener for Initialization Message from Parent ---
+    window.addEventListener('message', (event) => {
+        // IMPORTANT: Add origin check here too for security!
+        // Example: if (event.origin !== "http://localhost:8000") return;
+        console.log("Creator received message:", event.data, "from origin:", event.origin);
+
+        if (event.data && event.data.type === 'INIT_STYLE') {
+            const initialStyle = event.data.payload;
+            console.log("Creator received initial style:", initialStyle);
+
+            if (typeof initialStyle === 'object' && initialStyle !== null && initialStyle.colors) {
+                // Deep copy might be safer if the object is complex, but direct assign is usually fine here
+                currentCharacterStyle = JSON.parse(JSON.stringify(initialStyle));
+
+                // Re-apply the received style locally within the creator's preview & controls
+                applyStyle(currentCharacterStyle); // This updates preview, radios, and calls updateCategoryButtons
+            } else {
+                console.warn("Received invalid INIT_STYLE payload:", initialStyle);
+            }
+        }
+    });
+
+
+    // --- Utility --- (Unchanged)
+    function capitalize(str){return str.charAt(0).toUpperCase()+str.slice(1);}
+    function darkenHexColor(h,p){if(!h||typeof h!=='string')return'#000'; h=h.replace(/^#/,'');if(h.length===3)h=h.split('').map(c=>c+c).join('');if(h.length!==6)return'#000'; let r=parseInt(h.substring(0,2),16),g=parseInt(h.substring(2,4),16),b=parseInt(h.substring(4,6),16);r=Math.max(0,Math.floor(r*(1-p)));g=Math.max(0,Math.floor(g*(1-p)));b=Math.max(0,Math.floor(b*(1-p)));return `#${r.toString(16).padStart(2,'0')}${g.toString(16).padStart(2,'0')}${b.toString(16).padStart(2,'0')}`;}
+
+    // --- Initial Setup ---
+    populatePalette(); // Create the color swatches FIRST
+    // Apply initial default style. This will be overridden if an INIT_STYLE message is received.
+    applyStyle(currentCharacterStyle);
+    console.log("Character creator iframe initialized.");
+
+</script>
+</body>
+</html>
