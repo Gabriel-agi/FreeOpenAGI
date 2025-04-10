@@ -1,395 +1,308 @@
-// spatial_chat.js
+<!DOCTYPE html>
+<!-- ... (head and style remain the same) ... -->
+<body>
+    <div id="ui-container">
+        <!-- ... (game-world div remains the same) ... -->
+        <div id="chat-area">
+             <!-- Chat Tabs Container (MODIFIED) -->
+             <div id="chat-tabs-container">
+                 <button id="local-tab" data-mode="spatial" data-scope="Local">LOCAL</button> <!-- Changed ID, Scope, Text -->
+                 <button id="area-tab" data-mode="spatial" data-scope="Area">AREA</button>
+                 <button id="city-tab" data-mode="spatial" data-scope="City">CITY</button>
+                 <button id="world-tab" data-mode="spatial" data-scope="World">WORLD</button>
+                 <button id="message-tab" data-mode="message">MESSAGE</button>
+                 <button id="agent-tab" data-mode="agent">AGENT</button>
+             </div>
+             <div class="chat-messages" id="chatMessages"></div>
+             <div class="input-container">
+                <textarea class="message-input" id="userInput" placeholder="Consult the spirit..." rows="1"></textarea>
+                 <button class="send-button" id="sendButton" title="Send Message"><span>Send</span><span style="font-size: 1.2em;">→</span></button>
+            </div>
+        </div>
+    </div>
 
-const SpatialChat = (function() {
+    <!-- ... (Modals, Context Menus, PFP upload remain the same) ... -->
 
-    // --- Private State ---
-    let _internalState = {
-        player: { x: 0, y: 0, currentCity: null, currentArea: null, name: 'Player' },
-        npcs: [], // { id, name, x, y, personality, currentCity, currentArea }
-        cities: {}, // { cityName: { areaName1: {}, areaName2: {} } }
-        messages: {}, // { 'scope-key': ['<Author> msg1', ...] }
-        currentDisplayScope: null,
-        isInitialized: false,
-        isActive: true,
-    };
+    <!-- Load API Providers Script -->
+    <script src="api_providers.js"></script>
 
-    let _config = {
-        proxyProviderId: 'BIGMODEL_PROXY',
-        proxyModelId: 'glm-4-flash',
-        botIntervalMs: 2500,
-        generalChatRange: 75, // Range for general chat
-        maxMessagesPerScope: 50,
-        maxContextTurns: 4,
-        scopeSpeakChance: 0.6,
-        npcSpeakChanceMultiplier: 0.3,
-        debugLogging: false, // Keep false unless debugging
-    };
+    <!-- Embed Modified Spatial Chat Logic -->
+    <script>
+        // PASTE THE MODIFIED spatial_chat.js CODE FROM ABOVE HERE
+        // spatial_chat.js (Modified Version)
+        const SpatialChat = (function() {
+            // ... (Full modified SpatialChat code) ...
+        })();
+    </script>
 
-    let _botIntervalId = null;
-    let _apiProviderFunction = null;
-    let _isBotTickRunning = false;
+    <!-- Load Main Simulation Logic (MODIFIED - Inline Script) -->
+    <script>
+        // ... (marked setup, utility functions like darkenHexColor, maskApiKey) ...
 
-    // --- Private Utility Functions ---
+        function runSimulation() {
+            // --- Element Refs ---
+            // ... (unchanged refs) ...
+            const chatTabsContainer = document.getElementById('chat-tabs-container');
+            const allChatTabs = chatTabsContainer.querySelectorAll('button'); // Ensure this is captured
 
-    function _log(message, level = 'log') {
-        if (_config.debugLogging || level === 'error' || level === 'warn') {
-            console[level](`[SpatialChat] ${message}`);
-        }
-    }
+            // --- Game State & Config ---
+            // ... (unchanged state variables like MAP_WIDTH, npcData, etc.) ...
+            const NPC_FOLLOW_SPEED = 3.5; // Speed was already increased
+            // ... (rest of state) ...
+            let currentSpatialScope = 'Local'; // Default spatial scope is now Local
 
-    function _calculateDistance(x1, y1, x2, y2) {
-        if (x1 === undefined || y1 === undefined || x2 === undefined || y2 === undefined) {
-            return Infinity;
-        }
-        return Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2));
-    }
+            // ... (BASE_ACTION_RULES, LS_KEYS etc. - unchanged) ...
 
-    // --- Scope/Context Key Generation ---
-    function _getScopeKey(scope, city = null, area = null) {
-        city = city || _internalState.player.currentCity;
-        // Area is only strictly needed for Area scope key generation now
-        area = area || _internalState.player.currentArea;
+            // --- CORE FUNCTIONS ---
+            // ... (updateNameplate, renderConversationHistory, addMessage etc. - mostly unchanged, check addMessage notes) ...
 
-        switch (scope) {
-            case 'General':
-                // General chat KEY depends on the player's current city for context separation,
-                // but the NPCs considered will be based purely on proximity within that city.
-                // We still include area in the key for simplicity of separation, even if logic doesn't use it.
-                 if (!city || !area) { // Use area in key for partitioning, even if logic ignores it
-                    // _log(`Cannot get General scope key: Missing City (${city}) or Area (${area})`, 'warn');
-                    return null;
+            // Modified: addMessage might need slight adjustment for senderName in system messages
+            function addMessage(text, senderName, type, speakerData = null) {
+                 if (hideSystemMessages && ['debug', 'system', 'error'].includes(type)) return;
+
+                 const isDirectMode = currentChatDisplayMode === 'message' || currentChatDisplayMode === 'agent';
+                 const isSpatialMode = currentChatDisplayMode === 'spatial';
+
+                 // Only render styled messages if NOT in spatial mode.
+                 if (isSpatialMode) return; // Skip rendering for spatial mode
+
+                 // ...(rest of addMessage logic - check avatar generation for system/debug/error using senderName)
+                 const wasScrolledToBottom = chatMessages.scrollHeight - chatMessages.clientHeight <= chatMessages.scrollTop + 1;
+
+                 const messageDiv = document.createElement('div'); messageDiv.classList.add('message');
+                 let senderTypeClass = '', avatarClass = '', pfpSrc = '', isMarkdown = false, displayName = senderName || 'Unknown';
+
+                 if (type === 'user') {
+                     senderTypeClass = 'message-user'; avatarClass = 'user-avatar';
+                     pfpSrc = playerData.pfp || DEFAULT_PLAYER_PFP;
+                     displayName = playerData.name || 'Player';
+                     isMarkdown = false;
+                 } else if (type === 'assistant') {
+                     senderTypeClass = 'message-spirit'; avatarClass = 'spirit-avatar';
+                     const actualSpeaker = speakerData || npcData.find(n => n.name === senderName) || { pfp: DEFAULT_NPC_PFP, name: senderName };
+                     pfpSrc = actualSpeaker.pfp || DEFAULT_NPC_PFP;
+                     displayName = actualSpeaker.name || senderName;
+                     isMarkdown = true;
+                 } else { // system, debug, error
+                     senderTypeClass = type === 'error' ? 'message-debug' : `message-${type}`;
+                     avatarClass = type === 'error' ? 'debug-avatar' : `${type}-avatar`;
+                     const systemBgColor = getComputedStyle(document.documentElement).getPropertyValue('--amethyst').trim() || '#6b21a8';
+                     const defaultBgColor = getComputedStyle(document.documentElement).getPropertyValue('--ink-light').trim() || '#5a4e42';
+                     const avatarBg = (type === 'system') ? systemBgColor : defaultBgColor;
+                     // Use first letter of sender name for system/debug avatars, fallback to 'S'
+                     const avatarLetter = (senderName || 'S').substring(0,1).toUpperCase();
+                     pfpSrc = `https://ui-avatars.com/api/?name=${encodeURIComponent(avatarLetter)}&background=${avatarBg.substring(1)}&color=fff&size=64`;
+                     displayName = senderName || 'System'; // Use senderName if provided, else 'System'
+                     isMarkdown = false;
                  }
-                 return `general-${city}-${area}`; // Key still uses area for separation
-            case 'Area':
-                if (!city || !area) {
-                     // _log(`Cannot get Area scope key: Missing City (${city}) or Area (${area})`, 'warn');
-                     return null;
+                 // ... (rest of element creation, markdown parsing, appending - unchanged) ...
+                  messageDiv.classList.add(senderTypeClass);
+                 const avatarImg = document.createElement('img');
+                 avatarImg.className = `avatar ${avatarClass}`; avatarImg.src = pfpSrc; avatarImg.alt = `${displayName} avatar`; avatarImg.title = displayName;
+                 if (type === 'assistant' || type === 'system' || type === 'debug' || type === 'error') { avatarImg.addEventListener('click', openSettingsModal); } else if (type === 'user') { avatarImg.addEventListener('click', showPfpContextMenu); }
+                 const contentDiv = document.createElement('div'); contentDiv.className = `message-content ${senderTypeClass.replace('message-', '')}-message`;
+                 if (isMarkdown) { /* ... markdown handling ... */ }
+                 else { if (['system', 'debug', 'error'].includes(type)) { const nameSpan = document.createElement('span'); nameSpan.className = 'message-name'; nameSpan.textContent = `${displayName}: `; contentDiv.appendChild(nameSpan); contentDiv.appendChild(document.createTextNode(text)); } else { contentDiv.textContent = text; } }
+                 if (type === 'user') { messageDiv.appendChild(contentDiv); messageDiv.appendChild(avatarImg); } else { messageDiv.appendChild(avatarImg); messageDiv.appendChild(contentDiv); }
+                 chatMessages.appendChild(messageDiv);
+                 if(wasScrolledToBottom) { chatMessages.scrollTop = chatMessages.scrollHeight; }
+
+                 // --- History Storage --- (ensure SYSTEM messages from AGENT mode are added if desired)
+                 if (isDirectMode && (type === 'user' || type === 'assistant' || (type === 'system' && senderName !== 'Agent Command'))) { // Store user, assistant, non-agent-command system msgs
+                     conversationHistory.push({ role: type, content: text, senderName: senderName });
+                     if (conversationHistory.length > (MAX_HISTORY_TURNS * 2 + 10)) { conversationHistory = conversationHistory.slice(-(MAX_HISTORY_TURNS * 2 + 10)); }
+                     saveConversationHistory();
+                 } else if (type === 'system' && senderName === 'Agent Command') { // Store agent commands in history too? Optionally.
+                      conversationHistory.push({ role: type, content: text, senderName: senderName });
+                      if (conversationHistory.length > (MAX_HISTORY_TURNS * 2 + 10)) { conversationHistory = conversationHistory.slice(-(MAX_HISTORY_TURNS * 2 + 10)); }
+                      saveConversationHistory();
                  }
-                return `area-${city}-${area}`;
-            case 'City':
-                if (!city) {
-                     // _log(`Cannot get City scope key: Missing City (${city})`, 'warn');
-                     return null;
+                 if (type === 'system') { // Track recent game events separately
+                     recentEvents.push(`Event: ${text.replace('[SYSTEM] ', '')}`); if(recentEvents.length > 5) recentEvents.shift();
                  }
-                return `city-${city}`;
-            case 'World':
-                return 'world';
-            default:
-                if (scope !== null) {
-                    _log(`Invalid scope requested for key generation: ${scope}`, 'warn');
-                }
-                return null;
-        }
-    }
+            }
 
-    // --- AI Selection Logic ---
-    function _getNpcsInScope(scope) {
-        const { player, npcs } = _internalState;
-        if (!player.currentCity) {
-             _log(`Cannot get NPCs: Player city is null. Scope: ${scope}`, 'warn');
-             return [];
-        }
 
-        const city = player.currentCity;
-        const area = player.currentArea; // Player's current area is still needed for Area scope logic
-        let relevantNpcs = [];
+            // ... (Context Menu Handlers - unchanged logic, but will use updated menu items) ...
+            // ... (findCurrentAreaName, showSpeechBubble, updateCharacterPosition etc. - unchanged) ...
 
-        _log(`Getting NPCs for scope: ${scope}. Player Loc: C=${city}, A=${area}, (${player.x?.toFixed(0)}, ${player.y?.toFixed(0)})`, 'info');
+            // --- generateSystemPrompt, processNpcActions, handleWalkAction, findClosestCharacter ---
+            // --- handleFollowAction, handleUnfollowAction, updateFollowingNpcs ---
+            // --- displayTypingIndicator, removeTypingIndicator ---
+            // --- API Key Handling ---
+            // --- getApiResponseFromProvider ---
+            // --- disableInput, enableInput ---
+            // --- handlePlayerSend ---
+            // --- Settings & Appearance Modals (open, close, save, populate, etc.) ---
+            // (These functions were already modified in the previous step and remain correct)
 
-        switch (scope) {
-            case 'General':
-                 // *** General Scope Logic (Requirement Met) ***
-                 // Player must be in a city. NPCs must be in the same city and within range.
-                 // This logic *does not* require the NPC to be in the same specific *defined* area as the player.
-                 // It correctly checks only city and proximity.
-                if (!city) { _log("General scope requires player to be in a city.", 'warn'); return []; }
-                relevantNpcs = npcs.filter(npc => {
-                    const isInCity = npc.currentCity === city;
-                    const distance = _calculateDistance(player.x, player.y, npc.x, npc.y);
-                    const isInRange = distance <= _config.generalChatRange;
-                     if(_config.debugLogging && isInCity){ // Log only relevant NPCs
-                         _log(`NPC ${npc.name} (City: ${npc.currentCity}, Area: ${npc.currentArea}). Dist: ${distance?.toFixed(1)}. In Range: ${isInRange}`, 'debug');
-                     }
-                    return isInCity && isInRange; // Check only city and range
+            // --- Spatial Chat Update Function (unchanged from previous step) ---
+             function updateSpatialChatModuleState() {
+                 if (typeof SpatialChat === 'undefined' || !SpatialChat.updateState) { return; }
+                 if (!currentCityKey) { SpatialChat.updateState({ currentCity: null, currentArea: null }, [], {}, null); return; }
+                 const currentPlayerArea = findCurrentAreaName(playerData.x, playerData.y, environmentData);
+                 const currentPlayerState = { x: playerData.x, y: playerData.y, currentCity: currentCityKey, currentArea: currentPlayerArea, name: playerData.name };
+                 const currentNpcs = npcData.map(npc => ({ id: npc.id, name: npc.name, x: npc.x, y: npc.y, personality: npc.personaPrompt || `You are ${npc.name}.`, currentCity: currentCityKey, currentArea: findCurrentAreaName(npc.x, npc.y, environmentData) }));
+                 const currentCities = {}; if (currentCityKey) { currentCities[currentCityKey] = {}; }
+                 const currentDisplay = currentChatDisplayMode === 'spatial' ? currentSpatialScope : null;
+                 SpatialChat.updateState(currentPlayerState, currentNpcs, currentCities, currentDisplay);
+            }
+
+            // --- Tab Switching Logic (MODIFIED for 'Local') ---
+            function setActiveTab(clickedButton) {
+                 allChatTabs.forEach(btn => btn.classList.remove('active-tab'));
+                 clickedButton.classList.add('active-tab');
+
+                 const newMode = clickedButton.dataset.mode;
+                 const newScope = clickedButton.dataset.scope; // e.g., 'Local', 'Area', 'City', 'World'
+
+                 const previousMode = currentChatDisplayMode;
+
+                 currentChatDisplayMode = newMode;
+                 localStorage.setItem(LS_KEYS.currentChatDisplayMode, currentChatDisplayMode);
+
+                 chatMessages.innerHTML = ''; // Clear messages on tab switch
+
+                 if (newMode === 'spatial') {
+                     currentSpatialScope = newScope || 'Local'; // Default to Local if scope missing
+                     console.log(`Switching to Spatial Mode, Scope: ${currentSpatialScope}`);
+                     if (typeof SpatialChat !== 'undefined' && SpatialChat.start) {
+                         SpatialChat.start();
+                         updateSpatialChatModuleState(); // Update state including the new display scope
+                         displaySpatialChat(currentSpatialScope); // Display initial messages
+                     } else { console.warn("SpatialChat module not fully available for starting."); }
+                     clearInterval(spatialChatRenderIntervalId);
+                     spatialChatRenderIntervalId = setInterval(() => {
+                         if (currentChatDisplayMode === 'spatial') { displaySpatialChat(currentSpatialScope); }
+                     }, 3000);
+                     currentAiNpcData = null; // Clear direct chat target
+                     enableInput(); // Spatial input always enabled (for now)
+
+                 } else { // Message or Agent mode
+                     console.log(`Switching to ${newMode} Mode`);
+                     if (typeof SpatialChat !== 'undefined' && SpatialChat.stop) SpatialChat.stop();
+                     clearInterval(spatialChatRenderIntervalId);
+                     spatialChatRenderIntervalId = null;
+
+                     // Smartly set target NPC
+                     if (previousMode === 'spatial' || !currentAiNpcData) { // If coming from spatial OR no target exists
+                        currentAiNpcData = findClosestNpc(false) || initialSpeakerData;
+                        if(newMode === 'message' && !currentAiNpcData) { // Fallback for message mode
+                            currentAiNpcData = { name: "Spirit", personaPrompt: "You are a helpful, disembodied spirit.", pfp: DEFAULT_NPC_PFP };
+                        }
+                     } // else, keep existing currentAiNpcData when switching between message/agent
+
+                     renderConversationHistory();
+                     enableInput(); // Enable or keep disabled based on isWaitingForApiResponse
+                     userInput.focus(); // Focus input for direct modes
+                 }
+                 updateInputPlaceholder();
+            }
+
+             // --- Display Spatial Chat Function (MODIFIED for 'Local') ---
+            function displaySpatialChat(scope) {
+                 if (typeof SpatialChat === 'undefined' || !SpatialChat.getMessagesForScope) {
+                    chatMessages.innerHTML = '<p style="color:red; text-align:center; padding: 20px;">Error: SpatialChat module not loaded or incomplete.</p>';
+                    return;
+                 }
+                 const playerArea = findCurrentAreaName(playerData.x, playerData.y, environmentData);
+                 // Pass the correct scope ('Local', 'Area', etc.)
+                 const messages = SpatialChat.getMessagesForScope(scope, currentCityKey, playerArea);
+                 renderSpatialChatMessages(messages);
+            }
+
+            // --- Initialization (Ensure SpatialChat.init is called correctly) ---
+            function initializeSimulation(cityKey) {
+                 // ... (Setup before SpatialChat init - same as previous step) ...
+                 console.log(`Initializing simulation for city: ${cityKey}`);
+                 // ... clear intervals, load history/keys, select provider/model ...
+                 loadApiKeyManagement();
+                 loadConversationHistory();
+                 // ... select provider/model ...
+                 console.log(`API Initialized: Provider=${selectedProvider || 'None'}, Model=${selectedModel || 'None'}`);
+                 // ... clear map, setup cityDefinition, MAP_WIDTH/HEIGHT ...
+                 // ... load UI state (tabs, chat height, hide messages) ...
+                 // ... setup player data (pos, appearance, name, persona) ...
+                 // ... setup environmentData ...
+                 // ... setup npcData ...
+                 // ... update camera, set initialSpeakerData ...
+                 currentAiNpcData = null; // Clear initially
+
+                 // --- Initialize SpatialChat Module ---
+                 if (typeof SpatialChat !== 'undefined' && SpatialChat.init) {
+                     const initialPlayerState = { x: playerData.x, y: playerData.y, currentCity: currentCityKey, currentArea: findCurrentAreaName(playerData.x, playerData.y, environmentData), name: playerData.name };
+                     const initialNpcs = npcData.map(npc => ({ id: npc.id, name: npc.name, x: npc.x, y: npc.y, personality: npc.personaPrompt || `You are ${npc.name}.`, currentCity: currentCityKey, currentArea: findCurrentAreaName(npc.x, npc.y, environmentData) }));
+                     const initialCities = {}; if (currentCityKey) { initialCities[currentCityKey] = {}; }
+                     // Pass the config with potentially renamed localChatRange
+                     SpatialChat.init( { debugLogging: false, localChatRange: 75 /* or read from config */ },
+                                         { player: initialPlayerState, npcs: initialNpcs, cities: initialCities } );
+                 } else {
+                     console.error("SpatialChat module is not loaded or init function is missing!");
+                     addMessage("Error: Spatial Chat features are unavailable.", "SYSTEM", "error");
+                 }
+
+                 // --- Set Initial Tab ---
+                 const savedMode = localStorage.getItem(LS_KEYS.currentChatDisplayMode) || 'agent';
+                 // IMPORTANT: Ensure the initial tab selector matches the NEW 'local-tab' ID if 'spatial' was saved with 'Local' scope intended
+                 let initialTabSelector = `#chat-tabs-container button[data-mode="${savedMode}"]`;
+                 if (savedMode === 'spatial') {
+                     initialTabSelector = '#local-tab'; // Default spatial view to Local
+                 }
+                 let initialTabButton = document.querySelector(initialTabSelector);
+                 if (!initialTabButton) { // Fallback if specific tab not found
+                    initialTabButton = document.getElementById('local-tab') || document.getElementById('agent-tab') || document.getElementById('message-tab') || allChatTabs[0];
+                 }
+                 setActiveTab(initialTabButton);
+
+                 // ... (Welcome messages, start intervals) ...
+                 const welcomeMsg = `Welcome to ${cityDefinition.meta?.cityName||'the Simulation'}.`;
+                 addMessage(welcomeMsg, "Tome", 'system');
+                 // ...
+                 npcFollowInterval=setInterval(updateFollowingNpcs, 200);
+                 spatialChatUpdateIntervalId = setInterval(updateSpatialChatModuleState, 1000);
+                 console.log(`Initialization complete. Initial Tab: ${currentChatDisplayMode}.`);
+            }
+
+            function enterNoCityState() {
+                // ... (Same as previous, ensures SpatialChat is initialized minimally and stopped) ...
+                console.log("Entering No City state.");
+                 if(npcFollowInterval) clearInterval(npcFollowInterval); if(spatialChatUpdateIntervalId) clearInterval(spatialChatUpdateIntervalId); if(spatialChatRenderIntervalId) clearInterval(spatialChatRenderIntervalId);
+                 if (typeof SpatialChat !== 'undefined' && SpatialChat.stop) SpatialChat.stop();
+                 currentCityKey=null; chatMessages.innerHTML=''; mapContent.innerHTML=''; mapContent.appendChild(playerElement); playerElement.style.display='none'; playerData.x=undefined; playerData.y=undefined; npcData.length=0; environmentData.length=0; mapContent.style.width='100%'; mapContent.style.height='100%'; mapContent.style.transform='translate3d(0,0,0)'; gameWorld.style.display='none';
+                 loadConversationHistory();
+                 // ... Load API keys/models ...
+                 hideSystemMessages=localStorage.getItem(LS_KEYS.hideSystemMessages)==='true'; setChatTabsVisibility(false); // Hide tabs in no-city state
+                 if (typeof SpatialChat !== 'undefined' && SpatialChat.init) { SpatialChat.init({}, { player: { name: playerData.name || 'Player', currentCity: null }, npcs: [], cities: {} }); SpatialChat.stop(); }
+                 addMessage("Welcome! No cities created yet. Open Settings (click this sigil) to add your first city.", "SYSTEM", "system");
+                 currentChatDisplayMode = 'message'; currentAiNpcData = { name: "Spirit", personaPrompt: "You are a helpful, disembodied spirit.", pfp: DEFAULT_NPC_PFP };
+                 setActiveTab(document.getElementById('message-tab'));
+                 openSettingsModal();
+            }
+            // ... (doChatResize, saveChatHeight, toggleFullscreenChat - unchanged) ...
+
+            // --- Event Listeners (Ensure tab listener uses updated IDs/scopes) ---
+            // ... (keydown, input, sendButton, modals, resize, etc. - unchanged) ...
+
+            // Modified Tab Listener Setup
+             allChatTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    // Pass the actual button element to setActiveTab
+                    setActiveTab(tab);
                 });
-                _log(`Found ${relevantNpcs.length} NPCs in General scope range (${_config.generalChatRange}) within city ${city}.`, 'info');
-                break;
-                // *** End General Scope Logic ***
-            case 'Area':
-                 if (!area) { _log("Area scope requires player to be in an area.", 'warn'); return []; }
-                relevantNpcs = npcs.filter(npc => npc.currentCity === city && npc.currentArea === area );
-                 _log(`Found ${relevantNpcs.length} NPCs in Area scope (${area}).`, 'info');
-                 break;
-            case 'City':
-                relevantNpcs = npcs.filter(npc => npc.currentCity === city);
-                 _log(`Found ${relevantNpcs.length} NPCs in City scope (${city}).`, 'info');
-                 break;
-            case 'World':
-                relevantNpcs = [...npcs]; // All loaded NPCs
-                 _log(`Found ${relevantNpcs.length} NPCs in World scope.`, 'info');
-                 break;
-            default:
-                 _log(`Invalid scope "${scope}" for NPC selection.`, 'warn');
-                 relevantNpcs = [];
-        }
-        return relevantNpcs;
-    }
+             });
 
-     // --- Message Storage ---
-     function _addMessage(scopeKey, author, text) {
-        if (!scopeKey || !text || !author) {
-            _log(`Skipped adding message: Key=${scopeKey}, Author=${author}, Text empty=${!text}`, 'warn');
-            return false;
-        }
-        if (!_internalState.messages[scopeKey]) {
-            _internalState.messages[scopeKey] = [];
-        }
-        const cleanText = String(text).trim().substring(0, 500);
-        if (!cleanText) return false;
+            // ... (beforeunload, message receiver - unchanged) ...
 
-        const message = `<${author}> ${cleanText}`;
-        _internalState.messages[scopeKey].push(message);
-
-        if (_internalState.messages[scopeKey].length > _config.maxMessagesPerScope) {
-            _internalState.messages[scopeKey].shift();
-        }
-        _log(`Added to [${scopeKey}]: ${message.substring(0, 60)}...`);
-        return true;
-    }
-
-    // --- AI Call ---
-    async function _callAIProxy(prompt, personality) {
-        if (!_apiProviderFunction) { _log("API provider func not available.", 'error'); return null; }
-        if (!_config.proxyProviderId || !_config.proxyModelId) { _log("Proxy provider/model ID not configured.", 'error'); return null; }
-
-        const messages = [
-            { role: "system", content: personality || "You are an AI in a simulated world. Respond concisely." },
-            { role: "user", content: prompt }
-        ];
-
-        try {
-            _log(`Calling proxy: ${_config.proxyProviderId}/${_config.proxyModelId}`, 'info');
-            const response = await _apiProviderFunction( _config.proxyProviderId, _config.proxyModelId, messages, null, { temperature: 0.8 } );
-             if (response && typeof response === 'string') {
-                _log(`Proxy response received: ${response.substring(0, 60)}...`, 'info');
-                return response.trim();
-             } else {
-                _log(`Proxy returned invalid response: ${response}`, 'warn');
-                return null;
-             }
-        } catch (error) {
-            _log(`Error calling AI proxy: ${error.message}`, 'error');
-            console.error(error);
-            return null;
-        }
-    }
+            // --- Initial Execution ---
+            // ... (unchanged logic to find or create initial city key) ...
+            let cityKeyToLoad=localStorage.getItem(LS_KEYS.selectedCity); if(!cityKeyToLoad||!cityKeyToLoad.startsWith(USER_CITY_PREFIX)||!localStorage.getItem(cityKeyToLoad)){ const userCityKeys=[]; Object.keys(localStorage).forEach(key => { if (key.startsWith(USER_CITY_PREFIX)) userCityKeys.push(key); }); userCityKeys.sort(); cityKeyToLoad=userCityKeys[0]||null; if(cityKeyToLoad){ localStorage.setItem(LS_KEYS.selectedCity, cityKeyToLoad); } }
+            if (cityKeyToLoad) { initializeSimulation(cityKeyToLoad); } else { enterNoCityState(); }
 
 
-    // --- Autonomous Bot Logic ---
-    async function _botTick() {
-        if (_isBotTickRunning) return;
-         if (!_internalState.isActive || !_internalState.isInitialized || !_internalState.player.currentCity || !_internalState.currentDisplayScope) {
-             return;
-         }
-         const validSpatialScopes = ['General', 'Area', 'City', 'World'];
-         if (!validSpatialScopes.includes(_internalState.currentDisplayScope)) {
-             // Only run bot ticks if a spatial scope is actively being displayed
-             return;
-         }
+        } // End runSimulation
 
-        _isBotTickRunning = true;
+        document.addEventListener('DOMContentLoaded', runSimulation);
+    </script>
 
-        try {
-            const activeScope = _internalState.currentDisplayScope;
-            const activeScopeKey = _getScopeKey(activeScope);
-
-            if (!activeScopeKey) {
-                 _log(`Bot Tick: Could not get scope key for active scope: ${activeScope}`, 'warn');
-                 _isBotTickRunning = false; // Ensure flag is reset
-                 return;
-            }
-
-            const potentialSpeakers = _getNpcsInScope(activeScope);
-            if (potentialSpeakers.length === 0) {
-                 _isBotTickRunning = false; // Ensure flag is reset
-                 return;
-            }
-
-             const collectiveSpeakChance = Math.min(1, _config.scopeSpeakChance * potentialSpeakers.length * _config.npcSpeakChanceMultiplier);
-
-             if (Math.random() > collectiveSpeakChance) {
-                 _isBotTickRunning = false; // Ensure flag is reset
-                 return;
-             }
-
-            const speaker = potentialSpeakers[Math.floor(Math.random() * potentialSpeakers.length)];
-             if (!speaker || !speaker.name || !speaker.personality) {
-                _log(`Bot Tick: Invalid speaker selected for ${activeScope}.`, 'warn');
-                _isBotTickRunning = false; // Ensure flag is reset
-                return;
-            }
-
-            _log(`Bot Tick: ${speaker.name} selected to speak in active scope ${activeScope} (${activeScopeKey})`);
-
-            const history = _internalState.messages[activeScopeKey] || [];
-            const context = history.slice(-_config.maxContextTurns).join('\n') || `The #${activeScope} chat is quiet.`;
-
-            const locationDesc = `${speaker.currentArea || 'Somewhere'}, ${speaker.currentCity || 'Unknown City'}`;
-            // Adjusted prompt slightly
-            const prompt = `You are ${speaker.name} in ${locationDesc}. Personality: "${speaker.personality}".
-You are speaking in the #${activeScope} scope. Keep messages very short (1-2 brief sentences) & in character.
-React naturally to the last few messages or make a brief observation about your surroundings or personality if it's quiet. Avoid generic greetings like "Hello".
-
-Recent Context in #${activeScope}:
----
-${context}
----
-
-Your short message:`;
-
-            // Use .finally to ensure the flag is always reset
-            _callAIProxy(prompt, speaker.personality).then(response => {
-                if (response) {
-                    const added = _addMessage(activeScopeKey, speaker.name, response);
-                     if(added) _log(`Bot Tick SUCCESS: ${speaker.name} spoke in ${activeScope}: "${response.substring(0, 50)}..."`);
-                } else {
-                    _log(`Bot Tick FAIL: ${speaker.name} failed response for ${activeScope}.`);
-                }
-            }).catch(err => {
-                 _log(`Bot Tick ERROR for ${speaker.name} in ${activeScope}: ${err}`, 'error');
-            }).finally(() => {
-                 _isBotTickRunning = false; // Reset flag here
-            });
-
-        } catch (error) {
-            _log(`Error during bot tick: ${error}`, 'error');
-            console.error(error);
-            _isBotTickRunning = false; // Reset flag in case of synchronous error
-        }
-        // Removed finally block from here as it's now handled by the promise chain
-    }
-
-    // --- Public API ---
-    const publicApi = {
-        init: function(config = {}, initialState = {}) {
-            _log("Initializing...");
-            _config = { ..._config, ...config };
-
-            if (typeof window.getApiResponse === 'function') {
-                _apiProviderFunction = window.getApiResponse;
-            } else {
-                _log("CRITICAL: window.getApiResponse function not found.", 'error');
-                // maybe throw error or set a flag indicating critical failure
-                return;
-            }
-
-            const initialPlayer = { ..._internalState.player, ...(initialState.player || {}) };
-            this.updateState(initialPlayer, initialState.npcs, initialState.cities, null);
-
-            _internalState.messages = {}; // Clear messages on init
-            _internalState.isInitialized = true;
-            _internalState.isActive = false; // Start inactive, let main script call start()
-
-            _log(`Initialized. Interval: ${_config.botIntervalMs}ms. General Range: ${_config.generalChatRange}`);
-        },
-
-        updateState: function(playerState = null, npcList = null, cityData = null, displayScope = undefined) {
-            if (!_internalState.isInitialized) return;
-            let stateChanged = false;
-            let playerPosChanged = false;
-
-             if (playerState) {
-                 if (playerState.name !== undefined && _internalState.player.name !== playerState.name) { _internalState.player.name = playerState.name; stateChanged = true; }
-                 if (typeof playerState.x === 'number' && typeof playerState.y === 'number' && (_internalState.player.x !== playerState.x || _internalState.player.y !== playerState.y)) {
-                     _internalState.player.x = playerState.x; _internalState.player.y = playerState.y;
-                     stateChanged = true; playerPosChanged = true; // Track player position change specifically
-                 }
-                 if (playerState.currentCity !== undefined && _internalState.player.currentCity !== playerState.currentCity) { _internalState.player.currentCity = playerState.currentCity; stateChanged = true; }
-                 if (playerState.currentArea !== undefined && _internalState.player.currentArea !== playerState.currentArea) { _internalState.player.currentArea = playerState.currentArea; stateChanged = true; }
-             }
-             // Simple check for NPC list changes (more robust check might be needed for deep equality)
-             if (npcList && Array.isArray(npcList)) {
-                  if (JSON.stringify(npcList.map(n => `${n.id}-${n.x}-${n.y}-${n.currentArea}-${n.personality}`)) !== JSON.stringify(_internalState.npcs.map(n => `${n.id}-${n.x}-${n.y}-${n.currentArea}-${n.personality}`))) {
-                    _internalState.npcs = npcList.map(npc => ({
-                        id: npc.id, name: npc.name, x: npc.x, y: npc.y,
-                        personality: npc.personality, currentCity: npc.currentCity, currentArea: npc.currentArea
-                    }));
-                     stateChanged = true;
-                  }
-             }
-            // City data update (simplified, assuming structure doesn't change often)
-            if (cityData && typeof cityData === 'object') {
-                if (JSON.stringify(cityData) !== JSON.stringify(_internalState.cities)) {
-                    _internalState.cities = JSON.parse(JSON.stringify(cityData)); // Deep copy
-                    stateChanged = true;
-                }
-            }
-
-             if (displayScope !== undefined && _internalState.currentDisplayScope !== displayScope) {
-                _internalState.currentDisplayScope = displayScope;
-                 _log(`Display scope updated to: ${displayScope}`);
-                stateChanged = true;
-             }
-             //if (stateChanged) { _log(`State updated. Player pos changed: ${playerPosChanged}`); }
-        },
-
-        getMessagesForScope: function(scope, cityKey = null, areaKey = null) {
-            const scopeKey = _getScopeKey(scope, cityKey, areaKey);
-            if (!scopeKey) {
-                // Log less verbosely if it's a common case like player not in an area
-                // if (scope !== 'General' && scope !== 'City' && scope !== 'World') {
-                //     _log(`Cannot get messages: Invalid scope key for ${scope}, City: ${cityKey}, Area: ${areaKey}`, 'warn');
-                // }
-                return [`<SYSTEM> Cannot determine chat scope or player location.`];
-            }
-            // Ensure the key exists before trying to access it
-            if (!_internalState.messages[scopeKey]) {
-                 _internalState.messages[scopeKey] = []; // Initialize if needed
-            }
-            return [...(_internalState.messages[scopeKey] || [])]; // Return a copy
-        },
-
-        addPlayerMessageToScope: function(scope, playerName, text) {
-            const scopeKey = _getScopeKey(scope);
-            if (scopeKey) {
-                const added = _addMessage(scopeKey, playerName || _internalState.player.name, text);
-                // If message added, maybe trigger a faster bot response chance? (optional complexity)
-                return added;
-            }
-            _log(`Could not add player message: Invalid scope key for ${scope}`, 'warn');
-            return false;
-        },
-
-        start: function() {
-            if (!_internalState.isInitialized) { _log("Cannot start: Not initialized.", "warn"); return; }
-            if (_internalState.isActive) return; // Already running
-            _log("Starting autonomous chat bot...");
-            _internalState.isActive = true;
-            clearInterval(_botIntervalId); // Clear just in case
-            _botIntervalId = setInterval(_botTick, _config.botIntervalMs);
-            // Immediately trigger a tick after starting?
-            // setTimeout(_botTick, 100);
-        },
-
-        stop: function() {
-            if (!_internalState.isActive) return; // Already stopped
-            _log("Stopping autonomous chat bot.");
-            _internalState.isActive = false;
-            clearInterval(_botIntervalId);
-            _botIntervalId = null;
-            _isBotTickRunning = false; // Ensure tick flag is reset on stop
-        },
-
-        // Utility to potentially add system messages directly to spatial scopes if needed
-        addSystemMessage: function(scope, cityKey, areaKey, text) {
-             const scopeKey = _getScopeKey(scope, cityKey, areaKey);
-             if (scopeKey) {
-                 return _addMessage(scopeKey, 'SYSTEM', text);
-             }
-             return false;
-        }
-    };
-
-    return publicApi;
-
-})();
+</body>
+</html>
