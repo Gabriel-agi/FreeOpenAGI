@@ -1260,8 +1260,463 @@
         } // End runSimulation
 
         // document.addEventListener('DOMContentLoaded', runSimulation); // Will be called in Part 2
-    </script>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              
+                    // <<< CONTINUATION FROM PART 1 >>>
 
-    <!-- Part 2 will contain the rest of the <script> block -->
+            // --- API Call Logic (MODIFIED for different contexts) ---
+            async function getApiResponseFromProvider(userMessage, targetNpcId, attempt = 1) {
+                 // targetNpcId will be null for Agent mode, or the specific NPC ID for NPC tabs
+
+                 const isNpcChat = targetNpcId !== null;
+                 const isAgentMode = !isNpcChat && currentChatDisplayMode === 'agent';
+
+                 if (!isNpcChat && !isAgentMode) {
+                     console.error("getApiResponseFromProvider called in invalid mode:", currentChatDisplayMode);
+                     enableInput(); return;
+                 }
+
+                 // Allow Spirit chat even without city
+                 const isSpiritChat = isNpcChat && targetNpcId === -1;
+
+                 if (isAgentMode && !currentCityKey) {
+                     addMessage("Cannot command agents: No city loaded.", "SYSTEM", "error", null, null);
+                     enableInput(); return;
+                 }
+                 // Check if NPC exists OR if it's the special spirit chat
+                 if (isNpcChat && !isSpiritChat && !npcData.find(n => n.id === targetNpcId)) {
+                     addMessage("Cannot chat: NPC not found.", "SYSTEM", "error", null, targetNpcId);
+                     enableInput(); return;
+                 }
+
+
+                 // --- Common Setup ---
+                 if (typeof PROVIDERS === 'undefined' || Object.keys(PROVIDERS).length === 0) { addMessage("API Provider configuration (api_providers.js) not loaded.", "SYSTEM", "error", null, targetNpcId); enableInput(); return; }
+                 if (!selectedProvider || !selectedModel) { addMessage("No API Provider or Model selected. Configure in Settings.", "SYSTEM", "error", null, targetNpcId); enableInput(); return; }
+                 if (typeof window.getApiResponse !== 'function') { addMessage("API Provider script function not found.", "SYSTEM", "error", null, targetNpcId); enableInput(); return; }
+
+                 const providerConfig = PROVIDERS[selectedProvider];
+                 if (!providerConfig) { addMessage(`Config error: Provider "${selectedProvider}" not found.`, "SYSTEM", "error", null, targetNpcId); enableInput(); return; }
+
+                 // --- Determine Target NPC ---
+                 let targetNpcData = null;
+                 if (isNpcChat) {
+                     if(isSpiritChat) {
+                          targetNpcData = { id: targetNpcId, name: "Spirit", personaPrompt: "You are a helpful, disembodied spirit.", pfp: DEFAULT_NPC_PFP };
+                     } else {
+                          targetNpcData = npcData.find(n => n.id === targetNpcId);
+                     }
+                 } else if (isAgentMode) {
+                     if (!currentAiNpcData) currentAiNpcData = findClosestNpc(true);
+                     if (!currentAiNpcData) { addMessage("No agent close enough to command.", "SYSTEM", "error", null, null); enableInput(); return; }
+                     targetNpcData = currentAiNpcData;
+                 }
+
+                 if (!targetNpcData) {
+                     console.error("API Call Error: Target NPC could not be determined.");
+                     addMessage("Internal error: Cannot determine chat target.", "SYSTEM", "error", null, targetNpcId);
+                     enableInput(); return;
+                 }
+
+                 if (attempt === 1) { displayTypingIndicator(); }
+
+                 // --- API Key Selection (unchanged logic) ---
+                 let apiKeyToUse = null; let keysForProvider = []; let totalKeysForProvider = 0; let currentKeyIndex = 0;
+                 const needsClientKey = providerConfig.format !== 'proxy_compatible' && providerConfig.apiKeyLocation !== 'none';
+                 if (needsClientKey) { keysForProvider = apiKeyManagement.providerKeys[selectedProvider] || []; totalKeysForProvider = keysForProvider.length; if (totalKeysForProvider === 0) { removeTypingIndicator(); addMessage(`No API keys for ${providerConfig.name}. Add in Settings.`, "SYSTEM", "error", null, targetNpcId); enableInput(); return; } if (attempt > totalKeysForProvider) { removeTypingIndicator(); addMessage(`All ${totalKeysForProvider} keys for ${providerConfig.name} failed. Check Settings.`, "SYSTEM", "error", null, targetNpcId); enableInput(); return; } const startIndex = apiKeyManagement.activeKeyIndices[selectedProvider] ?? 0; currentKeyIndex = (startIndex + attempt - 1) % totalKeysForProvider; apiKeyToUse = keysForProvider[currentKeyIndex]; if (!apiKeyToUse) { removeTypingIndicator(); addMessage(`Internal error retrieving key index ${currentKeyIndex} for ${providerConfig.name}.`, "SYSTEM", "error", null, targetNpcId); enableInput(); return; } console.log(`API Attempt ${attempt}/${totalKeysForProvider} for ${selectedProvider}. Key index: ${currentKeyIndex} (${maskApiKey(apiKeyToUse)})`); } else { apiKeyToUse = null; console.log(`API Call for ${selectedProvider}. Key handled by proxy/server or not required.`); }
+
+                 // --- Construct Messages based on Context ---
+                 const sysPrompt = generateSystemPrompt(targetNpcData, isNpcChat);
+                 const messagesForApi = [{ role: 'system', content: sysPrompt }];
+                 let userContent = "";
+
+                 if (isAgentMode) {
+                     const gameState = getGameStateString();
+                     const events = recentEvents.length > 0 ? ` RecentEvents:[${recentEvents.join('; ')}]` : '';
+                     const context = `(You are ${targetNpcData.name}. Player ${playerData.name} is near you).`;
+                     userContent = `${gameState}${events} ${context} Player command: ${userMessage}`.trim();
+                     if (attempt === 1) { recentEvents = []; } // Clear events only on first attempt
+                     // Use main history for Agent mode context (user/assistant only)
+                     const agentHistory = mainConversationHistory.filter(m => m.role === 'user' || m.role === 'assistant');
+                     messagesForApi.push(...agentHistory);
+
+                 } else { // NPC Chat Tab
+                     userContent = userMessage; // Simple user message
+                     // Use the specific NPC's history
+                     const npcHistory = (npcConversationHistories[targetNpcId] || []).filter(m => m.role === 'user' || m.role === 'assistant');
+                     messagesForApi.push(...npcHistory);
+                 }
+                 messagesForApi.push({ role: 'user', content: userContent });
+
+                 const limitedApiMsgs = messagesForApi.length > (MAX_HISTORY_TURNS * 2 + 2) ?
+                      [messagesForApi[0], ...messagesForApi.slice(-(MAX_HISTORY_TURNS * 2 + 1))] : messagesForApi;
+
+                 // Debug logging (add targetNpcId to distinguish calls)
+                 const debugPrefix = isNpcChat ? `(NPC ${targetNpcId})` : '(AGENT)';
+                 if (attempt === 1) {
+                     addMessage(`${debugPrefix} -> ${targetNpcData.name} (${providerConfig.name}): ${userMessage.substring(0, 100)}...`, 'DEBUG', 'debug', null, null); // Debug always to main history
+                 }
+
+                 // --- Make API Call ---
+                 try {
+                     const rawReply = await window.getApiResponse(selectedProvider, selectedModel, limitedApiMsgs, apiKeyToUse, {});
+                     removeTypingIndicator();
+                     addMessage(`${debugPrefix} Raw <- ${targetNpcData.name}: ${rawReply.substring(0, 100)}...`, 'DEBUG', 'debug', null, null); // Debug always to main history
+
+                     if (needsClientKey) {
+                         apiKeyManagement.activeKeyIndices[selectedProvider] = (currentKeyIndex + 1) % totalKeysForProvider;
+                         saveApiKeyManagement();
+                         if (settingsOverlay.classList.contains('active')) { renderApiKeysForProvider(selectedProvider); }
+                     }
+
+                     // --- Process Reply ---
+                     if (isAgentMode) {
+                         processNpcActions(rawReply, targetNpcData); // Adds feedback to main history
+                     } else { // NPC Chat Tab
+                         if (rawReply && rawReply.trim()) {
+                             // Add reply to the specific NPC's history
+                             addMessage(rawReply, targetNpcData.name, 'assistant', targetNpcData, targetNpcId);
+                         } else {
+                             addMessage("...", targetNpcData.name, 'assistant', targetNpcData, targetNpcId);
+                         }
+                     }
+                     enableInput();
+
+                 } catch (error) {
+                      console.error(`Error API call attempt ${attempt} for ${selectedProvider} (Index ${currentKeyIndex}, Target ${targetNpcId}):`, error);
+                      const shouldCycle = needsClientKey && (error.message.includes("401") || error.message.includes("403") || error.message.includes("429") || error.message.toLowerCase().includes("invalid api key") || error.message.toLowerCase().includes("authentication failed") || error.message.toLowerCase().includes("permission denied"));
+                      if (shouldCycle) {
+                          addMessage(`API key issue for ${providerConfig.name}. Trying next...`, 'SYSTEM', 'debug', null, null); // Debug to main history
+                          setTimeout(() => getApiResponseFromProvider(userMessage, targetNpcId, attempt + 1), 500); // Try next key after delay
+                      } else {
+                          removeTypingIndicator();
+                          let errorMessage = `Error contacting ${targetNpcData.name} via ${providerConfig.name}: ${error.message}`;
+                          if (error.message.includes("blocked")) { errorMessage = `Message blocked by ${providerConfig.name} filters. Try rephrasing.`; }
+                          // Add error message to the relevant history
+                          addMessage(errorMessage, 'SYSTEM', 'error', null, targetNpcId);
+                          enableInput();
+                      }
+                 }
+            }
+
+
+            // --- Player Send Logic (MODIFIED) ---
+            function handlePlayerSend() {
+                const msg = userInput.value.trim();
+                if (!msg || sendButton.disabled) return;
+
+                userInput.value = ''; userInput.style.height='auto';userInput.style.height=(userInput.scrollHeight)+'px';
+
+                if (activeNpcTabId !== null) {
+                    // --- Send to Active NPC Tab ---
+                    const npcId = activeNpcTabId;
+                    // Use -1 for Spirit
+                    const npc = npcId === -1 ? { id: -1, name: "Spirit" } : npcData.find(n => n.id === npcId);
+                    if (!npc) {
+                         console.error("Active NPC tab target not found:", npcId);
+                         enableInput();
+                         return;
+                    }
+                    disableInput();
+                    addMessage(msg, playerData.name, 'user', playerData, npcId); // Add to NPC history
+                    getApiResponseFromProvider(msg, npcId, 1); // Call API for this NPC
+
+                } else if (currentChatDisplayMode === 'spatial') {
+                    // --- Send to Spatial Scope ---
+                     if (typeof SpatialChat !== 'undefined' && SpatialChat.addPlayerMessageToScope) {
+                        const added = SpatialChat.addPlayerMessageToScope(currentSpatialScope, playerData.name, msg);
+                         if (added) { displaySpatialChat(currentSpatialScope); }
+                         else { addMessage("Could not send message to spatial scope.", "SYSTEM", "error", null, null); } // Error to main history
+                     } else { addMessage("Spatial Chat module not available.", "SYSTEM", "error", null, null); } // Error to main history
+                     userInput.focus();
+
+                } else if (currentChatDisplayMode === 'message') {
+                    // --- Send from Main CHAT Tab (Open/Switch NPC Tab) ---
+                    const closestNpc = findClosestNpc(false);
+                    if (closestNpc) {
+                        addNpcTab(closestNpc.id, true); // Open or switch to the NPC's tab
+                        // We've switched tabs now, add the message to the *NPC's* history and trigger API call for them
+                        disableInput();
+                        addMessage(msg, playerData.name, 'user', playerData, closestNpc.id);
+                        getApiResponseFromProvider(msg, closestNpc.id, 1);
+                    } else {
+                        // No NPC nearby, chat with the "Spirit"
+                        const spiritId = -1; // Use a consistent ID for Spirit
+                        // Ensure history exists for Spirit
+                        if (!npcConversationHistories[spiritId]) npcConversationHistories[spiritId] = [];
+                        // Open/switch Spirit tab if not already open
+                        if(!openNpcTabs.includes(spiritId)) {
+                           addNpcTab(spiritId, true);
+                        } else {
+                           switchActiveTab(spiritId); // Just switch if already open
+                        }
+                        disableInput();
+                        addMessage(msg, playerData.name, 'user', playerData, spiritId);
+                        getApiResponseFromProvider(msg, spiritId, 1);
+                    }
+
+                } else if (currentChatDisplayMode === 'agent') {
+                     // --- Send to Agent Mode ---
+                     if (!currentAiNpcData) currentAiNpcData = findClosestNpc(false);
+                     if (!currentAiNpcData) { addMessage("No agent close enough to command.", "SYSTEM", "error", null, null); return; } // Error to main history
+
+                     disableInput();
+                     addMessage(msg, playerData.name, 'user', playerData, null); // Add user command to main history
+                     getApiResponseFromProvider(msg, null, 1); // Call API for agent mode (targetNpcId is null)
+
+                } else {
+                    console.warn("handlePlayerSend called in unknown state:", currentChatDisplayMode, activeNpcTabId);
+                    enableInput();
+                }
+            }
+
+            // --- Tab Switching Logic (NEW Unified Handler) ---
+            function switchActiveTab(targetId, spatialScope = null) {
+                // Use -1 for Spirit tab
+                console.log(`Switching tab to: ${targetId} ${spatialScope ? `(Scope: ${spatialScope})`: ''}`);
+
+                // 1. Deactivate all tabs (static and dynamic)
+                staticTabsContainer.querySelectorAll('button').forEach(btn => btn.classList.remove('active-tab'));
+                dynamicTabsContainer.querySelectorAll('button').forEach(btn => btn.classList.remove('active-tab'));
+
+                // 2. Stop previous intervals/modes if necessary
+                if (currentChatDisplayMode === 'spatial' && targetId !== 'spatial') { // Only stop if switching AWAY from spatial
+                    if (typeof SpatialChat !== 'undefined' && SpatialChat.stop) SpatialChat.stop();
+                    clearInterval(spatialChatRenderIntervalId);
+                    spatialChatRenderIntervalId = null;
+                }
+                removeTypingIndicator(); // Clear typing indicator on any switch
+
+                // 3. Determine new state and activate the correct tab
+                if (typeof targetId === 'number') { // Includes -1 for Spirit
+                    // --- Activate NPC Tab ---
+                    activeNpcTabId = targetId;
+                    currentChatDisplayMode = 'message'; // NPC tabs are conceptually message mode
+                    const npcTabButton = dynamicTabsContainer.querySelector(`button[data-npc-id="${targetId}"]`);
+                    if (npcTabButton) {
+                        npcTabButton.classList.add('active-tab');
+                        renderConversationHistory(targetId); // Render this NPC's history
+                        npcTabButton.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' }); // Scroll tab into view
+                    } else {
+                        console.error(`Could not find button for NPC tab ${targetId}. Removing from open list if present.`);
+                        openNpcTabs = openNpcTabs.filter(id => id !== targetId); // Ensure consistency
+                        saveOpenNpcTabs();
+                        switchActiveTab('message'); // Fallback to main chat
+                        return; // Exit early
+                    }
+                    currentAiNpcData = null; // Clear agent target
+
+                } else if (targetId === 'spatial') {
+                    // --- Activate Spatial Tab ---
+                    activeNpcTabId = null;
+                    currentChatDisplayMode = 'spatial';
+                    currentSpatialScope = spatialScope && ['Area', 'City', 'World'].includes(spatialScope) ? spatialScope : 'Area'; // Default to Area
+                    const spatialTabButton = staticTabsContainer.querySelector(`button[data-scope="${currentSpatialScope}"]`);
+                    if (spatialTabButton) spatialTabButton.classList.add('active-tab');
+
+                    if (typeof SpatialChat !== 'undefined' && SpatialChat.start) {
+                        SpatialChat.start();
+                        updateSpatialChatModuleState(); // Ensure state is correct before first render
+                        displaySpatialChat(currentSpatialScope);
+                        if (spatialChatRenderIntervalId) clearInterval(spatialChatRenderIntervalId); // Clear previous if any
+                        spatialChatRenderIntervalId = setInterval(() => {
+                            // Check if still in spatial mode before rendering
+                            if (activeNpcTabId === null && currentChatDisplayMode === 'spatial') {
+                                displaySpatialChat(currentSpatialScope);
+                            }
+                        }, 3000);
+                    } else { console.warn("SpatialChat module not fully available for starting."); }
+                    currentAiNpcData = null; // Clear agent target
+
+                } else { // 'message' or 'agent'
+                    // --- Activate Static Tab (CHAT or AGENT) ---
+                    activeNpcTabId = null;
+                    currentChatDisplayMode = targetId; // 'message' or 'agent'
+                    const staticTabButton = staticTabsContainer.querySelector(`#${targetId}-tab`);
+                    if (staticTabButton) staticTabButton.classList.add('active-tab');
+
+                    renderConversationHistory(null); // Render main history
+
+                    // Set agent target only if switching to agent mode
+                    if (currentChatDisplayMode === 'agent') {
+                        currentAiNpcData = findClosestNpc(false) || initialSpeakerData;
+                    } else {
+                        currentAiNpcData = null; // Clear agent target for main CHAT tab
+                    }
+                }
+
+                // 4. Final UI updates
+                updateInputPlaceholder();
+                saveActiveTabState(); // Save the newly activated tab
+                enableInput(); // Ensure input is enabled after switching
+                chatMessages.scrollTop = chatMessages.scrollHeight; // Scroll to bottom
+            }
+
+
+            // --- Initialization (MODIFIED) ---
+            function initializeSimulation(cityKey) {
+                console.log(`Initializing simulation for city: ${cityKey}`);
+                if(npcFollowInterval) clearInterval(npcFollowInterval);
+                if(spatialChatUpdateIntervalId) clearInterval(spatialChatUpdateIntervalId);
+                if(spatialChatRenderIntervalId) clearInterval(spatialChatRenderIntervalId);
+
+                // --- Load Core Data (API Keys, Histories, Settings) ---
+                 if (typeof PROVIDERS === 'undefined' || typeof SpatialChat === 'undefined') { /* ... (Error handling unchanged) ... */ const errorMsg = typeof PROVIDERS === 'undefined' ? "api_providers.js" : "spatial_chat.js"; document.body.innerHTML = `<div style="padding: 20px; font-family: Georgia, serif; color: #8b0000; background: #f5e7d0; border: 2px solid #3a3129;">FATAL ERROR: Script ${errorMsg} failed to load. Check file existence and browser console.</div>`; console.error(`FATAL: ${errorMsg} not loaded.`); return; }
+                 loadApiKeyManagement();
+                 loadMainConversationHistory();
+                 loadNpcConversationHistories();
+                 loadOpenNpcTabs();
+
+                 selectedProvider = localStorage.getItem(LS_KEYS.selectedProvider); /* ... (Provider/Model selection unchanged) ... */ if (!selectedProvider || !PROVIDERS[selectedProvider]) { selectedProvider = Object.keys(PROVIDERS)[0] || null; if(selectedProvider) localStorage.setItem(LS_KEYS.selectedProvider, selectedProvider); } const providerConfig = selectedProvider ? PROVIDERS[selectedProvider] : null; const savedModel = localStorage.getItem(LS_KEYS.selectedModel); if (providerConfig && providerConfig.availableModels && providerConfig.availableModels.includes(savedModel)) { selectedModel = savedModel; } else if (providerConfig && providerConfig.availableModels && providerConfig.availableModels.length > 0) { selectedModel = providerConfig.defaultModel || providerConfig.availableModels[0]; localStorage.setItem(LS_KEYS.selectedModel, selectedModel); } else { selectedModel = null; localStorage.removeItem(LS_KEYS.selectedModel); } console.log(`API Initialized: Provider=${selectedProvider || 'None'}, Model=${selectedModel || 'None'}`);
+
+                chatMessages.innerHTML=''; mapContent.innerHTML=''; mapContent.appendChild(playerElement);
+                playerElement.style.display='block'; gameWorld.style.display='block';
+                currentCityKey=cityKey;
+                const cityDataString=localStorage.getItem(cityKey); let cityDefinition=null; /* ... (City definition loading unchanged) ... */ if(cityDataString){try{cityDefinition=JSON.parse(cityDataString);}catch(e){console.error(`Failed to parse city data for "${cityKey}":`,e);}} if(!cityDefinition){ addMessage(`FATAL ERROR: Could not load or parse city data for key "${cityKey}".`, "SYSTEM","error", null, null); disableInput(); currentCityKey=null; return; }
+
+                console.log(`Using city: ${cityDefinition.meta?.cityName||cityKey}`);
+                MAP_WIDTH=cityDefinition.map?.width??2000; MAP_HEIGHT=cityDefinition.map?.height??1500; /* ... (Map size unchanged) ... */ mapContent.style.width=`${MAP_WIDTH}px`; mapContent.style.height=`${MAP_HEIGHT}px`;
+
+                hideSystemMessages=localStorage.getItem(LS_KEYS.hideSystemMessages)==='true';
+                recentEvents=[];
+
+                const savedChatHeight=localStorage.getItem(LS_KEYS.chatAreaHeight); /* ... (Chat height unchanged) ... */ if(savedChatHeight){ chatArea.style.flexBasis=`${Math.max(parseInt(savedChatHeight,10),parseInt(getComputedStyle(document.documentElement).getPropertyValue('--chat-min-height'))||150)}px`; } else { chatArea.style.flexBasis = '300px'; }
+                doChatResize();
+
+                // --- Initialize Player ---
+                playerData.element=playerElement; /* ... (Player setup unchanged) ... */ playerData.speechElement=playerElement.querySelector('.speech'); playerData.nameplateElement=playerElement.querySelector('.character-name-plate'); playerData.name=localStorage.getItem(LS_KEYS.playerName)||'Player'; playerData.personaPrompt=localStorage.getItem(LS_KEYS.playerPersona)||"You are the Player."; playerData.pfp=localStorage.getItem(LS_KEYS.playerPfp)||DEFAULT_PLAYER_PFP; const savedPlayerX=localStorage.getItem(LS_KEYS.playerPositionX(cityKey)); const savedPlayerY=localStorage.getItem(LS_KEYS.playerPositionY(cityKey)); playerData.x=savedPlayerX!==null?parseFloat(savedPlayerX):(cityDefinition.player?.startX??MAP_WIDTH/2); playerData.y=savedPlayerY!==null?parseFloat(savedPlayerY):(cityDefinition.player?.startY??MAP_HEIGHT/2); playerData.width=playerElement.offsetWidth||24; playerData.height=playerElement.offsetHeight||36; playerData.isTalking=false; playerData.speechTimeout=null; const savedPlayerAppearance=localStorage.getItem(LS_KEYS.playerAppearance); if(savedPlayerAppearance){try{playerData.appearance=JSON.parse(savedPlayerAppearance);}catch(e){console.error("Player appearance parse error:",e);localStorage.removeItem(LS_KEYS.playerAppearance);playerData.appearance=JSON.parse(JSON.stringify(defaultPlayerAppearance));}} else {playerData.appearance=JSON.parse(JSON.stringify(defaultPlayerAppearance));} applyPlayerAppearance(playerData.appearance); updateNameplate(playerData); updateCharacterPosition(playerData); playerElement.removeEventListener('contextmenu', handlePlayerContextMenu); playerElement.addEventListener('contextmenu', handlePlayerContextMenu);
+
+                // --- Initialize Environment ---
+                environmentData.length=0; /* ... (Environment setup unchanged) ... */ (cityDefinition.environments||[]).forEach((envDef,idx)=>{ const id=envDef.id||`env_${idx}_${Date.now()}`; const zoneElement=document.createElement('div'); zoneElement.className='environment-zone'; zoneElement.id=`env-${id}`; const nameElement=document.createElement('span'); nameElement.className='environment-name-plate'; const savedName=localStorage.getItem(LS_KEYS.envName(cityKey,id)); const currentName=savedName||envDef.name||`Area ${idx+1}`; nameElement.textContent=currentName; zoneElement.appendChild(nameElement); mapContent.appendChild(zoneElement); const envRuntimeData={ id:id, name: currentName, x:envDef.x, y:envDef.y, width:envDef.width, height:envDef.height, element:zoneElement, nameElement:nameElement }; environmentData.push(envRuntimeData); updateEnvironmentVisuals(envRuntimeData); if (savedName === null || savedName !== envRuntimeData.name) { localStorage.setItem(LS_KEYS.envName(cityKey,id),envRuntimeData.name); } }); console.log(`Created ${environmentData.length} environment zones.`);
+
+                // --- Initialize NPCs ---
+                npcData.length=0; /* ... (NPC data loading unchanged) ... */ (cityDefinition.npcSpawns||[]).forEach((spawnDef,idx)=>{ const id=idx; const npcElement=document.createElement('div'); npcElement.className='character npc'; npcElement.id=`npc-${id}`; npcElement.dataset.npcId=id; npcElement.innerHTML=`<div class="part detail5"></div> <div class="part detail4"></div> <div class="part detail3"></div> <div class="part legs"></div> <div class="part arm-left"></div> <div class="part arm-right"></div> <div class="part torso"></div> <div class="part detail1"></div> <div class="part detail2"></div> <div class="part head"></div> <span class="character-name-plate"></span> <span class="speech"></span>`; mapContent.appendChild(npcElement); const namePlate=npcElement.querySelector('.character-name-plate'); const speechBubble=npcElement.querySelector('.speech'); const npcWidth=npcElement.offsetWidth||24; const npcHeight=npcElement.offsetHeight||36; const savedName=localStorage.getItem(LS_KEYS.npcName(cityKey,id)); const savedPersona=localStorage.getItem(LS_KEYS.npcPersona(cityKey,id)); const savedX=localStorage.getItem(LS_KEYS.npcPositionX(cityKey,id)); const savedY=localStorage.getItem(LS_KEYS.npcPositionY(cityKey,id)); const savedPfp=localStorage.getItem(LS_KEYS.npcPfp(cityKey,id)); const defaultName=spawnDef.defaultName||`Agent ${id+1}`; const npc={ id:id, element:npcElement, name:savedName||defaultName, speechElement:speechBubble, nameplateElement:namePlate, personaPrompt:savedPersona||spawnDef.defaultPersona||`You are ${savedName||defaultName}.`, width:npcWidth, height:npcHeight, x:savedX!==null?parseFloat(savedX):spawnDef.x, y:savedY!==null?parseFloat(savedY):spawnDef.y, isTalking:false, speechTimeout:null, appearance:null, pfp: savedPfp||DEFAULT_NPC_PFP, spawnId: spawnDef.spawnId, followingTargetId: null }; if (savedName===null&&npc.name!==defaultName) localStorage.setItem(LS_KEYS.npcName(cityKey,id),npc.name); if (savedPersona===null&&npc.personaPrompt!==(spawnDef.defaultPersona||`You are ${defaultName}.`)) localStorage.setItem(LS_KEYS.npcPersona(cityKey,id),npc.personaPrompt); const savedAppearance=localStorage.getItem(LS_KEYS.npcAppearance(cityKey,id)); if(savedAppearance){try{npc.appearance=JSON.parse(savedAppearance);}catch(e){console.error(`NPC ${id} appearance parse error:`,e);localStorage.removeItem(LS_KEYS.npcAppearance(cityKey,id));npc.appearance=JSON.parse(JSON.stringify(defaultNpcAppearance));}} else {npc.appearance=JSON.parse(JSON.stringify(defaultNpcAppearance));} npcData.push(npc); updateNameplate(npc); applyNpcAppearance(npc); updateCharacterPosition(npc); npcElement.removeEventListener('contextmenu', handleNpcContextMenu); npcElement.addEventListener('contextmenu', handleNpcContextMenu); }); console.log(`Created ${npcData.length} NPCs.`);
+
+                // --- Create Initial NPC Tabs ---
+                dynamicTabsContainer.innerHTML = ''; // Clear any old tabs
+                const validOpenTabs = [];
+                openNpcTabs.forEach(npcId => {
+                    const npc = npcId === -1 ? {id: -1, name: "Spirit"} : npcData.find(n => n.id === npcId); // Handle Spirit ID
+                    if (npc) {
+                        const tabElement = createNpcTabElement(npcId, npc.name);
+                        dynamicTabsContainer.appendChild(tabElement);
+                        validOpenTabs.push(npcId); // Keep track of successfully created tabs
+                    } else {
+                        console.warn(`NPC ID ${npcId} from saved open tabs not found in current city or is invalid. Removing.`);
+                         if (npcId !== -1) { // Don't delete Spirit history unless explicitly cleared
+                             delete npcConversationHistories[npcId];
+                         }
+                    }
+                });
+                // Update state and save if any invalid tabs were removed
+                if (validOpenTabs.length !== openNpcTabs.length) {
+                    openNpcTabs = validOpenTabs;
+                    saveOpenNpcTabs();
+                    saveNpcConversationHistories(); // Save after potential deletion
+                }
+
+                viewportWidth=gameWorld.offsetWidth; viewportHeight=gameWorld.offsetHeight; updateCameraPosition(); initialSpeakerData=findClosestNpc(true);
+                currentAiNpcData = null; // Agent target cleared initially
+
+                 // --- Initialize SpatialChat Module ---
+                 if (typeof SpatialChat !== 'undefined' && SpatialChat.init) { /* ... (Spatial init unchanged) ... */ const initialPlayerState = { x: playerData.x, y: playerData.y, currentCity: currentCityKey, currentArea: findCurrentAreaName(playerData.x, playerData.y, environmentData), name: playerData.name }; const initialNpcs = npcData.map(npc => ({ id: npc.id, name: npc.name, x: npc.x, y: npc.y, personality: npc.personaPrompt || `You are ${npc.name}.`, currentCity: currentCityKey, currentArea: findCurrentAreaName(npc.x, npc.y, environmentData) })); const initialCities = {}; if (currentCityKey) { initialCities[currentCityKey] = {}; } SpatialChat.init( { debugLogging: false }, { player: initialPlayerState, npcs: initialNpcs, cities: initialCities } ); } else { console.error("SpatialChat module is not loaded or init function is missing!"); addMessage("Error: Spatial Chat features are unavailable.", "SYSTEM", "error", null, null); }
+
+                 // --- Set Initial Active Tab ---
+                 loadAndSetActiveTab(); // Load saved tab state or default
+
+                const welcomeMsg = `Welcome to ${cityDefinition.meta?.cityName||'the Simulation'}.`;
+                const systemSpeakerName = "Tome";
+                const providerNameForMsg = (providerConfig && providerConfig.name) ? providerConfig.name : (selectedProvider || 'None');
+                // Add welcome messages to main history (only if main history is empty to avoid duplicates on reload)
+                if (mainConversationHistory.length === 0) {
+                    addMessage(welcomeMsg, systemSpeakerName, 'system', null, null);
+                    addMessage(`API Provider: ${providerNameForMsg}. Model: ${selectedModel || 'N/A'}.`, systemSpeakerName, 'system', null, null);
+                }
+
+
+                // Start intervals
+                npcFollowInterval=setInterval(updateFollowingNpcs, 200);
+                spatialChatUpdateIntervalId = setInterval(updateSpatialChatModuleState, 1000);
+
+                console.log(`Initialization complete for: ${cityDefinition.meta?.cityName}. Initial Tab: ${activeNpcTabId !== null ? `NPC ${activeNpcTabId}` : currentChatDisplayMode}.`);
+            }
+
+            // --- Event Listeners (MODIFIED) ---
+            document.addEventListener('keydown',(e)=>{ if(settingsOverlay.classList.contains('active')||appearanceEditorOverlay.classList.contains('active')||document.activeElement===userInput||!currentCityKey) return; let m=false; switch(e.key.toLowerCase()){case'arrowup':case'w':movePlayer(0,-1);m=true;break;case'arrowdown':case's':movePlayer(0,1);m=true;break;case'arrowleft':case'a':movePlayer(-1,0);m=true;break;case'arrowright':case'd':movePlayer(1,0);m=true;break;}if(m)e.preventDefault();});
+            userInput.addEventListener('keypress',(e)=>{if(e.key==='Enter'&&!sendButton.disabled&&!e.shiftKey){e.preventDefault();handlePlayerSend();}});
+            userInput.addEventListener('input',()=>{userInput.style.height='auto';userInput.style.height=(userInput.scrollHeight)+'px';});
+            sendButton.addEventListener('click',()=>{if(!sendButton.disabled)handlePlayerSend();});
+            modalCloseBtn.addEventListener('click',closeSettingsModal); modalCancelBtn.addEventListener('click',closeSettingsModal); modalSaveBtn.addEventListener('click',saveSettings);
+            settingsOverlay.addEventListener('click',(e)=>{if(e.target===settingsOverlay)closeSettingsModal();});
+            settingsPrevBtn.addEventListener('click',()=>{if(currentSettingsPage>1)showSettingsPage(currentSettingsPage-1);}); settingsNextBtn.addEventListener('click',()=>{if(currentSettingsPage<TOTAL_SETTINGS_PAGES)showSettingsPage(currentSettingsPage+1);});
+            appearanceEditorCloseBtn.addEventListener('click', closeAppearanceEditorModal); appearanceEditorCancelBtn.addEventListener('click', closeAppearanceEditorModal); appearanceEditorSaveBtn.addEventListener('click', saveAppearanceFromEditor);
+            appearanceEditorOverlay.addEventListener('click',(e)=>{if(e.target===appearanceEditorOverlay)closeAppearanceEditorModal();});
+            appearancePfpPreview.addEventListener('click',()=>pfpUploadInput.click()); appearancePfpChangeBtn.addEventListener('click',()=>pfpUploadInput.click());
+            pfpUploadInput.addEventListener('change', handlePfpUpload);
+            window.addEventListener('resize',()=>{if(currentCityKey){viewportWidth=gameWorld.offsetWidth;viewportHeight=gameWorld.offsetHeight;doChatResize();updateInputPlaceholder();}});
+            clearAllChatsBtn.addEventListener('click', clearAllChats); // Listener for clear button
+
+            // MODIFIED Context Menu Listener
+            npcContextMenu.addEventListener('click', (e) => {
+                 if (e.target.classList.contains('context-menu-item')) {
+                     const action = e.target.dataset.action;
+                     const targetNpc = npcData.find(n => n.id === contextMenuTargetNpcId);
+                     if (!targetNpc) { closeAllContextMenus(); return; }
+                     console.log(`Action: ${action} on ${targetNpc.name} (ID: ${targetNpc.id})`);
+                     switch (action) {
+                         case 'talk': // Open/Switch NPC Tab
+                             addNpcTab(targetNpc.id, true);
+                             break;
+                         case 'command': // Switch to AGENT mode, targeting this NPC
+                             currentAiNpcData = targetNpc; // Set target for agent mode
+                             switchActiveTab('agent');
+                             addMessage(`Switched to Agent Mode with ${targetNpc.name}.`, 'SYSTEM', 'system', null, null); // To main history
+                             break;
+                         case 'toggleFollow':
+                             if (targetNpc.followingTargetId !== null) { handleUnfollowAction(targetNpc); } else { handleFollowAction(targetNpc); }
+                             break;
+                         case 'appearance':
+                             openAppearanceEditorModal(targetNpc.id);
+                             break;
+                         case 'cancel': break;
+                     }
+                     closeAllContextMenus();
+                 }
+             });
+
+            playerContextMenu.addEventListener('click',(e)=>{ if(e.target.classList.contains('context-menu-item')){const a=e.target.dataset.action; console.log(`Action: ${a} on Player`); switch(a){case 'appearance': openAppearanceEditorModal('player'); break; case 'add_area': addEnvAtPlayer(); break; case 'add_agent': addNpcAtPlayer(); break; case 'remove_closest_agent': const cN=findClosestNpc(false); if(cN){handleDeleteNpcFromSettings(null,cN.id);} else {addMessage("No agent nearby to remove.","SYSTEM","system", null, null);} break; case 'remove_closest_area': const cZ=findClosestEnvironmentZone(); if(cZ){handleDeleteEnvFromSettings(null,cZ.id);} else {addMessage("No area nearby to remove.","SYSTEM","system", null, null);} break; case 'cancel': break;} closeAllContextMenus(); }});
+            pfpContextMenu.addEventListener('click', (e) => { if (e.target.classList.contains('context-menu-item')) { const action = e.target.dataset.action; switch(action) { case 'toggle-fullscreen': toggleFullscreenChat(); break; case 'cancel': break; } closeAllContextMenus(); } });
+
+            // Static Tab Listeners
+            staticTabsContainer.querySelectorAll('button').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const mode = tab.dataset.mode;
+                    const scope = tab.dataset.scope; // Only for spatial
+                    switchActiveTab(mode === 'spatial' ? 'spatial' : mode, scope);
+                });
+            });
+            // Dynamic tab listeners are added when tabs are created in addNpcTab/initializeSimulation
+
+            window.addEventListener('beforeunload',(e)=>{ if(currentCityKey){saveNpcPositions();savePlayerPosition(); saveChatHeight();} saveMainConversationHistory(); saveNpcConversationHistories(); saveOpenNpcTabs(); saveActiveTabState(); if(npcFollowInterval) clearInterval(npcFollowInterval); if(spatialChatUpdateIntervalId) clearInterval(spatialChatUpdateIntervalId); if(spatialChatRenderIntervalId) clearInterval(spatialChatRenderIntervalId); if (typeof SpatialChat !== 'undefined' && SpatialChat.stop) SpatialChat.stop(); });
+            window.addEventListener('message', receiveCreatorData);
+            function receiveCreatorData(event) { /* ... (unchanged) ... */ if(event.data?.type==='CHARACTER_STYLE_UPDATE'){const rS=event.data.payload;if(typeof rS==='object'&&rS!==null&&rS.colors){temporaryAppearanceData=JSON.parse(JSON.stringify(rS));if(appearanceEditorTarget==='player'){applyAppearanceToElement(playerData.element,rS);}else if(appearanceEditorTarget!==null){const tN=npcData.find(n=>n.id===appearanceEditorTarget);if(tN){applyAppearanceToElement(tN.element,rS);}else{console.error(`Target NPC ${appearanceEditorTarget} not found for style update!`);}}else{console.warn("Received style update from creator, but no target is set.");}}else{console.warn("Received invalid style data from creator:", rS);}}}
+
+            // --- Initial Execution ---
+            let cityKeyToLoad=localStorage.getItem(LS_KEYS.selectedCity); if(!cityKeyToLoad||!cityKeyToLoad.startsWith(USER_CITY_PREFIX)||!localStorage.getItem(cityKeyToLoad)){ const userCityKeys=[]; Object.keys(localStorage).forEach(key => { if (key.startsWith(USER_CITY_PREFIX)) userCityKeys.push(key); }); userCityKeys.sort(); cityKeyToLoad=userCityKeys[0]||null; if(cityKeyToLoad){ localStorage.setItem(LS_KEYS.selectedCity, cityKeyToLoad); } }
+            if (cityKeyToLoad) {
+                initializeSimulation(cityKeyToLoad);
+            } else {
+                enterNoCityState();
+            }
+
+        } // End runSimulation
+
+        // Run the simulation once the DOM is ready
+        document.addEventListener('DOMContentLoaded', runSimulation);
+
+    </script> <!-- This is the SINGLE closing script tag -->
+
 </body>
-</html>
+</html>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              
+
+                                                                               
