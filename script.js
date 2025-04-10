@@ -1,10 +1,375 @@
-// ------------ ai-world.js ------------
-// (This file contains the main simulation logic)
+// spatial_chat.js (Modified Version - General Scope Removed)
+const SpatialChat = (function() {
 
-// Make sure Marked library is loaded before this script runs in the HTML
+    // --- Private State ---
+    let _internalState = {
+        player: { x: 0, y: 0, currentCity: null, currentArea: null, name: 'Player' },
+        npcs: [], // { id, name, x, y, personality, currentCity, currentArea }
+        cities: {}, // { cityName: { areaName1: {}, areaName2: {} } }
+        messages: {}, // { 'scope-key': ['<Author> msg1', ...] }
+        currentDisplayScope: null, // e.g., 'Area', 'City', 'World'
+        isInitialized: false,
+        isActive: true,
+    };
+
+    let _config = {
+        proxyProviderId: 'BIGMODEL_PROXY',
+        proxyModelId: 'glm-4-flash',
+        botIntervalMs: 2500,
+        // generalChatRange: 75, // REMOVED - No longer used
+        maxMessagesPerScope: 50,
+        maxContextTurns: 4,
+        scopeSpeakChance: 0.6,
+        npcSpeakChanceMultiplier: 0.3,
+        debugLogging: false, // Keep false unless debugging
+    };
+
+    let _botIntervalId = null;
+    let _apiProviderFunction = null;
+    let _isBotTickRunning = false;
+
+    // --- Private Utility Functions ---
+
+    function _log(message, level = 'log') {
+        if (_config.debugLogging || level === 'error' || level === 'warn') {
+            console[level](`[SpatialChat] ${message}`);
+        }
+    }
+
+    // REMOVED _calculateDistance as it was only used by General scope
+
+    // --- Scope/Context Key Generation (REMOVED General case) ---
+    function _getScopeKey(scope, city = null, area = null) {
+        city = city || _internalState.player.currentCity;
+        // Area is needed for Area scope key generation
+        area = area || _internalState.player.currentArea;
+
+        switch (scope) {
+            // REMOVED General case
+            case 'Area':
+                if (!city || !area) {
+                     // _log(`Cannot get Area scope key: Missing City (${city}) or Area (${area})`, 'warn');
+                     return null;
+                 }
+                return `area-${city}-${area}`;
+            case 'City':
+                if (!city) {
+                     // _log(`Cannot get City scope key: Missing City (${city})`, 'warn');
+                     return null;
+                 }
+                return `city-${city}`;
+            case 'World':
+                return 'world';
+            default:
+                if (scope !== null) { // Only log if an invalid scope *was* passed
+                    _log(`Invalid scope requested for key generation: ${scope}`, 'warn');
+                }
+                return null;
+        }
+    }
+
+    // --- AI Selection Logic (REMOVED General case) ---
+    function _getNpcsInScope(scope) {
+        const { player, npcs } = _internalState;
+        if (!player.currentCity) {
+             _log(`Cannot get NPCs: Player city is null. Scope: ${scope}`, 'warn');
+             return [];
+        }
+
+        const city = player.currentCity;
+        const area = player.currentArea; // Player's current area is still needed for Area scope logic
+        let relevantNpcs = [];
+
+        _log(`Getting NPCs for scope: ${scope}. Player Loc: C=${city}, A=${area}, (${player.x?.toFixed(0)}, ${player.y?.toFixed(0)})`, 'info');
+
+        switch (scope) {
+            // REMOVED General Scope Logic
+            case 'Area':
+                 if (!area) { _log("Area scope requires player to be in an area.", 'warn'); return []; }
+                relevantNpcs = npcs.filter(npc => npc.currentCity === city && npc.currentArea === area );
+                 _log(`Found ${relevantNpcs.length} NPCs in Area scope (${area}).`, 'info');
+                 break;
+            case 'City':
+                relevantNpcs = npcs.filter(npc => npc.currentCity === city);
+                 _log(`Found ${relevantNpcs.length} NPCs in City scope (${city}).`, 'info');
+                 break;
+            case 'World':
+                relevantNpcs = [...npcs]; // All loaded NPCs
+                 _log(`Found ${relevantNpcs.length} NPCs in World scope.`, 'info');
+                 break;
+            default:
+                 _log(`Invalid scope "${scope}" for NPC selection.`, 'warn');
+                 relevantNpcs = [];
+        }
+        return relevantNpcs;
+    }
+
+     // --- Message Storage ---
+     function _addMessage(scopeKey, author, text) {
+        if (!scopeKey || !text || !author) {
+            _log(`Skipped adding message: Key=${scopeKey}, Author=${author}, Text empty=${!text}`, 'warn');
+            return false;
+        }
+        if (!_internalState.messages[scopeKey]) {
+            _internalState.messages[scopeKey] = [];
+        }
+        const cleanText = String(text).trim().substring(0, 500);
+        if (!cleanText) return false;
+
+        const message = `<${author}> ${cleanText}`;
+        _internalState.messages[scopeKey].push(message);
+
+        if (_internalState.messages[scopeKey].length > _config.maxMessagesPerScope) {
+            _internalState.messages[scopeKey].shift();
+        }
+        _log(`Added to [${scopeKey}]: ${message.substring(0, 60)}...`);
+        return true;
+    }
+
+    // --- AI Call ---
+    async function _callAIProxy(prompt, personality) {
+        if (!_apiProviderFunction) { _log("API provider func not available.", 'error'); return null; }
+        if (!_config.proxyProviderId || !_config.proxyModelId) { _log("Proxy provider/model ID not configured.", 'error'); return null; }
+
+        const messages = [
+            { role: "system", content: personality || "You are an AI in a simulated world. Respond concisely." },
+            { role: "user", content: prompt }
+        ];
+
+        try {
+            _log(`Calling proxy: ${_config.proxyProviderId}/${_config.proxyModelId}`, 'info');
+            // Ensure the global getApiResponse function is available and called correctly
+            const response = await window.getApiResponse( _config.proxyProviderId, _config.proxyModelId, messages, null, { temperature: 0.8 } );
+             if (response && typeof response === 'string') {
+                _log(`Proxy response received: ${response.substring(0, 60)}...`, 'info');
+                return response.trim();
+             } else {
+                _log(`Proxy returned invalid response: ${response}`, 'warn');
+                return null;
+             }
+        } catch (error) {
+            _log(`Error calling AI proxy: ${error.message}`, 'error');
+            console.error(error);
+            return null;
+        }
+    }
+
+
+    // --- Autonomous Bot Logic (REMOVED General case checks) ---
+    async function _botTick() {
+        if (_isBotTickRunning) return;
+         if (!_internalState.isActive || !_internalState.isInitialized || !_internalState.player.currentCity || !_internalState.currentDisplayScope) {
+             return;
+         }
+         // Valid scopes for bot ticks (General removed)
+         const validSpatialScopes = ['Area', 'City', 'World'];
+         if (!validSpatialScopes.includes(_internalState.currentDisplayScope)) {
+             // Only run bot ticks if a valid spatial scope is actively being displayed
+             return;
+         }
+
+        _isBotTickRunning = true;
+
+        try {
+            const activeScope = _internalState.currentDisplayScope;
+            const activeScopeKey = _getScopeKey(activeScope);
+
+            if (!activeScopeKey) {
+                 _log(`Bot Tick: Could not get scope key for active scope: ${activeScope}`, 'warn');
+                 _isBotTickRunning = false; // Ensure flag is reset
+                 return;
+            }
+
+            const potentialSpeakers = _getNpcsInScope(activeScope);
+            if (potentialSpeakers.length === 0) {
+                 _isBotTickRunning = false; // Ensure flag is reset
+                 return;
+            }
+
+             const collectiveSpeakChance = Math.min(1, _config.scopeSpeakChance * potentialSpeakers.length * _config.npcSpeakChanceMultiplier);
+
+             if (Math.random() > collectiveSpeakChance) {
+                 _isBotTickRunning = false; // Ensure flag is reset
+                 return;
+             }
+
+            const speaker = potentialSpeakers[Math.floor(Math.random() * potentialSpeakers.length)];
+             if (!speaker || !speaker.name || !speaker.personality) {
+                _log(`Bot Tick: Invalid speaker selected for ${activeScope}.`, 'warn');
+                _isBotTickRunning = false; // Ensure flag is reset
+                return;
+            }
+
+            _log(`Bot Tick: ${speaker.name} selected to speak in active scope ${activeScope} (${activeScopeKey})`);
+
+            const history = _internalState.messages[activeScopeKey] || [];
+            const context = history.slice(-_config.maxContextTurns).join('\n') || `The #${activeScope} chat is quiet.`;
+
+            const locationDesc = `${speaker.currentArea || 'Somewhere'}, ${speaker.currentCity || 'Unknown City'}`;
+            // Adjusted prompt slightly
+            const prompt = `You are ${speaker.name} in ${locationDesc}. Personality: "${speaker.personality}".
+You are speaking in the #${activeScope} scope. Keep messages very short (1-2 brief sentences) & in character.
+React naturally to the last few messages or make a brief observation about your surroundings or personality if it's quiet. Avoid generic greetings like "Hello".
+
+Recent Context in #${activeScope}:
+---
+${context}
+---
+
+Your short message:`;
+
+            // Use .finally to ensure the flag is always reset
+            _callAIProxy(prompt, speaker.personality).then(response => {
+                if (response) {
+                    const added = _addMessage(activeScopeKey, speaker.name, response);
+                     if(added) _log(`Bot Tick SUCCESS: ${speaker.name} spoke in ${activeScope}: "${response.substring(0, 50)}..."`);
+                } else {
+                    _log(`Bot Tick FAIL: ${speaker.name} failed response for ${activeScope}.`);
+                }
+            }).catch(err => {
+                 _log(`Bot Tick ERROR for ${speaker.name} in ${activeScope}: ${err}`, 'error');
+            }).finally(() => {
+                 _isBotTickRunning = false; // Reset flag here
+            });
+
+        } catch (error) {
+            _log(`Error during bot tick: ${error}`, 'error');
+            console.error(error);
+            _isBotTickRunning = false; // Reset flag in case of synchronous error
+        }
+    }
+
+    // --- Public API ---
+    const publicApi = {
+        init: function(config = {}, initialState = {}) {
+            _log("Initializing...");
+            _config = { ..._config, ...config };
+
+            // Check for the global getApiResponse function provided by api_providers.js
+            if (typeof window.getApiResponse === 'function') {
+                _apiProviderFunction = window.getApiResponse;
+                _log("API provider function (window.getApiResponse) found.");
+            } else {
+                _log("CRITICAL: window.getApiResponse function not found. AI calls will fail.", 'error');
+                _internalState.isInitialized = false; // Mark as failed init
+                return; // Stop initialization
+            }
+
+            const initialPlayer = { ..._internalState.player, ...(initialState.player || {}) };
+            this.updateState(initialPlayer, initialState.npcs, initialState.cities, null);
+
+            _internalState.messages = {}; // Clear messages on init
+            _internalState.isInitialized = true;
+            _internalState.isActive = false; // Start inactive, let main script call start()
+
+            _log(`Initialized. Interval: ${_config.botIntervalMs}ms.`); // Removed General Range log
+        },
+
+        updateState: function(playerState = null, npcList = null, cityData = null, displayScope = undefined) {
+            if (!_internalState.isInitialized) return;
+            let stateChanged = false;
+            let playerPosChanged = false;
+
+             if (playerState) {
+                 if (playerState.name !== undefined && _internalState.player.name !== playerState.name) { _internalState.player.name = playerState.name; stateChanged = true; }
+                 if (typeof playerState.x === 'number' && typeof playerState.y === 'number' && (_internalState.player.x !== playerState.x || _internalState.player.y !== playerState.y)) {
+                     _internalState.player.x = playerState.x; _internalState.player.y = playerState.y;
+                     stateChanged = true; playerPosChanged = true; // Track player position change specifically
+                 }
+                 if (playerState.currentCity !== undefined && _internalState.player.currentCity !== playerState.currentCity) { _internalState.player.currentCity = playerState.currentCity; stateChanged = true; }
+                 if (playerState.currentArea !== undefined && _internalState.player.currentArea !== playerState.currentArea) { _internalState.player.currentArea = playerState.currentArea; stateChanged = true; }
+             }
+             // Simple check for NPC list changes (more robust check might be needed for deep equality)
+             if (npcList && Array.isArray(npcList)) {
+                  // More reliable check comparing relevant properties
+                  const npcStateString = (npcs) => JSON.stringify(npcs.map(n => `${n.id}|${n.x?.toFixed(1)}|${n.y?.toFixed(1)}|${n.currentArea}|${n.personality?.substring(0,20)}`).sort());
+                  if (npcStateString(npcList) !== npcStateString(_internalState.npcs)) {
+                    _internalState.npcs = npcList.map(npc => ({
+                        id: npc.id, name: npc.name, x: npc.x, y: npc.y,
+                        personality: npc.personality, currentCity: npc.currentCity, currentArea: npc.currentArea
+                    }));
+                     stateChanged = true;
+                     _log("NPC list updated.");
+                  }
+             }
+            // City data update (simplified, assuming structure doesn't change often)
+            if (cityData && typeof cityData === 'object') {
+                if (JSON.stringify(cityData) !== JSON.stringify(_internalState.cities)) {
+                    _internalState.cities = JSON.parse(JSON.stringify(cityData)); // Deep copy
+                    stateChanged = true;
+                }
+            }
+
+             if (displayScope !== undefined && _internalState.currentDisplayScope !== displayScope) {
+                // Ensure displayScope is not 'General' if it somehow gets passed
+                if (displayScope === 'General') {
+                     _log(`Attempted to set displayScope to removed 'General'. Ignoring.`, 'warn');
+                } else {
+                    _internalState.currentDisplayScope = displayScope;
+                    _log(`Display scope updated to: ${displayScope}`);
+                    stateChanged = true;
+                }
+             }
+             //if (stateChanged) { _log(`State updated. Player pos changed: ${playerPosChanged}`); }
+        },
+
+        getMessagesForScope: function(scope, cityKey = null, areaKey = null) {
+            const scopeKey = _getScopeKey(scope, cityKey, areaKey);
+            if (!scopeKey) {
+                // If scope was 'General' (which is now invalid), this will return null.
+                return [`<SYSTEM> Cannot determine chat scope or player location for '${scope}'.`];
+            }
+            // Ensure the key exists before trying to access it
+            if (!_internalState.messages[scopeKey]) {
+                 _internalState.messages[scopeKey] = []; // Initialize if needed
+            }
+            return [...(_internalState.messages[scopeKey] || [])]; // Return a copy
+        },
+
+        addPlayerMessageToScope: function(scope, playerName, text) {
+            const scopeKey = _getScopeKey(scope);
+            if (scopeKey) {
+                const added = _addMessage(scopeKey, playerName || _internalState.player.name, text);
+                return added;
+            }
+             _log(`Could not add player message: Invalid or removed scope '${scope}'.`, 'warn');
+            return false;
+        },
+
+        start: function() {
+            if (!_internalState.isInitialized) { _log("Cannot start: Not initialized.", "warn"); return; }
+            if (_internalState.isActive) return; // Already running
+            _log("Starting autonomous chat bot...");
+            _internalState.isActive = true;
+            clearInterval(_botIntervalId); // Clear just in case
+            _botIntervalId = setInterval(_botTick, _config.botIntervalMs);
+        },
+
+        stop: function() {
+            if (!_internalState.isActive) return; // Already stopped
+            _log("Stopping autonomous chat bot.");
+            _internalState.isActive = false;
+            clearInterval(_botIntervalId);
+            _botIntervalId = null;
+            _isBotTickRunning = false; // Ensure tick flag is reset on stop
+        },
+
+        addSystemMessage: function(scope, cityKey, areaKey, text) {
+             const scopeKey = _getScopeKey(scope, cityKey, areaKey);
+             if (scopeKey) {
+                 return _addMessage(scopeKey, 'SYSTEM', text);
+             }
+             return false;
+        }
+    };
+
+    return publicApi;
+
+})();
+
+
+// Load Main Simulation Logic (MODIFIED)
 marked.setOptions({ breaks: true, gfm: true, smartypants: true });
-
-// Utility functions (keep them here as they are used by runSimulation)
 function darkenHexColor(h, p) { if (!h || typeof h !== 'string') return '#000'; h = h.replace(/^#/, ''); if (h.length === 3) h = h.split('').map(c => c + c).join(''); if (h.length !== 6) return '#000'; let r = parseInt(h.substring(0, 2), 16), g = parseInt(h.substring(2, 4), 16), b = parseInt(h.substring(4, 6), 16); r = Math.max(0, Math.floor(r * (1 - p))); g = Math.max(0, Math.floor(g * (1 - p))); b = Math.max(0, Math.floor(b * (1 - p))); return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`; }
 function maskApiKey(key) { if (!key || typeof key !== 'string') return "INVALID"; return key.length > 8 ? `${key.substring(0, 4)}...${key.substring(key.length - 4)}` : key; }
 
@@ -36,7 +401,7 @@ function runSimulation() {
     const npcData = []; const environmentData = []; const playerData = { appearance: null, isPlayer: true, pfp: null, name: 'Player' };
     const playerStepDistance = 16; const globalSpeechDuration = 4500;
     let currentChatDisplayMode = 'agent'; // Default mode
-    let currentSpatialScope = 'Area'; // Default spatial scope (Adjust if needed based on your tabs)
+    let currentSpatialScope = 'Area'; // Default spatial scope (General removed)
     let currentAiNpcData = null; // Stores the NPC data object for current Chat/Agent interaction
     let initialSpeakerData = null; // NPC closest at load time
     let currentCityKey = null;
@@ -45,7 +410,7 @@ function runSimulation() {
     let temporaryPfpData = null; let isWaitingForApiResponse = false; let hideSystemMessages = false;
     let npcFollowInterval = null;
     const FOLLOW_DISTANCE = 50;
-    const NPC_FOLLOW_SPEED = 3.5; // Speed was already increased
+    const NPC_FOLLOW_SPEED = 3.5; // <-- INCREASED FOLLOW SPEED
     let currentSettingsPage = 1; const TOTAL_SETTINGS_PAGES = 4;
     let chatHeightBeforeFullscreen = null;
     let chatTabsVisible = true;
@@ -317,7 +682,7 @@ function runSimulation() {
              return; // Don't override if waiting for direct API
          }
          if (currentChatDisplayMode === 'spatial') {
-             // Updated placeholder for spatial modes
+             // Updated placeholder for spatial modes (General removed)
              userInput.placeholder = currentSpatialScope ? `Shout into #${currentSpatialScope}...` : 'Select a spatial scope...';
          } else if (currentChatDisplayMode === 'message') { // 'message' is the data-mode for the "Chat" tab
              const targetNpc = currentAiNpcData || { name: "Spirit" }; // Use current or fallback
@@ -488,23 +853,18 @@ function runSimulation() {
              addMessage("No city loaded.", "SYSTEM", "system");
              enableInput(); return;
          }
-         // Check if PROVIDERS and SpatialChat are loaded (they should be if HTML is set up correctly)
          if (typeof PROVIDERS === 'undefined' || Object.keys(PROVIDERS).length === 0) {
-             addMessage("API Provider configuration (api_providers.js) not loaded or empty. Cannot send message.", "SYSTEM", "error"); enableInput(); return;
+             addMessage("API Provider configuration (api_providers.js) not loaded or empty. Cannot send message.", "SYSTEM", "error");
+             enableInput(); return;
          }
-         if (typeof SpatialChat === 'undefined') {
-             addMessage("Spatial Chat module (spatial_chat.js) not loaded. Some features may fail.", "SYSTEM", "warn"); // Warn instead of error?
-         }
-         if (typeof window.getApiResponse !== 'function') { // This comes from api_providers.js
-             addMessage("API Provider script function (window.getApiResponse) not found. Cannot send message.", "SYSTEM", "error"); enableInput(); return;
-         }
-
-
          if (!selectedProvider || !selectedModel) {
              addMessage("No API Provider or Model selected. Please configure in Settings (Page 2).", "SYSTEM", "error");
              enableInput(); return;
          }
-
+         if (typeof window.getApiResponse !== 'function') {
+             addMessage("API Provider script function (window.getApiResponse) not found. Cannot send message.", "SYSTEM", "error");
+             enableInput(); return;
+         }
          const providerConfig = PROVIDERS[selectedProvider];
          if (!providerConfig) {
              addMessage(`Configuration error: Provider "${selectedProvider}" not found.`, "SYSTEM", "error");
@@ -735,7 +1095,7 @@ function runSimulation() {
     function saveNpcPositions(){ if (!currentCityKey) return; npcData.forEach(n=>{localStorage.setItem(LS_KEYS.npcPositionX(currentCityKey, n.id), String(n.x)); localStorage.setItem(LS_KEYS.npcPositionY(currentCityKey, n.id), String(n.y));}); }
     function savePlayerPosition(){ if (!currentCityKey) return; localStorage.setItem(LS_KEYS.playerPositionX(currentCityKey), String(playerData.x)); localStorage.setItem(LS_KEYS.playerPositionY(currentCityKey), String(playerData.y)); }
     function addCity(){ const n=prompt("Enter new city name:","My City");if(!n||!n.trim())return;const cN=n.trim();const nK=USER_CITY_PREFIX+cN.replace(/\s+/g,'_')+'_'+Date.now();if(localStorage.getItem(nK)){alert("A city with a similar name might already exist.");return;} const dC={meta:{cityName:cN},map:{width:2000,height:1500},player:{startX:1000,startY:750},environments:[{id:"start_"+Date.now(),name:"Start Zone",x:800,y:600,width:400,height:300}],npcSpawns:[{spawnId:"agent1_"+Date.now(),x:900,y:700,defaultName:"Agent 1",defaultPersona:"You are Agent 1."}]};localStorage.setItem(nK,JSON.stringify(dC));localStorage.setItem(LS_KEYS.selectedCity,nK);addMessage(`Created new city: ${cN}. Reloading environment...`,"SYSTEM","system"); closeSettingsModal(); setTimeout(() => window.location.reload(), 300);}
-    function deleteCity(){ if(!currentCityKey||!currentCityKey.startsWith(USER_CITY_PREFIX)){alert("Only user-created cities (marked with *) can be deleted. Please select one from the list.");return;}const s=document.getElementById('settingsCitySelector'); const cN=s?s.options[s.selectedIndex].text:currentCityKey; if(!confirm(`Are you absolutely sure you want to DELETE the city "${cN}"? This action is IRREVERSIBLE and will remove all associated data (agents, areas, positions, etc.).`))return;const nm=currentCityKey.substring(USER_CITY_PREFIX.length).split('_')[0];localStorage.removeItem(currentCityKey);Object.keys(localStorage).forEach(k=>{if(k.includes(`-${currentCityKey}-`))localStorage.removeItem(k);}); localStorage.removeItem(LS_KEYS.playerPositionX(currentCityKey)); localStorage.removeItem(LS_KEYS.playerPositionY(currentCityKey)); let nK=null;const rK=[]; Object.keys(localStorage).forEach(key=>{ if(key.startsWith(USER_CITY_PREFIX))rK.push(key); }); rK.sort(); nK=rK[0]||null; localStorage.setItem(LS_KEYS.selectedCity,nK||"");addMessage(`Deleted city: ${nm}. Reloading environment...`,"SYSTEM","system"); closeSettingsModal(); setTimeout(() => window.location.reload(), 300);}
+    function deleteCity(){ if(!currentCityKey||!currentCityKey.startsWith(USER_CITY_PREFIX)){alert("Only user-created cities (marked with *) can be deleted. Please select one from the list.");return;}const s=document.getElementById('settingsCitySelector'); const cN=s?s.options[s.selectedIndex].text:currentCityKey; if(!confirm(`Are you absolutely sure you want to DELETE the city "${cN}"? This action is IRREVERSIBLE and will remove all associated data (agents, areas, positions, etc.).`))return; const nm=currentCityKey.substring(USER_CITY_PREFIX.length).split('_')[0];localStorage.removeItem(currentCityKey);Object.keys(localStorage).forEach(k=>{if(k.includes(`-${currentCityKey}-`))localStorage.removeItem(k);}); localStorage.removeItem(LS_KEYS.playerPositionX(currentCityKey)); localStorage.removeItem(LS_KEYS.playerPositionY(currentCityKey)); let nK=null;const rK=[]; Object.keys(localStorage).forEach(key=>{ if(key.startsWith(USER_CITY_PREFIX))rK.push(key); }); rK.sort(); nK=rK[0]||null; localStorage.setItem(LS_KEYS.selectedCity,nK||"");addMessage(`Deleted city: ${nm}. Reloading environment...`,"SYSTEM","system"); closeSettingsModal(); setTimeout(() => window.location.reload(), 300);}
     function modifyCurrentCityDefinition(cb){ if(!currentCityKey) return false; const s=localStorage.getItem(currentCityKey);if(!s){addMessage("Error: Current city data not found in storage.","SYSTEM","error");return false;}try{let cD=JSON.parse(s);cb(cD);localStorage.setItem(currentCityKey,JSON.stringify(cD));return true;}catch(e){addMessage("Error modifying city definition: "+e.message,"SYSTEM","error");console.error("Error modifying city definition:",e);return false;}}
     function addNpcAtPlayer(){ if (!currentCityKey||playerData.element.style.display==='none'){addMessage("Cannot add agent: No city loaded or player position unknown.", "SYSTEM", "error"); return;} const iN=prompt("Enter name for the new agent:","New Agent"); if (!iN||!iN.trim()) return; const ok=modifyCurrentCityDefinition(def=>{const id=`uNPC_${Date.now()}`; def.npcSpawns=def.npcSpawns||[]; def.npcSpawns.push({ spawnId: id, x: Math.round(playerData.x), y: Math.round(playerData.y), defaultName: iN.trim(), defaultPersona:`You are ${iN.trim()}.` }); }); if(ok){ addMessage(`Added definition for agent '${iN.trim()}'. Map reload needed to see the new agent.`,"SYSTEM","system"); savePlayerPosition(); saveNpcPositions(); closeSettingsModal(); if(confirm("Agent definition added. Reload map now?")) { setTimeout(() => window.location.reload(), 300); } else { addMessage("Remember to reload the map later to see the new agent.", "SYSTEM", "info"); if(settingsOverlay.classList.contains('active')) populateSettingsModal(); } } }
     function handleDeleteNpcFromSettings(event, npcIdToDelete = null) { if (!currentCityKey) { addMessage("Cannot remove agent: No city loaded.", "SYSTEM", "error"); return; } const id=npcIdToDelete !== null ? npcIdToDelete : parseInt(event?.target?.dataset?.npcId, 10); if (isNaN(id)) { console.error("Invalid NPC ID for deletion"); return; } const n=npcData.find(n => n.id === id); const nN=n?n.name:`Agent ${id+1}`; if (!confirm(`Remove agent "${nN}" (ID:${id}) from the city definition? This is irreversible.`)) return; let dM=false; const ok=modifyCurrentCityDefinition(def => { const iL=def.npcSpawns?.length||0; const sId=n?n.spawnId:null; if(sId){ def.npcSpawns=def.npcSpawns?.filter(s => s.spawnId !== sId)||[]; } else { console.warn("Cannot remove NPC definition reliably without a unique spawnId."); } dM=(def.npcSpawns?.length||0)<iL; }); if (ok&&dM) { localStorage.removeItem(LS_KEYS.npcName(currentCityKey,id)); localStorage.removeItem(LS_KEYS.npcPersona(currentCityKey,id)); localStorage.removeItem(LS_KEYS.npcAppearance(currentCityKey,id)); localStorage.removeItem(LS_KEYS.npcPfp(currentCityKey,id)); localStorage.removeItem(LS_KEYS.npcPositionX(currentCityKey,id)); localStorage.removeItem(LS_KEYS.npcPositionY(currentCityKey,id)); const iR=npcData.findIndex(n => n.id === id); if (iR > -1) { if(npcData[iR].element) { npcData[iR].element.remove(); } npcData.splice(iR, 1); addMessage(`Removed agent from session: ${nN}. Definition updated.`, "SYSTEM", "system"); } else { addMessage(`Removed definition for: ${nN}. Was not currently in session.`, "SYSTEM", "system"); } updateInputPlaceholder(); updateSpatialChatModuleState(); if(settingsOverlay.classList.contains('active')) populateSettingsModal(); } else { if(!ok) addMessage(`Failed to save definition changes while removing ${nN}.`, "SYSTEM", "error"); else if (!dM) addMessage(`Failed to remove ${nN}: Definition not found or couldn't be removed.`, "SYSTEM", "warn"); } }
@@ -745,9 +1105,7 @@ function runSimulation() {
 
      // --- Spatial Chat Update Function (Unchanged) ---
      function updateSpatialChatModuleState() {
-         // Ensure SpatialChat is loaded before calling its functions
          if (typeof SpatialChat === 'undefined' || !SpatialChat.updateState) {
-             // console.warn("SpatialChat not ready for state update."); // Optional warning
              return;
          }
          if (!currentCityKey) {
@@ -774,13 +1132,13 @@ function runSimulation() {
          SpatialChat.updateState(currentPlayerState, currentNpcs, currentCities, currentDisplay);
     }
 
-    // --- Tab Switching Logic (MODIFIED - Ensure it handles the correct scopes/IDs) ---
+    // --- Tab Switching Logic (MODIFIED - No General, default spatial scope to Area) ---
     function setActiveTab(clickedButton) {
          allChatTabs.forEach(btn => btn.classList.remove('active-tab'));
          clickedButton.classList.add('active-tab');
 
          const newMode = clickedButton.dataset.mode;
-         const newScope = clickedButton.dataset.scope; // Only for spatial tabs ('Area', 'City', 'World', maybe 'Local' if you add it)
+         const newScope = clickedButton.dataset.scope; // Only for spatial tabs
 
          const previousMode = currentChatDisplayMode;
 
@@ -790,8 +1148,8 @@ function runSimulation() {
          chatMessages.innerHTML = '';
 
          if (newMode === 'spatial') {
-             // Default to 'Area' or your first spatial tab if scope is missing/invalid
-             currentSpatialScope = newScope && ['Area', 'City', 'World'].includes(newScope) ? newScope : 'Area'; // Adjust valid scopes if needed
+             // Default to 'Area' if scope is missing or invalid (General removed)
+             currentSpatialScope = newScope && ['Area', 'City', 'World'].includes(newScope) ? newScope : 'Area';
              console.log(`Switching to Spatial Mode, Scope: ${currentSpatialScope}`);
              if (typeof SpatialChat !== 'undefined' && SpatialChat.start) {
                  SpatialChat.start();
@@ -821,7 +1179,7 @@ function runSimulation() {
              }
 
              renderConversationHistory();
-             enableInput(); // Re-enable based on whether API is waiting
+             enableInput();
              userInput.focus(); // Set focus for direct modes
          }
 
@@ -830,7 +1188,6 @@ function runSimulation() {
 
      // --- Display Spatial Chat Function (Unchanged) ---
     function displaySpatialChat(scope) {
-         // Ensure SpatialChat is loaded
          if (typeof SpatialChat === 'undefined' || !SpatialChat.getMessagesForScope) {
             chatMessages.innerHTML = '<p style="color:red; text-align:center; padding: 20px;">Error: SpatialChat module not loaded or incomplete.</p>';
             return;
@@ -840,22 +1197,17 @@ function runSimulation() {
          renderSpatialChatMessages(messages);
     }
 
-    // --- Initialization (MODIFIED - Call SpatialChat.init correctly) ---
+    // --- Initialization (MODIFIED - Removed General references, changed default spatial scope) ---
     function initializeSimulation(cityKey) {
         console.log(`Initializing simulation for city: ${cityKey}`);
         if(npcFollowInterval) clearInterval(npcFollowInterval);
         if(spatialChatUpdateIntervalId) clearInterval(spatialChatUpdateIntervalId);
         if(spatialChatRenderIntervalId) clearInterval(spatialChatRenderIntervalId);
 
-         // Check required variables/modules are loaded
-         if (typeof PROVIDERS === 'undefined' || typeof SpatialChat === 'undefined' || typeof marked === 'undefined') {
-             const missing = [
-                 (typeof PROVIDERS === 'undefined' ? "api_providers.js" : ""),
-                 (typeof SpatialChat === 'undefined' ? "spatial_chat.js" : ""),
-                 (typeof marked === 'undefined' ? "Marked library" : "")
-             ].filter(Boolean).join(", ");
-             document.body.innerHTML = `<div style="padding: 20px; font-family: Georgia, serif; color: #8b0000; background: #f5e7d0; border: 2px solid #3a3129;">FATAL ERROR: Script(s) failed to load: ${missing}. Check file paths and browser console.</div>`;
-             console.error(`FATAL: Required script(s) not loaded: ${missing}`); return;
+         if (typeof PROVIDERS === 'undefined' || typeof SpatialChat === 'undefined') {
+             const errorMsg = typeof PROVIDERS === 'undefined' ? "api_providers.js" : "spatial_chat.js";
+             document.body.innerHTML = `<div style="padding: 20px; font-family: Georgia, serif; color: #8b0000; background: #f5e7d0; border: 2px solid #3a3129;">FATAL ERROR: Script ${errorMsg} failed to load. Check file existence and browser console.</div>`;
+             console.error(`FATAL: ${errorMsg} not loaded.`); return;
          }
          loadApiKeyManagement();
          loadConversationHistory();
@@ -889,9 +1241,9 @@ function runSimulation() {
         MAP_WIDTH=cityDefinition.map?.width??2000; MAP_HEIGHT=cityDefinition.map?.height??1500;
         mapContent.style.width=`${MAP_WIDTH}px`; mapContent.style.height=`${MAP_HEIGHT}px`;
 
-         // Default spatial scope depends on your first spatial tab
-         currentSpatialScope = 'Area'; // Or 'Local' if that's your first one
-         // Load saved mode or default
+         // Default spatial scope is now 'Area'
+         currentSpatialScope = 'Area';
+         // Load saved mode or default to 'agent' (which is now 2nd tab)
          currentChatDisplayMode = localStorage.getItem(LS_KEYS.currentChatDisplayMode) || 'agent';
 
         hideSystemMessages=localStorage.getItem(LS_KEYS.hideSystemMessages)==='true';
@@ -923,34 +1275,36 @@ function runSimulation() {
         currentAiNpcData = null; // Let setActiveTab handle this
 
          // --- Initialize SpatialChat Module ---
-         // This assumes SpatialChat is now globally available via spatial_chat.js
-         const initialPlayerState = { x: playerData.x, y: playerData.y, currentCity: currentCityKey, currentArea: findCurrentAreaName(playerData.x, playerData.y, environmentData), name: playerData.name };
-         const initialNpcs = npcData.map(npc => ({
-             id: npc.id, name: npc.name, x: npc.x, y: npc.y,
-             personality: npc.personaPrompt || `You are ${npc.name}.`,
-             currentCity: currentCityKey,
-             currentArea: findCurrentAreaName(npc.x, npc.y, environmentData)
-         }));
-         const initialCities = {};
-         if (currentCityKey) {
-             initialCities[currentCityKey] = { /* areas: {} */ };
+         if (typeof SpatialChat !== 'undefined' && SpatialChat.init) {
+             const initialPlayerState = { x: playerData.x, y: playerData.y, currentCity: currentCityKey, currentArea: findCurrentAreaName(playerData.x, playerData.y, environmentData), name: playerData.name };
+             const initialNpcs = npcData.map(npc => ({
+                 id: npc.id, name: npc.name, x: npc.x, y: npc.y,
+                 personality: npc.personaPrompt || `You are ${npc.name}.`,
+                 currentCity: currentCityKey,
+                 currentArea: findCurrentAreaName(npc.x, npc.y, environmentData)
+             }));
+             const initialCities = {};
+             if (currentCityKey) {
+                 initialCities[currentCityKey] = { /* areas: {} */ };
+             }
+             // Initialize without generalChatRange
+             SpatialChat.init( { debugLogging: false }, { player: initialPlayerState, npcs: initialNpcs, cities: initialCities } );
+         } else {
+             console.error("SpatialChat module is not loaded or init function is missing!");
+             addMessage("Error: Spatial Chat features are unavailable.", "SYSTEM", "error");
          }
-         // Initialize with appropriate config (e.g., debug setting)
-         SpatialChat.init( { debugLogging: false }, { player: initialPlayerState, npcs: initialNpcs, cities: initialCities } );
-
 
          // --- Set Initial Tab ---
-         const savedMode = localStorage.getItem(LS_KEYS.currentChatDisplayMode) || 'agent'; // Default to agent
+         const savedMode = localStorage.getItem(LS_KEYS.currentChatDisplayMode) || 'agent'; // Default to agent (2nd tab now)
+         // Selector now uses 'message' for the first tab (Chat)
          let initialTabSelector = `#chat-tabs-container button[data-mode="${savedMode}"]`;
-         // If saved mode was 'spatial', default spatial view based on your first spatial tab's ID
+         // If saved mode was 'spatial', default spatial view to 'Area' (first spatial tab)
          if (savedMode === 'spatial') {
-             // *** IMPORTANT: Update this ID to match your first spatial tab (e.g., '#area-tab' or '#local-tab') ***
              initialTabSelector = '#area-tab';
          }
          let initialTabButton = document.querySelector(initialTabSelector);
-         // Fallback: Try specific IDs, then first button
+         // Fallback: Try Chat, then Agent, then Area, then first button
          if (!initialTabButton) {
-            // *** IMPORTANT: Update these fallback IDs to match your actual tab IDs ***
             initialTabButton = document.getElementById('chat-tab') || document.getElementById('agent-tab') || document.getElementById('area-tab') || allChatTabs[0];
          }
          setActiveTab(initialTabButton);
@@ -975,7 +1329,7 @@ function runSimulation() {
         if(npcFollowInterval) clearInterval(npcFollowInterval);
         if(spatialChatUpdateIntervalId) clearInterval(spatialChatUpdateIntervalId);
         if(spatialChatRenderIntervalId) clearInterval(spatialChatRenderIntervalId);
-        if (typeof SpatialChat !== 'undefined' && SpatialChat.stop) SpatialChat.stop(); // Ensure SpatialChat is stopped
+        if (typeof SpatialChat !== 'undefined' && SpatialChat.stop) SpatialChat.stop();
 
         currentCityKey=null; chatMessages.innerHTML=''; mapContent.innerHTML=''; mapContent.appendChild(playerElement);
         playerElement.style.display='none'; playerData.x=undefined; playerData.y=undefined;
@@ -1001,7 +1355,6 @@ function runSimulation() {
          const savedTabsVisibility = localStorage.getItem(LS_KEYS.chatTabsVisible);
          setChatTabsVisibility(savedTabsVisibility === null || savedTabsVisibility === 'true');
 
-         // Minimal SpatialChat init for no-city state
          if (typeof SpatialChat !== 'undefined' && SpatialChat.init) {
             SpatialChat.init({}, { player: { name: playerData.name || 'Player', currentCity: null }, npcs: [], cities: {} });
             SpatialChat.stop();
@@ -1012,8 +1365,7 @@ function runSimulation() {
          // Default to Chat ('message') mode when no city exists
          currentChatDisplayMode = 'message';
          currentAiNpcData = { name: "Spirit", personaPrompt: "You are a helpful, disembodied spirit.", pfp: DEFAULT_NPC_PFP };
-         // *** IMPORTANT: Update this ID to match your 'Chat' tab ID ***
-         setActiveTab(document.getElementById('chat-tab'));
+         setActiveTab(document.getElementById('chat-tab')); // Use the new ID
 
         chatTabsContainer.classList.add('hidden');
         openSettingsModal();
@@ -1051,13 +1403,11 @@ function runSimulation() {
              switch (action) {
                  case 'talk': // Switch to CHAT ('message') mode
                      currentAiNpcData = targetNpc;
-                     // *** IMPORTANT: Update this ID to match your 'Chat' tab ID ***
-                     setActiveTab(document.getElementById('chat-tab'));
+                     setActiveTab(document.getElementById('chat-tab')); // Use new ID
                      addMessage(`Switched to Chat Mode with ${targetNpc.name}.`, 'SYSTEM', 'system');
                      break;
                  case 'command': // Switch to AGENT mode
                      currentAiNpcData = targetNpc;
-                     // *** IMPORTANT: Update this ID to match your 'Agent' tab ID ***
                      setActiveTab(document.getElementById('agent-tab'));
                      addMessage(`Switched to Agent Mode with ${targetNpc.name}.`, 'SYSTEM', 'system');
                      break;
@@ -1095,19 +1445,11 @@ function runSimulation() {
 
 } // End runSimulation
 
-// Add the DOMContentLoaded listener to ensure the simulation runs after the DOM is ready
 document.addEventListener('DOMContentLoaded', runSimulation);
 
-// ------------ End of ai-world.js ------------
 ```
 
-**2. Modify your main HTML file (e.g., `index.html`):**
-
-Take your original HTML file and make the following changes:
-
-*   **Remove** the entire first `<script>` block that *contained* the embedded `SpatialChat` code (lines 701 to 936).
-*   **Remove** the entire *content* of the second `<script>` block (lines 940 to 1846). Keep the opening and closing `<script>` tags (lines 939 and 1847).
-*   Add `<script>` tags near the *end* of the `<body>` to load the necessary JavaScript files *in the correct order*.
+**2. `index.html`**
 
 ```html
 <!DOCTYPE html>
@@ -1116,8 +1458,6 @@ Take your original HTML file and make the following changes:
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Agent Sim - Arcane Tome UI</title>
-    <!-- External Libraries/Fonts -->
-    <!-- Load Marked library EARLY -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1154,13 +1494,340 @@ Take your original HTML file and make the following changes:
         .character .part.arm-left { z-index: 6; transform-origin: 2px 1px; } .character .part.arm-right { z-index: 6; transform-origin: 1px 1px; }
         .character .part.detail1 { z-index: 7; } .character .part.detail2 { z-index: 11; } .character .part.detail3 { z-index: 3; }
         .character .part.detail4 { z-index: 12; border: none; } .character .part.detail5 { z-index: 12; border: none; }
-        /* ... All other CSS rules (lines 39 to 574) remain here ... */
-        .api-key-item span { max-width: 60%; }
+        .character.gender-male .part.head { top: 1px; left: 7px; width: 10px; height: 9px; border-radius: 2px 2px 0 0; }
+        .character.gender-male .part.detail2 { display: block; top: 0px; left: 5px; width: 14px; height: 6px; border-radius: 3px 3px 1px 1px; border: 1px solid var(--default-outline); }
+        .character.gender-male .part.detail3 { display: block; top: 5px; left: 6px; width: 12px; height: 6px; border-radius: 0 0 2px 2px; border: 1px solid var(--default-outline); }
+        .character.gender-male.outfit-citizen .part.head, .character.gender-male.outfit-citizen .part.torso, .character.gender-male.outfit-citizen .part.legs, .character.gender-male.outfit-citizen .part.detail2, .character.gender-male.outfit-citizen .part.detail3, .character.gender-male.outfit-citizen .part.arm-left, .character.gender-male.outfit-citizen .part.arm-right { display: block; }
+        .character.gender-male.outfit-citizen .part.torso { top: 9px; left: 5px; width: 14px; height: 12px; border-top-width: 2px; border-bottom: none;}
+        .character.gender-male.outfit-citizen .part.legs { top: 21px; left: 6px; width: 12px; height: 9px; border-bottom-width: 3px; border-top: none; }
+        .character.gender-male.outfit-citizen .part.arm-left { top: 10px; left: 2px; width: 3px; height: 10px; border-radius: 1px; }
+        .character.gender-male.outfit-citizen .part.arm-right { top: 10px; left: 19px; width: 3px; height: 10px; border-radius: 1px; }
+        .character.gender-male.outfit-mage .part.head, .character.gender-male.outfit-mage .part.torso, .character.gender-male.outfit-mage .part.legs, .character.gender-male.outfit-mage .part.detail1, .character.gender-male.outfit-mage .part.detail4, .character.gender-male.outfit-mage .part.arm-left, .character.gender-male.outfit-mage .part.arm-right { display: block; }
+        .character.gender-male.outfit-mage .part.detail2, .character.gender-male.outfit-mage .part.detail3 { display: none; }
+        .character.gender-male.outfit-mage .part.detail4 { top: -4px; left: 4px; width: 16px; height: 10px; border-radius: 50% 50% 0 0 / 40% 40% 0 0; border: 1px solid var(--default-outline); border-bottom: none; clip-path: polygon(50% 0%, 100% 100%, 0% 100%); }
+        .character.gender-male.outfit-mage .part.torso { top: 9px; left: 4px; width: 16px; height: 18px; }
+        .character.gender-male.outfit-mage .part.legs { top: 27px; left: 6px; width: 12px; height: 6px; border-bottom-width: 3px; border-top: none; }
+        .character.gender-male.outfit-mage .part.detail1 { top: 18px; left: 4px; width: 16px; height: 3px; }
+        .character.gender-male.outfit-mage .part.arm-left { top: 11px; left: 1px; width: 4px; height: 10px; }
+        .character.gender-male.outfit-mage .part.arm-right { top: 11px; left: 19px; width: 4px; height: 10px; }
+        .character.gender-male.outfit-warrior .part.head, .character.gender-male.outfit-warrior .part.torso, .character.gender-male.outfit-warrior .part.legs, .character.gender-male.outfit-warrior .part.detail1, .character.gender-male.outfit-warrior .part.detail2, .character.gender-male.outfit-warrior .part.detail3, .character.gender-male.outfit-warrior .part.detail4, .character.gender-male.outfit-warrior .part.detail5, .character.gender-male.outfit-warrior .part.arm-left, .character.gender-male.outfit-warrior .part.arm-right { display: block; }
+        .character.gender-male.outfit-warrior .part.detail4 { top: 0px; left: 1px; width: 7px; height: 10px; border-radius: 3px 0 0 0; border-width: 1px; border-style: outset; }
+        .character.gender-male.outfit-warrior .part.detail5 { top: 0px; left: 16px; width: 7px; height: 10px; border-radius: 0 3px 0 0; border-width: 1px; border-style: outset; }
+        .character.gender-male.outfit-warrior .part.head { border-radius: 1px; }
+        .character.gender-male.outfit-warrior .part.torso { top: 9px; left: 4px; width: 16px; height: 13px; border-width: 2px; border-style: outset; }
+        .character.gender-male.outfit-warrior .part.legs { top: 22px; left: 5px; width: 14px; height: 8px; border-bottom-width: 4px; border-style: outset; border-top: none;}
+        .character.gender-male.outfit-warrior .part.detail1 { top: 18px; left: 4px; width: 16px; height: 4px; }
+        .character.gender-male.outfit-warrior .part.arm-left { top: 11px; left: 1px; width: 4px; height: 10px; }
+        .character.gender-male.outfit-warrior .part.arm-right { top: 11px; left: 19px; width: 4px; height: 10px; }
+        .character.gender-male.outfit-scifi .part.head, .character.gender-male.outfit-scifi .part.torso, .character.gender-male.outfit-scifi .part.legs, .character.gender-male.outfit-scifi .part.detail1, .character.gender-male.outfit-scifi .part.detail2, .character.gender-male.outfit-scifi .part.detail3, .character.gender-male.outfit-scifi .part.arm-left, .character.gender-male.outfit-scifi .part.arm-right { display: block; }
+        .character.gender-male.outfit-scifi .part.head { top: 1px; left: 7px; width: 10px; height: 9px; border-radius: 2px; }
+        .character.gender-male.outfit-scifi .part.torso { top: 9px; left: 5px; width: 14px; height: 13px; border-style: solid; border-width: 1px 2px;}
+        .character.gender-male.outfit-scifi .part.legs { top: 22px; left: 6px; width: 12px; height: 9px; border-bottom-width: 3px; border-style: solid; border-width: 1px 2px;}
+        .character.gender-male.outfit-scifi .part.detail1 { top: 11px; left: 8px; width: 8px; height: 5px; border-radius: 1px; z-index: 7; }
+        .character.gender-male.outfit-scifi .part.arm-left { top: 10px; left: 2px; width: 4px; height: 11px; border-radius: 1px;}
+        .character.gender-male.outfit-scifi .part.arm-right { top: 10px; left: 18px; width: 4px; height: 11px; border-radius: 1px;}
+        .character.gender-male.outfit-ranger .part.head, .character.gender-male.outfit-ranger .part.torso, .character.gender-male.outfit-ranger .part.legs, .character.gender-male.outfit-ranger .part.detail1, .character.gender-male.outfit-ranger .part.detail2, .character.gender-male.outfit-ranger .part.detail3, .character.gender-male.outfit-ranger .part.arm-left, .character.gender-male.outfit-ranger .part.arm-right { display: block; }
+        .character.gender-male.outfit-ranger .part.torso { top: 9px; left: 5px; width: 14px; height: 13px; }
+        .character.gender-male.outfit-ranger .part.legs { top: 22px; left: 6px; width: 12px; height: 9px; border-bottom-width: 3px; }
+        .character.gender-male.outfit-ranger .part.detail1 { top: 18px; left: 5px; width: 14px; height: 4px; }
+        .character.gender-male.outfit-ranger .part.arm-left { top: 10px; left: 2px; width: 4px; height: 11px; }
+        .character.gender-male.outfit-ranger .part.arm-right { top: 10px; left: 18px; width: 4px; height: 11px; }
+        .character.gender-male.outfit-kimono .part.head, .character.gender-male.outfit-kimono .part.torso, .character.gender-male.outfit-kimono .part.legs, .character.gender-male.outfit-kimono .part.detail1, .character.gender-male.outfit-kimono .part.detail2, .character.gender-male.outfit-kimono .part.detail3, .character.gender-male.outfit-kimono .part.arm-left, .character.gender-male.outfit-kimono .part.arm-right { display: block; }
+        .character.gender-male.outfit-kimono .part.torso { top: 9px; left: 4px; width: 16px; height: 18px; border-radius: 1px; border-right-width: 2px; border-left-width: 2px;}
+        .character.gender-male.outfit-kimono .part.legs { top: 27px; left: 6px; width: 12px; height: 6px; border-bottom-width: 3px; border-top: none; }
+        .character.gender-male.outfit-kimono .part.detail1 { top: 16px; left: 4px; width: 16px; height: 5px; z-index: 7; }
+        .character.gender-male.outfit-kimono .part.arm-left { top: 10px; left: 0px; width: 6px; height: 15px; border-radius: 0 0 2px 2px; }
+        .character.gender-male.outfit-kimono .part.arm-right { top: 10px; left: 18px; width: 6px; height: 15px; border-radius: 0 0 2px 2px; }
+        .character.gender-female .part.head { width: 12px; height: 11px; left: 6px; top: 1px; border-radius: 40% 40% 35% 35%; }
+        .character.gender-female .part.detail3 { display: block; top: 4px; left: 4px; width: 16px; height: 20px; border-radius: 0 0 10px 10px; border: none; }
+        .character.gender-female .part.detail2 { display: block; top: 1px; left: 5px; width: 14px; height: 8px; border-radius: 5px 5px 2px 2px; border: none; border-bottom: 1px solid #111;}
+        .character.gender-female.outfit-citizen .part.head, .character.gender-female.outfit-citizen .part.torso, .character.gender-female.outfit-citizen .part.legs, .character.gender-female.outfit-citizen .part.detail1, .character.gender-female.outfit-citizen .part.detail2, .character.gender-female.outfit-citizen .part.detail3, .character.gender-female.outfit-citizen .part.arm-left, .character.gender-female.outfit-citizen .part.arm-right { display: block; }
+        .character.gender-female.outfit-citizen .part.torso { top: 10px; left: 7px; width: 10px; height: 11px; border-radius: 2px; }
+        .character.gender-female.outfit-citizen .part.detail1 { top: 18px; left: 6px; width: 12px; height: 3px; border-radius: 1px; }
+        .character.gender-female.outfit-citizen .part.legs { top: 21px; left: 5px; width: 14px; height: 10px; border-bottom-width: 3px; border-top: none; border-radius: 0 0 5px 5px; }
+        .character.gender-female.outfit-citizen .part.arm-left { top: 11px; left: 4px; width: 3px; height: 6px; border-radius: 1px; }
+        .character.gender-female.outfit-citizen .part.arm-right { top: 11px; left: 17px; width: 3px; height: 6px; border-radius: 1px; }
+        .character.gender-female.outfit-mage .part.head, .character.gender-female.outfit-mage .part.torso, .character.gender-female.outfit-mage .part.legs, .character.gender-female.outfit-mage .part.detail1, .character.gender-female.outfit-mage .part.detail2, .character.gender-female.outfit-mage .part.detail3, .character.gender-female.outfit-mage .part.arm-left, .character.gender-female.outfit-mage .part.arm-right { display: block; }
+        .character.gender-female.outfit-mage .part.head { top: 2px; }
+        .character.gender-female.outfit-mage .part.detail2 { top: 1px; left: 4px; width: 16px; height: 9px; border-radius: 6px 6px 3px 3px; }
+        .character.gender-female.outfit-mage .part.detail3 { top: 5px; left: 4px; width: 16px; height: 22px; border-radius: 0 0 10px 10px;}
+        .character.gender-female.outfit-mage .part.torso { top: 11px; left: 5px; width: 14px; height: 18px; border-radius: 2px; }
+        .character.gender-female.outfit-mage .part.detail1 { top: 14px; left: 9px; width: 6px; height: 4px; border-radius: 50%; z-index: 7; }
+        .character.gender-female.outfit-mage .part.legs { top: 29px; left: 6px; width: 12px; height: 5px; border-bottom-width: 2px; border-top: none; border-radius: 0 0 3px 3px;}
+        .character.gender-female.outfit-mage .part.arm-left { top: 12px; left: 1px; width: 5px; height: 15px; border-radius: 0 0 3px 3px; }
+        .character.gender-female.outfit-mage .part.arm-right { top: 12px; left: 18px; width: 5px; height: 15px; border-radius: 0 0 3px 3px; }
+        .character.gender-female.outfit-warrior .part.head, .character.gender-female.outfit-warrior .part.torso, .character.gender-female.outfit-warrior .part.legs, .character.gender-female.outfit-warrior .part.detail1, .character.gender-female.outfit-warrior .part.detail2, .character.gender-female.outfit-warrior .part.detail3, .character.gender-female.outfit-warrior .part.arm-left, .character.gender-female.outfit-warrior .part.arm-right { display: block; }
+        .character.gender-female.outfit-warrior .part.torso { top: 10px; left: 6px; width: 12px; height: 11px; border-radius: 3px 3px 1px 1px; border-style: solid; border-width: 1px; }
+        .character.gender-female.outfit-warrior .part.detail1 { top: 20px; left: 4px; width: 16px; height: 7px; border-radius: 0 0 4px 4px; border-style: outset; }
+        .character.gender-female.outfit-warrior .part.legs { top: 27px; left: 7px; width: 10px; height: 6px; border-bottom-width: 3px; border-top: none; }
+        .character.gender-female.outfit-warrior .part.arm-left { top: 11px; left: 3px; width: 3px; height: 9px; border-radius: 1px; border-style: outset; border-width: 1px; }
+        .character.gender-female.outfit-warrior .part.arm-right { top: 11px; left: 18px; width: 3px; height: 9px; border-radius: 1px; border-style: outset; border-width: 1px; }
+        .character.gender-female.outfit-warrior .part.detail2 { top: 1px; height: 7px; left: 4px; width: 16px;}
+        .character.gender-female.outfit-warrior .part.detail3 { height: 22px;}
+        .character.gender-female.outfit-scifi .part.head, .character.gender-female.outfit-scifi .part.torso, .character.gender-female.outfit-scifi .part.legs, .character.gender-female.outfit-scifi .part.detail1, .character.gender-female.outfit-scifi .part.detail2, .character.gender-female.outfit-scifi .part.detail3, .character.gender-female.outfit-scifi .part.arm-left, .character.gender-female.outfit-scifi .part.arm-right { display: block; }
+        .character.gender-female.outfit-scifi .part.torso { top: 10px; left: 6px; width: 12px; height: 12px; border-style: solid; border-width: 1px; border-radius: 2px; }
+        .character.gender-female.outfit-scifi .part.legs { top: 22px; left: 7px; width: 10px; height: 9px; border-bottom-width: 3px; border-style: solid; border-width: 1px; }
+        .character.gender-female.outfit-scifi .part.detail1 { top: 11px; left: 9px; width: 6px; height: 4px; border-radius: 1px; z-index: 7;}
+        .character.gender-female.outfit-scifi .part.arm-left { top: 11px; left: 3px; width: 3px; height: 11px; border-radius: 1px; }
+        .character.gender-female.outfit-scifi .part.arm-right { top: 11px; left: 18px; width: 3px; height: 11px; border-radius: 1px; }
+        .character.gender-female.outfit-ranger .part.head, .character.gender-female.outfit-ranger .part.torso, .character.gender-female.outfit-ranger .part.legs, .character.gender-female.outfit-ranger .part.detail1, .character.gender-female.outfit-ranger .part.detail2, .character.gender-female.outfit-ranger .part.detail3, .character.gender-female.outfit-ranger .part.arm-left, .character.gender-female.outfit-ranger .part.arm-right { display: block; }
+        .character.gender-female.outfit-ranger .part.torso { top: 10px; left: 6px; width: 12px; height: 13px; border-radius: 1px; }
+        .character.gender-female.outfit-ranger .part.legs { top: 23px; left: 7px; width: 10px; height: 8px; border-bottom-width: 3px;}
+        .character.gender-female.outfit-ranger .part.detail1 { top: 19px; left: 6px; width: 12px; height: 4px; z-index: 7;}
+        .character.gender-female.outfit-ranger .part.arm-left { top: 11px; left: 3px; width: 3px; height: 11px; }
+        .character.gender-female.outfit-ranger .part.arm-right { top: 11px; left: 18px; width: 3px; height: 11px; }
+        .character.gender-female.outfit-kimono .part.head, .character.gender-female.outfit-kimono .part.torso, .character.gender-female.outfit-kimono .part.legs, .character.gender-female.outfit-kimono .part.detail1, .character.gender-female.outfit-kimono .part.detail2, .character.gender-female.outfit-kimono .part.detail3, .character.gender-female.outfit-kimono .part.arm-left, .character.gender-female.outfit-kimono .part.arm-right { display: block; }
+        .character.gender-female.outfit-kimono .part.torso { top: 10px; left: 4px; width: 16px; height: 17px; border-radius: 1px; border-right-width: 2px; border-left-width: 2px; border-style: solid;}
+        .character.gender-female.outfit-kimono .part.legs { top: 27px; left: 7px; width: 10px; height: 7px; border-bottom-width: 2px; border-top: none;}
+        .character.gender-female.outfit-kimono .part.detail1 { top: 17px; left: 4px; width: 16px; height: 7px; border-radius: 1px;}
+        .character.gender-female.outfit-kimono .part.arm-left { top: 11px; left: 0px; width: 6px; height: 18px; border-radius: 0 0 6px 2px; }
+        .character.gender-female.outfit-kimono .part.arm-right { top: 11px; left: 18px; width: 6px; height: 18px; border-radius: 0 0 2px 6px; }
+        @keyframes playerBobbing { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
+        @keyframes playerWalkArmLeft { 0%, 100% { transform: rotate(-10deg) translateX(0px); } 50% { transform: rotate(8deg) translateX(0px); } }
+        @keyframes playerWalkArmRight { 0%, 100% { transform: rotate(8deg) translateX(0px); } 50% { transform: rotate(-10deg) translateX(0px); } }
+        @keyframes playerWalkLegs { 0%, 100% { transform: translateX(0px); } 50% { transform: translateX(-0.5px); } }
+        #player.is-walking { animation: playerBobbing 0.5s infinite ease-in-out; }
+        #player.is-walking .part.arm-left { animation: playerWalkArmLeft 0.5s infinite ease-in-out; }
+        #player.is-walking .part.arm-right { animation: playerWalkArmRight 0.5s infinite ease-in-out; }
+        #player.is-walking .part.legs { animation: playerWalkLegs 0.5s infinite ease-in-out; }
+        .character .character-name-plate { position: absolute; bottom: calc(100% + 10px); left: 50%; transform: translateX(-50%); background-color: rgba(0, 0, 0, 0.7); color: #fff; padding: 1px 5px; border-radius: 3px; font-size: 10px; font-weight: bold; white-space: nowrap; text-shadow: 1px 1px 1px #000; z-index: 11; border: 1px solid rgba(255, 255, 255, 0.2); pointer-events: none; user-select: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; }
+        .character .speech { display: none; }
+
+        /* --- Environment Zones --- */
+        .environment-zone { position: absolute; border: 2px dashed rgba(58, 49, 41, 0.5); background-color: rgba(58, 49, 41, 0.08); border-radius: 8px; display: flex; justify-content: center; align-items: flex-start; padding-top: 8px; pointer-events: none; box-sizing: border-box; z-index: 1; color: var(--ink-light); font-size: 14px; font-weight: bold; text-shadow: 1px 1px 2px rgba(0,0,0,0.2); }
+        .environment-name-plate { background-color: rgba(58, 49, 41, 0.6); color: var(--parchment); padding: 3px 8px; border-radius: 4px; white-space: nowrap; border: 1px solid rgba(245, 231, 208, 0.3); }
+
+        /* --- Chat Area & Messages --- */
+        #chat-area { flex-basis: 300px; min-height: var(--chat-min-height); display: flex; flex-direction: column; background: var(--parchment-dark); flex-shrink: 0; position: relative; border-top: 2px solid var(--ink-light); transition: flex-basis 0.3s ease-out; }
+        /* --- Chat Tabs --- */
+        #chat-tabs-container {
+            display: flex; padding: 5px 15px; gap: 8px; background-color: var(--parchment-dark);
+            border-bottom: 1px solid var(--ink-light); flex-shrink: 0;
+            transition: max-height 0.3s ease, padding 0.3s ease, opacity 0.3s ease, border 0.3s ease;
+            max-height: 100px; overflow: hidden; opacity: 1; flex-wrap: wrap;
+        }
+        #chat-tabs-container.hidden { max-height: 0; padding-top: 0; padding-bottom: 0; opacity: 0; border-bottom: none; pointer-events: none; }
+        #chat-tabs-container button {
+            background-color: var(--parchment); border: 1px solid var(--ink-light); border-radius: 6px; padding: 5px 12px;
+            color: var(--ink); font-size: 0.95rem; cursor: pointer; transition: background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
+            font-family: Georgia, serif; flex-shrink: 0;
+        }
+        #chat-tabs-container button:hover { background-color: var(--parchment-dark); box-shadow: 0 0 5px rgba(0,0,0,0.1); }
+        #chat-tabs-container button.active-tab { background-color: var(--gold); color: var(--ink); border-color: var(--gold); box-shadow: inset 0 1px 3px rgba(0,0,0,0.2); }
+        /* Apply Tibia font to renamed Chat tab and others (REMOVED #general-tab rule, changed #message-tab to #chat-tab) */
+        #chat-tabs-container button#area-tab,
+        #chat-tabs-container button#city-tab,
+        #chat-tabs-container button#world-tab,
+        #chat-tabs-container button#chat-tab, /* <-- RENAMED */
+        #chat-tabs-container button#agent-tab {
+            font-family: var(--tibia-like-font);
+            text-transform: uppercase;
+            font-size: 0.85rem;
+        }
+        /* --- End Chat Tabs --- */
+        .chat-messages { flex: 1; padding: 25px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--ink-light) var(--parchment-dark); display: flex; flex-direction: column; gap: 10px; background-color: var(--parchment); }
+        .chat-messages::-webkit-scrollbar { width: 8px; } .chat-messages::-webkit-scrollbar-track { background: var(--parchment-dark); } .chat-messages::-webkit-scrollbar-thumb { background-color: var(--ink-light); border-radius: 4px; }
+        .message { display: flex; gap: 15px; max-width: 85%; animation: appear 0.8s ease-out; margin-bottom: 10px; }
+        .message-user { align-self: flex-end; flex-direction: row-reverse; } .message-spirit { align-self: flex-start; }
+        .message-system, .message-debug { align-self: flex-start; opacity: 0.8; font-size: 0.9em;}
+        .message-system .message-content, .message-debug .message-content { background-color: var(--parchment-dark); border: 1px dashed var(--ink-light); }
+        /* Style for spatial chat messages (plain text) */
+        .spatial-message { font-family: monospace; font-size: 1rem; color: var(--ink); white-space: pre-wrap; line-height: 1.4; padding: 2px 0; border-bottom: 1px dotted var(--ink-light); }
+        .spatial-message:last-child { border-bottom: none; }
+        .avatar { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; flex-shrink: 0; border: 2px solid var(--parchment-dark); box-shadow: var(--shadow); display: flex; align-items: center; justify-content: center; font-family: 'Cinzel Decorative', cursive; font-size: 1.5rem; transition: var(--fade); color: white; cursor: pointer; }
+        .user-avatar { background-color: var(--sapphire); } .spirit-avatar { background-color: var(--amethyst); }
+        .system-avatar, .debug-avatar { background-color: var(--ink-light); font-size: 1.2rem; }
+        .spirit-avatar:hover, .user-avatar:hover, .system-avatar:hover, .debug-avatar:hover { transform: scale(1.1); box-shadow: var(--glow); }
+        .message-content { padding: 18px 22px; border-radius: 8px; line-height: 1.6; position: relative; word-break: break-word; box-shadow: var(--shadow); max-width: 100%; font-size: 1.1rem; }
+        .message-content p { margin-bottom: 1em; } .message-content p:last-child { margin-bottom: 0; }
+        .message-content strong { font-weight: bold; color: var(--ink); } .message-content em { font-style: italic; }
+        .message-content ul, .message-content ol { margin-left: 1.5em; margin-bottom: 1em; } .message-content li { margin-bottom: 0.5em; }
+        .message-content code { font-family: monospace; background-color: rgba(0, 0, 0, 0.1); padding: 0.2em 0.4em; border-radius: 3px; }
+        .message-content pre { position: relative; background-color: rgba(0, 0, 0, 0.1); padding: 1em; border-radius: 5px; overflow-x: auto; margin-bottom: 1em; font-family: monospace; font-size: 0.95em; }
+        .copy-code-btn { position: absolute; top: 5px; right: 5px; background-color: var(--gold); color: var(--ink); border: none; border-radius: 3px; padding: 3px 8px; font-size: 0.8rem; cursor: pointer; opacity: 0; transition: opacity 0.3s ease; }
+        .message-content pre:hover .copy-code-btn { opacity: 1; } .copy-code-btn:hover { background-color: var(--crimson); color: white; }
+        .copy-code-btn.copied { background-color: var(--sapphire); color: white; }
+        .message-content blockquote { border-left: 3px solid var(--gold); padding-left: 1em; margin-left: 0; margin-bottom: 1em; color: var(--ink-light); }
+        .user-message { background-color: var(--sapphire); color: white; border-top-right-radius: 0; }
+        .spirit-message { background-color: white; color: var(--ink); border: 1px solid var(--ink-light); border-top-left-radius: 0; }
+        .system-message, .debug-message { background-color: var(--parchment-dark); color: var(--ink-light); border: 1px dashed var(--ink-light); border-top-left-radius: 0; font-style: italic; }
+        .system-message .message-name, .debug-message .message-name { font-weight: bold; margin-right: 5px; display: inline-block; }
+        .typing-indicator { display: inline-flex; align-items: center; gap: 8px; padding: 15px 20px; background-color: var(--parchment-dark); border-radius: 8px; box-shadow: var(--shadow); align-self: flex-start; color: var(--ink-light); font-style: italic; border: 1px dashed var(--ink-light); position: relative; overflow: hidden; font-size: 1rem; margin-left: 65px; }
+        .typing-indicator::after { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(201, 162, 39, 0.2), transparent); animation: shimmer 2s infinite; }
+        .rune { font-family: 'Cinzel Decorative', cursive; font-size: 1.2rem; animation: float 2s infinite ease-in-out; margin-left: 5px; }
+
+        /* --- Input Area --- */
+        .input-container { padding: 18px; background-color: var(--parchment-dark); border-top: none; display: flex; gap: 12px; align-items: flex-end; flex-shrink: 0; }
+        #userInput { flex: 1; padding: 18px; background-color: var(--parchment); border: 2px solid var(--ink-light); border-radius: 5px; font-family: inherit; font-size: 1.1rem; resize: none; outline: none; color: var(--ink); min-height: 60px; max-height: 200px; line-height: 1.5; overflow-y: auto; }
+        #userInput:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(201, 162, 39, 0.3); }
+        #userInput::placeholder { color: var(--ink-light); font-style: italic; }
+        #sendButton { background-color: var(--gold); color: var(--ink); border: none; border-radius: 5px; padding: 0 24px; height: 60px; font-family: 'Cinzel Decorative', cursive; font-weight: bold; cursor: pointer; transition: var(--fade); box-shadow: var(--shadow); display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 1.1rem; flex-shrink: 0; align-self: flex-end; }
+        #sendButton:hover:not(:disabled) { background-color: var(--crimson); color: white; }
+        #sendButton:disabled { opacity: 0.7; cursor: not-allowed; background-color: var(--ink-light); color: var(--parchment); }
+
+        /* --- Settings Modal (Paginated) --- */
+        /* ... (Modal styles remain unchanged) ... */
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center; z-index: 1000; opacity: 0; pointer-events: none; transition: var(--fade); }
+        .modal-overlay.active { opacity: 1; pointer-events: all; }
+        .modal-content {
+            background-color: var(--parchment); color: var(--ink); border-radius: 8px;
+            width: 90%; max-width: 800px; padding: 0;
+            box-shadow: var(--shadow); transform: translateY(20px); transition: var(--fade);
+            max-height: 85vh; display: flex; flex-direction: column;
+            border: 1px solid var(--ink-light); overflow: hidden;
+        }
+        .modal-overlay.active .modal-content { transform: translateY(0); }
+        .modal-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 0; border-bottom: 1px solid var(--ink-light);
+            padding: 20px 28px 15px 28px; flex-shrink: 0;
+        }
+        .modal-title { font-family: 'Cinzel Decorative', cursive; font-size: 1.5rem; color: var(--ink); }
+        .modal-close-btn { background: none; border: none; cursor: pointer; color: var(--ink-light); font-size: 1.8rem; line-height: 1; transition: var(--fade); }
+        .modal-close-btn:hover { color: var(--crimson); }
+        .modal-body {
+            flex-grow: 1; overflow: hidden; display: flex; flex-direction: column;
+            min-height: 300px; padding: 0 28px;
+        }
+        .settings-page { display: none; flex-grow: 1; overflow-y: auto; padding: 20px 5px 20px 0; scrollbar-width: thin; scrollbar-color: var(--modal-scrollbar-thumb) var(--modal-scrollbar-track); }
+        .settings-page.active { display: block; }
+        .settings-page::-webkit-scrollbar { width: 8px; } .settings-page::-webkit-scrollbar-track { background: var(--modal-scrollbar-track); border-radius: 4px; } .settings-page::-webkit-scrollbar-thumb { background-color: var(--modal-scrollbar-thumb); border-radius: 4px; border: 1px solid var(--modal-scrollbar-track); } .settings-page::-webkit-scrollbar-thumb:hover { background-color: var(--modal-scrollbar-thumb-hover); }
+        .settings-section { margin-bottom: 25px; padding-bottom: 20px; border-bottom: 1px dashed var(--ink-light); } .settings-section:last-child { border-bottom: none; margin-bottom: 0; }
+        .settings-section-title { font-size: 1.3rem; font-weight: bold; color: var(--ink); margin-bottom: 15px; border-bottom: 1px solid var(--gold); padding-bottom: 8px; font-family: 'Cinzel Decorative', cursive; }
+        .settings-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
+        .settings-item { background-color: var(--parchment-dark); padding: 15px; border-radius: 6px; border: 1px solid var(--ink-light); position: relative; }
+        .settings-label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 0.9rem; color: var(--ink); }
+        .settings-input, .settings-textarea, .settings-select {
+            width: 100%; padding: 10px 12px; border: 1px solid var(--ink-light); border-radius: 4px;
+            font-family: inherit; font-size: 1rem; background-color: var(--parchment); color: var(--ink);
+            margin-bottom: 10px; box-sizing: border-box; line-height: 1.5;
+        }
+        .settings-textarea { min-height: 80px; resize: vertical; }
+        .settings-input:focus, .settings-textarea:focus, .settings-select:focus {
+             border-color: var(--gold); outline: none; box-shadow: 0 0 0 3px rgba(201, 162, 39, 0.3);
+        }
+        .settings-env-item { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; position: relative; padding-right: 30px; }
+        .settings-env-label { flex-shrink: 0; width: 80px; text-align: right; font-weight: normal; color: var(--ink); }
+        .settings-env-input { flex-grow: 1; }
+        .settings-delete-btn { position: absolute; top: 5px; right: 5px; width: 20px; height: 20px; line-height: 18px; text-align: center; background-color: var(--danger-color); color: white; border: none; border-radius: 50%; cursor: pointer; font-size: 12px; font-weight: bold; transition: background-color 0.2s ease; padding: 0; }
+        .settings-delete-btn:hover { background-color: var(--danger-hover); }
+        .settings-env-item .settings-delete-btn { top: 50%; right: 5px; transform: translateY(-50%); }
+        .settings-city-controls { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
+        .settings-city-controls label { font-weight: bold; color: var(--ink); flex-shrink: 0; margin-right: 5px; }
+        .settings-city-selector { padding: 8px 10px; border-radius: 4px; border: 1px solid var(--ink-light); background-color: var(--parchment); color: var(--ink); font-size: 1rem; flex-grow: 1; min-width: 150px; font-family: inherit; }
+        .settings-city-edit-btn { padding: 6px 10px; font-size: 1rem; height: 38px; line-height: 1; border-radius: 6px; background-color: var(--ink-light); color: var(--parchment); border: none; cursor: pointer; flex-shrink: 0; transition: var(--fade); font-family: 'Cinzel Decorative', cursive; display: inline-flex; align-items: center; justify-content: center;}
+        .settings-city-edit-btn:hover { background-color: var(--ink); }
+        .settings-city-delete-btn { background-color: var(--danger-color); color: white; } .settings-city-delete-btn:hover { background-color: var(--danger-hover); }
+        .settings-city-add-btn { background-color: var(--gold); color: var(--ink); } .settings-city-add-btn:hover { background-color: #a1801f; }
+        /* API Key Multi-Key Styles */
+        .settings-api-config { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;}
+        .api-key-management { display: flex; flex-direction: column; gap: 15px; }
+        .api-key-list-container { max-height: 150px; overflow-y: auto; border: 1px solid var(--ink-light); border-radius: 4px; background-color: var(--parchment-dark); padding: 8px; scrollbar-width: thin; scrollbar-color: var(--modal-scrollbar-thumb) var(--modal-scrollbar-track); }
+        .api-key-list-container::-webkit-scrollbar { width: 6px; } .api-key-list-container::-webkit-scrollbar-track { background: var(--modal-scrollbar-track); border-radius: 3px; } .api-key-list-container::-webkit-scrollbar-thumb { background-color: var(--modal-scrollbar-thumb); border-radius: 3px; } .api-key-list-container::-webkit-scrollbar-thumb:hover { background-color: var(--modal-scrollbar-thumb-hover); }
+        .api-key-item { display: flex; justify-content: space-between; align-items: center; padding: 6px 8px; border-bottom: 1px dashed var(--ink-light); font-size: 0.9rem; } .api-key-item:last-child { border-bottom: none; }
+        .api-key-item span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 70%; font-family: monospace; }
+        .api-key-item-controls { display: flex; gap: 5px; flex-shrink: 0; }
+        .api-key-item-controls button { padding: 3px 8px; font-size: 0.8rem; border-radius: 3px; cursor: pointer; border: none; transition: var(--fade); font-family: 'Cinzel Decorative', cursive; }
+        .api-key-item-delete-btn { background-color: var(--danger-color); color: white; } .api-key-item-delete-btn:hover { background-color: var(--danger-hover); }
+        .api-key-add-controls { display: flex; gap: 10px; }
+        #newApiKeyInput { flex-grow: 1; padding: 10px 12px; border: 1px solid var(--ink-light); border-radius: 4px; font-family: inherit; font-size: 1rem; background-color: var(--parchment); color: var(--ink); box-sizing: border-box; }
+        #addApiKeyBtn { padding: 8px 15px; border-radius: 5px; font-weight: bold; cursor: pointer; transition: var(--fade); border: none; font-size: 1rem; background-color: var(--gold); color: var(--ink); font-family: 'Cinzel Decorative', cursive; }
+        #addApiKeyBtn:hover:not(:disabled) { background-color: #a1801f; }
+        #addApiKeyBtn:disabled { background-color: var(--ink-light); opacity: 0.7; cursor: not-allowed; }
+        #newApiKeyInput:disabled { background-color: var(--parchment-dark); cursor: not-allowed; }
+        .active-key-display { margin-top: 10px; font-size: 0.9rem; color: var(--ink-light); }
+        .active-key-display strong { font-family: monospace; color: var(--amethyst); }
+        .key-list-message { font-style: italic; color: var(--ink-light); text-align: center; padding: 10px 0; font-size: 0.9rem; }
+        /* End API Key Multi-Key Styles */
+        .map-size-inputs { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; }
+        .map-size-inputs input[type="number"] { width: 80px; padding: 8px 10px; font-size: 1rem; border: 1px solid var(--ink-light); background-color: var(--parchment); color: var(--ink); border-radius: 4px;}
+        .map-size-inputs label { font-size: 1rem; color: var(--ink); margin-right: 5px; }
+        .settings-checkbox-item { display: flex; align-items: center; gap: 8px; background-color: var(--parchment-dark); padding: 10px 15px; border-radius: 6px; border: 1px solid var(--ink-light); }
+        .settings-checkbox-item label { font-size: 1rem; color: var(--ink); cursor: pointer; user-select: none; }
+        .settings-checkbox-item input[type="checkbox"] { cursor: pointer; accent-color: var(--gold); }
+        .settings-pagination {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-top: 0; padding: 15px 28px;
+            border-top: 1px solid var(--ink-light); flex-shrink: 0;
+        }
+        .pagination-btn { padding: 8px 16px; border-radius: 5px; font-family: 'Cinzel Decorative', cursive; font-weight: bold; cursor: pointer; transition: var(--fade); border: none; font-size: 1rem; background-color: var(--ink-light); color: var(--parchment); }
+        .pagination-btn:hover:not(:disabled) { background-color: var(--ink); }
+        .pagination-btn:disabled { background-color: var(--parchment-dark); color: var(--ink-light); cursor: not-allowed; }
+        .page-indicator { font-size: 1rem; color: var(--ink-light); font-weight: bold; }
+        .modal-footer {
+            margin-top: 0; padding: 15px 28px 20px 28px;
+            border-top: 1px solid var(--ink-light); display: flex; justify-content: flex-end;
+            gap: 10px; flex-shrink: 0; background-color: var(--parchment-dark);
+        }
+        .modal-btn { padding: 12px 24px; border-radius: 5px; font-family: 'Cinzel Decorative', cursive; font-weight: bold; cursor: pointer; transition: var(--fade); border: none; font-size: 1.1rem; }
+        .modal-btn-primary { background-color: var(--gold); color: var(--ink); } .modal-btn-primary:hover { background-color: var(--crimson); color: white; }
+        .modal-btn-secondary { background-color: var(--ink-light); color: var(--parchment); } .modal-btn-secondary:hover { background-color: var(--ink); color: white; }
+
+        /* --- Appearance Editor Modal --- */
+        /* ... (Appearance Editor styles remain unchanged) ... */
+         #appearance-editor-overlay .modal-content { max-width: 900px; }
+        #appearance-editor-overlay .modal-body { overflow-y: auto; padding: 20px 28px 20px 28px; flex-grow: 1; scrollbar-width: thin; scrollbar-color: var(--modal-scrollbar-thumb) var(--modal-scrollbar-track); touch-action: pan-y; -webkit-overflow-scrolling: touch; min-height: 0; }
+        #appearance-editor-overlay .modal-body::-webkit-scrollbar { width: 8px; } #appearance-editor-overlay .modal-body::-webkit-scrollbar-track { background: var(--modal-scrollbar-track); border-radius: 4px; } #appearance-editor-overlay .modal-body::-webkit-scrollbar-thumb { background-color: var(--modal-scrollbar-thumb); border-radius: 4px; border: 1px solid var(--modal-scrollbar-track); } #appearance-editor-overlay .modal-body::-webkit-scrollbar-thumb:hover { background-color: var(--modal-scrollbar-thumb-hover); }
+        .appearance-editor-details { padding: 15px; background-color: var(--parchment-dark); border: 1px solid var(--ink-light); border-radius: 6px; margin-bottom: 15px; display: grid; grid-template-columns: auto 1fr auto; gap: 10px 15px; align-items: center; }
+        .appearance-editor-details label { font-weight: bold; font-size: 1rem; color: var(--ink); text-align: right; }
+        .appearance-editor-details input, .appearance-editor-details textarea { grid-column: 2; width: 100%; padding: 10px 12px; border: 1px solid var(--ink-light); border-radius: 4px; font-family: inherit; font-size: 1rem; background-color: var(--parchment); color: var(--ink); box-sizing: border-box; }
+        .appearance-editor-details textarea { min-height: 60px; resize: vertical; line-height: 1.5; }
+        .appearance-editor-details input:focus, .appearance-editor-details textarea:focus { border-color: var(--gold); outline: none; box-shadow: 0 0 0 3px rgba(201, 162, 39, 0.3); }
+        .appearance-pfp-section { grid-column: 3; display: flex; flex-direction: column; align-items: center; gap: 8px; padding-left: 15px; }
+        .appearance-pfp-preview { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid var(--ink-light); cursor: pointer; transition: border-color 0.3s ease; }
+        .appearance-pfp-preview:hover { border-color: var(--gold); }
+        .appearance-pfp-change-btn { font-size: 0.9rem; color: var(--ink-light); cursor: pointer; text-decoration: underline; background: none; border: none; padding: 0; }
+        .appearance-pfp-change-btn:hover { color: var(--gold); }
+        .appearance-iframe-container { border: 1px solid var(--ink-light); padding: 0; background-color: var(--parchment-dark); border-radius: 6px; overflow: hidden; flex-shrink: 0; }
+        #characterCreatorFrame { width: 100%; height: 500px; border: none; display: block; background-color: var(--ink-light); }
+        .pfp-upload { display: none; }
+
+        /* --- Context Menu --- */
+        .context-menu { display: none; position: absolute; background-color: var(--parchment-dark); border: 1px solid var(--ink-light); border-radius: 4px; padding: 5px 0; z-index: 1050; box-shadow: var(--shadow); min-width: 180px; font-size: 1rem; color: var(--ink); font-family: Georgia, serif; }
+        .context-menu-item { padding: 8px 18px; cursor: pointer; white-space: nowrap; }
+        .context-menu-item:hover { background-color: var(--ink-light); color: var(--parchment); }
+        .context-menu-divider { border: none; border-top: 1px solid var(--ink-light); margin: 4px 0; }
+
+        /* Animations */
+        @keyframes appear { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+        @keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            body { font-size: 1rem; } .chat-messages { padding: 18px; }
+            .message-content { padding: 15px 18px; font-size: 1rem; } .input-container { padding: 15px; }
+            #userInput { padding: 15px; min-height: 50px; font-size: 1rem; }
+            #sendButton { height: 55px; padding: 0 18px; font-size: 1rem; }
+            .avatar { width: 40px; height: 40px; font-size: 1.1rem; }
+             .typing-indicator { margin-left: 55px; font-size: 0.9rem;} .rune { font-size: 1rem;}
+             /* Modal adjustments */
+             .modal-content { padding: 0; width: 95%; }
+             .modal-header { padding: 15px 20px 10px 20px; }
+             .modal-body { padding: 0 20px; }
+             .settings-page { padding: 15px 5px 15px 0; }
+             .settings-pagination { padding: 10px 20px; flex-direction: column; gap: 10px; } .page-indicator { order: -1; }
+             .modal-footer { padding: 10px 20px 15px 20px; }
+             /* Appearance Editor */
+             #appearance-editor-overlay .modal-body { padding: 15px 20px; }
+             .appearance-editor-details { grid-template-columns: auto 1fr; }
+             .appearance-pfp-section { grid-column: 1 / -1; grid-row: 3; justify-self: center; padding-left: 0; margin-top: 10px; }
+            /* Adjust tab buttons for smaller screens */
+            #chat-tabs-container { padding: 5px 10px; gap: 5px; }
+            #chat-tabs-container button { padding: 5px 10px; font-size: 0.9rem; }
+             #chat-tabs-container button#area-tab,
+             #chat-tabs-container button#city-tab,
+             #chat-tabs-container button#world-tab,
+             #chat-tabs-container button#chat-tab, /* <-- RENAMED */
+             #chat-tabs-container button#agent-tab { font-size: 0.8rem; }
+             /* API Config Responsive */
+             .settings-api-config { grid-template-columns: 1fr; }
+             .api-key-list-container { max-height: 120px; }
+             .api-key-item span { max-width: 60%; }
         }
     </style>
 </head>
 <body>
-    <!-- Your Original HTML Structure -->
     <div id="ui-container">
         <div id="game-world">
             <div id="map-content">
@@ -1177,14 +1844,15 @@ Take your original HTML file and make the following changes:
             </div>
         </div>
         <div id="chat-area">
-             <!-- Chat Tabs Container (Make sure IDs match ai-world.js expectations) -->
+             <!-- Chat Tabs Container (MODIFIED) -->
              <div id="chat-tabs-container">
-                 <!-- *** Example Tabs - Make sure these match your desired setup *** -->
-                 <button id="chat-tab" data-mode="message">CHAT</button> <!-- Example Chat Tab -->
-                 <button id="area-tab" data-mode="spatial" data-scope="Area">AREA</button> <!-- Example Spatial Tab 1 -->
-                 <button id="city-tab" data-mode="spatial" data-scope="City">CITY</button> <!-- Example Spatial Tab 2 -->
-                 <button id="world-tab" data-mode="spatial" data-scope="World">WORLD</button> <!-- Example Spatial Tab 3 -->
-                 <button id="agent-tab" data-mode="agent">AGENT</button> <!-- Example Agent Tab -->
+                 <button id="chat-tab" data-mode="message">CHAT</button> <!-- MOVED & RENAMED -->
+                 <button id="area-tab" data-mode="spatial" data-scope="Area">AREA</button>
+                 <button id="city-tab" data-mode="spatial" data-scope="City">CITY</button>
+                 <button id="world-tab" data-mode="spatial" data-scope="World">WORLD</button>
+                 <!-- <button id="message-tab" data-mode="message">MESSAGE</button> ORIGINAL POSITION -->
+                 <button id="agent-tab" data-mode="agent">AGENT</button>
+                 <!-- REMOVED general-tab -->
              </div>
              <div class="chat-messages" id="chatMessages"></div>
              <div class="input-container">
@@ -1194,7 +1862,7 @@ Take your original HTML file and make the following changes:
         </div>
     </div>
 
-    <!-- Settings Modal -->
+    <!-- Settings Modal (Paginated) -->
     <div class="modal-overlay" id="settings-overlay">
         <div class="modal-content">
             <div class="modal-header">
@@ -1236,7 +1904,6 @@ Take your original HTML file and make the following changes:
                      </div>
                  </div>
                  <div class="appearance-iframe-container">
-                      <!-- Ensure this path is correct relative to index.html -->
                      <iframe id="characterCreatorFrame" src="character_creator.html"></iframe>
                  </div>
              </div>
@@ -1249,8 +1916,8 @@ Take your original HTML file and make the following changes:
 
     <!-- Context Menus -->
     <div id="npc-context-menu" class="context-menu" style="display: none;">
-        <!-- *** Make sure data-action attributes match ai-world.js expectations *** -->
-        <div class="context-menu-item" data-action="talk">Talk (Chat Mode)</div>
+        <!-- MODIFIED CONTEXT MENU -->
+        <div class="context-menu-item" data-action="talk">Talk (Chat Mode)</div> <!-- RENAMED -->
         <div class="context-menu-item" data-action="command">Command (Agent Mode)</div>
         <div class="context-menu-item" data-action="toggleFollow">Toggle Follow/Unfollow</div>
         <div class="context-menu-item" data-action="appearance">Set Appearance, Details & Sigil</div>
@@ -1272,13 +1939,12 @@ Take your original HTML file and make the following changes:
 
     <input type="file" class="pfp-upload" id="pfp-upload" accept="image/*">
 
-    <!-- Load Scripts - ORDER MATTERS! -->
-    <!-- Assumes api_providers.js defines the PROVIDERS object and window.getApiResponse -->
+    <!-- Load API Providers Script (Make sure this file exists) -->
     <script src="api_providers.js"></script>
-    <!-- Assumes spatial_chat.js defines the SpatialChat object -->
-    <script src="spatial_chat.js"></script>
-    <!-- Loads the main simulation logic which depends on the above -->
-    <script src="ai-world.js"></script>
+
+    <!-- Load the separated JavaScript file -->
+    <!-- 'defer' ensures the script runs after the HTML is parsed -->
+    <script src="script.js" defer></script>
 
 </body>
 </html>
