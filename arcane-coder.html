@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Arcane Tome (Provider Enhanced - Reliable Font)</title>
+    <title>Arcane Tome (Provider Enhanced - Reliable Font + Retry)</title>
     <!-- Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-light.min.css">
@@ -88,9 +88,15 @@
         .api-key-manager { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 5px; }
         .api-key-manager input[type="password"] { flex-grow: 1; min-width: 200px; }
         .api-key-manager button { padding: 8px 12px; font-size: 0.9em; height: 44px; flex-shrink: 0; }
-        .api-key-status { font-size: 0.9em; color: var(--ink-light); margin-top: 5px; flex-basis: 100%; }
+        .api-key-status-container { flex-basis: 100%; display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 5px; }
+        .api-key-status { font-size: 0.9em; color: var(--ink-light); flex-grow: 1; }
+        .api-call-count-display { font-size: 0.9em; color: var(--ink-light); flex-shrink: 0; }
+        #reset-call-count-button { font-family: var(--font-body); background-color: var(--ink-light); color: var(--parchment); margin-left: 5px; padding: 4px 8px; font-size: 0.8em; height: auto; flex-shrink: 0; }
+        #reset-call-count-button:hover { background-color: var(--ink); }
         #clear-keys-button { background-color: var(--crimson); color: white; margin-left: auto; }
         #clear-keys-button:hover { background-color: darkred; }
+        .settings-group { margin-bottom: 15px; flex-shrink: 0; } /* Added for better spacing */
+        #max-variations-input { width: 60px; text-align: center; margin-left: 8px; }
         #code-edit-modal .modal-content { max-width: 650px; }
         #edit-snippet-textarea { font-family: Consolas, Monaco, monospace; min-height: 150px; max-height: 40vh; flex-grow: 1; flex-shrink: 1; overflow-y: auto; margin-bottom: 5px; background-color: white; }
         .modal-content .line-inputs { display: flex; gap: 15px; align-items: center; margin-bottom: 10px; flex-shrink: 0; flex-wrap: wrap; }
@@ -102,6 +108,7 @@
         .edit-instructions-area { flex-shrink: 0; margin-bottom: 15px; }
         .edit-instructions-controls { display: flex; gap: 8px; align-items: center; margin-top: 5px; }
         #edit-instructions { width: 100%; min-height: 60px; max-height: 25vh; resize: vertical; background-color: white; }
+        #edit-add-iterator-button { margin-right: auto; }
         #edit-response-count { width: 40px; padding: 6px; font-size: 0.9rem; height: auto; border: 1px solid var(--ink-light); margin-left: auto; background-color: white; }
         #html-runner-modal .modal-content { max-width: 90vw; width: 85%; }
         .html-runner-container { display: flex; flex-grow: 1; gap: 15px; min-height: 0; margin-bottom: 15px; }
@@ -139,7 +146,7 @@
     </style>
 </head>
 <body>
-    <!-- HTML Structure (Unchanged) -->
+    <!-- HTML Structure -->
     <div class="tome" id="chat-container">
         <div class="pages" id="pages"></div>
         <div class="writing-area">
@@ -155,7 +162,7 @@
             </div>
         </div>
     </div>
-    <!-- Settings Modal (HTML Unchanged) -->
+    <!-- Settings Modal -->
     <div class="modal-overlay" id="system-prompt-modal">
          <div class="modal-content">
              <h3>Tome Settings</h3>
@@ -170,11 +177,19 @@
                       <button id="add-key-button" title="Add this key to the list for the selected provider">Add Key</button>
                       <button id="clear-keys-button" title="Remove all stored keys for the selected provider">Clear Keys for Provider</button>
                  </div>
-                 <span id="api-key-status" class="api-key-status">Keys Loaded: 0</span>
+                 <div class="api-key-status-container">
+                     <span id="api-key-status" class="api-key-status">Keys Loaded: 0</span>
+                     <span id="api-call-count-display" class="api-call-count-display">Calls: 0</span>
+                     <button id="reset-call-count-button" class="small-button" title="Reset call count for this provider">Reset Count</button>
+                 </div>
              </div>
-             <div class="form-group">
+             <div class="form-group settings-group">
                  <label for="system-prompt-input">Spirit's Nature (System Prompt):</label>
                  <textarea id="system-prompt-input" placeholder="Define the spirit's core nature..."></textarea>
+             </div>
+             <div class="form-group settings-group">
+                 <label for="max-variations-input" style="flex-basis: auto; margin-bottom: 0;">Max Response Variations:</label>
+                 <input type="number" id="max-variations-input" min="1" max="10" value="5" class="response-count-input" style="width: 60px; height: 40px;">
              </div>
              <div class="form-group">
                  <div style="display: flex; align-items: center;"> <input type="checkbox" id="hide-code-checkbox"> <label for="hide-code-checkbox">Veil Glyphs</label> </div>
@@ -187,7 +202,7 @@
              </div>
          </div>
     </div>
-    <!-- Code Edit Modal (HTML Unchanged) -->
+    <!-- Code Edit Modal -->
     <div class="modal-overlay" id="code-edit-modal">
         <div class="modal-content">
             <h3>Transcribe & Alter Glyphs</h3>
@@ -205,7 +220,7 @@
                 <div class="edit-instructions-controls">
                     <button id="edit-add-iterator-button" class="small-button" title="Insert {i}">Add {i}</button>
                     <label for="edit-response-count" style="margin-left: auto; flex-basis: auto; margin-bottom: 0; font-weight: normal; color: var(--ink-light); font-size: 0.9em;">Variations:</label>
-                    <input type="number" class="response-count-input" id="edit-response-count" value="1" min="1" max="5" title="Number of edit variations">
+                    <input type="number" class="response-count-input" id="edit-response-count" value="1" min="1" max="5"> <!-- Max updated dynamically -->
                 </div>
             </div>
             <div class="modal-buttons">
@@ -214,7 +229,7 @@
             </div>
         </div>
     </div>
-    <!-- HTML Runner Modal (HTML Unchanged) -->
+    <!-- HTML Runner Modal -->
     <div class="modal-overlay" id="html-runner-modal">
         <div class="modal-content">
             <h3>HTML Runner</h3>
@@ -228,7 +243,7 @@
              </div>
         </div>
     </div>
-    <!-- Hidden Helpers (HTML Unchanged) -->
+    <!-- Hidden Helpers -->
     <textarea class="visually-hidden" id="copy-helper" aria-hidden="true"></textarea>
     <input type="file" id="file-upload-input" accept="*/*" style="display:none;">
     <input type="file" class="pfp-upload" accept="image/*" style="display:none;">
@@ -246,10 +261,12 @@
         // --- Provider/Key State ---
         let selectedProvider = '';
         let selectedModel = '';
-        let apiKeys = {};
-        let currentApiKeyIndex = {};
+        let apiKeys = {}; // Structure: { providerKey: ["key1", "key2"], ... }
+        let currentApiKeyIndex = {}; // Structure: { providerKey: 0, ... }
+        let apiCallCounts = {}; // Structure: { providerKey: 123, ... }
 
-        // --- Other State ---
+        // --- Settings State ---
+        let maxResponseVariations = 5; // Default, loaded from storage
         let hideCodeBlocks = true;
         let downloadCodeMode = false;
         let enableRunHtmlMode = false;
@@ -272,6 +289,9 @@
         const addKeyButton = document.getElementById('add-key-button');
         const clearKeysButton = document.getElementById('clear-keys-button');
         const apiKeyStatus = document.getElementById('api-key-status');
+        const apiCallCountDisplay = document.getElementById('api-call-count-display'); // New element
+        const resetCallCountButton = document.getElementById('reset-call-count-button'); // New element
+        const maxVariationsInput = document.getElementById('max-variations-input'); // New element
         const saveSettingsButton = document.getElementById('save-settings-button');
         const hideCodeCheckbox = document.getElementById('hide-code-checkbox');
         const downloadCodeCheckbox = document.getElementById('download-code-checkbox');
@@ -312,11 +332,34 @@
         // --- All Function Definitions ---
 
         function updateApiKeyStatus(provider = selectedProvider) {
-            const keysForProvider = apiKeys[provider] || []; const count = keysForProvider.length;
-            if (apiKeyStatus) { apiKeyStatus.textContent = `Keys Loaded: ${count}`; }
-            if(selectedProviderLabel && typeof PROVIDERS !== 'undefined') { selectedProviderLabel.textContent = (PROVIDERS[provider]?.name || provider) ?? 'Unknown Provider'; }
-            else if (selectedProviderLabel) { selectedProviderLabel.textContent = provider || 'Unknown Provider'; }
-            if (sendButton) { sendButton.disabled = !hasSelectedProviderApiKeys() || isWaitingForResponse; }
+            const keysForProvider = apiKeys[provider] || []; const keyCount = keysForProvider.length;
+            const callCount = apiCallCounts[provider] || 0;
+            const providerName = (typeof PROVIDERS !== 'undefined' && PROVIDERS[provider]?.name) ? PROVIDERS[provider].name : (provider || 'Unknown Provider');
+
+            if (apiKeyStatus) { apiKeyStatus.textContent = `Keys Loaded: ${keyCount}`; }
+            if (apiCallCountDisplay) { apiCallCountDisplay.textContent = `Calls: ${callCount}`; }
+            if (selectedProviderLabel) { selectedProviderLabel.textContent = providerName; }
+
+            const providerNeedsKey = doesProviderNeedApiKey(provider);
+            if (sendButton) {
+                 sendButton.disabled = (providerNeedsKey && keyCount === 0) || isWaitingForResponse;
+            }
+            if (apiKeyInput) {
+                apiKeyInput.disabled = !providerNeedsKey;
+                apiKeyInput.placeholder = providerNeedsKey ? "Paste new key..." : "Not Required";
+            }
+            if (addKeyButton) { addKeyButton.disabled = !providerNeedsKey; }
+            if (clearKeysButton) { clearKeysButton.disabled = !providerNeedsKey; }
+            if (resetCallCountButton) { resetCallCountButton.style.display = provider ? 'inline-block' : 'none'; }
+        }
+
+        function doesProviderNeedApiKey(provider) {
+            if (!provider || typeof PROVIDERS === 'undefined' || !PROVIDERS[provider]) {
+                return true; // Assume key needed if config is missing
+            }
+            const providerConfig = PROVIDERS[provider];
+            // Needs key if location is NOT 'none', OR if it's a proxy_compatible format (which might still use keys server-side)
+            return providerConfig.apiKeyLocation !== 'none' || providerConfig.format === 'proxy_compatible';
         }
 
         function addApiKey() {
@@ -324,148 +367,587 @@
              if (!provider) { alert("Please select a provider first."); return; }
              if (typeof PROVIDERS === 'undefined' || !PROVIDERS[provider]) { alert(`Invalid provider selected or PROVIDERS missing: ${provider}`); return; }
              const providerConfig = PROVIDERS[provider];
-             if (providerConfig.apiKeyLocation === 'none' && providerConfig.format !== 'proxy_compatible') { alert(`${providerConfig.name} does not require client-side API keys.`); apiKeyInput.value = ''; return; }
-             if (newKey) { if (!apiKeys[provider]) apiKeys[provider] = []; if (!apiKeys[provider].includes(newKey)) { apiKeys[provider].push(newKey); apiKeyInput.value = ''; updateApiKeyStatus(provider); console.log(`Added key for ${provider}. Total keys: ${apiKeys[provider].length}`); try { localStorage.setItem('apiKeys', JSON.stringify(apiKeys)); } catch (e) { console.error("Failed to save API keys after adding:", e); }} else { alert(`This API key is already in the list for ${providerConfig.name}.`); }}
-             else { alert("Please paste an API key before adding."); }
+
+             // Only proceed if the provider actually requires a client-side key
+             if (!doesProviderNeedApiKey(provider)) {
+                 alert(`${providerConfig.name} does not require client-side API keys.`);
+                 apiKeyInput.value = '';
+                 return;
+             }
+
+             if (newKey) {
+                 if (!apiKeys[provider]) apiKeys[provider] = [];
+                 if (!apiKeys[provider].includes(newKey)) {
+                     apiKeys[provider].push(newKey);
+                     apiKeyInput.value = '';
+                     updateApiKeyStatus(provider);
+                     console.log(`Added key for ${provider}. Total keys: ${apiKeys[provider].length}`);
+                     try { localStorage.setItem('apiKeys', JSON.stringify(apiKeys)); }
+                     catch (e) { console.error("Failed to save API keys after adding:", e); }
+                 } else {
+                     alert(`This API key is already in the list for ${providerConfig.name}.`);
+                 }
+             } else {
+                 alert("Please paste an API key before adding.");
+             }
         }
 
         function clearApiKeysForProvider() {
-             const provider = selectedProvider; if (!provider) { alert("Please select a provider first."); return; }
+             const provider = selectedProvider;
+             if (!provider) { alert("Please select a provider first."); return; }
              if (typeof PROVIDERS === 'undefined' || !PROVIDERS[provider]) { alert(`Please select a valid provider first or PROVIDERS missing.`); return; }
              const providerName = PROVIDERS[provider]?.name || provider;
-             if (confirm(`Are you sure you want to remove ALL keys for ${providerName}?`)) { apiKeys[provider] = []; currentApiKeyIndex[provider] = 0; updateApiKeyStatus(provider); console.log(`Cleared all API keys for ${provider}.`); try { localStorage.setItem('apiKeys', JSON.stringify(apiKeys)); localStorage.setItem('currentApiKeyIndex', JSON.stringify(currentApiKeyIndex)); } catch (e) { console.error("Failed to save cleared API keys/indices:", e); }}
+
+             if (confirm(`Are you sure you want to remove ALL keys for ${providerName}?`)) {
+                 apiKeys[provider] = [];
+                 currentApiKeyIndex[provider] = 0; // Reset index as well
+                 updateApiKeyStatus(provider);
+                 console.log(`Cleared all API keys for ${provider}.`);
+                 try {
+                     localStorage.setItem('apiKeys', JSON.stringify(apiKeys));
+                     localStorage.setItem('currentApiKeyIndex', JSON.stringify(currentApiKeyIndex));
+                 } catch (e) {
+                     console.error("Failed to save cleared API keys/indices:", e);
+                 }
+             }
         }
 
+        function resetApiCallCountForProvider() {
+            const provider = selectedProvider;
+            if (!provider) { alert("Please select a provider first."); return; }
+            const providerName = (typeof PROVIDERS !== 'undefined' && PROVIDERS[provider]?.name) ? PROVIDERS[provider].name : provider;
+            if (confirm(`Reset the successful API call count for ${providerName} to zero?`)) {
+                apiCallCounts[provider] = 0;
+                updateApiKeyStatus(provider);
+                console.log(`Reset API call count for ${provider}.`);
+                try {
+                    localStorage.setItem('apiCallCounts', JSON.stringify(apiCallCounts));
+                } catch (e) {
+                    console.error("Failed to save reset API call counts:", e);
+                }
+            }
+        }
+
+        // THIS FUNCTION IS NO LONGER USED DIRECTLY FOR GETTING KEYS FOR API CALLS
+        // It's kept for potential other uses or reference, but attemptApiCallWithRetry handles key selection now.
+        /*
         function getNextApiKey(provider) {
             if (typeof PROVIDERS === 'undefined' || !PROVIDERS[provider]) { console.error(`Provider config missing for ${provider} in getNextApiKey`); return null; }
-            const keysForProvider = apiKeys[provider] || []; const providerConfig = PROVIDERS[provider];
-            if (providerConfig.apiKeyLocation === 'none' && providerConfig.format !== 'proxy_compatible') { return null; }
-            if (keysForProvider.length === 0) { if (!(providerConfig.apiKeyLocation === 'none' && providerConfig.format !== 'proxy_compatible')) { console.error(`No API keys available for provider: ${provider}`); } return null; }
-            let index = currentApiKeyIndex[provider] || 0; if (index >= keysForProvider.length) index = 0;
-            const keyToUse = keysForProvider[index]; currentApiKeyIndex[provider] = (index + 1) % keysForProvider.length;
-            try { localStorage.setItem('currentApiKeyIndex', JSON.stringify(currentApiKeyIndex)); } catch (e) { console.warn("Could not save API key index object:", e); }
+            const providerConfig = PROVIDERS[provider];
+            if (!doesProviderNeedApiKey(provider)) { return null; } // No key needed
+
+            const keysForProvider = apiKeys[provider] || [];
+            if (keysForProvider.length === 0) {
+                 console.error(`No API keys available for provider: ${provider}`);
+                 return null;
+            }
+
+            let index = currentApiKeyIndex[provider] || 0;
+            if (index >= keysForProvider.length) index = 0; // Wrap around
+
+            const keyToUse = keysForProvider[index];
+            currentApiKeyIndex[provider] = (index + 1) % keysForProvider.length; // Move to next index for the *next* logical call sequence
+
+            try { localStorage.setItem('currentApiKeyIndex', JSON.stringify(currentApiKeyIndex)); }
+            catch (e) { console.warn("Could not save API key index object:", e); }
+
             return keyToUse;
         }
+        */
 
-        function hasSelectedProviderApiKeys() {
-             if (typeof PROVIDERS === 'undefined') { console.error("PROVIDERS object not available in hasSelectedProviderApiKeys."); return false; }
-             const providerConfig = PROVIDERS[selectedProvider]; if (!providerConfig) return false;
-             if (providerConfig.apiKeyLocation === 'none' && providerConfig.format !== 'proxy_compatible') return true;
-             const keysForCurrent = apiKeys[selectedProvider] || []; return keysForCurrent.length > 0;
+        // NEW FUNCTION: Attempts API call, retrying with next available key on failure.
+        async function attemptApiCallWithRetry(provider, model, history, options) {
+            console.log(`Attempting API call to ${provider}/${model}.`);
+            if (typeof PROVIDERS === 'undefined' || !PROVIDERS[provider]) {
+                throw new Error(`Config Error: Provider '${provider}' missing`);
+            }
+            const providerConfig = PROVIDERS[provider];
+            const needsKey = doesProviderNeedApiKey(provider);
+            const keys = apiKeys[provider] || [];
+            const numKeys = keys.length;
+            let startIndex = currentApiKeyIndex[provider] || 0;
+            let triedKeyIndices = new Set(); // Track indices tried *within this specific attempt sequence*
+
+            if (needsKey && numKeys === 0) {
+                throw new Error(`[Config Error: No API Key available for ${providerConfig.name}]`);
+            }
+
+            // Determine the maximum number of attempts (either 1 if no key needed, or the number of keys)
+            const maxAttempts = needsKey ? numKeys : 1;
+
+            for (let attempt = 0; attempt < maxAttempts; attempt++) {
+                let currentKey = null;
+                let keyIndexToTry = -1; // -1 indicates no key is being used (e.g., provider doesn't need one)
+
+                if (needsKey) {
+                    // Calculate the index to try for this attempt, wrapping around from startIndex
+                    keyIndexToTry = (startIndex + attempt) % numKeys;
+
+                    // This check prevents infinite loops if somehow all keys were tried without success
+                    // (though the loop structure `attempt < maxAttempts` should handle this)
+                    if (triedKeyIndices.has(keyIndexToTry) && triedKeyIndices.size === numKeys) {
+                         console.warn(`Already tried all keys for ${provider}. Aborting further retries for this call.`);
+                         break; // Exit the retry loop for this specific API call
+                    }
+
+                    currentKey = keys[keyIndexToTry];
+                    triedKeyIndices.add(keyIndexToTry); // Mark this index as tried *for this sequence*
+                     console.log(`API Call Attempt ${attempt + 1}/${maxAttempts}. Trying key index: ${keyIndexToTry} for ${provider}`);
+                } else {
+                    // Provider doesn't need a client-side key
+                     console.log(`API Call Attempt ${attempt + 1}/${maxAttempts} to ${provider} (no client key needed)`);
+                }
+
+                try {
+                    if (typeof getApiResponse !== 'function') {
+                        throw new Error("getApiResponse function is not defined.");
+                    }
+                    // Make the actual API call
+                    const result = await getApiResponse(provider, model, history, currentKey, options);
+
+                    // --- SUCCESS ---
+                    console.log(`API Call Success on attempt ${attempt + 1} for ${provider}`);
+
+                    // Update the *global* starting index for the *next* sequence of calls
+                    if (needsKey && keyIndexToTry !== -1) {
+                       currentApiKeyIndex[provider] = (keyIndexToTry + 1) % numKeys;
+                       try { localStorage.setItem('currentApiKeyIndex', JSON.stringify(currentApiKeyIndex)); } catch(e) {console.warn("Failed to save current API key index:", e);}
+                    }
+
+                    // Increment successful call counter for the provider
+                    apiCallCounts[provider] = (apiCallCounts[provider] || 0) + 1;
+                    try { localStorage.setItem('apiCallCounts', JSON.stringify(apiCallCounts)); } catch(e) {console.warn("Failed to save API call counts:", e);}
+                    updateApiKeyStatus(provider); // Update UI counter immediately
+
+                    return result || "[Silence]"; // Return the successful result
+
+                } catch (error) {
+                    console.warn(`API Call Error (Provider: ${provider}, Model: ${model}, Attempt: ${attempt + 1}, KeyIndex: ${keyIndexToTry}):`, error);
+                    // If this was the last attempt, the error will propagate after the loop finishes
+                    if (attempt === maxAttempts - 1) {
+                        console.error(`All ${maxAttempts} attempts failed for ${provider}. Last error:`, error);
+                        // Re-throw the last encountered error to be caught by the calling function
+                        throw new Error(`[Spirit Disturbance after ${maxAttempts} attempts: ${error instanceof Error ? error.message : String(error)}]`);
+                    }
+                    // Otherwise, the loop will continue to the next key/attempt
+                    console.log(`Retrying with next key...`);
+                }
+            }
+
+            // This point should only be reached if all attempts failed.
+            throw new Error(`[Spirit Communication Failed after ${maxAttempts} attempts for ${provider}]`);
+        }
+
+
+        function hasSufficientApiResources() {
+             // Checks if the selected provider needs a key and if at least one exists.
+             if (!selectedProvider || typeof PROVIDERS === 'undefined' || !PROVIDERS[selectedProvider]) return false;
+             const needsKey = doesProviderNeedApiKey(selectedProvider);
+             if (!needsKey) return true; // No key needed, resources are sufficient.
+             const keysForCurrent = apiKeys[selectedProvider] || [];
+             return keysForCurrent.length > 0;
         }
 
         async function handleSendMessage() {
-             if (!hasSelectedProviderApiKeys()) { const providerName = (typeof PROVIDERS !== 'undefined' && PROVIDERS[selectedProvider]?.name) ? PROVIDERS[selectedProvider].name : selectedProvider || "the selected provider"; alert(`No API Key loaded for ${providerName}. Please add one in Settings.`); return; }
+             if (!hasSufficientApiResources()) {
+                 const providerName = (typeof PROVIDERS !== 'undefined' && PROVIDERS[selectedProvider]?.name) ? PROVIDERS[selectedProvider].name : selectedProvider || "the selected provider";
+                 if (doesProviderNeedApiKey(selectedProvider)) {
+                     alert(`No API Key loaded for ${providerName}, which requires one. Please add a key in Settings.`);
+                 } else {
+                     alert(`Cannot send message. Please select a valid provider in Settings.`); // Should ideally not happen if validation is good
+                 }
+                 return;
+             }
              if (isWaitingForResponse) return;
-             const userInput = messageInput.value.trim(); const responseCount = parseInt(mainResponseCountInput.value, 10);
+
+             const userInput = messageInput.value.trim();
+             const responseCount = parseInt(mainResponseCountInput.value, 10);
+
              if (userInput === '') return;
-             const numResponses = isNaN(responseCount) || responseCount < 0 ? 0 : Math.min(responseCount, 5);
-             const turnId = `turn-${turnCounter++}`; const containsPlaceholder = userInput.includes(iterationPlaceholder);
-             isWaitingForResponse = true; if (sendButton) sendButton.disabled = true; messageInput.value = ''; autoGrowTextarea();
-             const userEntry = { role: 'user', content: userInput, turnId: turnId }; conversationHistory.push(userEntry); displayMessage(userEntry, 'user'); saveHistoryToLocalStorage(); scrollToBottom();
+
+             // Use the configured max variations limit
+             const numResponses = isNaN(responseCount) || responseCount < 0 ? 0 : Math.min(responseCount, maxResponseVariations);
+
+             const turnId = `turn-${turnCounter++}`;
+             const containsPlaceholder = userInput.includes(iterationPlaceholder);
+
+             isWaitingForResponse = true;
+             if (sendButton) sendButton.disabled = true;
+             messageInput.value = '';
+             autoGrowTextarea();
+
+             const userEntry = { role: 'user', content: userInput, turnId: turnId };
+             conversationHistory.push(userEntry);
+             displayMessage(userEntry, 'user');
+             saveHistoryToLocalStorage();
+             scrollToBottom();
+
              if (numResponses > 0) {
-                 showTypingIndicator(); const baseHistory = prepareHistoryForApi(conversationHistory); const responses = []; let errorOccurred = false; const provider = selectedProvider; const model = selectedModel;
+                 showTypingIndicator();
+                 const baseHistory = prepareHistoryForApi(conversationHistory);
+                 const responses = [];
+                 let overallError = null; // Track if any variation failed definitively
+                 const provider = selectedProvider; // Capture at start
+                 const model = selectedModel; // Capture at start
+
                  console.log(`Sending ${numResponses} requests to ${provider} (${model})`);
+
                  for (let i = 0; i < numResponses; i++) {
-                     const iteration = i + 1; const currentKey = getNextApiKey(provider);
-                     if (typeof PROVIDERS === 'undefined') { responses.push(`[Config Error: PROVIDERS object missing]`); errorOccurred = true; break; }
-                     const providerConfigCheck = PROVIDERS[provider]; if (!providerConfigCheck) { responses.push(`[Config Error: Provider '${provider}' missing]`); errorOccurred = true; break; }
-                     if (providerConfigCheck.apiKeyLocation !== 'none' && providerConfigCheck.format !== 'proxy_compatible' && !currentKey) { responses.push(`[Config Error: No Key for ${provider}]`); errorOccurred = true; break; }
+                     const iteration = i + 1;
                      let currentHistory = [...baseHistory];
+
+                     // Substitute placeholder if needed
                      if (containsPlaceholder && numResponses > 1) {
                          const userMessageIndex = currentHistory.findLastIndex(m => m.role === 'user');
-                         if (userMessageIndex > -1) { const substitutedContent = currentHistory[userMessageIndex].content.replace(new RegExp(iterationPlaceholder.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'g'), iteration.toString()); currentHistory[userMessageIndex] = { ...currentHistory[userMessageIndex], content: substitutedContent }; console.log(`Substituted placeholder for iteration ${iteration}`);}
-                         else { console.warn("Could not find user message to substitute placeholder."); }
+                         if (userMessageIndex > -1) {
+                             const substitutedContent = currentHistory[userMessageIndex].content.replace(new RegExp(iterationPlaceholder.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'g'), iteration.toString());
+                             currentHistory[userMessageIndex] = { ...currentHistory[userMessageIndex], content: substitutedContent };
+                             console.log(`Substituted placeholder for iteration ${iteration}`);
+                         } else {
+                             console.warn("Could not find user message to substitute placeholder.");
+                         }
                      }
-                     try { if (typeof getApiResponse !== 'function') { throw new Error("getApiResponse function is not defined."); } const messageContent = await getApiResponse(provider, model, currentHistory, currentKey, { temperature: 0.7, top_p: 0.9 }); responses.push(messageContent || "[Silence]"); }
-                     catch (e) { console.error(`API Call Error (Provider: ${provider}, Model: ${model}, Iteration: ${iteration}):`, e); responses.push(`[Spirit Disturbance: ${e instanceof Error ? e.message : String(e)}]`); errorOccurred = true; }
-                 }
+
+                     try {
+                         // Use the new retry function
+                         const messageContent = await attemptApiCallWithRetry(provider, model, currentHistory, { temperature: 0.7, top_p: 0.9 });
+                         responses.push(messageContent);
+                     }
+                     catch (e) {
+                         console.error(`API Call Failed (Provider: ${provider}, Model: ${model}, Iteration: ${iteration}) after retries:`, e);
+                         // Push the final error message from the retry function
+                         responses.push(e.message || "[Spirit Communication Failed]");
+                         overallError = e; // Record that at least one failed
+                     }
+                 } // End loop through variations
+
                  hideTypingIndicator();
-                 if (responses.length > 0) { const botEntry = { role: 'assistant', variants: responses, selectedIndex: 0, turnId: turnId }; conversationHistory.push(botEntry); saveHistoryToLocalStorage(); displayBotMessage(botEntry, 'spirit'); scrollToBottom(); }
-             } else { console.log("Query added to history, 0 responses requested."); }
-             isWaitingForResponse = false; if (sendButton) sendButton.disabled = !hasSelectedProviderApiKeys(); messageInput.focus();
+
+                 if (responses.length > 0) {
+                     const botEntry = { role: 'assistant', variants: responses, selectedIndex: 0, turnId: turnId };
+                     conversationHistory.push(botEntry);
+                     saveHistoryToLocalStorage();
+                     displayBotMessage(botEntry, 'spirit');
+                     scrollToBottom();
+                 }
+             } else {
+                 console.log("Query added to history, 0 responses requested.");
+             }
+
+             isWaitingForResponse = false;
+             // Re-enable send button based on whether resources are available
+             if (sendButton) sendButton.disabled = !hasSufficientApiResources();
+             messageInput.focus();
         }
 
         async function handleSendEditRequest() {
-             if (!hasSelectedProviderApiKeys()) { const providerName = (typeof PROVIDERS !== 'undefined' && PROVIDERS[selectedProvider]?.name) ? PROVIDERS[selectedProvider].name : (selectedProvider || "the selected provider"); alert(`No API Key loaded for ${providerName}. Please add one in Settings.`); return; }
-             if (isWaitingForResponse) return;
-             const pastedCode = editSnippetTextarea.value; const startLine = parseInt(editStartLineInput.value, 10); const endLine = parseInt(editEndLineInput.value, 10); const instructions = editInstructionsInput.value.trim(); const numVariations = parseInt(editResponseCountInput.value, 10); const pastedLines = pastedCode.split('\n'); const totalLines = pastedLines.length;
-             if (pastedCode.trim() === '') { alert("Please inscribe the glyphs to be altered."); editSnippetTextarea.focus(); return; } if (!instructions) { alert("Instructions are required."); editInstructionsInput.focus(); return; }
-             if (isNaN(startLine) || isNaN(endLine) || startLine < 1 || endLine < startLine || endLine > totalLines) { alert(`Invalid line selection (1-${totalLines}).`); editStartLineInput.focus(); return; }
-             const numResponses = isNaN(numVariations) || numVariations < 1 ? 1 : Math.min(numVariations, 5); const containsPlaceholder = instructions.includes(iterationPlaceholder);
-             codeEditModal.style.display = 'none'; isWaitingForResponse = true; if (sendButton) sendButton.disabled = true; const turnId = `turn-${turnCounter++}`; const userRequestSummary = `[Glyph Alteration Request: Lines ${startLine}-${endLine}, ${numResponses} variation(s)]`;
-             const userEntry = { role: 'user', content: userRequestSummary, turnId: turnId }; conversationHistory.push(userEntry); displayMessage(userEntry, 'user'); saveHistoryToLocalStorage(); scrollToBottom(); showTypingIndicator();
-             const startIndex = startLine - 1; const endIndex = endLine; const snippetToAlter = pastedLines.slice(startIndex, endIndex).join('\n'); const historyUpToEdit = conversationHistory.slice(0, -1); const baseApiHistory = prepareHistoryForApi(historyUpToEdit);
-             const editResponses = []; let errorOccurred = false; const provider = selectedProvider; const model = selectedModel; console.log(`Sending ${numResponses} EDIT requests to ${provider} (${model})`);
-             for (let i = 0; i < numResponses; i++) {
-                 const iteration = i + 1; const currentKey = getNextApiKey(provider);
-                 if (typeof PROVIDERS === 'undefined') { editResponses.push(`--- ERROR: PROVIDERS missing ---`); errorOccurred = true; break; } const providerConfigCheck = PROVIDERS[provider]; if (!providerConfigCheck) { editResponses.push(`--- ERROR: Provider '${provider}' missing ---`); errorOccurred = true; break; } if (providerConfigCheck.apiKeyLocation !== 'none' && providerConfigCheck.format !== 'proxy_compatible' && !currentKey) { editResponses.push(`--- ERROR: No Key for ${provider} ---`); errorOccurred = true; break; }
-                 let currentInstructions = instructions; if (containsPlaceholder && numResponses > 1) { currentInstructions = instructions.replace(new RegExp(iterationPlaceholder.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'g'), iteration.toString()); }
-                 const prompt = `You are tasked with editing a code snippet.\n Context from previous conversation may be relevant.\n You MUST ONLY return the modified lines based on the instructions provided.\n Do NOT include the original line numbers or markdown code blocks unless instructed.\n\n Original lines ${startLine} to ${endLine}:\n \`\`\`\n ${snippetToAlter}\n \`\`\`\n\n Instructions: ${currentInstructions}\n\n Return ONLY the altered lines.`;
-                 let apiHistoryForThisCall = [...baseApiHistory, { role: 'user', content: prompt }];
-                 try { if (typeof getApiResponse !== 'function') { throw new Error("getApiResponse function is not defined."); } const rawResponse = await getApiResponse(provider, model, apiHistoryForThisCall, currentKey, { temperature: 0.5, top_p: 0.9 }); const editedLines = (rawResponse || "").split('\n'); const reconstructedLines = [...pastedLines.slice(0, startIndex), ...editedLines, ...pastedLines.slice(endIndex)]; editResponses.push(reconstructedLines.join('\n')); }
-                 catch (e) { console.error(`Edit Request API Error (Provider: ${provider}, Model: ${model}, Variation ${iteration}):`, e); const errorMarker = `--- ERROR Altering Variation ${iteration} ---\n${e instanceof Error ? e.message : String(e)}\n--- ORIGINAL LINES ${startLine}-${endLine} ---`; const reconstructedLines = [...pastedLines.slice(0, startIndex), errorMarker, ...pastedLines.slice(startIndex, endIndex), ...pastedLines.slice(endIndex)]; editResponses.push(reconstructedLines.join('\n')); errorOccurred = true; }
+             if (!hasSufficientApiResources()) {
+                 const providerName = (typeof PROVIDERS !== 'undefined' && PROVIDERS[selectedProvider]?.name) ? PROVIDERS[selectedProvider].name : (selectedProvider || "the selected provider");
+                 if (doesProviderNeedApiKey(selectedProvider)) {
+                    alert(`No API Key loaded for ${providerName}, which requires one. Please add a key in Settings.`);
+                 } else {
+                    alert(`Cannot send edit request. Please select a valid provider in Settings.`);
+                 }
+                 return;
              }
-             hideTypingIndicator(); const botEntry = { role: 'assistant', variants: editResponses.length > 0 ? editResponses : ["[Edit Failed]"], selectedIndex: 0, turnId: turnId, isCodeEdit: true };
-             conversationHistory.push(botEntry); saveHistoryToLocalStorage(); displayBotMessage(botEntry, 'spirit');
-             isWaitingForResponse = false; if (sendButton) sendButton.disabled = !hasSelectedProviderApiKeys(); scrollToBottom(); messageInput.focus();
+             if (isWaitingForResponse) return;
+
+             const pastedCode = editSnippetTextarea.value;
+             const startLine = parseInt(editStartLineInput.value, 10);
+             const endLine = parseInt(editEndLineInput.value, 10);
+             const instructions = editInstructionsInput.value.trim();
+             const numVariations = parseInt(editResponseCountInput.value, 10);
+             const pastedLines = pastedCode.split('\n');
+             const totalLines = pastedLines.length;
+
+             if (pastedCode.trim() === '') { alert("Please inscribe the glyphs to be altered."); editSnippetTextarea.focus(); return; }
+             if (!instructions) { alert("Instructions are required."); editInstructionsInput.focus(); return; }
+             if (isNaN(startLine) || isNaN(endLine) || startLine < 1 || endLine < startLine || endLine > totalLines) { alert(`Invalid line selection (1-${totalLines}).`); editStartLineInput.focus(); return; }
+
+             // Use the configured max variations limit
+             const numResponses = isNaN(numVariations) || numVariations < 1 ? 1 : Math.min(numVariations, maxResponseVariations);
+             const containsPlaceholder = instructions.includes(iterationPlaceholder);
+
+             codeEditModal.style.display = 'none';
+             isWaitingForResponse = true;
+             if (sendButton) sendButton.disabled = true;
+
+             const turnId = `turn-${turnCounter++}`;
+             const userRequestSummary = `[Glyph Alteration Request: Lines ${startLine}-${endLine}, ${numResponses} variation(s)]`;
+             const userEntry = { role: 'user', content: userRequestSummary, turnId: turnId };
+             conversationHistory.push(userEntry);
+             displayMessage(userEntry, 'user');
+             saveHistoryToLocalStorage();
+             scrollToBottom();
+             showTypingIndicator();
+
+             const startIndex = startLine - 1;
+             const endIndex = endLine; // slice is exclusive of end index
+             const snippetToAlter = pastedLines.slice(startIndex, endIndex).join('\n');
+             const historyUpToEdit = conversationHistory.slice(0, -1); // Exclude the "[Glyph Alteration Request...]" message itself
+             const baseApiHistory = prepareHistoryForApi(historyUpToEdit);
+
+             const editResponses = [];
+             let overallError = null;
+             const provider = selectedProvider; // Capture at start
+             const model = selectedModel; // Capture at start
+
+             console.log(`Sending ${numResponses} EDIT requests to ${provider} (${model})`);
+
+             for (let i = 0; i < numResponses; i++) {
+                 const iteration = i + 1;
+                 let currentInstructions = instructions;
+                 if (containsPlaceholder && numResponses > 1) {
+                     currentInstructions = instructions.replace(new RegExp(iterationPlaceholder.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'g'), iteration.toString());
+                 }
+
+                 // Construct the prompt for the edit request
+                 const prompt = `You are tasked with editing a code snippet based ONLY on the provided lines and instructions.
+Context from the previous conversation IS relevant for understanding the goal, but you MUST operate *only* on the snippet provided below.
+You MUST return *only* the modified lines based on the instructions.
+Do NOT include the original line numbers.
+Do NOT include markdown code block fences (like \`\`\`) unless the *content* being returned *is* markdown itself.
+Do NOT add explanatory text before or after the code unless explicitly asked.
+
+Original lines ${startLine} to ${endLine}:
+\`\`\`
+${snippetToAlter}
+\`\`\`
+
+Instructions: ${currentInstructions}
+
+Return ONLY the altered lines.`;
+
+                 // Combine base history with the specific edit prompt
+                 let apiHistoryForThisCall = [...baseApiHistory, { role: 'user', content: prompt }];
+
+                 try {
+                     // Use the new retry function
+                     const rawResponse = await attemptApiCallWithRetry(provider, model, apiHistoryForThisCall, { temperature: 0.5, top_p: 0.9 });
+
+                     // Process the response: split into lines and reconstruct the full code
+                     const editedLines = (rawResponse || "").split('\n'); // Ensure rawResponse is treated as string
+                     // Handle potential extra newlines from the model sometimes adding fences
+                     const cleanedEditedLines = editedLines.map(l => l.replace(/^```(?:\w+\n)?/, '').replace(/```$/, '')).filter((l, idx, arr) => idx !== 0 || l !== '' || arr.length === 1); // Basic cleaning
+
+                     const reconstructedLines = [
+                         ...pastedLines.slice(0, startIndex),
+                         ...cleanedEditedLines,
+                         ...pastedLines.slice(endIndex)
+                     ];
+                     editResponses.push(reconstructedLines.join('\n'));
+                 } catch (e) {
+                     console.error(`Edit Request API Error (Provider: ${provider}, Model: ${model}, Variation ${iteration}) after retries:`, e);
+                     overallError = e;
+                     // Construct an error message embedded in the original code context
+                     const errorMarker = `--- ERROR Altering Variation ${iteration} ---\n${e.message || String(e)}\n--- ORIGINAL LINES ${startLine}-${endLine} WERE HERE ---`;
+                     const reconstructedLines = [
+                         ...pastedLines.slice(0, startIndex),
+                         errorMarker,
+                         // ...pastedLines.slice(startIndex, endIndex), // Don't include original on error, marker replaces it
+                         ...pastedLines.slice(endIndex)
+                     ];
+                     editResponses.push(reconstructedLines.join('\n'));
+                 }
+             } // End loop through variations
+
+             hideTypingIndicator();
+
+             // Create and display the bot response containing the edited code variations
+             const botEntry = {
+                 role: 'assistant',
+                 variants: editResponses.length > 0 ? editResponses : ["[Edit Failed]"],
+                 selectedIndex: 0,
+                 turnId: turnId,
+                 isCodeEdit: true // Keep this flag if it's used elsewhere
+             };
+             conversationHistory.push(botEntry);
+             saveHistoryToLocalStorage();
+             displayBotMessage(botEntry, 'spirit');
+
+             isWaitingForResponse = false;
+             // Re-enable send button based on whether resources are available
+             if (sendButton) sendButton.disabled = !hasSufficientApiResources();
+             scrollToBottom();
+             messageInput.focus();
         }
 
         function populateProviderSelect() {
-            if (!providerSelect) { console.error("providerSelect missing."); return; } providerSelect.innerHTML = '';
+            if (!providerSelect) { console.error("providerSelect missing."); return; }
+            providerSelect.innerHTML = '';
             if (typeof PROVIDERS === 'undefined' || Object.keys(PROVIDERS).length === 0) { console.error("PROVIDERS missing or empty."); providerSelect.innerHTML = '<option value="" disabled>Error</option>'; return; }
             for (const providerKey in PROVIDERS) { const option = document.createElement('option'); option.value = providerKey; option.textContent = PROVIDERS[providerKey].name || providerKey; providerSelect.appendChild(option); }
-            if (!PROVIDERS[selectedProvider]) { selectedProvider = Object.keys(PROVIDERS)[0] || ''; localStorage.setItem('selectedProvider', selectedProvider); }
-            providerSelect.value = selectedProvider; populateModelSelect(selectedProvider);
+
+            // Ensure selectedProvider is valid, default to first if not
+            if (!PROVIDERS[selectedProvider]) {
+                selectedProvider = Object.keys(PROVIDERS)[0] || '';
+                localStorage.setItem('selectedProvider', selectedProvider);
+            }
+            providerSelect.value = selectedProvider;
+            populateModelSelect(selectedProvider); // This also updates API key status
         }
 
         function populateModelSelect(providerKey) {
-            if (!modelSelect) { console.error("modelSelect missing."); return; } modelSelect.innerHTML = '';
-            if (typeof PROVIDERS === 'undefined' || !providerKey || !PROVIDERS[providerKey]) { modelSelect.innerHTML = '<option value="" disabled>Select Provider</option>'; selectedModel = ''; localStorage.setItem('selectedModel', ''); return; }
-            const providerConf = PROVIDERS[providerKey]; if (!providerConf.availableModels || providerConf.availableModels.length === 0) { modelSelect.innerHTML = '<option value="" disabled>No models</option>'; selectedModel = ''; localStorage.setItem('selectedModel', ''); return; }
-            providerConf.availableModels.forEach(modelInfo => { const modelKey = typeof modelInfo === 'string' ? modelInfo : modelInfo.key; const modelName = typeof modelInfo === 'string' ? modelInfo : modelInfo.name || modelInfo.key; if (!modelKey) return; const option = document.createElement('option'); option.value = modelKey; option.textContent = modelName; modelSelect.appendChild(option); });
-            const savedModel = localStorage.getItem('selectedModel'); const isValidSavedModel = savedModel && providerConf.availableModels.some(m => (typeof m === 'string' ? m === savedModel : m.key === savedModel));
-            if (isValidSavedModel) { modelSelect.value = savedModel; selectedModel = savedModel; }
-            else if (providerConf.defaultModel && providerConf.availableModels.some(m => (typeof m === 'string' ? m === providerConf.defaultModel : m.key === providerConf.defaultModel))) { modelSelect.value = providerConf.defaultModel; selectedModel = providerConf.defaultModel; }
-            else { const firstModelKey = typeof providerConf.availableModels[0] === 'string' ? providerConf.availableModels[0] : providerConf.availableModels[0]?.key; if (firstModelKey) { modelSelect.value = firstModelKey; selectedModel = firstModelKey; } else { modelSelect.innerHTML = '<option value="" disabled>Error</option>'; selectedModel = ''; } }
-            localStorage.setItem('selectedModel', selectedModel); console.log(`Model set: ${selectedModel} for ${selectedProvider}`);
+            if (!modelSelect) { console.error("modelSelect missing."); return; }
+            modelSelect.innerHTML = '';
+
+            // Fallback if providerKey is somehow invalid
+            if (typeof PROVIDERS === 'undefined' || !providerKey || !PROVIDERS[providerKey]) {
+                modelSelect.innerHTML = '<option value="" disabled>Select Provider</option>';
+                selectedModel = '';
+                localStorage.setItem('selectedModel', '');
+                updateApiKeyStatus(providerKey); // Update status even if provider is invalid
+                return;
+            }
+
+            const providerConf = PROVIDERS[providerKey];
+            // Check if models are defined
+            if (!providerConf.availableModels || providerConf.availableModels.length === 0) {
+                modelSelect.innerHTML = '<option value="" disabled>No models defined</option>';
+                selectedModel = '';
+                localStorage.setItem('selectedModel', '');
+                updateApiKeyStatus(providerKey); // Update status
+                return;
+            }
+
+            // Populate models
+            providerConf.availableModels.forEach(modelInfo => {
+                 const modelKey = typeof modelInfo === 'string' ? modelInfo : modelInfo.key;
+                 const modelName = typeof modelInfo === 'string' ? modelInfo : modelInfo.name || modelInfo.key;
+                 if (!modelKey) return; // Skip invalid model entries
+                 const option = document.createElement('option');
+                 option.value = modelKey;
+                 option.textContent = modelName;
+                 modelSelect.appendChild(option);
+            });
+
+            // Select the appropriate model (saved, default, or first)
+            const savedModel = localStorage.getItem('selectedModel');
+            const isValidSavedModel = savedModel && providerConf.availableModels.some(m => (typeof m === 'string' ? m === savedModel : m.key === savedModel));
+
+            if (isValidSavedModel) {
+                modelSelect.value = savedModel;
+                selectedModel = savedModel;
+            } else if (providerConf.defaultModel && providerConf.availableModels.some(m => (typeof m === 'string' ? m === providerConf.defaultModel : m.key === providerConf.defaultModel))) {
+                modelSelect.value = providerConf.defaultModel;
+                selectedModel = providerConf.defaultModel;
+            } else {
+                // Select the first available model as a fallback
+                const firstModelKey = typeof providerConf.availableModels[0] === 'string' ? providerConf.availableModels[0] : providerConf.availableModels[0]?.key;
+                if (firstModelKey) {
+                    modelSelect.value = firstModelKey;
+                    selectedModel = firstModelKey;
+                } else {
+                    // Should not happen if validation above is correct, but safeguard
+                    modelSelect.innerHTML = '<option value="" disabled>Error loading models</option>';
+                    selectedModel = '';
+                }
+            }
+            localStorage.setItem('selectedModel', selectedModel);
+            console.log(`Model set: ${selectedModel} for ${selectedProvider}`);
+            updateApiKeyStatus(providerKey); // Crucial: Update status after model selection potentially changes provider needs
         }
 
-        function handleProviderChange() { selectedProvider = providerSelect.value; localStorage.setItem('selectedProvider', selectedProvider); populateModelSelect(selectedProvider); updateApiKeyStatus(selectedProvider); if (sendButton) sendButton.disabled = !hasSelectedProviderApiKeys() || isWaitingForResponse; }
 
-        function handleModelChange() { selectedModel = modelSelect.value; localStorage.setItem('selectedModel', selectedModel); console.log(`Model set: ${selectedModel} for ${selectedProvider}`); }
+        function handleProviderChange() {
+            selectedProvider = providerSelect.value;
+            localStorage.setItem('selectedProvider', selectedProvider);
+            populateModelSelect(selectedProvider); // This triggers model population and updates API key status
+            // Send button state is handled within updateApiKeyStatus called by populateModelSelect
+        }
+
+        function handleModelChange() {
+            selectedModel = modelSelect.value;
+            localStorage.setItem('selectedModel', selectedModel);
+            console.log(`Model changed to: ${selectedModel} for ${selectedProvider}`);
+            // No need to update API status here, as it depends on the provider, not the model
+        }
 
         function openSystemPromptModal() {
              console.log("openSystemPromptModal called");
              if (!systemPromptModal) { console.error("Settings modal element missing!"); return; }
+
+             // Populate fields from current state/storage
              if (systemPromptInput) systemPromptInput.value = conversationHistory[0]?.content || localStorage.getItem('systemPrompt') || DEFAULT_SYSTEM_PROMPT;
-             populateProviderSelect(); updateApiKeyStatus(selectedProvider);
-             if (apiKeyInput) apiKeyInput.value = '';
+             if (maxVariationsInput) maxVariationsInput.value = maxResponseVariations;
              if (hideCodeCheckbox) hideCodeCheckbox.checked = hideCodeBlocks;
              if (downloadCodeCheckbox) downloadCodeCheckbox.checked = downloadCodeMode;
              if (enableRunHtmlCheckbox) enableRunHtmlCheckbox.checked = enableRunHtmlMode;
+             if (apiKeyInput) apiKeyInput.value = ''; // Clear key input field
+
+             // Populate provider/model selects (this also updates API key status display)
+             populateProviderSelect();
+
              systemPromptModal.style.display = 'flex';
              console.log("System prompt modal display attempt finished.");
          }
 
         function saveSettings() {
-             console.log("saveSettings called"); const sp = systemPromptInput.value.trim() || DEFAULT_SYSTEM_PROMPT;
-             if (conversationHistory.length === 0 || conversationHistory[0]?.role !== 'system') { conversationHistory.unshift({ role: 'system', content: sp }); } else { conversationHistory[0].content = sp; }
-             localStorage.setItem('systemPrompt', sp); localStorage.setItem('selectedProvider', selectedProvider); localStorage.setItem('selectedModel', selectedModel);
-             try { localStorage.setItem('apiKeys', JSON.stringify(apiKeys)); localStorage.setItem('currentApiKeyIndex', JSON.stringify(currentApiKeyIndex)); console.log(`Settings saved. Provider: ${selectedProvider}, Model: ${selectedModel}`); }
-             catch (e) { console.error("Failed to save API keys/indices:", e); alert("Error saving API keys."); }
-             saveHistoryToLocalStorage(); if (sendButton) sendButton.disabled = !hasSelectedProviderApiKeys(); systemPromptModal.style.display = 'none';
+             console.log("saveSettings called");
+             // System Prompt
+             const sp = systemPromptInput.value.trim() || DEFAULT_SYSTEM_PROMPT;
+             if (conversationHistory.length === 0 || conversationHistory[0]?.role !== 'system') {
+                 conversationHistory.unshift({ role: 'system', content: sp });
+             } else {
+                 conversationHistory[0].content = sp;
+             }
+             localStorage.setItem('systemPrompt', sp);
+
+             // Provider & Model (already updated by change handlers, but save again)
+             localStorage.setItem('selectedProvider', selectedProvider);
+             localStorage.setItem('selectedModel', selectedModel);
+
+             // Max Variations
+             const newMaxVar = parseInt(maxVariationsInput.value, 10);
+             if (!isNaN(newMaxVar) && newMaxVar >= 1 && newMaxVar <= parseInt(maxVariationsInput.max, 10)) {
+                maxResponseVariations = newMaxVar;
+                localStorage.setItem('maxResponseVariations', String(maxResponseVariations));
+                // Update the actual input fields' max attributes
+                updateResponseCountInputMax();
+             } else {
+                 alert(`Invalid Max Variations value. Please enter a number between 1 and ${maxVariationsInput.max}.`);
+                 maxVariationsInput.value = maxResponseVariations; // Reset to previous valid value
+                 return; // Don't close modal if validation fails
+             }
+
+
+             // API Keys & Indices (already saved on add/clear/retry, but save here for completeness)
+             try {
+                 localStorage.setItem('apiKeys', JSON.stringify(apiKeys));
+                 localStorage.setItem('currentApiKeyIndex', JSON.stringify(currentApiKeyIndex));
+                 localStorage.setItem('apiCallCounts', JSON.stringify(apiCallCounts)); // Save counts
+                 console.log(`Settings saved. Provider: ${selectedProvider}, Model: ${selectedModel}, Max Variations: ${maxResponseVariations}`);
+             }
+             catch (e) { console.error("Failed to save API keys/indices/counts:", e); alert("Error saving API data."); }
+
+             saveHistoryToLocalStorage(); // Save potentially modified system prompt in history
+             updateApiKeyStatus(); // Update main UI button state
+             systemPromptModal.style.display = 'none';
         }
 
+        function updateResponseCountInputMax() {
+            // Update the max value for the response count inputs based on the setting
+            if (mainResponseCountInput) mainResponseCountInput.max = maxResponseVariations;
+            if (editResponseCountInput) editResponseCountInput.max = maxResponseVariations;
+        }
+
+
         function handleHideCodeToggle() { if (!hideCodeCheckbox || !chatContainerElement) return; hideCodeBlocks = hideCodeCheckbox.checked; localStorage.setItem('hideCodeBlocks', String(hideCodeBlocks)); chatContainerElement.classList.toggle('code-hidden', hideCodeBlocks); }
-
         function handleDownloadCodeToggle() { if (!downloadCodeCheckbox || !chatContainerElement) return; downloadCodeMode = downloadCodeCheckbox.checked; localStorage.setItem('downloadCodeMode', String(downloadCodeMode)); chatContainerElement.classList.toggle('download-code-active', downloadCodeMode); }
-
         function handleEnableRunHtmlToggle() { if (!enableRunHtmlCheckbox || !chatContainerElement) return; enableRunHtmlMode = enableRunHtmlCheckbox.checked; localStorage.setItem('enableRunHtmlMode', String(enableRunHtmlMode)); chatContainerElement.classList.toggle('run-html-active', enableRunHtmlMode); }
 
         function handleClearChat() {
              console.log("handleClearChat called");
-             if (confirm("Disperse all echoes? (Cannot be undone)")) { console.log("Clear confirmed"); const sp = conversationHistory[0]?.content || localStorage.getItem('systemPrompt') || DEFAULT_SYSTEM_PROMPT; conversationHistory = [{ role: 'system', content: sp }]; turnCounter = 1; saveHistoryToLocalStorage(); rebuildChatFromHistory(); displayInitialGreeting(); console.log("Chat cleared."); }
+             if (confirm("Disperse all echoes? (Cannot be undone)")) {
+                 console.log("Clear confirmed");
+                 const sp = conversationHistory[0]?.content || localStorage.getItem('systemPrompt') || DEFAULT_SYSTEM_PROMPT;
+                 conversationHistory = [{ role: 'system', content: sp }]; // Keep only system prompt
+                 turnCounter = 1; // Reset turn counter
+                 saveHistoryToLocalStorage();
+                 rebuildChatFromHistory(); // Clear UI
+                 displayInitialGreeting(); // Show greeting again
+                 console.log("Chat cleared.");
+             }
              else { console.log("Clear cancelled"); }
         }
 
@@ -482,7 +964,11 @@
 
         function openEditCodeModal() {
              console.log("openEditCodeModal called"); if (!codeEditModal) { console.error("Code edit modal missing!"); return; }
-             if (editSnippetTextarea) editSnippetTextarea.value = ''; if (editStartLineInput) editStartLineInput.value = 1; if (editEndLineInput) editEndLineInput.value = 1; if (editInstructionsInput) editInstructionsInput.value = ''; if (editResponseCountInput) editResponseCountInput.value = 1;
+             if (editSnippetTextarea) editSnippetTextarea.value = ''; if (editStartLineInput) editStartLineInput.value = 1; if (editEndLineInput) editEndLineInput.value = 1; if (editInstructionsInput) editInstructionsInput.value = '';
+             if (editResponseCountInput) {
+                editResponseCountInput.value = 1;
+                editResponseCountInput.max = maxResponseVariations; // Ensure max is set correctly
+             }
              updateSnippetLineCount(); codeEditModal.style.display = 'flex'; if (editSnippetTextarea) editSnippetTextarea.focus();
              console.log("Code edit modal display attempt finished.");
         }
@@ -496,8 +982,9 @@
 
         function renderRunnerHTML() {
              if (!htmlRunnerInput || !htmlRunnerFrame) { console.error("HTML Runner elements missing."); return; } const htmlCode = htmlRunnerInput.value;
-             if (/<script.*?>.*?window\.location.*?<\/script>/i.test(htmlCode) || /<script.*?>.*?document\.cookie.*?<\/script>/i.test(htmlCode) || /<script.*?>.*?localStorage.*?<\/script>/i.test(htmlCode) || /<script.*?>.*?sessionStorage.*?<\/script>/i.test(htmlCode)) { console.warn("Harmful script detected. Blocking render."); try { const d = htmlRunnerFrame.contentDocument || htmlRunnerFrame.contentWindow?.document; if (d) { d.open(); d.write('<html><body>Blocked</body></html>'); d.close(); } } catch (e) { /* ignore */ } return; }
-             try { const d = htmlRunnerFrame.contentDocument || htmlRunnerFrame.contentWindow?.document; if (d) { d.open(); d.write(htmlCode); d.close(); } else { console.error("Cannot access iframe document."); } } catch (e) { console.error("Error rendering HTML:", e); try { const d = htmlRunnerFrame.contentDocument || htmlRunnerFrame.contentWindow?.document; if (d) { d.open(); d.write(`<html><body>Error:<pre>${e.message}</pre></body></html>`); d.close(); } } catch (e2) { /* ignore */ } }
+             // Basic check for obviously malicious patterns - could be expanded
+             if (/<script.*?>.*?window\.location.*?<\/script>/i.test(htmlCode) || /<script.*?>.*?document\.cookie.*?<\/script>/i.test(htmlCode) || /<script.*?>.*?localStorage.*?<\/script>/i.test(htmlCode) || /<script.*?>.*?sessionStorage.*?<\/script>/i.test(htmlCode)) { console.warn("Potentially harmful script detected. Blocking render."); try { const d = htmlRunnerFrame.contentDocument || htmlRunnerFrame.contentWindow?.document; if (d) { d.open(); d.write('<html><head><title>Blocked</title></head><body><p style="color:red; font-weight:bold;">Execution blocked due to potentially harmful script content (e.g., manipulating location, cookies, or storage).</p></body></html>'); d.close(); } } catch (e) { /* ignore sandbox errors */ } return; }
+             try { const d = htmlRunnerFrame.contentDocument || htmlRunnerFrame.contentWindow?.document; if (d) { d.open(); d.write(htmlCode); d.close(); } else { console.error("Cannot access iframe document."); } } catch (e) { console.error("Error rendering HTML:", e); try { const d = htmlRunnerFrame.contentDocument || htmlRunnerFrame.contentWindow?.document; if (d) { d.open(); d.write(`<html><body><h1>Render Error</h1><pre>${e.message}</pre></body></html>`); d.close(); } } catch (e2) { /* ignore sandbox errors */ } }
         }
 
         function openHtmlRunner(initialCode = '') { if (!htmlRunnerModal || !htmlRunnerInput) { console.error("HTML Runner modal/input missing."); return; } htmlRunnerInput.value = initialCode; renderRunnerHTML(); htmlRunnerModal.style.display = 'flex'; }
@@ -512,11 +999,11 @@
             if (!entry || !entry.variants) { console.warn("Invalid bot entry:", entry); return; } const variants = Array.isArray(entry.variants) ? entry.variants : [entry.variants]; const selectedIndex = entry.selectedIndex ?? 0;
             if (variants.length > 1) displayMultipleMessages({ ...entry, variants: variants, selectedIndex: selectedIndex }, sender);
             else if (variants.length === 1) displayMessage({ ...entry, variants: variants, selectedIndex: 0 }, sender);
-            else displayMessage({ ...entry, variants: ["[Silence]"], selectedIndex: 0 }, sender);
+            else displayMessage({ ...entry, variants: ["[Silence]"], selectedIndex: 0 }, sender); // Handle empty variants case
         }
 
         function displayMessage(entry, sender) {
-            const content = (sender === 'user') ? (entry.content || "") : (entry.variants?.[entry.selectedIndex ?? 0] || "[Error]");
+            const content = (sender === 'user') ? (entry.content || "") : (entry.variants?.[entry.selectedIndex ?? 0] || "[Error - No variant selected or available]");
             const msgDiv = document.createElement('div'); msgDiv.className = `message message-${sender}`; if (entry.turnId) msgDiv.dataset.turnId = entry.turnId;
             const pfpUrl = (sender === 'user') ? userPfp : botPfp; const avatarEl = createPfpElement(sender, pfpUrl); const wrapper = document.createElement('div'); wrapper.classList.add('message-content-wrapper');
             const contentDiv = document.createElement('div'); contentDiv.className = 'message-content';
@@ -530,115 +1017,399 @@
 
         function displayMultipleMessages(entry, sender = 'spirit') {
             if (!pages) { console.error("Pages container missing."); return null; } if (!entry || !Array.isArray(entry.variants) || entry.variants.length === 0) { console.warn("Invalid multi-entry:", entry); return null; }
-            const tid = entry.turnId; const vars = entry.variants; let idx = entry.selectedIndex ?? 0; if (idx < 0 || idx >= vars.length) idx = 0;
+            const tid = entry.turnId; const vars = entry.variants; let idx = entry.selectedIndex ?? 0; if (idx < 0 || idx >= vars.length) idx = 0; // Validate index
             const msgDiv = document.createElement('div'); msgDiv.className = `message message-${sender}`; if (tid) msgDiv.dataset.turnId = tid; const pfpUrl = (sender === 'user') ? userPfp : botPfp; const avatarEl = createPfpElement(sender, pfpUrl);
             const wrapper = document.createElement('div'); wrapper.classList.add('message-content-wrapper'); const contentDiv = document.createElement('div'); contentDiv.className = 'message-content'; const nav = document.createElement('div'); nav.classList.add('response-navigation');
-            const prev = document.createElement('button'); prev.textContent = '<'; prev.title = "Previous"; const span = document.createElement('span'); span.title = "Variant"; const next = document.createElement('button'); next.textContent = '>'; next.title = "Next";
-            nav.appendChild(prev); nav.appendChild(span); nav.appendChild(next); let actsContainer = document.createElement('div'); actsContainer.classList.add('message-actions'); wrapper.appendChild(contentDiv); wrapper.appendChild(actsContainer); wrapper.appendChild(nav);
-            function update(currentIndex) { const c = vars[currentIndex] || "[Error]"; try { contentDiv.innerHTML = marked.parse(c); } catch (e) { console.error("Markdown error:", e); contentDiv.textContent = c; contentDiv.style.whiteSpace = 'pre-wrap'; } addCodeActionButtons(contentDiv, wrapper, tid, currentIndex); span.textContent = `${currentIndex + 1} / ${vars.length}`; prev.disabled = currentIndex === 0; next.disabled = currentIndex === vars.length - 1; contentDiv.querySelectorAll('pre code').forEach((block) => { try { hljs.highlightElement(block); } catch (e) { console.warn("Highlight error:", e); } }); contentDiv.style.animation = 'none'; void contentDiv.offsetWidth; contentDiv.style.animation = 'fadeIn 0.3s ease-in-out'; }
-            prev.addEventListener('click', () => { if (idx > 0) { idx--; update(idx); updateHistorySelection(tid, idx); } }); next.addEventListener('click', () => { if (idx < vars.length - 1) { idx++; update(idx); updateHistorySelection(tid, idx); } });
-            if (sender === 'user') { msgDiv.appendChild(wrapper); msgDiv.appendChild(avatarEl); } else { msgDiv.appendChild(avatarEl); msgDiv.appendChild(wrapper); } pages.appendChild(msgDiv); update(idx); return msgDiv;
+            const prev = document.createElement('button'); prev.textContent = '<'; prev.title = "Previous Variation"; const span = document.createElement('span'); span.title = "Current Variation"; const next = document.createElement('button'); next.textContent = '>'; next.title = "Next Variation";
+            nav.appendChild(prev); nav.appendChild(span); nav.appendChild(next); let actsContainer = document.createElement('div'); actsContainer.classList.add('message-actions'); wrapper.appendChild(contentDiv); wrapper.appendChild(actsContainer); wrapper.appendChild(nav); // Nav below actions
+
+            function update(currentIndex) {
+                const c = vars[currentIndex] || "[Error - Variant unavailable]";
+                try { contentDiv.innerHTML = marked.parse(c); }
+                catch (e) { console.error("Markdown error:", e); contentDiv.textContent = c; contentDiv.style.whiteSpace = 'pre-wrap'; }
+                addCodeActionButtons(contentDiv, wrapper, tid, currentIndex); // Pass current index
+                span.textContent = `${currentIndex + 1} / ${vars.length}`;
+                prev.disabled = currentIndex === 0;
+                next.disabled = currentIndex === vars.length - 1;
+                // Highlight code blocks within the newly rendered content
+                contentDiv.querySelectorAll('pre code').forEach((block) => { try { hljs.highlightElement(block); } catch (e) { console.warn("Highlight error:", e); } });
+                // Trigger reflow for animation restart
+                contentDiv.style.animation = 'none';
+                void contentDiv.offsetWidth; // Reflow
+                contentDiv.style.animation = 'fadeIn 0.3s ease-in-out';
+            }
+
+            prev.addEventListener('click', () => { if (idx > 0) { idx--; update(idx); updateHistorySelection(tid, idx); } });
+            next.addEventListener('click', () => { if (idx < vars.length - 1) { idx++; update(idx); updateHistorySelection(tid, idx); } });
+
+            if (sender === 'user') { msgDiv.appendChild(wrapper); msgDiv.appendChild(avatarEl); } else { msgDiv.appendChild(avatarEl); msgDiv.appendChild(wrapper); }
+            pages.appendChild(msgDiv);
+            update(idx); // Initial display
+            return msgDiv;
         }
 
         function addCodeActionButtons(contentDiv, wrapper, turnId, variantIndex) {
-             let acts = wrapper.querySelector('.message-actions'); if (!acts) { acts = document.createElement('div'); acts.classList.add('message-actions'); const nav = wrapper.querySelector('.response-navigation'); if (nav) wrapper.insertBefore(acts, nav); else wrapper.appendChild(acts); } acts.innerHTML = '';
-             contentDiv.querySelectorAll('.cat-placeholder').forEach(c => c.remove()); const codeBlocks = contentDiv.querySelectorAll('pre'); if (codeBlocks.length === 0 && !acts.hasChildNodes()) { if(acts.parentNode) acts.remove(); return; }
+             let acts = wrapper.querySelector('.message-actions');
+             // Ensure actions container exists if needed
+             if (!acts) {
+                 acts = document.createElement('div');
+                 acts.classList.add('message-actions');
+                 const nav = wrapper.querySelector('.response-navigation');
+                 if (nav) {
+                     wrapper.insertBefore(acts, nav); // Insert actions before navigation
+                 } else {
+                     wrapper.appendChild(acts); // Append if no nav exists
+                 }
+             }
+             acts.innerHTML = ''; // Clear previous buttons for this variant
+
+             // Remove old placeholders first
+             contentDiv.querySelectorAll('.cat-placeholder').forEach(c => c.remove());
+
+             const codeBlocks = contentDiv.querySelectorAll('pre');
+             if (codeBlocks.length === 0) {
+                 // If no code blocks AND no other actions are planned, remove the container
+                 if (!acts.hasChildNodes() && acts.parentNode) {
+                     acts.remove();
+                 }
+                 return;
+             }
+
              codeBlocks.forEach((pre, preIdx) => {
-                 const uid = `pre-${turnId || 'g'}-${variantIndex}-${preIdx}`; pre.id = uid; const cat = document.createElement('span'); cat.className = 'cat-placeholder'; cat.textContent = '🐱'; cat.dataset.preId = uid; pre.parentNode.insertBefore(cat, pre);
-                 const code = pre.querySelector('code'); const txt = code ? code.textContent : ''; const lang = code?.className.match(/language-(\w+)/)?.[1]?.toLowerCase() || 'txt'; const fn = `tome_${turnId || 'c'}_${variantIndex + 1}_${preIdx + 1}.${lang}`;
-                 const cp = document.createElement('button'); cp.textContent='Copy'; cp.title=`Copy ${lang}`; cp.className='copy-code-button action-button'; cp.onclick=()=>copyCodeFromPre(uid, cp); acts.appendChild(cp);
-                 const dl = document.createElement('button'); dl.textContent='Download'; dl.title=`Download ${fn}`; dl.className='download-code-button action-button'; dl.onclick=()=>downloadCode(txt, fn); acts.appendChild(dl);
-                 if (lang==='html') { const rn = document.createElement('button'); rn.textContent='Run HTML'; rn.className='run-html-button action-button'; rn.title="Run HTML"; rn.onclick=()=>openHtmlRunner(txt); acts.appendChild(rn); }
-             }); if (!acts.hasChildNodes() && acts.parentNode) acts.remove();
+                 // Unique ID considering turn, variant, and block index
+                 const uid = `pre-${turnId || 'g'}-${variantIndex}-${preIdx}`;
+                 pre.id = uid; // Assign ID for later retrieval
+
+                 // Add cat placeholder for hidden code view
+                 const cat = document.createElement('span');
+                 cat.className = 'cat-placeholder'; cat.textContent = '🐱'; cat.dataset.preId = uid;
+                 pre.parentNode.insertBefore(cat, pre);
+
+                 const code = pre.querySelector('code');
+                 const txt = code ? code.textContent : ''; // Get raw code text
+                 const langMatch = code?.className.match(/language-(\w+)/);
+                 const lang = langMatch ? langMatch[1].toLowerCase() : 'txt'; // Detect language
+                 const fn = `tome_${turnId || 'c'}_var${variantIndex + 1}_block${preIdx + 1}.${lang}`; // Generate filename
+
+                 // Copy Button
+                 const cp = document.createElement('button'); cp.textContent='Copy'; cp.title=`Copy ${lang} Code Block ${preIdx + 1}`; cp.className='copy-code-button action-button';
+                 cp.onclick = () => copyCodeFromPre(uid, cp);
+                 acts.appendChild(cp);
+
+                 // Download Button (conditionally displayed via CSS)
+                 const dl = document.createElement('button'); dl.textContent='Download'; dl.title=`Download ${fn}`; dl.className='download-code-button action-button';
+                 dl.onclick = () => downloadCode(txt, fn);
+                 acts.appendChild(dl);
+
+                 // Run HTML Button (conditionally displayed via CSS, only for HTML blocks)
+                 if (lang === 'html') {
+                     const rn = document.createElement('button'); rn.textContent='Run HTML'; rn.className='run-html-button action-button'; rn.title=`Run HTML Block ${preIdx + 1}`;
+                     rn.onclick = () => openHtmlRunner(txt);
+                     acts.appendChild(rn);
+                 }
+             });
+
+             // Clean up actions container if it ended up empty (e.g., only non-HTML code and download disabled)
+             if (!acts.hasChildNodes() && acts.parentNode) {
+                  acts.remove();
+             }
         }
 
         function copyCodeFromPre(preId, btn) {
              const pre = document.getElementById(preId); const code = pre ? pre.querySelector('code') : null; if (!code) { console.error(`Code element missing for ${preId}`); if (btn) btn.textContent='Err'; return; }
-             const txt = code.textContent || ''; if (!copyHelper) { console.error("Copy helper missing."); if (btn) btn.textContent='Err'; return; } copyHelper.value = txt; copyHelper.select(); copyHelper.setSelectionRange(0, 99999); let ok = false; try { ok = document.execCommand('copy'); } catch (e) { ok = false; } window.getSelection()?.removeAllRanges();
+             const txt = code.textContent || ''; if (!copyHelper) { console.error("Copy helper missing."); if (btn) btn.textContent='Err'; return; } copyHelper.value = txt; copyHelper.select(); copyHelper.setSelectionRange(0, 99999); let ok = false; try { ok = document.execCommand('copy'); } catch (e) { ok = false; console.warn("document.execCommand('copy') failed:", e); }
+             // Deselect text
+             window.getSelection()?.removeAllRanges();
+             // Provide feedback on the button
              if (btn) { if (ok) { btn.textContent = 'Copied!'; btn.classList.add('copied'); setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1500); } else { btn.textContent = 'Failed!'; setTimeout(() => { btn.textContent = 'Copy'; }, 2500); } }
         }
 
         function downloadCode(codeText, filename) { try { const b = new Blob([codeText], { type: 'text/plain;charset=utf-8' }); const u = URL.createObjectURL(b); const a = document.createElement('a'); a.href = u; a.download = filename; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(u); } catch (e) { console.error("Download err:", e); alert("Download failed."); } }
-
         function showTypingIndicator() { if (document.getElementById('typing-indicator')) return; if (!pages) { console.error("Pages missing for typing indicator."); return; } const ind = document.createElement('div'); ind.className = 'typing-indicator message message-spirit'; ind.id = 'typing-indicator'; const av = createPfpElement('spirit', botPfp); const wr = document.createElement('div'); wr.className = 'message-content-wrapper'; const cd = document.createElement('div'); cd.className = 'message-content'; cd.style.cssText = 'font-style: italic; color: var(--ink-light);'; cd.textContent = 'The spirit whispers...'; wr.appendChild(cd); ind.appendChild(av); ind.appendChild(wr); pages.appendChild(ind); scrollToBottom(); }
-
         function hideTypingIndicator() { const ind = document.getElementById('typing-indicator'); if (ind) ind.remove(); }
+        function scrollToBottom() { if (!pages) return; setTimeout(() => { pages.scrollTop = pages.scrollHeight; }, 50); } // Small delay helps ensure rendering is complete
 
-        function scrollToBottom() { if (!pages) return; setTimeout(() => { pages.scrollTop = pages.scrollHeight; }, 50); }
+        function prepareHistoryForApi(hist) {
+            if (!Array.isArray(hist)) return [];
+            return hist
+                // Filter out any potentially null/undefined entries just in case
+                .filter(m => m && m.role)
+                .map(m => {
+                    if (m.role === 'system') {
+                        return { role: 'system', content: m.content || "" };
+                    }
+                    if (m.role === 'user') {
+                        // Make sure content exists, default to empty string if not
+                        return { role: 'user', content: m.content || "" };
+                    }
+                    if (m.role === 'assistant') {
+                        // Get content from the currently selected variant
+                        const content = m.variants?.[m.selectedIndex ?? 0];
+                        // Only include assistant message if content is valid (not null/undefined)
+                        return content != null ? { role: 'assistant', content: content } : null;
+                    }
+                    // Ignore unknown roles
+                    return null;
+                })
+                // Filter out any nulls potentially returned (e.g., assistant message with no valid content)
+                .filter(Boolean);
+        }
 
-        function prepareHistoryForApi(hist) { if (!Array.isArray(hist)) return []; return hist.map(m => { if (!m || !m.role) return null; if (m.role === 'system') return { role: 'system', content: m.content || "" }; if (m.role === 'user') return { role: 'user', content: m.content || "" }; if (m.role === 'assistant') { const c = m.variants?.[m.selectedIndex ?? 0]; return c ? { role: 'assistant', content: c } : null; } return null; }).filter(Boolean); }
 
-        function updateHistorySelection(turnId, newIndex) { if (!turnId) return; const idx = conversationHistory.findIndex(m => m.turnId === turnId && m.role === 'assistant'); if (idx > -1) { const msg = conversationHistory[idx]; if (msg.variants && newIndex >= 0 && newIndex < msg.variants.length) { msg.selectedIndex = newIndex; saveHistoryToLocalStorage(); } else { console.warn(`Invalid index ${newIndex} for turn ${turnId}`); } } }
+        function updateHistorySelection(turnId, newIndex) {
+            if (!turnId) return;
+            const historyIndex = conversationHistory.findIndex(m => m.turnId === turnId && m.role === 'assistant');
+            if (historyIndex > -1) {
+                const msg = conversationHistory[historyIndex];
+                if (msg.variants && newIndex >= 0 && newIndex < msg.variants.length) {
+                    if (msg.selectedIndex !== newIndex) { // Only update if changed
+                        msg.selectedIndex = newIndex;
+                        saveHistoryToLocalStorage(); // Save the change
+                        console.log(`Updated selected index for turn ${turnId} to ${newIndex}`);
+                    }
+                } else {
+                    console.warn(`Invalid index ${newIndex} provided for turn ${turnId}`);
+                }
+            } else {
+                console.warn(`Could not find assistant message for turn ${turnId} to update selection.`);
+            }
+        }
 
         function saveHistoryToLocalStorage() { try { localStorage.setItem('conversationHistory', JSON.stringify(conversationHistory)); } catch (e) { console.error("Save history error:", e); } }
 
         function loadHistoryFromLocalStorage() {
-             let providerOk = false; try { if (typeof PROVIDERS === 'undefined' || Object.keys(PROVIDERS).length === 0) throw new Error("PROVIDERS missing."); const sp = localStorage.getItem('selectedProvider'); selectedProvider = (sp && PROVIDERS[sp]) ? sp : (Object.keys(PROVIDERS)[0] || ''); selectedModel = localStorage.getItem('selectedModel') || ''; providerOk = true; } catch (e) { console.error("Provider init error:", e); selectedProvider = localStorage.getItem('selectedProvider') || ''; selectedModel = localStorage.getItem('selectedModel') || ''; }
-             try { const sk = localStorage.getItem('apiKeys'); apiKeys = sk ? JSON.parse(sk) : {}; const si = localStorage.getItem('currentApiKeyIndex'); currentApiKeyIndex = si ? JSON.parse(si) : {}; if (typeof apiKeys !== 'object' || apiKeys === null) apiKeys = {}; if (typeof currentApiKeyIndex !== 'object' || currentApiKeyIndex === null) currentApiKeyIndex = {}; } catch (e) { console.warn("Key/Index load error:", e); apiKeys = {}; currentApiKeyIndex = {}; }
-             let historyOk = false; try { const sh = localStorage.getItem('conversationHistory'); if (!sh) throw new Error('No history'); const ph = JSON.parse(sh); if (!Array.isArray(ph)) throw new Error('History not array'); if (ph.length > 0 && ph[0]?.role !== 'system') { const sys = localStorage.getItem('systemPrompt') || DEFAULT_SYSTEM_PROMPT; ph.unshift({ role: 'system', content: sys }); } else if (ph.length === 0) { const sys = localStorage.getItem('systemPrompt') || DEFAULT_SYSTEM_PROMPT; ph.push({ role: 'system', content: sys }); }
-                 conversationHistory = ph.map(m => { if (m && m.role === 'assistant') { const v = Array.isArray(m.variants) ? m.variants : (m.content ? [m.content] : []); let s = m.selectedIndex ?? 0; if (!Number.isInteger(s) || s < 0 || s >= v.length) s = 0; return { ...m, variants: v, selectedIndex: s, content: undefined }; } return m; }).filter(Boolean);
-                 const lt = conversationHistory.slice().reverse().find(m => m.turnId?.startsWith('turn-')); turnCounter = lt?.turnId ? (parseInt(lt.turnId.split('-')[1], 10) || 0) + 1 : 1; historyOk = true; console.log(`History loaded. Next turn: ${turnCounter}`); }
-             catch (e) { console.warn("History load error:", e); const sys = localStorage.getItem('systemPrompt') || DEFAULT_SYSTEM_PROMPT; conversationHistory = [{ role: 'system', content: sys }]; turnCounter = 1; }
-             return providerOk && historyOk;
+             let providerOk = false;
+             try {
+                 if (typeof PROVIDERS === 'undefined' || Object.keys(PROVIDERS).length === 0) throw new Error("PROVIDERS definitions missing.");
+                 const sp = localStorage.getItem('selectedProvider');
+                 // Ensure the saved provider still exists in the definitions
+                 selectedProvider = (sp && PROVIDERS[sp]) ? sp : (Object.keys(PROVIDERS)[0] || '');
+                 selectedModel = localStorage.getItem('selectedModel') || ''; // Model validity checked in populateModelSelect
+                 providerOk = true;
+             } catch (e) {
+                 console.error("Provider configuration or loading error:", e);
+                 // Fallback to potentially stored values even if PROVIDERS is broken
+                 selectedProvider = localStorage.getItem('selectedProvider') || '';
+                 selectedModel = localStorage.getItem('selectedModel') || '';
+             }
+
+             // Load API Keys, Indices, and Counts
+             try {
+                 const sk = localStorage.getItem('apiKeys');
+                 apiKeys = sk ? JSON.parse(sk) : {};
+                 const si = localStorage.getItem('currentApiKeyIndex');
+                 currentApiKeyIndex = si ? JSON.parse(si) : {};
+                 const sc = localStorage.getItem('apiCallCounts'); // Load counts
+                 apiCallCounts = sc ? JSON.parse(sc) : {};
+
+                 // Basic validation
+                 if (typeof apiKeys !== 'object' || apiKeys === null) apiKeys = {};
+                 if (typeof currentApiKeyIndex !== 'object' || currentApiKeyIndex === null) currentApiKeyIndex = {};
+                 if (typeof apiCallCounts !== 'object' || apiCallCounts === null) apiCallCounts = {}; // Validate counts object
+             } catch (e) {
+                 console.warn("API Key/Index/Count loading error:", e);
+                 apiKeys = {}; currentApiKeyIndex = {}; apiCallCounts = {}; // Reset on error
+             }
+
+             // Load Max Variations setting
+             try {
+                 const savedMaxVar = localStorage.getItem('maxResponseVariations');
+                 const parsedMaxVar = parseInt(savedMaxVar || '5', 10); // Default to 5
+                 maxResponseVariations = (!isNaN(parsedMaxVar) && parsedMaxVar >= 1) ? parsedMaxVar : 5;
+             } catch (e) {
+                 console.warn("Max Variations loading error:", e);
+                 maxResponseVariations = 5; // Default on error
+             }
+
+
+             // Load Conversation History
+             let historyOk = false;
+             try {
+                 const sh = localStorage.getItem('conversationHistory');
+                 if (!sh) throw new Error('No history found in localStorage');
+                 const ph = JSON.parse(sh);
+                 if (!Array.isArray(ph)) throw new Error('Stored history is not an array');
+
+                 // Ensure System Prompt exists
+                 if (ph.length === 0 || ph[0]?.role !== 'system') {
+                     const sys = localStorage.getItem('systemPrompt') || DEFAULT_SYSTEM_PROMPT;
+                     ph.unshift({ role: 'system', content: sys });
+                 } else {
+                     // Ensure existing system prompt content is not null/undefined
+                     ph[0].content = ph[0].content || localStorage.getItem('systemPrompt') || DEFAULT_SYSTEM_PROMPT;
+                 }
+
+                 // Sanitize loaded history
+                 conversationHistory = ph.map(m => {
+                     if (!m || !m.role) return null; // Skip invalid messages
+                     if (m.role === 'assistant') {
+                         // Ensure variants is an array, handle old 'content' field
+                         const variants = Array.isArray(m.variants) ? m.variants : (m.content != null ? [m.content] : []);
+                         let selectedIndex = m.selectedIndex ?? 0;
+                         // Validate selectedIndex
+                         if (!Number.isInteger(selectedIndex) || selectedIndex < 0 || selectedIndex >= variants.length) {
+                             selectedIndex = 0; // Default to 0 if invalid
+                         }
+                         return {
+                             role: 'assistant',
+                             variants: variants,
+                             selectedIndex: selectedIndex,
+                             turnId: m.turnId, // Preserve turnId
+                             isCodeEdit: m.isCodeEdit // Preserve flag
+                             // content: undefined // Remove legacy content field
+                         };
+                     }
+                      // Ensure user messages have content
+                     if (m.role === 'user') {
+                         return { ...m, content: m.content || "" };
+                     }
+                     // Keep system prompt as is (already validated)
+                     if (m.role === 'system') {
+                        return m;
+                     }
+                     return null; // Skip unknown roles
+                 }).filter(Boolean); // Remove null entries
+
+                 // Determine the next turn counter
+                 const lastTurn = conversationHistory.slice().reverse().find(m => m.turnId?.startsWith('turn-'));
+                 turnCounter = lastTurn?.turnId ? (parseInt(lastTurn.turnId.split('-')[1], 10) || 0) + 1 : 1;
+
+                 historyOk = true;
+                 console.log(`History loaded. ${conversationHistory.length - 1} messages. Next turn ID: ${turnCounter}`);
+             }
+             catch (e) {
+                 console.warn("Conversation history loading error:", e);
+                 // Initialize with default system prompt if history loading fails
+                 const sys = localStorage.getItem('systemPrompt') || DEFAULT_SYSTEM_PROMPT;
+                 conversationHistory = [{ role: 'system', content: sys }];
+                 turnCounter = 1;
+             }
+             return providerOk && historyOk; // Indicate if core parts loaded okay
         }
 
-        function rebuildChatFromHistory() { if (!pages) return; pages.innerHTML = ''; for (let i = 1; i < conversationHistory.length; i++) { const e = conversationHistory[i]; if (e.role === 'user') displayMessage(e, 'user'); else if (e.role === 'assistant') displayBotMessage(e, 'spirit'); } scrollToBottom(); }
+        function rebuildChatFromHistory() {
+            if (!pages) return;
+            pages.innerHTML = ''; // Clear existing messages
+            // Start from index 1 to skip the system prompt
+            for (let i = 1; i < conversationHistory.length; i++) {
+                 const entry = conversationHistory[i];
+                 if (entry.role === 'user') {
+                     displayMessage(entry, 'user');
+                 } else if (entry.role === 'assistant') {
+                     // Use displayBotMessage to handle single/multiple variants correctly
+                     displayBotMessage(entry, 'spirit');
+                 }
+            }
+            scrollToBottom();
+        }
 
-        function displayInitialGreeting() { if (!pages) return; if (conversationHistory.length <= 1) { const g = "The ancient tome awaits..."; const e = { role: 'assistant', variants: [g], selectedIndex: 0, turnId: 'turn-0' }; displayBotMessage(e, 'spirit'); turnCounter = Math.max(turnCounter, 1); } }
+        function displayInitialGreeting() {
+             if (!pages) return;
+             // Only display if there are no messages other than the system prompt
+             if (conversationHistory.length <= 1) {
+                 const greetingMessage = "The ancient tome awaits your query...";
+                 // Create a temporary entry structure for display
+                 const greetingEntry = {
+                     role: 'assistant',
+                     variants: [greetingMessage],
+                     selectedIndex: 0,
+                     turnId: 'turn-0' // Assign a non-conflicting ID
+                 };
+                 displayBotMessage(greetingEntry, 'spirit');
+                 // Do not add this temporary greeting to the actual conversationHistory
+                 turnCounter = Math.max(turnCounter, 1); // Ensure counter is at least 1
+             }
+        }
 
         // --- Initial Load Function ---
         function initialLoad() {
             console.log("InitialLoad started.");
-            if (typeof PROVIDERS === 'undefined') { console.error("FATAL: PROVIDERS missing."); alert("Error: PROVIDERS definitions missing."); return; }
-            if (typeof getApiResponse !== 'function') { console.error("FATAL: getApiResponse missing."); alert("Error: API function missing."); return; }
+            // Critical dependency checks
+            if (typeof PROVIDERS === 'undefined') { console.error("FATAL: PROVIDERS definitions missing (api_providers.js)."); alert("Error: PROVIDERS definitions missing. Please ensure api_providers.js is loaded correctly."); return; }
+            if (typeof getApiResponse !== 'function') { console.error("FATAL: getApiResponse function missing (api_providers.js)."); alert("Error: API call function (getApiResponse) missing. Please ensure api_providers.js defines it."); return; }
 
+            // Load all data from localStorage
             loadHistoryFromLocalStorage();
-            populateProviderSelect();
-            updateApiKeyStatus(selectedProvider);
 
+            // Populate UI elements based on loaded state
+            populateProviderSelect(); // Sets provider/model selects and updates API status
+            updateApiKeyStatus(selectedProvider); // Explicitly update status after load
+
+            // Load UI state settings
             hideCodeBlocks = localStorage.getItem('hideCodeBlocks') === 'true';
             downloadCodeMode = localStorage.getItem('downloadCodeMode') === 'true';
             enableRunHtmlMode = localStorage.getItem('enableRunHtmlMode') === 'true';
-            if (chatContainerElement) { chatContainerElement.classList.toggle('code-hidden', hideCodeBlocks); chatContainerElement.classList.toggle('download-code-active', downloadCodeMode); chatContainerElement.classList.toggle('run-html-active', enableRunHtmlMode); }
-            if (hideCodeCheckbox) hideCodeCheckbox.checked = hideCodeBlocks; if (downloadCodeCheckbox) downloadCodeCheckbox.checked = downloadCodeMode; if (enableRunHtmlCheckbox) enableRunHtmlCheckbox.checked = enableRunHtmlMode;
 
-            if (sendButton) sendButton.disabled = !hasSelectedProviderApiKeys();
+            // Apply UI state classes
+            if (chatContainerElement) {
+                chatContainerElement.classList.toggle('code-hidden', hideCodeBlocks);
+                chatContainerElement.classList.toggle('download-code-active', downloadCodeMode);
+                chatContainerElement.classList.toggle('run-html-active', enableRunHtmlMode);
+            }
+            // Set checkbox states
+            if (hideCodeCheckbox) hideCodeCheckbox.checked = hideCodeBlocks;
+            if (downloadCodeCheckbox) downloadCodeCheckbox.checked = downloadCodeMode;
+            if (enableRunHtmlCheckbox) enableRunHtmlCheckbox.checked = enableRunHtmlMode;
+
+            // Set initial state of Send button
+            if (sendButton) sendButton.disabled = !hasSufficientApiResources();
+
+            // Set max values for response count inputs
+            updateResponseCountInputMax();
+
+
+            // Render the chat history
             rebuildChatFromHistory();
+
+            // Display greeting if chat is empty
             displayInitialGreeting();
+
+            // Set initial textarea height
+            autoGrowTextarea();
+
             console.log("Arcane Tome Initialized.");
         }
 
         // --- Event Listeners (Attached Globally AFTER functions defined) ---
-        if (sendButton) sendButton.addEventListener('click', handleSendMessage); else console.error("sendButton missing");
-        if (messageInput) { messageInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }); messageInput.addEventListener('input', autoGrowTextarea); } else console.error("messageInput missing");
-        if (settingsButton) settingsButton.addEventListener('click', openSystemPromptModal); else console.error("settingsButton missing");
-        if (providerSelect) providerSelect.addEventListener('change', handleProviderChange); else console.error("providerSelect missing");
-        if (modelSelect) modelSelect.addEventListener('change', handleModelChange); else console.error("modelSelect missing");
-        if (addKeyButton) addKeyButton.addEventListener('click', addApiKey); else console.error("addKeyButton missing");
-        if (clearKeysButton) clearKeysButton.addEventListener('click', clearApiKeysForProvider); else console.error("clearKeysButton missing");
-        if (saveSettingsButton) saveSettingsButton.addEventListener('click', saveSettings); else console.error("saveSettingsButton missing");
-        if (cancelSettingsButton) cancelSettingsButton.addEventListener('click', () => { if (systemPromptModal) systemPromptModal.style.display = 'none'; }); else console.error("cancelSettingsButton missing");
-        if (systemPromptModal) systemPromptModal.addEventListener('click', (e) => { if (e.target === systemPromptModal) systemPromptModal.style.display = 'none'; }); else console.error("systemPromptModal missing");
-        if (hideCodeCheckbox) hideCodeCheckbox.addEventListener('change', handleHideCodeToggle); else console.error("hideCodeCheckbox missing");
-        if (downloadCodeCheckbox) downloadCodeCheckbox.addEventListener('change', handleDownloadCodeToggle); else console.error("downloadCodeCheckbox missing");
-        if (enableRunHtmlCheckbox) enableRunHtmlCheckbox.addEventListener('change', handleEnableRunHtmlToggle); else console.error("enableRunHtmlCheckbox missing");
-        if (editCodeButton) editCodeButton.addEventListener('click', openEditCodeModal); else console.error("editCodeButton missing"); // Check this
-        if (sendEditRequestButton) sendEditRequestButton.addEventListener('click', handleSendEditRequest); else console.error("sendEditRequestButton missing");
-        if (cancelEditRequestButton) cancelEditRequestButton.addEventListener('click', () => { if (codeEditModal) codeEditModal.style.display = 'none'; }); else console.error("cancelEditRequestButton missing");
-        if (codeEditModal) codeEditModal.addEventListener('click', (e) => { if (e.target === codeEditModal) codeEditModal.style.display = 'none'; }); else console.error("codeEditModal missing");
-        if (editSnippetTextarea) editSnippetTextarea.addEventListener('input', updateSnippetLineCount); else console.error("editSnippetTextarea missing");
-        if (editAddIteratorButton) editAddIteratorButton.addEventListener('click', () => insertIteratorPlaceholder(editInstructionsInput)); else console.error("editAddIteratorButton missing");
-        if (htmlRunnerRenderButton) htmlRunnerRenderButton.addEventListener('click', renderRunnerHTML); else console.error("htmlRunnerRenderButton missing");
-        if (htmlRunnerCloseButton) htmlRunnerCloseButton.addEventListener('click', () => { if (htmlRunnerModal) htmlRunnerModal.style.display = 'none'; }); else console.error("htmlRunnerCloseButton missing");
-        if (htmlRunnerModal) htmlRunnerModal.addEventListener('click', (e) => { if (e.target === htmlRunnerModal) htmlRunnerModal.style.display = 'none'; }); else console.error("htmlRunnerModal missing");
-        if (clearChatButton) clearChatButton.addEventListener('click', handleClearChat); else console.error("clearChatButton missing"); // Check this
-        if (addIteratorButton) addIteratorButton.addEventListener('click', () => insertIteratorPlaceholder(messageInput)); else console.error("addIteratorButton missing"); // Check this
-        if (uploadFileButton) uploadFileButton.addEventListener('click', () => { if (fileUploadInput) fileUploadInput.click(); }); else console.error("uploadFileButton missing");
-        if (pfpUploadInput) pfpUploadInput.addEventListener('change', function(event) { const f=event.target.files[0];if(!f||!currentPfpElementToUpdate)return;const r=new FileReader();r.onload=function(e){const u=e.target.result;currentPfpElementToUpdate.src=u;const t=currentPfpElementToUpdate.closest('.avatar').dataset.senderType; if(t==='user'){userPfp=u;localStorage.setItem('userPfp',u);document.querySelectorAll('.avatar.user-avatar img').forEach(i=>i.src=u);}else if(t==='spirit'){botPfp=u;localStorage.setItem('botPfp',u);document.querySelectorAll('.avatar.spirit-avatar img').forEach(i=>i.src=u);}currentPfpElementToUpdate=null;};r.readAsDataURL(f); }); else console.error("pfpUploadInput missing");
+        function attachEventListeners() {
+            console.log("Attaching event listeners...");
+            if (sendButton) sendButton.addEventListener('click', handleSendMessage); else console.error("sendButton missing");
+            if (messageInput) { messageInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }); messageInput.addEventListener('input', autoGrowTextarea); } else console.error("messageInput missing");
+            if (settingsButton) settingsButton.addEventListener('click', openSystemPromptModal); else console.error("settingsButton missing");
+            if (providerSelect) providerSelect.addEventListener('change', handleProviderChange); else console.error("providerSelect missing");
+            if (modelSelect) modelSelect.addEventListener('change', handleModelChange); else console.error("modelSelect missing");
+            if (addKeyButton) addKeyButton.addEventListener('click', addApiKey); else console.error("addKeyButton missing");
+            if (clearKeysButton) clearKeysButton.addEventListener('click', clearApiKeysForProvider); else console.error("clearKeysButton missing");
+            if (resetCallCountButton) resetCallCountButton.addEventListener('click', resetApiCallCountForProvider); else console.error("resetCallCountButton missing"); // Listener for new button
+            if (saveSettingsButton) saveSettingsButton.addEventListener('click', saveSettings); else console.error("saveSettingsButton missing");
+            if (cancelSettingsButton) cancelSettingsButton.addEventListener('click', () => { if (systemPromptModal) systemPromptModal.style.display = 'none'; }); else console.error("cancelSettingsButton missing");
+            if (systemPromptModal) systemPromptModal.addEventListener('click', (e) => { if (e.target === systemPromptModal) systemPromptModal.style.display = 'none'; }); else console.error("systemPromptModal missing");
+            if (hideCodeCheckbox) hideCodeCheckbox.addEventListener('change', handleHideCodeToggle); else console.error("hideCodeCheckbox missing");
+            if (downloadCodeCheckbox) downloadCodeCheckbox.addEventListener('change', handleDownloadCodeToggle); else console.error("downloadCodeCheckbox missing");
+            if (enableRunHtmlCheckbox) enableRunHtmlCheckbox.addEventListener('change', handleEnableRunHtmlToggle); else console.error("enableRunHtmlCheckbox missing");
+            if (editCodeButton) editCodeButton.addEventListener('click', openEditCodeModal); else console.error("editCodeButton missing");
+            if (sendEditRequestButton) sendEditRequestButton.addEventListener('click', handleSendEditRequest); else console.error("sendEditRequestButton missing");
+            if (cancelEditRequestButton) cancelEditRequestButton.addEventListener('click', () => { if (codeEditModal) codeEditModal.style.display = 'none'; }); else console.error("cancelEditRequestButton missing");
+            if (codeEditModal) codeEditModal.addEventListener('click', (e) => { if (e.target === codeEditModal) codeEditModal.style.display = 'none'; }); else console.error("codeEditModal missing");
+            if (editSnippetTextarea) editSnippetTextarea.addEventListener('input', updateSnippetLineCount); else console.error("editSnippetTextarea missing");
+            if (editAddIteratorButton) editAddIteratorButton.addEventListener('click', () => insertIteratorPlaceholder(editInstructionsInput)); else console.error("editAddIteratorButton missing");
+            if (htmlRunnerRenderButton) htmlRunnerRenderButton.addEventListener('click', renderRunnerHTML); else console.error("htmlRunnerRenderButton missing");
+            if (htmlRunnerCloseButton) htmlRunnerCloseButton.addEventListener('click', () => { if (htmlRunnerModal) htmlRunnerModal.style.display = 'none'; }); else console.error("htmlRunnerCloseButton missing");
+            if (htmlRunnerModal) htmlRunnerModal.addEventListener('click', (e) => { if (e.target === htmlRunnerModal) htmlRunnerModal.style.display = 'none'; }); else console.error("htmlRunnerModal missing");
+            if (clearChatButton) clearChatButton.addEventListener('click', handleClearChat); else console.error("clearChatButton missing");
+            if (addIteratorButton) addIteratorButton.addEventListener('click', () => insertIteratorPlaceholder(messageInput)); else console.error("addIteratorButton missing");
+            if (uploadFileButton) uploadFileButton.addEventListener('click', () => { if (fileUploadInput) fileUploadInput.click(); }); else console.error("uploadFileButton missing"); // Basic file input trigger
+            if (pfpUploadInput) pfpUploadInput.addEventListener('change', function(event) { const f=event.target.files[0];if(!f||!currentPfpElementToUpdate)return;const r=new FileReader();r.onload=function(e){const u=e.target.result;currentPfpElementToUpdate.src=u;const t=currentPfpElementToUpdate.closest('.avatar').dataset.senderType; if(t==='user'){userPfp=u;localStorage.setItem('userPfp',u);document.querySelectorAll('.avatar.user-avatar img').forEach(i=>i.src=u);}else if(t==='spirit'){botPfp=u;localStorage.setItem('botPfp',u);document.querySelectorAll('.avatar.spirit-avatar img').forEach(i=>i.src=u);}currentPfpElementToUpdate=null;};r.readAsDataURL(f); }); else console.error("pfpUploadInput missing");
+            console.log("Event listeners attached.");
+        }
 
 
         // --- Start the application ---
-        document.addEventListener('DOMContentLoaded', initialLoad);
+        // Use DOMContentLoaded to ensure HTML is parsed, then run initial setup and attach listeners.
+        document.addEventListener('DOMContentLoaded', () => {
+            initialLoad();
+            attachEventListeners(); // Attach listeners after initial load is complete
+        });
 
     </script>
 </body>
