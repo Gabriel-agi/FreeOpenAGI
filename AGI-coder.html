@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vibe Coder</title>
+    <!-- Markdown & Highlighting Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+    <style>
+        /* --- Base & Layout Styles --- */
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #fafafa; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
+        .chat-container { width: 100%; height: 100%; max-width: 100%; max-height: 100%; background-color: #fff; border-radius: 0; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); }
+        .chat-header { background-color: #007bff; color: #fff; padding: 15px; text-align: center; font-size: 1.2em; font-weight: bold; cursor: pointer; flex-shrink: 0; }
+        .chat-body { padding: 15px; flex: 1; overflow-y: auto; display: flex; flex-direction: column; background-color: #f7f7f7; }
+
+        /* --- Message Styles --- */
+        .message-container { display: flex; align-items: flex-start; margin-bottom: 10px; animation: fadeIn 0.5s ease-in-out; }
+        .message-content-wrapper { max-width: 70%; display: flex; flex-direction: column; }
+        .message { padding: 10px; border-radius: 8px; word-wrap: break-word; background-color: #e4e6eb; color: #000; border-bottom-left-radius: 0; width: fit-content; min-width: 50px; line-height: 1.5; }
+        .message.user { background-color: #007bff; color: #fff; border-bottom-left-radius: 8px; border-bottom-right-radius: 0; white-space: pre-wrap; }
+        .message-container.user-message { justify-content: flex-end; }
+        .message-container.user-message .message-content-wrapper { align-items: flex-end; }
+        .pfp { width: 40px; height: 40px; border-radius: 50%; margin-right: 10px; object-fit: cover; cursor: pointer; flex-shrink: 0; }
+        .message-container.user-message .pfp { margin-right: 0; margin-left: 10px; }
+        .is-typing { align-self: flex-start; color: #888; font-style: italic; margin-bottom: 10px; margin-left: 50px; flex-shrink: 0; }
+
+        /* --- Footer/Input Area --- */
+        .chat-input-container { display: flex; align-items: center; border-top: 1px solid #ddd; padding: 10px; background-color: #fff; flex-shrink: 0; flex-wrap: wrap; gap: 5px; }
+        .chat-input { flex: 1 1 200px; padding: 10px; border: 1px solid #ddd; border-radius: 8px; outline: none; transition: border-color 0.3s ease; margin-right: 5px; }
+        .chat-input:focus { border-color: #007bff; }
+        .footer-button { background-color: #6c757d; color: #fff; border: none; border-radius: 8px; cursor: pointer; transition: background-color 0.3s ease; padding: 10px 12px; font-size: 0.9em; flex-shrink: 0; white-space: nowrap; }
+        .footer-button:hover { background-color: #5a6268; }
+        #clear-chat-button { background-color: #dc3545; }
+        #clear-chat-button:hover { background-color: #c82333; }
+        .chat-send { background-color: #007bff; color: #fff; border: none; border-radius: 8px; cursor: pointer; transition: background-color 0.3s ease; padding: 10px 15px; flex-shrink: 0; font-size: 1em; }
+        .chat-send:hover { background-color: #0056b3; }
+        .response-count-input { width: 45px; padding: 10px; border: 1px solid #ddd; border-radius: 8px; text-align: center; flex-shrink: 0; }
+        .footer-controls { display: flex; align-items: center; gap: 5px; flex-wrap: nowrap; }
+
+        /* --- Multi-Response Navigation --- */
+        .response-navigation { display: flex; align-items: center; justify-content: flex-start; margin-top: 5px; gap: 5px; width: fit-content; }
+        .response-navigation button { background-color: #ddd; border: none; border-radius: 4px; padding: 2px 6px; cursor: pointer; font-size: 0.9em; line-height: 1; }
+        .response-navigation button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .response-navigation span { font-size: 0.8em; color: #555; margin: 0 5px; user-select: none; }
+
+        /* --- Modals --- */
+        .system-prompt-modal, .code-edit-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); justify-content: center; align-items: center; z-index: 1000; }
+        .system-prompt-content, .code-edit-content { background-color: #fff; padding: 25px; border-radius: 12px; width: 90%; max-width: 700px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); max-height: 90vh; display: flex; flex-direction: column; }
+        /* System Prompt Modal */
+        .system-prompt-content h3 { margin-top: 0; }
+        .system-prompt-content .form-group { margin-top: 15px; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+        .system-prompt-content .form-group label { margin-bottom: 0; font-weight: normal; color: #333; cursor: pointer; flex-shrink: 0; /* Prevent label shrinking */ }
+        .system-prompt-content .form-group input[type="checkbox"] { cursor: pointer; margin-right: 0; }
+        .system-prompt-content .form-group input[type="password"],
+        .system-prompt-content textarea { width: 100%; /* Take full width within group */ padding: 10px; border: 1px solid #ddd; border-radius: 8px; outline: none; box-sizing: border-box; }
+        .system-prompt-content textarea { height: 100px; resize: vertical; }
+        .system-prompt-content .modal-buttons { margin-top: 20px; text-align: right; }
+        .system-prompt-content button#save-settings-button { background-color: #007bff; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; transition: background-color 0.3s ease; }
+        .system-prompt-content button#save-settings-button:hover { background-color: #0056b3; }
+        /* Code Edit Modal */
+        .code-edit-content h3 { margin-top: 0; margin-bottom: 15px; text-align: center; color: #333; flex-shrink: 0; }
+        .code-edit-content .form-group { margin-bottom: 15px; }
+        .code-edit-content label { display: block; margin-bottom: 5px; font-weight: bold; color: #555; }
+        #edit-snippet-textarea { width: calc(100% - 22px); min-height: 150px; max-height: 40vh; flex-grow: 1; overflow-y: auto; padding: 10px; border: 1px solid #ddd; border-radius: 8px; outline: none; font-family: Consolas, Monaco, monospace; font-size: 0.9em; line-height: 1.4; margin-bottom: 5px; }
+        .code-edit-content .line-inputs { display: flex; gap: 15px; align-items: center; margin-bottom: 10px; flex-shrink: 0; }
+        .code-edit-content .line-inputs input[type="number"] { width: 80px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+        #edit-snippet-counter { font-size: 0.9em; color: #555; text-align: right; margin-bottom: 15px; flex-shrink: 0; }
+        #edit-snippet-line-count { font-weight: bold; color: #007bff; }
+        #edit-instructions { width: calc(100% - 22px); padding: 10px; border: 1px solid #ddd; border-radius: 8px; outline: none; resize: vertical; font-family: inherit; height: 80px; flex-shrink: 0; }
+        .code-edit-content .modal-buttons { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; flex-shrink: 0; }
+        .code-edit-content button.cancel-edit { background-color: #6c757d; }
+        .code-edit-content button.cancel-edit:hover { background-color: #5a6268; }
+
+        /* --- Code Formatting & Markdown --- */
+        .message pre code.hljs { display: block; overflow-x: auto; padding: 1em; background: #f3f3f3; color: #383a42; border-radius: 5px; }
+        .message p:first-child { margin-top: 0; } .message p:last-child { margin-bottom: 0; }
+        .message ul, .message ol { margin-top: 0.5em; margin-bottom: 0.5em; padding-left: 2em; }
+        .message li { margin-bottom: 0.2em; }
+        .message blockquote { border-left: 3px solid #ccc; padding-left: 1em; margin-left: 0; margin-right: 0; color: #666; }
+        .message code:not(.hljs) { background-color: #eee; padding: 0.2em 0.4em; border-radius: 3px; font-size: 85%; font-family: Consolas, Monaco, monospace; }
+
+        /* --- Cat Placeholder & Action Buttons --- */
+        .cat-placeholder { display: none; font-size: 1.2em; cursor: default; user-select: none; padding: 2px 5px; background-color: #f0f0f0; border-radius: 3px; border: 1px solid #ddd; margin-right: 5px; }
+        .message-actions { margin-top: 8px; text-align: left; display: flex; gap: 5px; }
+        .copy-code-button, .download-code-button { background-color: #6c757d; color: white; border: none; padding: 4px 8px; font-size: 0.8em; border-radius: 4px; cursor: pointer; opacity: 0.8; transition: opacity 0.2s ease, background-color 0.2s ease; }
+        .copy-code-button:hover, .download-code-button:hover { opacity: 1; }
+        .copy-code-button.copied { background-color: #28a745; }
+        .download-code-button { background-color: #17a2b8; }
+        .download-code-button:hover { background-color: #138496; }
+
+        /* --- Hide Code & Download Mode CSS --- */
+        .chat-container.code-hidden .message pre { display: none; }
+        .chat-container.code-hidden .message .cat-placeholder { display: inline-block; }
+        .download-code-button { display: none; }
+        .chat-container.download-code-active .download-code-button { display: inline-block; }
+
+        /* --- Animation --- */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- Responsiveness --- */
+        @media (max-width: 768px) {
+            .chat-container { max-width: 100%; border-radius: 0; }
+            .chat-input-container { padding: 10px 5px; flex-direction: column; align-items: stretch; }
+            .chat-input { flex-basis: auto; margin-right: 0; margin-bottom: 5px; }
+            .footer-controls { display: flex; justify-content: space-between; align-items: center; gap: 5px; flex-wrap: wrap; }
+            .chat-send, #edit-code-button, #clear-chat-button, #add-iterator-button { flex-grow: 1; font-size: 0.85em; padding: 8px 10px; }
+            .response-count-input { width: 40px; padding: 8px; flex-grow: 0; }
+            .message-content-wrapper { max-width: 85%; }
+            .code-edit-content { padding: 15px; max-width: 95%; }
+            .code-edit-content .line-inputs { flex-direction: column; align-items: stretch; gap: 10px; }
+            #edit-snippet-textarea { max-height: 50vh; }
+            .system-prompt-content { padding: 15px; }
+            .system-prompt-content .form-group { flex-direction: column; align-items: flex-start; gap: 3px; } /* Stack checkboxes etc */
+            .system-prompt-content .form-group label { min-width: 120px; } /* Ensure labels have space */
+        }
+        @media (max-width: 480px) { /* Further adjustments if needed */ }
+        .visually-hidden { position: absolute !important; height: 1px; width: 1px; overflow: hidden; clip: rect(1px, 1px, 1px, 1px); white-space: nowrap; }
+    </style>
+</head>
+<body>
+    <div class="chat-container" id="chat-container">
+        <header class="chat-header" id="chat-header">Vibe Coder</header>
+        <div class="chat-body"> <!-- Messages --> </div>
+        <footer class="chat-input-container">
+            <input type="text" class="chat-input" placeholder="Ask a question or provide code...">
+            <div class="footer-controls">
+                <button id="add-iterator-button" class="footer-button" title="Insert iteration placeholder {i}">Add {i}</button>
+                <button id="clear-chat-button" class="footer-button" title="Clear chat history">Clear Chat</button>
+                <button id="edit-code-button" class="footer-button" title="Edit code snippet">Edit Code</button>
+                <input type="number" class="response-count-input" value="1" min="0" max="5" title="Number of responses (0 to skip AI)">
+                <button class="chat-send">Send</button>
+            </div>
+        </footer>
+        <input type="file" class="pfp-upload" accept="image/*" style="display:none;">
+    </div>
+
+    <!-- System Prompt Modal -->
+    <div class="system-prompt-modal" id="system-prompt-modal">
+         <div class="system-prompt-content">
+             <h3>Settings</h3>
+             <div class="form-group"> <!-- Group for System Prompt -->
+                 <label for="system-prompt-input">System Prompt:</label>
+                 <textarea id="system-prompt-input" placeholder="Define the AI's core behavior..."></textarea>
+             </div>
+              <div class="form-group"> <!-- Group for API Key -->
+                 <label for="api-key-input">API Key:</label>
+                 <input type="password" id="api-key-input" placeholder="Enter your API Key">
+             </div>
+             <div class="form-group">
+                 <label for="hide-code-checkbox">Hide Code Blocks</label>
+                 <input type="checkbox" id="hide-code-checkbox">
+             </div>
+             <div class="form-group">
+                 <label for="download-code-checkbox">Enable Code Download</label>
+                 <input type="checkbox" id="download-code-checkbox">
+             </div>
+             <div class="modal-buttons">
+                <button id="save-settings-button">Save Settings</button> <!-- Changed button text/ID -->
+             </div>
+         </div>
+    </div>
+
+    <!-- Code Edit Modal -->
+    <div class="code-edit-modal" id="code-edit-modal"> <!-- ... content ... -->
+        <div class="code-edit-content">
+            <h3>Edit Code Snippet</h3>
+            <p style="font-size: 0.9em; color: #666; margin-bottom: 5px; flex-shrink: 0;">Paste code below. Select lines to send to AI for editing.</p>
+            <textarea id="edit-snippet-textarea" placeholder="Paste your code here..."></textarea>
+            <div class="line-inputs" style="flex-shrink: 0;">
+                 <div> <label for="edit-start-line">Start Line:</label> <input type="number" id="edit-start-line" min="1" value="1"> </div>
+                 <div> <label for="edit-end-line">End Line:</label> <input type="number" id="edit-end-line" min="1" value="1"> </div>
+                 <div id="edit-snippet-counter" style="margin-left: auto;"> Lines: <span id="edit-snippet-line-count">0</span> </div>
+            </div>
+            <div class="form-group" style="flex-shrink: 0;">
+                <label for="edit-instructions">Instructions for AI (applies to selected lines):</label>
+                <textarea id="edit-instructions" rows="3" placeholder="e.g., Refactor this selection, fix the bug..."></textarea>
+            </div>
+            <div class="modal-buttons" style="flex-shrink: 0;">
+                <button id="cancel-edit-request" class="cancel-edit">Cancel</button>
+                <button id="send-edit-request">Send Edit Request</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden Textarea for Copy Helper -->
+    <textarea class="visually-hidden" id="copy-helper" aria-hidden="true"></textarea>
+
+    <script>
+        // --- Global State & Constants ---
+        let conversationHistory = [];
+        let userPfp = localStorage.getItem('userPfp') || 'https://via.placeholder.com/40/007bff/ffffff?text=U';
+        let botPfp = localStorage.getItem('botPfp') || 'https://via.placeholder.com/40/6c757d/ffffff?text=AI';
+        let currentPfpElementToUpdate = null;
+        let turnCounter = 0;
+        const iterationPlaceholder = '{i}';
+        let apiKey = localStorage.getItem('apiKey') || ''; // Load API Key
+        let hideCodeBlocks = localStorage.getItem('hideCodeBlocks') === 'true';
+        let downloadCodeMode = localStorage.getItem('downloadCodeMode') === 'true';
+
+        // --- DOM Elements ---
+        const chatContainerElement = document.getElementById('chat-container');
+        const chatBody = document.querySelector('.chat-body');
+        const chatInput = document.querySelector('.chat-input');
+        const sendButton = document.querySelector('.chat-send');
+        const responseCountInput = document.querySelector('.response-count-input');
+        const pfpUploadInput = document.querySelector('.pfp-upload');
+        const chatHeader = document.getElementById('chat-header');
+        const systemPromptModal = document.getElementById('system-prompt-modal');
+        const systemPromptInput = document.getElementById('system-prompt-input');
+        const apiKeyInput = document.getElementById('api-key-input'); // New API Key input
+        const saveSettingsButton = document.getElementById('save-settings-button'); // Changed ID
+        const hideCodeCheckbox = document.getElementById('hide-code-checkbox');
+        const downloadCodeCheckbox = document.getElementById('download-code-checkbox');
+        const editCodeButton = document.getElementById('edit-code-button');
+        const codeEditModal = document.getElementById('code-edit-modal');
+        const editSnippetTextarea = document.getElementById('edit-snippet-textarea');
+        const editStartLineInput = document.getElementById('edit-start-line');
+        const editEndLineInput = document.getElementById('edit-end-line');
+        const editSnippetLineCount = document.getElementById('edit-snippet-line-count');
+        const editInstructionsInput = document.getElementById('edit-instructions');
+        const sendEditRequestButton = document.getElementById('send-edit-request');
+        const cancelEditRequestButton = document.getElementById('cancel-edit-request');
+        const clearChatButton = document.getElementById('clear-chat-button');
+        const addIteratorButton = document.getElementById('add-iterator-button');
+        const copyHelper = document.getElementById('copy-helper');
+
+        // --- Configure Markdown & Highlighting ---
+        marked.setOptions({ /* ... same ... */
+            highlight:function(code,lang){const l=hljs.getLanguage(lang)?lang:'plaintext';try{return hljs.highlight(code,{language:l,ignoreIllegals:true}).value;}catch(e){return hljs.highlight(code,{language:'plaintext',ignoreIllegals:true}).value;}},langPrefix:'hljs language-',gfm:true,breaks:true
+         });
+
+        // --- PFP Handling ---
+        pfpUploadInput.addEventListener('change', function(event) { /* ... same ... */
+            const f=event.target.files[0];if(!f||!currentPfpElementToUpdate)return;const r=new FileReader();r.onload=function(e){const u=e.target.result;currentPfpElementToUpdate.src=u;const t=currentPfpElementToUpdate.dataset.pfpType;if(t==='user'){userPfp=u;localStorage.setItem('userPfp',u);document.querySelectorAll('.pfp.user-pfp').forEach(i=>i.src=u);}else if(t==='bot'){botPfp=u;localStorage.setItem('botPfp',u);document.querySelectorAll('.pfp.bot-pfp').forEach(i=>i.src=u);}currentPfpElementToUpdate=null;};r.readAsDataURL(f);
+         });
+
+        // --- Event Listeners ---
+        sendButton.addEventListener('click', handleSendMessage);
+        chatInput.addEventListener('keypress', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } });
+        editCodeButton.addEventListener('click', openEditCodeModal);
+        sendEditRequestButton.addEventListener('click', handleSendEditRequest);
+        cancelEditRequestButton.addEventListener('click', () => codeEditModal.style.display = 'none');
+        codeEditModal.addEventListener('click', (e) => { if (e.target === codeEditModal) { codeEditModal.style.display = 'none'; } });
+        chatHeader.addEventListener('click', openSystemPromptModal);
+        saveSettingsButton.addEventListener('click', saveSettings); // Use new save function
+        systemPromptModal.addEventListener('click', (e) => { if (e.target === systemPromptModal) { systemPromptModal.style.display = 'none'; } });
+        clearChatButton.addEventListener('click', handleClearChat);
+        addIteratorButton.addEventListener('click', insertIteratorPlaceholder);
+        editSnippetTextarea.addEventListener('input', updateSnippetLineCount);
+        hideCodeCheckbox.addEventListener('change', handleHideCodeToggle);
+        downloadCodeCheckbox.addEventListener('change', handleDownloadCodeToggle);
+
+
+        // --- Core Functions ---
+
+        // Helper to check for API Key before making calls
+        function isApiKeySet() {
+            if (!apiKey) {
+                alert("API Key is not set. Please set it in the Settings (click header).");
+                return false;
+            }
+            return true;
+        }
+
+        async function handleSendMessage() {
+            if (!isApiKeySet()) return; // Check API key first
+            const userInput=chatInput.value.trim(); const respCount=parseInt(responseCountInput.value,10); if(userInput==='')return; const safeCount=isNaN(respCount)||respCount<0?0:respCount; const turnId=`turn-${turnCounter++}`; const containsPlaceholder=userInput.includes(iterationPlaceholder); const userEntry={role:'user',content:userInput,turnId:turnId}; conversationHistory.push(userEntry); displayMessage(userEntry,userPfp); saveHistoryToLocalStorage(); chatInput.value=''; chatInput.focus();
+            if(safeCount>0){ displayTypingIndicator(); const baseHist=prepareHistoryForApi(conversationHistory); const responses=[]; let error=false;
+                for(let i=0;i<safeCount;i++){ const iter=i+1; let histCopy=[...baseHist]; if(containsPlaceholder&&safeCount>1){const idx=histCopy.length-1; if(histCopy[idx]?.role==='user'){const sub=histCopy[idx].content.replace(new RegExp(iterationPlaceholder.replace(/[-\/\\^$*+?.()|[\]{}]/g,'\\$&'),'g'),iter.toString()); histCopy[idx]={...histCopy[idx],content:sub};}} if(i>0&&responses.length>0){responses.forEach(r=>histCopy.push({role:'assistant',content:r}));} console.log(`Req ${iter} hist:`,histCopy); try{ const res=await fetch('https://api.deepseek.com/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${apiKey}`},body:JSON.stringify({model:'deepseek-chat',messages:histCopy,stream:false,temperature:0.8,top_p:0.9})}); if(!res.ok){const e=await res.text(); throw new Error(`API ${res.status}: ${e}`);} const data=await res.json(); if(!data.choices?.[0]?.message?.content){throw new Error('API bad resp.');} responses.push(data.choices[0].message.content.trim()||"[Empty]");}catch(e){console.error(`Fetch ${iter} Err:`,e);responses.push(`[Err: ${e.message}]`);error=true;}} removeTypingIndicator();
+                if(responses.length>0){const botEntry={role:'assistant',variants:responses,selectedIndex:0,turnId:turnId}; conversationHistory.push(botEntry); saveHistoryToLocalStorage(); displayBotMessage(botEntry,botPfp);}else if(!error){displayMessage({role:'system',content:'AI called, no resp.'},botPfp);}}else{console.log("Skip AI call.");} scrollToBottom();
+        }
+
+        function updateSnippetLineCount() { /* ... same ... */
+             const text=editSnippetTextarea.value;const count=text===''?0:text.split('\n').length;editSnippetLineCount.textContent=count;editStartLineInput.max=count>0?count:1;editEndLineInput.max=count>0?count:1;if(parseInt(editEndLineInput.value,10)>count){editEndLineInput.value=count;}if(parseInt(editStartLineInput.value,10)>count){editStartLineInput.value=count>0?count:1;}
+        }
+
+        function openEditCodeModal() { /* ... same ... */
+            editSnippetTextarea.value='';editInstructionsInput.value='';editStartLineInput.value=1;editEndLineInput.value=1;updateSnippetLineCount();codeEditModal.style.display='flex';editSnippetTextarea.focus();
+        }
+
+        async function handleSendEditRequest() {
+            if (!isApiKeySet()) return; // Check API key first
+             const pastedCode=editSnippetTextarea.value;const startLine=parseInt(editStartLineInput.value,10);const endLine=parseInt(editEndLineInput.value,10);const instructions=editInstructionsInput.value.trim();if(pastedCode.trim()===''){alert("Snippet empty.");editSnippetTextarea.focus();return;}if(!instructions){alert("Need instructions.");editInstructionsInput.focus();return;}const pastedLines=pastedCode.split('\n');const totalLines=pastedLines.length;if(isNaN(startLine)||isNaN(endLine)||startLine<1||endLine<startLine||endLine>totalLines){alert(`Invalid line range (${startLine}-${endLine}). Use 1-${totalLines} for snippet, Start <= End.`);return;}codeEditModal.style.display='none';const turnId=`turn-${turnCounter++}`;const startIdx=startLine-1;const endIdx=endLine;const snippetForAI=pastedLines.slice(startIdx,endIdx).join('\n');const userReq=`[Code Edit Request]\nInstructions (for lines ${startLine}-${endLine} of snippet): ${instructions}`;const userEntry={role:'user',content:userReq,turnId:turnId};conversationHistory.push(userEntry);displayMessage(userEntry,userPfp);saveHistoryToLocalStorage();displayTypingIndicator();const aiPrompt=`Edit code snippet per instructions.\n\nSNIPPET (Lines ${startLine}-${endLine}):\n\`\`\`\n${snippetForAI}\n\`\`\`\n\nINSTRUCTIONS:\n${instructions}\n\nReturn ONLY the edited code snippet for lines ${startLine}-${endLine}. Ensure the response contains ONLY the code, no explanations.`;const histUpTo=conversationHistory.slice(0,-1);let histForApi=prepareHistoryForApi(histUpTo);histForApi.push({role:'user',content:aiPrompt});console.log("Sending Edit Req API:",histForApi);let editedLinesArr=[];let error=false;try{const res=await fetch('https://api.deepseek.com/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${apiKey}`},body:JSON.stringify({model:'deepseek-chat',messages:histForApi,stream:false,temperature:0.4,top_p:0.9})});if(!res.ok){const err=await res.text();throw new Error(`API Err ${res.status}: ${err}`);}const data=await res.json();if(!data.choices?.[0]?.message?.content){throw new Error('API unexpected resp.');}let rawEdit=data.choices[0].message.content.trim();rawEdit=rawEdit.replace(/^```(?:\w*\n)?/,'').replace(/\n?```$/,'').trim();editedLinesArr=rawEdit.split('\n');}catch(e){console.error("Edit API Err:",e);editedLinesArr=[`[Error: ${e.message}]`];error=true;}removeTypingIndicator();let reconstructed;try{const newFull=[...pastedLines.slice(0,startIdx),...editedLinesArr,...pastedLines.slice(endIdx)];reconstructed=newFull.join('\n');}catch(recErr){console.error("Reconstruction Err:",recErr);reconstructed=pastedCode+"\n\n--- RECONSTRUCTION ERROR ---";error=true;}const botEntry={role:'assistant',variants:[reconstructed],selectedIndex:0,turnId:turnId,isCodeEdit:true};conversationHistory.push(botEntry);saveHistoryToLocalStorage();displayBotMessage(botEntry,botPfp);scrollToBottom();
+        }
+
+        function openSystemPromptModal() {
+             systemPromptInput.value = conversationHistory[0]?.content || '';
+             apiKeyInput.value = apiKey; // Load current API key into input
+             hideCodeCheckbox.checked = hideCodeBlocks;
+             downloadCodeCheckbox.checked = downloadCodeMode;
+             systemPromptModal.style.display = 'flex';
+         }
+
+        function saveSettings() { // Renamed function to save all settings
+            // 1. Save System Prompt
+            const newSystemPrompt = systemPromptInput.value.trim();
+            if (newSystemPrompt) {
+                 if (conversationHistory.length === 0 || conversationHistory[0]?.role !== 'system') {
+                     conversationHistory.unshift({ role: 'system', content: newSystemPrompt });
+                 } else {
+                     conversationHistory[0].content = newSystemPrompt;
+                 }
+                 localStorage.setItem('systemPrompt', newSystemPrompt);
+             } else {
+                  alert("System prompt cannot be empty (using previous or default).");
+             }
+
+             // 2. Save API Key
+             const newApiKey = apiKeyInput.value.trim();
+             apiKey = newApiKey; // Update global variable
+             localStorage.setItem('apiKey', apiKey);
+             console.log("API Key updated.");
+
+             // 3. Save Checkbox States (already handled by their change handlers)
+
+             saveHistoryToLocalStorage(); // Save history in case system prompt changed
+             systemPromptModal.style.display = 'none'; // Close modal
+             alert("Settings saved!"); // User feedback
+        }
+
+        function handleHideCodeToggle() { /* ... same ... */
+            hideCodeBlocks = hideCodeCheckbox.checked; localStorage.setItem('hideCodeBlocks', hideCodeBlocks); chatContainerElement.classList.toggle('code-hidden', hideCodeBlocks); console.log("Hide Code Blocks:", hideCodeBlocks);
+        }
+
+        function handleDownloadCodeToggle() { /* ... same ... */
+            downloadCodeMode = downloadCodeCheckbox.checked; localStorage.setItem('downloadCodeMode', downloadCodeMode); chatContainerElement.classList.toggle('download-code-active', downloadCodeMode); console.log("Download Code Mode:", downloadCodeMode);
+        }
+
+        function handleClearChat() { /* ... same ... */
+            if(confirm("Clear chat history?")){console.log("Clearing...");const sysP=conversationHistory[0]?.content||localStorage.getItem('systemPrompt')||'You are helpful.';conversationHistory=[{role:'system',content:sysP}];turnCounter=1;saveHistoryToLocalStorage();rebuildChatFromHistory();}
+        }
+
+        function insertIteratorPlaceholder() { /* ... same ... */
+             const input=chatInput;const start=input.selectionStart;const end=input.selectionEnd;const val=input.value;const newVal=val.substring(0,start)+iterationPlaceholder+val.substring(end);input.value=newVal;const newPos=start+iterationPlaceholder.length;input.selectionStart=newPos;input.selectionEnd=newPos;input.focus();
+         }
+
+
+        // --- Display Logic ---
+        function createPfpElement(sender, pfpUrl) { /* ... same ... */
+            const el=document.createElement('img');el.src=pfpUrl;el.classList.add('pfp');el.dataset.pfpType=sender;if(sender==='user')el.classList.add('user-pfp');else el.classList.add('bot-pfp');el.addEventListener('click',()=>{currentPfpElementToUpdate=el;pfpUploadInput.click();});return el;
+         }
+        function displayBotMessage(entry, pfp) { /* ... same ... */
+            if (entry.variants?.length > 1) displayMultipleMessages(entry, pfp); else if (entry.variants?.length >= 1) displayMessage(entry, pfp); else console.warn("Bad bot struct:", entry);
+         }
+        function displayMessage(entry, pfp) { /* ... same - creates buttons ... */
+            const sender=entry.role==='user'?'user':'bot'; const content=sender==='user'?entry.content:(entry.variants?.[entry.selectedIndex??0]||'[Error]');
+            const container=document.createElement('div');container.classList.add('message-container');if(entry.turnId)container.dataset.turnId=entry.turnId; if(sender==='user')container.classList.add('user-message');if(sender==='bot'&&entry.isCodeEdit)container.classList.add('code-edit-result');
+            const pfpEl=createPfpElement(sender,pfp); const wrapper=document.createElement('div');wrapper.classList.add('message-content-wrapper'); const msgEl=document.createElement('div');msgEl.classList.add('message',sender);
+            if(sender==='bot'){try{msgEl.innerHTML=marked.parse(content);}catch(e){console.error("MD Err:",e);msgEl.textContent=content;}}else{msgEl.textContent=content;msgEl.style.whiteSpace='pre-wrap';}wrapper.appendChild(msgEl);
+            if(sender==='bot'){const codeBlocks=msgEl.querySelectorAll('pre');if(codeBlocks.length>0){let actionsContainer=wrapper.querySelector('.message-actions');if(!actionsContainer){actionsContainer=document.createElement('div');actionsContainer.classList.add('message-actions');wrapper.appendChild(actionsContainer);}codeBlocks.forEach((pre,idx)=>{const preId=`pre-${entry.turnId||'gen'}-${idx}`;const catId=`cat-${entry.turnId||'gen'}-${idx}`;pre.id=preId;const cat=document.createElement('span');cat.classList.add('cat-placeholder');cat.id=catId;cat.textContent='🐱';cat.dataset.preId=preId;pre.parentNode.insertBefore(cat,pre);const codeEl=pre.querySelector('code');const codeText=codeEl?codeEl.textContent:'';const lang=codeEl?.className.match(/language-(\w+)/)?.[1]||'txt';const filename=`code_${Date.now()}.${lang}`;const copyBtn=document.createElement('button');copyBtn.textContent='Copy';copyBtn.classList.add('copy-code-button','footer-button');copyBtn.title='Copy code';copyBtn.onclick=()=>copyCodeFromPre(preId,copyBtn);actionsContainer.appendChild(copyBtn);const downloadBtn=document.createElement('button');downloadBtn.textContent='Download';downloadBtn.classList.add('download-code-button','footer-button');downloadBtn.title='Download code';downloadBtn.onclick=()=>downloadCode(codeText,filename);actionsContainer.appendChild(downloadBtn);});}}
+            if(sender==='user'){container.appendChild(wrapper);container.appendChild(pfpEl);}else{container.appendChild(pfpEl);container.appendChild(wrapper);}chatBody.appendChild(container);return container;
+        }
+        function displayMultipleMessages(entry, pfp) { /* ... same - creates buttons ... */
+             const turnId=entry.turnId;const variants=entry.variants;let idx=entry.selectedIndex; const container=document.createElement('div');container.classList.add('message-container');if(turnId)container.dataset.turnId=turnId; const pfpEl=createPfpElement('bot',pfp);const wrapper=document.createElement('div');wrapper.classList.add('message-content-wrapper'); const msgEl=document.createElement('div');msgEl.classList.add('message','bot');const nav=document.createElement('div');nav.classList.add('response-navigation'); const prev=document.createElement('button');prev.textContent='<';const span=document.createElement('span');const next=document.createElement('button');next.textContent='>'; nav.appendChild(prev);nav.appendChild(span);nav.appendChild(next);wrapper.appendChild(msgEl);wrapper.appendChild(nav); let actionsContainer=document.createElement('div');actionsContainer.classList.add('message-actions');wrapper.appendChild(actionsContainer); container.appendChild(pfpEl);container.appendChild(wrapper);chatBody.appendChild(container);
+             function update(index){try{msgEl.innerHTML=marked.parse(variants[index]);}catch(e){console.error("MD Multi Err:",e);msgEl.textContent=variants[index];}actionsContainer.innerHTML=''; const oldPlaceholders=msgEl.querySelectorAll('.cat-placeholder'); oldPlaceholders.forEach(p=>p.remove()); const codeBlocks=msgEl.querySelectorAll('pre'); if(codeBlocks.length>0){codeBlocks.forEach((pre,preIdx)=>{const preId=`pre-${turnId||'gen'}-${index}-${preIdx}`;const catId=`cat-${turnId||'gen'}-${index}-${preIdx}`;pre.id=preId;const cat=document.createElement('span');cat.classList.add('cat-placeholder');cat.id=catId;cat.textContent='🐱';cat.dataset.preId=preId;pre.parentNode.insertBefore(cat,pre);const codeEl=pre.querySelector('code');const codeText=codeEl?codeEl.textContent:'';const lang=codeEl?.className.match(/language-(\w+)/)?.[1]||'txt';const filename=`code_${Date.now()}.${lang}`;const copyBtn=document.createElement('button');copyBtn.textContent='Copy';copyBtn.classList.add('copy-code-button','footer-button');copyBtn.onclick=()=>copyCodeFromPre(preId,copyBtn);actionsContainer.appendChild(copyBtn);const downloadBtn=document.createElement('button');downloadBtn.textContent='Download';downloadBtn.classList.add('download-code-button','footer-button');downloadBtn.onclick=()=>downloadCode(codeText,filename);actionsContainer.appendChild(downloadBtn);});} span.textContent=`${index+1} / ${variants.length}`;prev.disabled=index===0;next.disabled=index===variants.length-1;msgEl.style.animation='none';void msgEl.offsetWidth;msgEl.style.animation='fadeIn 0.3s ease-in-out';}
+             prev.addEventListener('click',()=>{if(idx>0){idx--;update(idx);updateHistorySelection(turnId,idx);}}); next.addEventListener('click',()=>{if(idx<variants.length-1){idx++;update(idx);updateHistorySelection(turnId,idx);}}); update(idx); return container;
+         }
+        function copyCodeFromPre(preId, btn) { /* ... same ... */
+            const pre=document.getElementById(preId);const code=pre?pre.querySelector('code'):null;if(!code){console.error("No code for",preId);if(btn){btn.textContent='Err!';btn.disabled=true;}return;}const text=code.textContent||'';copyHelper.value=text;copyHelper.select();copyHelper.setSelectionRange(0,99999);let ok=false;try{ok=document.execCommand('copy');}catch(err){console.error('Copy err:',err);ok=false;}window.getSelection().removeAllRanges();if(btn){if(ok){btn.textContent='Copied!';btn.classList.add('copied');setTimeout(()=>{btn.textContent='Copy';btn.classList.remove('copied');},1500);}else{btn.textContent='Failed!';setTimeout(()=>{btn.textContent='Copy';},2000);}}
+         }
+        function downloadCode(codeText, filename) { /* ... same ... */
+             try { const blob=new Blob([codeText],{type:'text/plain;charset=utf-8'});const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download=filename;document.body.appendChild(link);link.click();document.body.removeChild(link);URL.revokeObjectURL(url);console.log(`DL ${filename}`); } catch (e) { console.error("DL failed:", e); alert("Download failed."); }
+         }
+
+        // --- History Management & Utilities ---
+        function prepareHistoryForApi(hist) { /* ... same ... */
+             return hist.map(m=>{if(m.role==='system')return{role:'system',content:m.content};if(m.role==='user')return{role:'user',content:m.content};if(m.role==='assistant'&&m.variants?.length>0)return{role:'assistant',content:m.variants[m.selectedIndex??0]};return null;}).filter(Boolean);
+         }
+        function updateHistorySelection(turnId, idx) { /* ... same ... */
+             const i=conversationHistory.findIndex(m=>m.turnId===turnId&&m.role==='assistant');if(i>-1){conversationHistory[i].selectedIndex=idx;saveHistoryToLocalStorage();}
+        }
+        function saveHistoryToLocalStorage() { /* ... same ... */
+             try{localStorage.setItem('conversationHistory',JSON.stringify(conversationHistory));}catch(e){console.error("Save Err:",e);}
+         }
+        function loadHistoryFromLocalStorage() { /* ... same ... */
+             try{const s=localStorage.getItem('conversationHistory');if(!s)throw new Error('No hist');const p=JSON.parse(s);if(!Array.isArray(p)||p.length===0||p[0]?.role!=='system')throw new Error('Bad fmt');conversationHistory=p.map(m=>{if(m.role==='assistant'&&!Array.isArray(m.variants))return{...m,variants:[m.content||""],selectedIndex:0};if(m.role==='assistant'&&m.variants){if(m.selectedIndex<0||m.selectedIndex>=m.variants.length)m.selectedIndex=0;}return m;});console.log("Loaded history");const l=conversationHistory.filter(m=>m.turnId).pop();if(l?.turnId?.startsWith('turn-')){const n=parseInt(l.turnId.split('-')[1],10);turnCounter=isNaN(n)?1:n+1;}else{turnCounter=1;}return true;}catch(e){console.warn("Load Err:",e);}conversationHistory=[{role:'system',content:localStorage.getItem('systemPrompt')||'You are helpful.'}];turnCounter=1;return false;
+         }
+        function rebuildChatFromHistory() { /* ... same ... */
+             chatBody.innerHTML='';for(let i=1;i<conversationHistory.length;i++){const e=conversationHistory[i];if(e.role==='user')displayMessage(e,userPfp);else if(e.role==='assistant')displayBotMessage(e,botPfp);}
+         }
+        function displayTypingIndicator() { /* ... same ... */
+             if(!chatBody.querySelector('.is-typing')){const e=document.createElement('div');e.classList.add('is-typing');e.textContent='AI is working...';chatBody.appendChild(e);scrollToBottom();} }
+        function removeTypingIndicator() { /* ... same ... */
+             const e=chatBody.querySelector('.is-typing');if(e)e.remove(); }
+        function scrollToBottom() { /* ... same ... */
+             setTimeout(()=>{chatBody.scrollTop=chatBody.scrollHeight;},50); }
+
+        // --- Initial Load ---
+        function displayInitialGreeting() { /* ... same ... */
+            const g="Welcome to Vibe Coder!";const e={role:'assistant',variants:[g],selectedIndex:0,turnId:'turn-0'};conversationHistory.push(e);displayBotMessage(e,botPfp);saveHistoryToLocalStorage();turnCounter=1;
+        }
+        function initialLoad() { // MODIFIED
+            loadHistoryFromLocalStorage();
+            // Load settings *before* rebuilding
+            apiKey = localStorage.getItem('apiKey') || '';
+            hideCodeBlocks = localStorage.getItem('hideCodeBlocks') === 'true';
+            downloadCodeMode = localStorage.getItem('downloadCodeMode') === 'true';
+            // Apply CSS classes based on loaded settings
+            chatContainerElement.classList.toggle('code-hidden', hideCodeBlocks);
+            chatContainerElement.classList.toggle('download-code-active', downloadCodeMode);
+
+            rebuildChatFromHistory();
+
+            if (conversationHistory.length <= 1) { displayInitialGreeting(); }
+            scrollToBottom();
+        }
+
+        initialLoad(); // Start
+
+    </script>
+</body>
+</html>
