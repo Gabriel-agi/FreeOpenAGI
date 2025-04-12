@@ -18,7 +18,7 @@ const PROVIDERS = {
         name: "SambaNova",
         format: "openai_compatible",
         baseURL: "https://api.sambanova.ai/v1/chat/completions",
-        availableModels: ["DeepSeek-V3-0324"],
+        availableModels: ["DeepSeek-V3-0324", "DeepSeek-R1"],
         defaultModel: "DeepSeek-V3-0324",
         apiKeyLocation: "header",
         authHeaderPrefix: "Bearer ",
