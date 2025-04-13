@@ -2,23 +2,55 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AGI Chat</title> <!-- V8.1 + Mic -->
+    <title>AGI Chat</title> <!-- V8.1 + Mic + Proxy -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
     <style>
-        /* --- Base Styles --- */
-        :root{--sb-bg:#f7f7f8;--chat-bg:#fff;--input-bg:#f7f7f8;--text-pri:#202123;--text-sec:#6e6e73;--accent:#4a90e2;--border:#e5e5e5;--hover:#e9e9ea;--font:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;--sb-width:260px;--sb-trans:width .2s ease-in-out}body,html{height:100%;margin:0;font-family:var(--font);background:var(--chat-bg);color:var(--text-pri);overflow:hidden;font-size:15px}button{background:0 0;border:none;cursor:pointer;padding:0;font-family:inherit;color:inherit}input,select,textarea{font-family:inherit;font-size:inherit;box-sizing:border-box}*{box-sizing:border-box}.app{display:flex;height:100vh}.sidebar{width:var(--sb-width);background:var(--sb-bg);border-right:1px solid var(--border);display:flex;flex-direction:column;transition:var(--sb-trans);overflow:hidden;position:relative;flex-shrink:0}.app.sidebar-collapsed .sidebar{width:0;border-right:none}.sidebar-header{padding:10px 15px;font-size:.85em;color:var(--text-sec);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;flex-shrink:0}#hist-list{list-style:none;padding:0;margin:0;overflow-y:auto;flex-grow:1}#hist-list li{padding:8px 15px 8px 25px;margin:1px 10px;border-radius:6px;cursor:pointer;font-size:.9em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border:1px solid transparent;position:relative}#hist-list li:hover{background:var(--hover)}#hist-list li.active{background:#e0e0e0;font-weight:500}
+        /* --- Base Styles (Responsiveness Adjusted) --- */
+        :root{--sb-bg:#f7f7f8;--chat-bg:#fff;--input-bg:#f7f7f8;--text-pri:#202123;--text-sec:#6e6e73;--accent:#4a90e2;--border:#e5e5e5;--hover:#e9e9ea;--font:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;--sb-width:260px;--sb-trans:width .2s ease-in-out}
+        /* Make html/body take full height to allow flex children to fill */
+        html,body{height:100%;margin:0;font-family:var(--font);background:var(--chat-bg);color:var(--text-pri);overflow:hidden;font-size:15px}
+        button{background:0 0;border:none;cursor:pointer;padding:0;font-family:inherit;color:inherit}
+        input,select,textarea{font-family:inherit;font-size:inherit;box-sizing:border-box}
+        *{box-sizing:border-box}
+        /* App uses flex row and takes full height */
+        .app{display:flex;height:100%;}
+        .sidebar{width:var(--sb-width);background:var(--sb-bg);border-right:1px solid var(--border);display:flex;flex-direction:column;transition:var(--sb-trans);overflow:hidden;position:relative;flex-shrink:0; height: 100%; /* Sidebar takes full height */ }
+        .app.sidebar-collapsed .sidebar{width:0;border-right:none}
+        .sidebar-header{padding:10px 15px;font-size:.85em;color:var(--text-sec);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;flex-shrink:0}
+        #hist-list{list-style:none;padding:0;margin:0;overflow-y:auto;flex-grow:1} /* History list grows */
+        #hist-list li{padding:8px 15px 8px 25px;margin:1px 10px;border-radius:6px;cursor:pointer;font-size:.9em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border:1px solid transparent;position:relative}
+        #hist-list li:hover{background:var(--hover)}#hist-list li.active{background:#e0e0e0;font-weight:500}
         .sidebar-footer{padding: 10px 15px; font-size:.9em; color:var(--text-sec); text-align: center; border-top:1px solid var(--border); white-space:nowrap; flex-shrink:0; display:flex; justify-content: center; gap: 15px; }
         #api-key-btn, #agi-btn { font-size:1.2em; padding:5px 8px; border-radius:4px }
         #api-key-btn:hover, #agi-btn:hover { background-color:var(--hover) }
 
-        .chat-area{flex-grow:1;display:flex;flex-direction:column;background:var(--chat-bg);height:100vh;position:relative}.chat-header{display:flex;align-items:center;padding:0 10px 0 0;border-bottom:1px solid var(--border);height:41px;flex-shrink:0}#sidebar-toggle{font-size:1.6em;padding:5px 15px;color:var(--text-sec);line-height:1}.chat-header h2{margin:0 auto 0 10px;font-size:1.1em;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#new-chat{font-size:1.5em;width:28px;height:28px;display:flex;align-items:center;justify-content:center;color:var(--text-sec);margin-left:auto;border-radius:50%}#new-chat:hover,#sidebar-toggle:hover{background:var(--hover);border-radius:4px}#chat-cont{flex-grow:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;padding-bottom:130px}#chat-cont::-webkit-scrollbar,#hist-list::-webkit-scrollbar{display:none}#chat-cont,#hist-list{-ms-overflow-style:none;scrollbar-width:none}.init-welcome{margin:auto;text-align:center;color:var(--text-sec)}
+        /* Chat area uses flex column and takes remaining width/height */
+        .chat-area{flex-grow:1;display:flex;flex-direction:column;background:var(--chat-bg); height: 100%; /* Takes full height of flex parent */ position:relative; /* Keep relative for child absolute positioning if needed */ }
+        .chat-header{display:flex;align-items:center;padding:0 10px 0 0;border-bottom:1px solid var(--border);height:41px;flex-shrink:0}
+        #sidebar-toggle{font-size:1.6em;padding:5px 15px;color:var(--text-sec);line-height:1}.chat-header h2{margin:0 auto 0 10px;font-size:1.1em;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#new-chat{font-size:1.5em;width:28px;height:28px;display:flex;align-items:center;justify-content:center;color:var(--text-sec);margin-left:auto;border-radius:50%}#new-chat:hover,#sidebar-toggle:hover{background:var(--hover);border-radius:4px}
+        /* Chat content grows and scrolls */
+        #chat-cont{flex-grow:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column; padding-bottom: 10px; /* Reduce padding, input area is below now */ }
+        #chat-cont::-webkit-scrollbar,#hist-list::-webkit-scrollbar{display:none}#chat-cont,#hist-list{-ms-overflow-style:none;scrollbar-width:none}.init-welcome{margin:auto;text-align:center;color:var(--text-sec)}
         .init-welcome svg,.a-pfp svg,.a-pfp img{width:40px;height:40px;fill:var(--accent);border-radius:50%;}
         .init-welcome h1{font-size:1.6em;color:var(--text-pri);margin:0 0 5px 0;font-weight:500}.msg-wrap{display:flex;margin-bottom:20px;width:100%;align-items:flex-start;cursor:context-menu;}.u-msg-wrap{justify-content:flex-end}.a-pfp{width:30px;height:30px;border-radius:50%;background:var(--accent);flex-shrink:0;margin-right:10px;display:flex;align-items:center;justify-content:center;overflow:hidden;}
         .a-pfp svg{width:18px;height:18px;fill:#fff;margin:0;} .a-pfp img{width:100%;height:100%;object-fit:cover;}
         .msg{padding:10px 14px;border-radius:15px;max-width:85%;line-height:1.5;font-size:1em;word-wrap:break-word;box-shadow:0 1px 2px rgba(0,0,0,.05);overflow-wrap:break-word;}.u-msg{background:#e3f2fd;color:var(--text-pri);border-bottom-right-radius:5px}.a-msg{background:var(--sb-bg);border-bottom-left-radius:5px}.msg>*:first-child{margin-top:0}.msg>*:last-child{margin-bottom:0}
         .msg i { font-style: italic; color: var(--text-sec); }
         .msg pre{background:#e0e0e0;padding:10px;border-radius:5px;font-size:.9em;margin:.5em 0;white-space:pre-wrap;word-break:break-all;overflow-x:auto;}
-        .msg code:not(pre code){font-family:monospace;background:#e0e0e0;padding:.1em .3em;border-radius:3px}.msg ul,.msg ol{margin:.5em 0 .5em 20px;padding-left:10px}.input-area{position:absolute;bottom:0;left:0;right:0;padding:10px 20px 15px 20px;background:linear-gradient(to top,var(--chat-bg) 80%,transparent);display:flex;flex-direction:column;align-items:center;gap:10px}.input-wrap{display:flex;align-items:center;width:100%;max-width:750px;background:var(--chat-bg);border-radius:24px;padding:8px 18px;border:1px solid var(--border);box-shadow:0 2px 5px rgba(0,0,0,.05)}#u-input{flex-grow:1;border:none;outline:0;background:0 0;font-size:1em;color:var(--text-pri)}#u-input::placeholder{color:var(--text-sec)}.input-bottom-row{display:flex;justify-content:space-between;align-items:center;width:100%;max-width:750px}.input-opts{display:flex;gap:8px;align-items:center;padding-left:5px}.input-opts button{padding:5px 12px;border:1px solid var(--border);border-radius:15px;font-size:.8em;background:var(--chat-bg);color:var(--text-sec)}.input-opts button.active{border-color:var(--accent);color:var(--accent);background-color:#e3f2fd}.input-action-buttons{display:flex;gap:8px;align-items:center; position: relative;}
+        .msg code:not(pre code){font-family:monospace;background:#e0e0e0;padding:.1em .3em;border-radius:3px}.msg ul,.msg ol{margin:.5em 0 .5em 20px;padding-left:10px}
+
+        /* Input area is now part of the flex flow, not absolutely positioned */
+        .input-area{
+            /* position:absolute; bottom:0; left:0; right:0; */ /* REMOVED Absolute positioning */
+            position: relative; /* Use relative positioning */
+            flex-shrink: 0; /* Prevent input area from shrinking */
+            padding: 10px 20px 15px 20px;
+            background: var(--chat-bg); /* Solid background */
+            /* background:linear-gradient(to top,var(--chat-bg) 80%,transparent); */ /* REMOVED Gradient */
+            display:flex;flex-direction:column;align-items:center;gap:10px;
+            border-top: 1px solid var(--border); /* Add a top border */
+        }
+        .input-wrap{display:flex;align-items:center;width:100%;max-width:750px;background:var(--chat-bg);border-radius:24px;padding:8px 18px;border:1px solid var(--border);box-shadow:0 2px 5px rgba(0,0,0,.05)}#u-input{flex-grow:1;border:none;outline:0;background:0 0;font-size:1em;color:var(--text-pri)}#u-input::placeholder{color:var(--text-sec)}.input-bottom-row{display:flex;justify-content:space-between;align-items:center;width:100%;max-width:750px}.input-opts{display:flex;gap:8px;align-items:center;padding-left:5px}.input-opts button{padding:5px 12px;border:1px solid var(--border);border-radius:15px;font-size:.8em;background:var(--chat-bg);color:var(--text-sec)}.input-opts button.active{border-color:var(--accent);color:var(--accent);background-color:#e3f2fd}.input-action-buttons{display:flex;gap:8px;align-items:center; position: relative;}
         #helper-ai-btn{font-size:1.5em;color:var(--text-sec);line-height:1;padding:0 5px;}
         #helper-ai-btn.active { color: var(--accent); }
         #send-btn{background:var(--accent);color:#fff;border-radius:50%;width:32px;height:32px;font-size:1.1em;display:flex;align-items:center;justify-content:center;flex-shrink:0}#helper-ai-btn:hover{color:var(--text-pri)}
@@ -97,7 +129,7 @@
         #current-pfp img{width:100%;height:100%;object-fit:cover;}
         #generate-pfp-btn { font-size: 0.85em; padding: 6px 10px; flex-grow: 1;}
         #delete-agi-btn { background-color: #fdd; color: #c53030; font-size: 0.85em; padding: 6px 10px; } #delete-agi-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        #helper-menu { position: absolute; bottom: 100%; right: 45px; background: #fff; border: 1px solid var(--border); border-radius: 6px; box-shadow: 0 2px 10px rgba(0,0,0,.1); padding: 5px 0; min-width: 140px; z-index: 10; display: none; }
+        #helper-menu { position: absolute; bottom: 100%; right: 45px; background: #fff; border: 1px solid var(--border); border-radius: 6px; box-shadow: 0 2px 10px rgba(0,0,0,.1); padding: 5px 0; min-width: 140px; z-index: 10; display: none; margin-bottom: 5px; /* Add margin to separate from input area */ }
         #helper-menu div { padding: 6px 15px; font-size: .9em; cursor: pointer; white-space: nowrap; }
         #helper-menu div:hover { background: var(--hover); }
         #helper-menu div.selected { background-color: #e0e0e0; font-weight: bold; }
@@ -125,14 +157,18 @@
             </div>
         </div>
         <div class="chat-area">
-             <div class="chat-header"><button id="sidebar-toggle" onclick="toggleSidebar()" title="Toggle Sidebar">&#9776;</button><h2 id="chat-title">New Chat</h2><button id="new-chat" onclick="startNewChat()" title="New Chat">+</button></div>
+             <div class="chat-header"><button id="sidebar-toggle" onclick="toggleSidebar()" title="Toggle Sidebar">☰</button><h2 id="chat-title">New Chat</h2><button id="new-chat" onclick="startNewChat()" title="New Chat">+</button></div>
              <div id="chat-cont" oncontextmenu="showMessageCtxMenu(event)"><div class="init-welcome"><svg><use href="#w-icon"/></svg><h1>Ready</h1><p>Select mode & start.</p></div></div>
              <div class="input-area">
                  <div id="edit-indicator">Editing... <button onclick="cancelEdit()">✖</button></div>
                  <div id="helper-prompt-wrap"><textarea id="helper-prompt-input" placeholder="Helper AI System Prompt (applies to selected helper)"></textarea></div>
                  <div class="input-wrap"><input type="text" id="u-input" placeholder="Enter message..."></div>
                  <div class="input-bottom-row">
-                    <div class="input-opts"><button id="mode-deepthinking" onclick="selectMode('deepThinking')">💡 DeepThinking</button><button id="mode-turbo" onclick="selectMode('turbo')">⚡ Turbo</button></div>
+                    <div class="input-opts">
+                        <button id="mode-deepthinking" onclick="selectMode('deepThinking')">💡 DeepThinking</button>
+                        <button id="mode-turbo" onclick="selectMode('turbo')">⚡ Turbo</button>
+                        <button id="mode-proxy" onclick="selectMode('proxy')">🛡️ Proxy</button> <!-- << NEW PROXY BUTTON -->
+                    </div>
                     <div class="input-action-buttons">
                         <button id="helper-ai-btn" onclick="toggleHelperMenu()" title="Helper AI Settings">+</button>
 
@@ -172,23 +208,33 @@
     <div id="agi-modal" class="modal"><div class="modal-content"><h3>AGIs <button onclick="addNewAgi()" title="Add New AGI" style="font-size: 1.2em; padding: 0 5px;">+</button></h3><div id="agi-grid"></div><div id="agi-edit-area"><label for="agi-name-edit">Name:</label><input type="text" id="agi-name-edit"><label for="prompt-text-edit">System Prompt:</label><textarea id="prompt-text-edit"></textarea><label>PFP:</label><div id="pfp-display-area"><span id="current-pfp">❓</span><button id="generate-pfp-btn" onclick="generatePfp()">Generate</button></div><button id="delete-agi-btn" onclick="deleteSelectedAgi()">Delete AGI</button></div><div class="modal-actions"><button id="close-agi-modal-btn" onclick="hideAgiModal()">Cancel</button><button id="save-agi-btn" onclick="saveAgiSelection()">Save & Select</button></div></div></div>
     <div id="searchModalOverlay">
          <div id="searchModalContent">
-            <div id="searchModalHeader"><button id="closeSearchModalBtn" title="Close" onclick="closeSearchModal()">&times;</button></div>
+            <div id="searchModalHeader"><button id="closeSearchModalBtn" title="Close" onclick="closeSearchModal()">×</button></div>
             <div id="searchFrameContainer"><iframe id="searchFrame" src="about:blank" title="External App Module"></iframe></div>
          </div>
     </div>
 
     <script>
-        // --- API Config & Call Logic (Unchanged) ---
-        const PROVIDERS={V3_TURBO:{name:"V3 Turbo",format:"openai_compatible",baseURL:"https://api.sambanova.ai/v1/chat/completions",modelId:"DeepSeek-V3-0324",apiKeyLocation:"header",authPrefix:"Bearer ",sysPrompt:!0},PRO_2_5:{name:"2.5-pro",format:"gemini_generateContent",baseURL:"https://generativelanguage.googleapis.com/v1beta/models/",modelId:"gemini-2.5-pro-exp-03-25",apiKeyLocation:"query",apiKeyQueryParam:"key",sysPrompt:!1,sysInstructKey:"system_instruction"},V3:{name:"V3",format:"openai_compatible",baseURL:"https://api.deepseek.com/v1/chat/completions",modelId:"deepseek-chat",apiKeyLocation:"header",authPrefix:"Bearer ",sysPrompt:!0}};const GEMINI_IMG_MODEL="gemini-2.0-flash-exp-image-generation";function transformHistoryForGemini(h){const c=[];let s=null;if(h[0]?.role==='system')s=h[0].content;const t=h.slice(s?1:0);t.forEach(m=>{if(m.content!=null)c.push({role:m.role==='assistant'?'model':m.role,parts:[{text:m.content}]})});return {contents:c,systemInstruction:s};}async function getApiResponse(k,h,a,o={}){console.log(`API:${k}`);const c=PROVIDERS[k];if(!c)throw new Error(`No cfg ${k}`);const r=c.apiKeyLocation!=='none';if(r&&!a)throw new Error(`Key missing ${k}`);let u,b,d={'Content-Type':'application/json'};const v=h.filter(m=>m?.role&&typeof m.content==='string');let g=v;if(c.format==="gemini_generateContent")g=v.filter(m=>m.role!=='system');else if(!c.sysPrompt)g=v.filter(m=>m.role!=='system');try{if(c.format==="openai_compatible"){u=c.baseURL;if(a)d['Authorization']=`${c.authPrefix||''}${a}`;b={model:c.modelId,messages:g,stream:o.stream??!1,temperature:o.t??0.7,top_p:o.p??0.9};}else if(c.format==="gemini_generateContent"){u=`${c.baseURL}${c.modelId}:generateContent`;if(a)u+=`?${c.apiKeyQueryParam}=${a}`;const{contents:n,systemInstruction:s}=transformHistoryForGemini(v);if(n.length===0&&!s)throw new Error("Empty hist/prompt Gemini");b={contents:n,generationConfig:{temperature:o.t??0.7,topP:o.p??0.9}};if(s&&c.sysInstructKey)b[c.sysInstructKey]={parts:[{text:s}]};}else throw new Error(`Unsupported:${c.format}`);}catch(e){console.error(`Prep Err:${k}`,e);throw e;}try{const s=await fetch(u,{method:'POST',headers:d,body:JSON.stringify(b)});if(!s.ok){let m=`API Err ${s.status}`;try{const d=await s.json();m=d.error?.message||d.message||JSON.stringify(d)}catch{try{const t=await s.text();if(t)m=t}catch{}}throw new Error(m);}const p=await s.json();let t=null;if(c.format==="openai_compatible")t=p.choices?.[0]?.message?.content;else if(c.format==="gemini_generateContent")t=p.candidates?.[0]?.content?.parts?.[0]?.text;if(typeof t!=='string'){console.warn("Invalid resp structure:",p);t="";}return t;}catch(e){console.error(`Fetch Err:${k}`,e);throw e;}}
+        // --- API Config & Call Logic (Proxy Added) ---
+        const PROVIDERS={
+            V3_TURBO:{name:"SambaNova",format:"openai_compatible",baseURL:"https://api.sambanova.ai/v1/chat/completions",modelId:"DeepSeek-V3-0324",apiKeyLocation:"header",authPrefix:"Bearer ",sysPrompt:!0},
+            PRO_2_5:{name:"Gemini",format:"gemini_generateContent",baseURL:"https://generativelanguage.googleapis.com/v1beta/models/",modelId:"gemini-2.5-pro-exp-03-25",apiKeyLocation:"query",apiKeyQueryParam:"key",sysPrompt:!1,sysInstructKey:"system_instruction"},
+            V3:{name:"DeepSeek",format:"openai_compatible",baseURL:"https://api.deepseek.com/v1/chat/completions",modelId:"deepseek-chat",apiKeyLocation:"header",authPrefix:"Bearer ",sysPrompt:!0},
+            // --- ADDED PROXY DEFINITION ---
+            BIGMODEL_PROXY: {name: "BigModel (via Proxy)",format: "proxy_compatible",baseURL: "/api/proxy",modelId: "glm-4-flash",apiKeyLocation: "none",sysPrompt: true}, // Simplified proxy def
+            // --- Image gen model (for AGI PFP) ---
+            GEMINI_IMG_MODEL:"gemini-2.0-flash-exp-image-generation"
+         };
 
-        // --- DOM Refs & State (Existing + Mic Button + Search Modal) ---
+        function transformHistoryForGemini(h){const c=[];let s=null;if(h[0]?.role==='system')s=h[0].content;const t=h.slice(s?1:0);t.forEach(m=>{if(m.content!=null)c.push({role:m.role==='assistant'?'model':m.role,parts:[{text:m.content}]})});return {contents:c,systemInstruction:s};}async function getApiResponse(k,h,a,o={}){console.log(`[Main API] Called for: ${k}`);const c=PROVIDERS[k];if(!c)throw new Error(`No cfg ${k}`);const r=c.apiKeyLocation!=='none';if(r&&!a)throw new Error(`Key missing ${k}`);let u,b,d={'Content-Type':'application/json'};const v=h.filter(m=>m?.role&&typeof m.content==='string');let g=v;if(c.format==="gemini_generateContent")g=v.filter(m=>m.role!=='system');else if(!c.sysPrompt)g=v.filter(m=>m.role!=='system');try{if(c.format==="openai_compatible"){u=c.baseURL;if(a)d['Authorization']=`${c.authPrefix||''}${a}`;b={model:c.modelId,messages:g,stream:o.stream??!1,temperature:o.t??0.7,top_p:o.p??0.9};}else if(c.format==="gemini_generateContent"){u=`${c.baseURL}${c.modelId}:generateContent`;if(a)u+=`?${c.apiKeyQueryParam}=${a}`;const{contents:n,systemInstruction:s}=transformHistoryForGemini(v);if(n.length===0&&!s)throw new Error("Empty hist/prompt Gemini");b={contents:n,generationConfig:{temperature:o.t??0.7,topP:o.p??0.9}};if(s&&c.sysInstructKey)b[c.sysInstructKey]={parts:[{text:s}]};}else throw new Error(`Unsupported:${c.format}`);}catch(e){console.error(`Prep Err:${k}`,e);throw e;}try{const s=await fetch(u,{method:'POST',headers:d,body:JSON.stringify(b)});if(!s.ok){let m=`API Err ${s.status}`;try{const d=await s.json();m=d.error?.message||d.message||JSON.stringify(d)}catch{try{const t=await s.text();if(t)m=t}catch{}}throw new Error(m);}const p=await s.json();let t=null;if(c.format==="openai_compatible")t=p.choices?.[0]?.message?.content;else if(c.format==="gemini_generateContent")t=p.candidates?.[0]?.content?.parts?.[0]?.text;if(typeof t!=='string'){console.warn("Invalid resp structure:",p);t="";}return t;}catch(e){console.error(`Fetch Err:${k}`,e);throw e;}}
+
+        // --- DOM Refs & State (Existing + Mic Button + Search Modal + Proxy Button) ---
         const chatCont=document.getElementById('chat-cont'),uInput=document.getElementById('u-input'),histList=document.getElementById('hist-list'),initWelcome=document.querySelector('.init-welcome'),chatTitle=document.getElementById('chat-title'),histCtxMenu=document.getElementById('hist-ctx-menu'),msgCtxMenu=document.getElementById('msg-ctx-menu'),appCont=document.getElementById('app-cont'),apiKeyModal=document.getElementById('api-key-modal'),keyInputsCont=document.getElementById('api-key-inputs'),btnDT=document.getElementById('mode-deepthinking'),btnTurbo=document.getElementById('mode-turbo');
+        const btnProxy = document.getElementById('mode-proxy'); // << NEW PROXY BUTTON REF
         const agiModal=document.getElementById('agi-modal'),agiGrid=document.getElementById('agi-grid'),agiNameEdit=document.getElementById('agi-name-edit'),promptEdit=document.getElementById('prompt-text-edit'),currentPfpDisp=document.getElementById('current-pfp'),delAgiBtn=document.getElementById('delete-agi-btn');
         const helperBtn=document.getElementById('helper-ai-btn'),helperMenu=document.getElementById('helper-menu'),helperPromptWrap=document.getElementById('helper-prompt-wrap'),helperPromptInput=document.getElementById('helper-prompt-input');
         const editIndicator = document.getElementById('edit-indicator');
         const searchModalOverlay = document.getElementById('searchModalOverlay');
         const searchFrame = document.getElementById('searchFrame');
-        // --- NEW: Mic Button Refs ---
         const micTranscribeBtn = document.getElementById('mic-transcribe-btn');
         const micButtonText = micTranscribeBtn.querySelector('.mic-btn-text');
         const micStatusSpan = document.getElementById('mic-status');
@@ -197,6 +243,7 @@
         let helperAiKey=null, helperAiPrompt='';
         let editingMsgIndex = null;
         let serperApiKey = '';
+        // let isProxyMode = false; // State now handled by currentMode === 'proxy'
 
         // --- Storage & Helpers ---
         const CHAT_STORE='chats_v11',KEY_STORE='keys_v7',GOOD_KEY_IDX_STORE='goodKeyIdx_v4',AGI_STORE='agis_v1',ACTIVE_AGI_STORE='activeAgi_v1';
@@ -217,15 +264,25 @@
         const saveUpdateChat=(n,h)=>{if(!n||h.length===0)return;const c=getChats();c[n]={ctx:h,title:genTitle(h),ts:Date.now()};saveChats(c);if(n===currentChatName)updateHistList()};const loadChat=(n)=>{if(!n)return startNewChat();const c=getChats()[n];if(c?.ctx){chatCont.innerHTML='';msgHist=c.ctx;currentChatName=n;chatTitle.textContent=c.title||n;msgHist.forEach((m,i)=>appendMsg(m.content,m.role,false,false,i));checkWelcome();chatCont.scrollTop=chatCont.scrollHeight;updateHistList();cancelEdit();}else{startNewChat()}};const renameChat=(n)=>{const c=getChats();if(!c[n])return;const t=prompt("Rename:",c[n].title||n)?.trim();if(t){c[n].title=t;c[n].ts=Date.now();saveChats(c);if(n===currentChatName)chatTitle.textContent=t;updateHistList()}};const deleteChat=(n)=>{const c=getChats();if(!c[n]||!confirm(`Delete "${c[n].title||n}"?`))return;delete c[n];saveChats(c);if(n===currentChatName)startNewChat();updateHistList()};const startNewChat=()=>{chatCont.innerHTML='';msgHist=[];currentChatName=null;chatTitle.textContent="New Chat";checkWelcome();updateHistList();uInput.focus();selectMode('default'); selectHelperAi(null); helperPromptWrap.style.display = 'none'; cancelEdit();};
 
         // --- API Key Modal Logic (Handles Serper Key) ---
-        const showApiKeyModal = () => { keyInputsCont.innerHTML = ''; const providerKeys = getApiKeys(); Object.entries(PROVIDERS).forEach(([pk, pc]) => { if (pc.apiKeyLocation !== 'none') { const d = document.createElement('div'); d.innerHTML = `<label for="k-${pk}">${pc.name}</label><textarea id="k-${pk}" data-provider="${pk}" rows="2" placeholder="One API Key per line">${(providerKeys[pk] || []).join('\n')}</textarea>`; keyInputsCont.appendChild(d); } }); const serperDiv = document.createElement('div'); serperDiv.innerHTML = `<label for="k-serper">Serper (for AI Search)</label><textarea id="k-serper" data-keytype="serper" rows="1" placeholder="Serper.dev API Key">${serperApiKey}</textarea>`; keyInputsCont.appendChild(serperDiv); apiKeyModal.style.display = 'flex'; };
+        const showApiKeyModal = () => { keyInputsCont.innerHTML = ''; const providerKeys = getApiKeys(); Object.entries(PROVIDERS).forEach(([pk, pc]) => { /* Skip BIGMODEL_PROXY in keys modal */ if (pc.apiKeyLocation !== 'none' && pk !== 'BIGMODEL_PROXY' && pk !== 'GEMINI_IMG_MODEL') { const d = document.createElement('div'); d.innerHTML = `<label for="k-${pk}">${pc.name}</label><textarea id="k-${pk}" data-provider="${pk}" rows="2" placeholder="One API Key per line">${(providerKeys[pk] || []).join('\n')}</textarea>`; keyInputsCont.appendChild(d); } }); const serperDiv = document.createElement('div'); serperDiv.innerHTML = `<label for="k-serper">Serper (for AI Search)</label><textarea id="k-serper" data-keytype="serper" rows="1" placeholder="Serper.dev API Key">${serperApiKey}</textarea>`; keyInputsCont.appendChild(serperDiv); apiKeyModal.style.display = 'flex'; };
         const hideApiKeyModal = () => { apiKeyModal.style.display = 'none' };
         const saveApiKeys = () => { const tas = keyInputsCont.querySelectorAll('textarea'); const newProviderKeys = {}; let foundSerperKey = ''; tas.forEach(ta => { const provider = ta.dataset.provider; const keyType = ta.dataset.keytype; const keyContent = ta.value.trim(); if (keyType === 'serper') { foundSerperKey = keyContent; } else if (provider) { const keys = keyContent.split('\n').map(k => k.trim()).filter(Boolean); if (keys.length > 0) { newProviderKeys[provider] = keys; } } }); saveApiKeysToStorage(newProviderKeys); serperApiKey = foundSerperKey; if (serperApiKey) { localStorage.setItem(SERPER_KEY_STORE, serperApiKey); console.log('Serper key saved.'); } else { localStorage.removeItem(SERPER_KEY_STORE); console.log('Serper key cleared.'); } hideApiKeyModal(); alert('Keys saved!'); };
 
         // --- AGI Modal Logic ---
         const populateAgiGrid=()=>{agiGrid.innerHTML='';const agis=getAgis();Object.keys(agis).forEach(k=>{const d=agis[k];const i=document.createElement('div');i.className='agi-item';i.dataset.key=k;const f=d.pfp;if(f?.startsWith('data:image')||f?.startsWith('http'))i.innerHTML=`<img src="${f}" alt="">`;else i.textContent=f||'?';if(k===selectedAgiKeyInModal)i.classList.add('selected');i.onclick=()=>handleAgiItemClick(k);agiGrid.appendChild(i)})};const showAgiModal=()=>{selectedAgiKeyInModal=currentAgiKey||Object.keys(getAgis())[0]||null;populateAgiGrid();updateAgiEditArea(selectedAgiKeyInModal);agiModal.style.display='flex'};const hideAgiModal=()=>{agiModal.style.display='none';selectedAgiKeyInModal=null;};const updateAgiEditArea=(k)=>{const agis=getAgis();const d=k?agis[k]:null;agiNameEdit.value=d?.name||'';promptEdit.value=d?.prompt||'';const f=d?.pfp;if(f?.startsWith('data:image')||f?.startsWith('http'))currentPfpDisp.innerHTML=`<img src="${f}" alt="">`;else currentPfpDisp.textContent=f||'❓';delAgiBtn.disabled=!k;agiNameEdit.disabled=!k;promptEdit.disabled=!k;document.getElementById('generate-pfp-btn').disabled=!k;};const handleAgiItemClick=(key)=>{selectedAgiKeyInModal=key;updateAgiEditArea(key);agiGrid.querySelectorAll('.agi-item').forEach(el=>el.classList.toggle('selected',el.dataset.key===key));};const addNewAgi=()=>{const a=getAgis();const k=`a_${Date.now()}`;a[k]={name:"New",prompt:"",pfp:"❓"};saveAgis(a);selectedAgiKeyInModal=k;populateAgiGrid();updateAgiEditArea(k);agiNameEdit.focus();agiNameEdit.select();};const generatePfp=async()=>{const name=agiNameEdit.value.trim();if(!name){alert("Enter AGI name.");return;}const pKey='PRO_2_5';const keys=getApiKeys()[pKey]||[];const cfg=PROVIDERS[pKey];if(cfg.apiKeyLocation!=='none'&&keys.length===0){alert(`Key missing ${cfg.name}.Use 🔑.`);showApiKeyModal();return;}const apiKey=keys[0];if(cfg.apiKeyLocation!=='none'&&!apiKey){alert("No key for Gemini.");return;}const prompt=`Generate a profile picture for "${name}". IMPORTANT: ONLY return the generated image data. DO NOT include ANY text. Style: simple icon, vector art, PNG.`;let url=`${cfg.baseURL}${GEMINI_IMG_MODEL}:generateContent?${cfg.apiKeyQueryParam}=${apiKey}`;currentPfpDisp.textContent='⏳';try{const res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{response_modalities:["IMAGE","TEXT"]}})});if(!res.ok){let m=`API Err ${res.status}`;try{const d=await res.json();m=d.error?.message||d.message||JSON.stringify(d);}catch{}throw new Error(m);}const data=await res.json();const imgPart=data.candidates?.[0]?.content?.parts?.find(p=>p.inlineData);if(!imgPart?.inlineData?.data){const txtPart=data.candidates?.[0]?.content?.parts?.find(p=>p.text);console.warn("Img gen txt:",txtPart?.text);throw new Error("No image data."+(txtPart?.text?"Txt:"+txtPart.text.substring(0,50)+"...":""));}const imgUrl=`data:${imgPart.inlineData.mimeType};base64,${imgPart.inlineData.data}`;currentPfpDisp.innerHTML=`<img src="${imgUrl}" alt="PFP">`;}catch(err){console.error("PFP Gen fail:",err);alert(`PFP gen failed:${err.message}`);currentPfpDisp.textContent='❓';}};const deleteSelectedAgi=()=>{const k=selectedAgiKeyInModal;if(!k||!confirm(`Delete AGI "${getAgis()[k]?.name||k}"?`))return;const a=getAgis();delete a[k];saveAgis(a);if(currentAgiKey===k){currentAgiKey=null;saveActiveAgiKey('');}selectedAgiKeyInModal=currentAgiKey||Object.keys(getAgis())[0]||null;populateAgiGrid();updateAgiEditArea(selectedAgiKeyInModal);};const saveAgiSelection=()=>{console.log("Saving AGI Selection for key:", selectedAgiKeyInModal);const key=selectedAgiKeyInModal;if(!key){hideAgiModal();return};const agis=getAgis();const name=agiNameEdit.value.trim();const prompt=promptEdit.value.trim();const pfpEl=currentPfpDisp.querySelector('img');const pfpVal=pfpEl?pfpEl.src:(currentPfpDisp.textContent.trim()||null);if(!agis[key])agis[key]={};agis[key].name=name||"Unnamed";agis[key].prompt=prompt;agis[key].pfp=(pfpVal==='❓'||pfpVal==='👤')?null:pfpVal;saveAgis(agis);currentAgiKey=key;saveActiveAgiKey(key);console.log("AGI set:",key);hideAgiModal();};
 
-        // --- Mode Selection ---
-        const selectMode=(m)=>{currentMode=(currentMode===m?'default':m);btnDT.classList.toggle('active',currentMode==='deepThinking');btnTurbo.classList.toggle('active',currentMode==='turbo');console.log("Mode:",currentMode)};
+        // --- Mode Selection (Proxy Added) ---
+        const selectMode = (m) => {
+            // If clicking the currently active mode, toggle it off to 'default'
+            currentMode = (currentMode === m ? 'default' : m);
+
+            // Update button active states
+            btnDT.classList.toggle('active', currentMode === 'deepThinking');
+            btnTurbo.classList.toggle('active', currentMode === 'turbo');
+            btnProxy.classList.toggle('active', currentMode === 'proxy');
+
+            console.log("Mode selected:", currentMode);
+        };
 
         // --- Helper AI UI ---
         const toggleHelperMenu = () => { helperMenu.style.display = (helperMenu.style.display === 'block') ? 'none' : 'block'; };
@@ -234,8 +291,70 @@
         const toggleHelperPromptInput = () => { const isVisible = helperPromptWrap.style.display === 'block'; helperPromptWrap.style.display = isVisible ? 'none' : 'block'; if (!isVisible) { helperPromptInput.focus(); } };
         const updateHelperPrompt = () => { helperAiPrompt = helperPromptInput.value.trim(); };
 
-        // --- Core API Call Logic ---
-        const callAndProcessMainApi = async (hist, userMsgContentForHist) => { let mainPK; if (currentMode === 'deepThinking') mainPK = 'PRO_2_5'; else if (currentMode === 'turbo') mainPK = 'V3_TURBO'; else mainPK = 'V3'; const mainKeys = getApiKeys()[mainPK] || []; const mainCfg = PROVIDERS[mainPK]; if (mainCfg.apiKeyLocation !== 'none' && mainKeys.length === 0) { alert(`Key missing for ${mainCfg.name}. Use 🔑.`); showApiKeyModal(); return { error: true, reason: 'key' }; } const historyToSend = [...hist]; const agis = getAgis(); const agiData = currentAgiKey ? agis[currentAgiKey] : null; const sysPromptText = agiData?.prompt || "u re hlpful"; if (sysPromptText && sysPromptText !== "u re hlpful") { historyToSend.unshift({ role: "system", content: sysPromptText }); } const mainTk = appendMsg("<i>Thinking...</i>", 'assistant', true, true); let mainResponse = null, mainError = null, mainKeyUsed = null; const mainGoodIdx = getGoodKeyIndices(); const mainStartIdx = mainGoodIdx[mainPK] ?? 0; for (let i = 0; i < mainKeys.length; i++) { const cIdx = (mainStartIdx + i) % mainKeys.length; const cKey = mainKeys[cIdx]; console.log(`Try Main ${mainPK} key ${cIdx}`); try { mainResponse = await getApiResponse(mainPK, historyToSend, cKey, { t: 0.7, p: 0.9 }); mainKeyUsed = cIdx; console.log(`Main OK key ${mainKeyUsed}`); mainGoodIdx[mainPK] = mainKeyUsed; saveGoodKeyIndices(mainGoodIdx); break; } catch (err) { console.error(`Main Key ${cIdx} fail ${mainPK}:`, err); mainError = err; } } if (mainTk && mainTk.parentNode === chatCont) chatCont.removeChild(mainTk); if (mainResponse !== null) { if (userMsgContentForHist) { msgHist.push({ role: "user", content: userMsgContentForHist }); } msgHist.push({ role: "assistant", content: mainResponse }); appendMsg(mainResponse, 'assistant', true, false, msgHist.length - 1); saveUpdateChat(currentChatName, msgHist); if (getChats()[currentChatName]) { chatTitle.textContent = getChats()[currentChatName].title; updateHistList(); } return { error: false }; } else { console.error(`All main keys fail ${mainPK}. Last:`, mainError); const errorMsg = `<i>Error: All keys failed for ${mainCfg.name}. ${mainError?.message || String(mainError)}</i>`; appendMsg(errorMsg, 'assistant'); return { error: true, message: errorMsg }; } };
+        // --- Core API Call Logic (Unaffected by Proxy Button) ---
+        // This function handles the MAIN chat input, NOT the helper apps.
+        // It should ignore the proxy button state.
+        const callAndProcessMainApi = async (hist, userMsgContentForHist) => {
+            let mainPK;
+            // Determine MAIN provider based on DeepThinking/Turbo/Default (IGNORE PROXY MODE HERE)
+            if (currentMode === 'deepThinking') mainPK = 'PRO_2_5';
+            else if (currentMode === 'turbo') mainPK = 'V3_TURBO';
+            else mainPK = 'V3'; // Default or if Proxy is active, main chat uses V3
+
+            const mainKeys = getApiKeys()[mainPK] || [];
+            const mainCfg = PROVIDERS[mainPK];
+            if (mainCfg.apiKeyLocation !== 'none' && mainKeys.length === 0) {
+                alert(`Key missing for ${mainCfg.name}. Use 🔑.`); showApiKeyModal();
+                return { error: true, reason: 'key' };
+            }
+            const historyToSend = [...hist];
+            const agis = getAgis();
+            const agiData = currentAgiKey ? agis[currentAgiKey] : null;
+            const sysPromptText = agiData?.prompt || "u re hlpful";
+            if (sysPromptText && sysPromptText !== "u re hlpful") {
+                 if (mainCfg.sysPrompt || (mainCfg.format === 'gemini_generateContent' && mainCfg.sysInstructKey)) {
+                    historyToSend.unshift({ role: "system", content: sysPromptText });
+                 }
+            }
+            const mainTk = appendMsg("<i>Thinking...</i>", 'assistant', true, true);
+            let mainResponse = null, mainError = null, mainKeyUsed = null;
+            const mainGoodIdx = getGoodKeyIndices();
+            const mainStartIdx = mainGoodIdx[mainPK] ?? 0;
+            for (let i = 0; i < mainKeys.length; i++) {
+                const cIdx = (mainStartIdx + i) % mainKeys.length;
+                const cKey = mainKeys[cIdx];
+                console.log(`Try Main ${mainPK} key ${cIdx}`);
+                try {
+                    mainResponse = await getApiResponse(mainPK, historyToSend, cKey, { t: 0.7, p: 0.9 });
+                    mainKeyUsed = cIdx;
+                    console.log(`Main OK key ${mainKeyUsed}`);
+                    mainGoodIdx[mainPK] = mainKeyUsed; saveGoodKeyIndices(mainGoodIdx);
+                    break;
+                } catch (err) {
+                    console.error(`Main Key ${cIdx} fail ${mainPK}:`, err);
+                    mainError = err;
+                }
+            }
+            if (mainTk && mainTk.parentNode === chatCont) chatCont.removeChild(mainTk);
+            if (mainResponse !== null) {
+                if (userMsgContentForHist) {
+                    msgHist.push({ role: "user", content: userMsgContentForHist });
+                }
+                msgHist.push({ role: "assistant", content: mainResponse });
+                appendMsg(mainResponse, 'assistant', true, false, msgHist.length - 1);
+                saveUpdateChat(currentChatName, msgHist);
+                if (getChats()[currentChatName]) {
+                    chatTitle.textContent = getChats()[currentChatName].title;
+                    updateHistList();
+                }
+                return { error: false };
+            } else {
+                console.error(`All main keys fail ${mainPK}. Last:`, mainError);
+                const errorMsg = `<i>Error: All keys failed for ${mainCfg.name}. ${mainError?.message || String(mainError)}</i>`;
+                appendMsg(errorMsg, 'assistant');
+                return { error: true, message: errorMsg };
+            }
+        };
 
         // --- Messaging ---
         const sendMessage = async () => { const rawUserContent = uInput.value.trim(); if (!rawUserContent && editingMsgIndex === null) { alert("Enter msg"); return } if (editingMsgIndex !== null) { console.log(`Editing message index: ${editingMsgIndex}`); const originalMsgHist = [...msgHist]; const targetIndex = editingMsgIndex; if (targetIndex < 0 || targetIndex >= originalMsgHist.length || originalMsgHist[targetIndex].role !== 'user') { console.error("Cannot edit this index"); cancelEdit(); return; } let modifiedHist = [...originalMsgHist]; modifiedHist[targetIndex].content = rawUserContent; modifiedHist = modifiedHist.slice(0, targetIndex + 1); msgHist = modifiedHist; rerenderChat(); let historyForEdit = [...msgHist]; uInput.value = ''; checkWelcome(); const result = await callAndProcessMainApi(historyForEdit, null); if (result.error) { console.log("Edit failed, rolling back history."); msgHist = originalMsgHist; rerenderChat(); } else { saveUpdateChat(currentChatName, msgHist); } cancelEdit(); return; } let finalUserContent = rawUserContent; if (helperAiKey && helperAiPrompt) { console.log(`Using Helper AI: ${helperAiKey} with context and prompt: "${helperAiPrompt}"`); const helperConfig = PROVIDERS[helperAiKey]; const helperKeys = getApiKeys()[helperAiKey] || []; if (helperConfig.apiKeyLocation !== 'none' && helperKeys.length === 0) { alert(`Key missing for Helper ${helperConfig.name}. Use 🔑.`); showApiKeyModal(); return; } const thinkingMsg = appendMsg("<i>Helper AI processing...</i>", 'assistant', true, true); let helperMessages = [...msgHist]; if (helperAiPrompt) { helperMessages.unshift({ role: "system", content: helperAiPrompt }); } helperMessages.push({ role: "user", content: rawUserContent }); let helperResponse = null, helperApiError = null; const helperGoodIdx = getGoodKeyIndices(); const helperStartIdx = helperGoodIdx[helperAiKey] ?? 0; for (let i = 0; i < helperKeys.length; i++) { const currentIdx = (helperStartIdx + i) % helperKeys.length; const currentKey = helperKeys[currentIdx]; try { helperResponse = await getApiResponse(helperAiKey, helperMessages, currentKey, { t: 0.5, p: 0.9 }); helperGoodIdx[helperAiKey] = currentIdx; saveGoodKeyIndices(helperGoodIdx); break; } catch (err) { helperApiError = err; } } if (thinkingMsg && thinkingMsg.parentNode === chatCont) chatCont.removeChild(thinkingMsg); if (helperResponse !== null) { finalUserContent = helperResponse; } else { appendMsg(`<i>Helper AI (${helperConfig.name}) failed: ${helperApiError?.message || String(helperApiError)}. Sending original.</i>`, 'assistant'); } } uInput.value = ''; checkWelcome(); if (!currentChatName) { currentChatName = genName(); } appendMsg(finalUserContent, 'user', true, false, msgHist.length); const historyForApi = [...msgHist, { role: "user", content: finalUserContent }]; const currentUserMsgIndex = msgHist.length; const result = await callAndProcessMainApi(historyForApi, finalUserContent); if (result.error) { msgHist.pop(); const userMsgElement = chatCont.querySelector(`.msg-wrap[data-msg-index="${currentUserMsgIndex}"]`); if (userMsgElement) chatCont.removeChild(userMsgElement); checkWelcome(); } else if (getChats()[currentChatName]?.title !== chatTitle.textContent) { chatTitle.textContent = getChats()[currentChatName].title; updateHistList(); } };
@@ -255,251 +374,112 @@
         // --- Serper Key Management ---
         function loadSerperKey() { serperApiKey = localStorage.getItem(SERPER_KEY_STORE) || ''; console.log('Serper key loaded into variable.'); }
 
-        // --- AI Search / Deep Dive Integration ---
-        function getCurrentAiConfig() { console.log("Getting current AI config. Mode:", currentMode); let providerKey; let modelNameForError = ''; if (currentMode === 'deepThinking') { providerKey = 'PRO_2_5'; modelNameForError = 'DeepThinking (Gemini 2.5-pro)'; } else if (currentMode === 'turbo') { providerKey = 'V3_TURBO'; modelNameForError = 'Turbo (SambaNova V3-0324)'; } else { providerKey = 'V3'; modelNameForError = 'Default (DeepSeek V3)'; } const providerConfig = PROVIDERS[providerKey]; if (!providerConfig) { console.error("ERROR: Missing provider config:", providerKey); alert("Internal Error: Missing AI provider config."); return null; } const apiKeyArray = getApiKeys()[providerKey] || []; const firstApiKey = apiKeyArray[0] || null; if (!firstApiKey && providerConfig.apiKeyLocation !== 'none') { console.error(`API Key missing for ${modelNameForError}`); alert(`Cannot start external app. API Key missing for ${modelNameForError}. Use 🔑.`); showApiKeyModal(); return null; } let config = { aiModel: providerConfig.modelId, aiApiUrl: null, aiApiToken: firstApiKey }; if (providerConfig.format === "gemini_generateContent") { config.aiApiUrl = `${providerConfig.baseURL}${providerConfig.modelId}:generateContent`; } else if (providerConfig.format === "openai_compatible") { config.aiApiUrl = providerConfig.baseURL; } else { console.error("ERROR: Unsupported provider format:", providerConfig.format); alert("Internal Error: Unsupported API format."); return null; } console.log(`Determined AI Config: Model=${config.aiModel}, URL=${config.aiApiUrl}, Token=...${config.aiApiToken ? config.aiApiToken.slice(-4) : 'NONE'}`); return config; }
-        function openExternalAppModal(appUrl, configPayload, errorMsgPrefix = "Error") { console.log(`Opening Modal iframe: ${appUrl}`); searchFrame.src = appUrl; searchModalOverlay.style.display = 'flex'; searchFrame.onload = () => { console.log(`Frame loaded for ${appUrl}. Sending config:`, configPayload); try { searchFrame.contentWindow.postMessage({ type: 'config', payload: configPayload }, '*'); } catch (error) { console.error("Error sending postMessage:", error); alert(`${errorMsgPrefix}: Error communicating with external window.`); closeSearchModal(); } searchFrame.onload = null; }; searchFrame.onerror = () => { console.error(`Failed to load iframe: ${appUrl}`); alert(`${errorMsgPrefix}: Error loading the application.`); closeSearchModal(); searchFrame.onerror = null; } }
+        // --- AI Search / Deep Dive Integration (Proxy Logic Added) ---
+        function getCurrentAiConfig() {
+            console.log("Getting current AI config for Helper Apps. Mode:", currentMode);
+            let config = { aiModel: null, aiApiUrl: null, aiApiToken: null, usingProxy: false }; // Default to not using proxy
+
+            if (currentMode === 'proxy') {
+                // --- PROXY MODE ---
+                console.log("Proxy mode active for Helper Apps.");
+                const proxyConfig = PROVIDERS['BIGMODEL_PROXY'];
+                if (!proxyConfig) {
+                    console.error("ERROR: Missing BIGMODEL_PROXY provider config.");
+                    alert("Internal Error: Missing Proxy provider config.");
+                    return null;
+                }
+                config.aiModel = proxyConfig.modelId; // e.g., "glm-4-flash"
+                config.aiApiUrl = proxyConfig.baseURL; // e.g., "/api/proxy"
+                config.aiApiToken = null; // Proxy handles auth server-side
+                config.usingProxy = true; // <<< SET PROXY FLAG
+                console.log(`Determined Proxy Config: Model=${config.aiModel}, URL=${config.aiApiUrl}, Token=NONE, UsingProxy=true`);
+
+            } else {
+                // --- DIRECT MODE (DeepThinking, Turbo, Default) ---
+                console.log("Direct mode active for Helper Apps.");
+                let providerKey;
+                let modelNameForError = '';
+                if (currentMode === 'deepThinking') { providerKey = 'PRO_2_5'; modelNameForError = 'DeepThinking (Gemini)'; }
+                else if (currentMode === 'turbo') { providerKey = 'V3_TURBO'; modelNameForError = 'Turbo (SambaNova)'; }
+                else { providerKey = 'V3'; modelNameForError = 'Default (DeepSeek)'; } // Default if nothing else active
+
+                const providerConfig = PROVIDERS[providerKey];
+                if (!providerConfig) {
+                    console.error("ERROR: Missing provider config:", providerKey);
+                    alert("Internal Error: Missing AI provider config.");
+                    return null;
+                }
+
+                const apiKeyArray = getApiKeys()[providerKey] || [];
+                const firstApiKey = apiKeyArray[0] || null;
+
+                if (!firstApiKey && providerConfig.apiKeyLocation !== 'none') {
+                    console.error(`API Key missing for ${modelNameForError}`);
+                    alert(`Cannot start external app. API Key missing for ${modelNameForError}. Use 🔑.`);
+                    showApiKeyModal();
+                    return null;
+                }
+
+                config.aiModel = providerConfig.modelId;
+                config.aiApiToken = firstApiKey; // Send the key for direct calls
+                config.usingProxy = false; // <<< SET PROXY FLAG
+
+                // Determine URL based on format
+                if (providerConfig.format === "gemini_generateContent") {
+                    config.aiApiUrl = `${providerConfig.baseURL}${providerConfig.modelId}:generateContent`;
+                } else if (providerConfig.format === "openai_compatible") {
+                    config.aiApiUrl = providerConfig.baseURL;
+                } else {
+                    console.error("ERROR: Unsupported provider format for direct call:", providerConfig.format);
+                    alert("Internal Error: Unsupported API format.");
+                    return null;
+                }
+                 console.log(`Determined Direct Config: Model=${config.aiModel}, URL=${config.aiApiUrl}, Token=...${config.aiApiToken ? config.aiApiToken.slice(-4) : 'NONE'}, UsingProxy=false`);
+            }
+
+            return config;
+        }
+
+        function openExternalAppModal(appUrl, configPayload, errorMsgPrefix = "Error") {
+            if (!configPayload) { // Added check for null config
+                console.error(`${errorMsgPrefix}: Cannot open modal - configuration generation failed.`);
+                // No alert here as getCurrentAiConfig already alerts the user about key issues etc.
+                return;
+            }
+            console.log(`Opening Modal iframe: ${appUrl}`);
+            searchFrame.src = appUrl;
+            searchModalOverlay.style.display = 'flex';
+            searchFrame.onload = () => {
+                console.log(`Frame loaded for ${appUrl}. Sending config (including usingProxy flag):`, configPayload);
+                try {
+                    // Send the *entire* payload, which now includes the 'usingProxy' flag
+                    searchFrame.contentWindow.postMessage({ type: 'config', payload: configPayload }, '*');
+                } catch (error) {
+                    console.error("Error sending postMessage:", error);
+                    alert(`${errorMsgPrefix}: Error communicating with external window.`);
+                    closeSearchModal();
+                }
+                searchFrame.onload = null;
+            };
+            searchFrame.onerror = () => {
+                console.error(`Failed to load iframe: ${appUrl}`);
+                alert(`${errorMsgPrefix}: Error loading the application.`);
+                closeSearchModal();
+                searchFrame.onerror = null;
+            }
+        }
         function openAiSearch() { if (!serperApiKey) { alert('AI Search requires a Serper API key. Please set it using the 🔑 icon first.'); showApiKeyModal(); return; } const currentAi = getCurrentAiConfig(); if (!currentAi) { return; } const configPayload = { serperApiKey: serperApiKey, ...currentAi }; openExternalAppModal(SEARCH_APP_URL, configPayload, "AI Search Error"); }
         function openAiDeepDive() { const currentAi = getCurrentAiConfig(); if (!currentAi) { return; } const configPayload = { ...currentAi }; openExternalAppModal(DEEP_DIVE_APP_URL, configPayload, "AI Deep Dive Error"); }
         function closeSearchModal() { searchModalOverlay.style.display = 'none'; searchFrame.src = 'about:blank'; console.log('External App Modal closed.'); }
 
-        // --- START: Microphone Transcription Logic ---
-        let mic_mediaRecorder;
-        let mic_audioChunks = [];
-        let mic_isRecording = false;
-        let mic_stream;
-        let mic_recordedMimeType = 'audio/webm;codecs=opus'; // Default preference
-
-        function mic_updateStatus(message, type = 'info') { // type can be 'info', 'success', 'error'
-             if (!micStatusSpan) return;
-             micStatusSpan.textContent = message;
-             micStatusSpan.className = type; // Resets previous classes
-        }
-
-        function mic_resetButton() {
-            mic_isRecording = false;
-            micTranscribeBtn.classList.remove('recording');
-            micButtonText.textContent = 'Record';
-            mic_updateStatus(''); // Clear status on reset
-            console.log("Mic button reset.");
-        }
-
-        function mic_stopMicTracks() {
-            if (mic_stream) {
-                mic_stream.getTracks().forEach(track => track.stop());
-                console.log("Microphone tracks stopped.");
-                mic_stream = null; // Clear stream variable
-            }
-        }
-
-       async function mic_startRecording() {
-            if (mic_isRecording) return;
-
-            // Get Gemini API Key from main app's storage
-            const geminiProviderKey = 'PRO_2_5'; // Assuming PRO_2_5 holds the Gemini key
-            const geminiKeys = getApiKeys()[geminiProviderKey] || [];
-            const geminiApiKey = geminiKeys[0]; // Use the first available key
-
-            if (!geminiApiKey && PROVIDERS[geminiProviderKey]?.apiKeyLocation !== 'none') {
-                mic_updateStatus('Gemini Key Missing!', 'error');
-                alert(`Transcription requires a Gemini API Key (${PROVIDERS[geminiProviderKey].name}). Please add one using the 🔑 icon.`);
-                showApiKeyModal(); // Guide user
-                return;
-            }
-
-            mic_updateStatus('Req. Mic...');
-            uInput.value = '[Recording - press Stop button]'; // Placeholder in input
-
-            try {
-                mic_stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                mic_updateStatus('Init Rec...');
-
-                const options = {};
-                if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) options.mimeType = 'audio/webm;codecs=opus';
-                else if (MediaRecorder.isTypeSupported('audio/ogg;codecs=opus')) options.mimeType = 'audio/ogg;codecs=opus';
-                else if (MediaRecorder.isTypeSupported('audio/webm')) options.mimeType = 'audio/webm';
-                else if (MediaRecorder.isTypeSupported('audio/ogg')) options.mimeType = 'audio/ogg';
-
-                mic_mediaRecorder = new MediaRecorder(mic_stream, options);
-                mic_recordedMimeType = mic_mediaRecorder.mimeType;
-                console.log("Using MIME type:", mic_recordedMimeType);
-
-                mic_audioChunks = [];
-
-                mic_mediaRecorder.ondataavailable = (event) => {
-                    if (event.data.size > 0) {
-                        mic_audioChunks.push(event.data);
-                    }
-                };
-
-                mic_mediaRecorder.onstop = async () => {
-                    console.log("Mic recording stopped. Chunks:", mic_audioChunks.length);
-                    mic_updateStatus('Processing...');
-                    const audioBlob = new Blob(mic_audioChunks, { type: mic_recordedMimeType });
-                    mic_audioChunks = []; // Clear chunks
-
-                    mic_stopMicTracks(); // Stop mic indicator *after* blob created
-
-                    if (audioBlob.size === 0) {
-                        console.error("Audio Blob is empty.");
-                        mic_updateStatus('No audio data.', 'error');
-                        uInput.value = ''; // Clear placeholder
-                        mic_resetButton(); // IMPORTANT: Reset button state
-                        return;
-                    }
-                    console.log("Audio Blob size:", audioBlob.size, "type:", audioBlob.type);
-
-                    // Pass the retrieved key here
-                    await mic_sendAudioToGemini(audioBlob, geminiApiKey, mic_recordedMimeType);
-                    // Reset button is called within sendAudioToGemini or its error paths now
-                };
-
-                mic_mediaRecorder.onerror = (event) => {
-                    console.error("MediaRecorder error:", event.error);
-                    mic_updateStatus(`Rec Error: ${event.error.name}`, 'error');
-                    uInput.value = ''; // Clear placeholder
-                    mic_stopMicTracks();
-                    mic_resetButton(); // IMPORTANT: Reset button state on recorder error
-                };
-
-                mic_mediaRecorder.start();
-                mic_isRecording = true;
-                mic_updateStatus('🔴 Recording');
-                micTranscribeBtn.classList.add('recording');
-                micButtonText.textContent = 'Stop';
-
-            } catch (err) {
-                console.error('Error accessing mic or starting recorder:', err);
-                let errorMsg = `Error: ${err.message}`;
-                if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") errorMsg = "Mic access denied.";
-                else if (err.name === "NotFoundError" || err.name === "DevicesNotFoundError") errorMsg = "No mic found.";
-                else errorMsg = `Start Error: ${err.name}`;
-                mic_updateStatus(errorMsg, 'error');
-                uInput.value = ''; // Clear placeholder
-                mic_stopMicTracks(); // Ensure tracks are stopped if stream was partially acquired
-                mic_resetButton();   // IMPORTANT: Reset button state on start error
-            }
-        }
-
-        function mic_stopRecording() {
-            // Added checks for robustness
-            if (!mic_isRecording || !mic_mediaRecorder) {
-                 console.log("Not recording or recorder not initialized.");
-                 if(mic_isRecording) mic_resetButton(); // Reset state if inconsistent
-                 return;
-            }
-             if (mic_mediaRecorder.state === 'inactive') {
-                 console.log("Recorder already stopped.");
-                 mic_resetButton(); // Ensure button is reset if state is wrong
-                 return;
-            }
-
-            console.log("Stopping mic recording...");
-            mic_updateStatus('Stopping...');
-            // The 'onstop' event handles processing, API call, and resetting the button *after* processing
-            mic_mediaRecorder.stop();
-        }
-
-        async function mic_sendAudioToGemini(audioBlob, apiKey, mimeType) {
-            mic_updateStatus('Converting...');
-            const reader = new FileReader();
-            reader.readAsDataURL(audioBlob);
-
-            reader.onloadend = async () => {
-                const base64Audio = reader.result.split(',')[1];
-
-                if (!base64Audio) {
-                    console.error("Failed Base64 conversion.");
-                    mic_updateStatus('Audio Err', 'error');
-                    uInput.value = ''; // Clear placeholder
-                    mic_resetButton(); // Reset button state
-                    return;
-                }
-                console.log(`Base64 conversion complete. Approx size: ${Math.round(base64Audio.length * 3/4)} bytes`);
-
-                const MODEL_NAME = "gemini-2.0-flash"; // Specific model for REST audio transcription
-                const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${apiKey}`;
-
-                const requestBody = {
-                    contents: [{
-                        parts: [
-                            { "text": "Transcribe the following audio accurately:" },
-                            { "inlineData": { "mimeType": mimeType, "data": base64Audio } }
-                        ]
-                    }],
-                    // generationConfig: { temperature: 0.1 } // Optional fine-tuning
-                };
-
-                mic_updateStatus('Sending API...');
-                console.log(`Sending request to Gemini (${MODEL_NAME}) API...`);
-
-                try {
-                    const response = await fetch(API_URL, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(requestBody),
-                    });
-
-                    const responseData = await response.json();
-
-                    if (!response.ok) {
-                        console.error("Gemini API Error Response:", responseData);
-                        let errorMsg = `API Error: ${response.status}`;
-                        if (responseData.error?.message) {
-                            errorMsg = `API Err: ${responseData.error.message.substring(0, 50)}...`; // Keep it short
-                        }
-                        throw new Error(errorMsg); // Throw to catch block below
-                    }
-
-                    console.log("Gemini API Success Response:", responseData);
-                    let transcription = "[Transcription not found]";
-                    let blockReason = responseData.promptFeedback?.blockReason;
-
-                    if (blockReason) {
-                        transcription = `Blocked: ${blockReason}`;
-                         mic_updateStatus('Blocked', 'error');
-                    } else if (responseData.candidates?.[0]?.content?.parts?.[0]?.text) {
-                        transcription = responseData.candidates[0].content.parts[0].text.trim();
-                        mic_updateStatus('Done!', 'success');
-                        // Insert into main input field
-                        uInput.value = transcription;
-                        uInput.focus(); // Focus input field after transcription
-                    } else if (responseData.candidates?.[0]?.finishReason && responseData.candidates[0].finishReason !== 'STOP') {
-                        transcription = `[Stopped: ${responseData.candidates[0].finishReason}]`;
-                         mic_updateStatus('Stopped', 'error');
-                    } else {
-                        console.warn("Could not find transcription text in response:", responseData);
-                        transcription = "[Parse Error]";
-                         mic_updateStatus('Parse Err', 'error');
-                    }
-
-                    // Only clear input if transcription failed or was blocked/stopped
-                    if (transcription.startsWith('[') || transcription.startsWith('Blocked')) {
-                        uInput.value = transcription; // Show the error/status in input briefly
-                    }
-
-
-                } catch (error) {
-                    console.error('Error calling/processing Gemini API:', error);
-                    mic_updateStatus(`${error.message}`, 'error');
-                    uInput.value = `[Transcription Error]`; // Show error in input
-                } finally {
-                     mic_resetButton(); // IMPORTANT: Reset button AFTER API call attempt (success or fail)
-                     // Optionally clear status after a delay
-                     setTimeout(() => {
-                         if (micStatusSpan.className !== 'error') mic_updateStatus('');
-                     }, 3000);
-                }
-            }; // end of reader.onloadend
-
-             reader.onerror = (error) => {
-                console.error("FileReader error:", error);
-                mic_updateStatus('Read Error', 'error');
-                uInput.value = ''; // Clear placeholder
-                mic_resetButton(); // Reset button if reader fails
-            };
-        }
-        // --- END: Microphone Transcription Logic ---
-
+        // --- Microphone Transcription Logic (Unchanged) ---
+        let mic_mediaRecorder; let mic_audioChunks = []; let mic_isRecording = false; let mic_stream; let mic_recordedMimeType = 'audio/webm;codecs=opus';
+        function mic_updateStatus(message, type = 'info') { if (!micStatusSpan) return; micStatusSpan.textContent = message; micStatusSpan.className = type; }
+        function mic_resetButton() { mic_isRecording = false; micTranscribeBtn.classList.remove('recording'); micButtonText.textContent = 'Record'; mic_updateStatus(''); console.log("Mic button reset."); }
+        function mic_stopMicTracks() { if (mic_stream) { mic_stream.getTracks().forEach(track => track.stop()); console.log("Microphone tracks stopped."); mic_stream = null; } }
+       async function mic_startRecording() { if (mic_isRecording) return; const geminiProviderKey = 'PRO_2_5'; const geminiKeys = getApiKeys()[geminiProviderKey] || []; const geminiApiKey = geminiKeys[0]; if (!geminiApiKey && PROVIDERS[geminiProviderKey]?.apiKeyLocation !== 'none') { mic_updateStatus('Gemini Key Missing!', 'error'); alert(`Transcription requires a Gemini API Key (${PROVIDERS[geminiProviderKey].name}). Please add one using the 🔑 icon.`); showApiKeyModal(); return; } mic_updateStatus('Req. Mic...'); uInput.value = '[Recording - press Stop button]'; try { mic_stream = await navigator.mediaDevices.getUserMedia({ audio: true }); mic_updateStatus('Init Rec...'); const options = {}; if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) options.mimeType = 'audio/webm;codecs=opus'; else if (MediaRecorder.isTypeSupported('audio/ogg;codecs=opus')) options.mimeType = 'audio/ogg;codecs=opus'; else if (MediaRecorder.isTypeSupported('audio/webm')) options.mimeType = 'audio/webm'; else if (MediaRecorder.isTypeSupported('audio/ogg')) options.mimeType = 'audio/ogg'; mic_mediaRecorder = new MediaRecorder(mic_stream, options); mic_recordedMimeType = mic_mediaRecorder.mimeType; console.log("Using MIME type:", mic_recordedMimeType); mic_audioChunks = []; mic_mediaRecorder.ondataavailable = (event) => { if (event.data.size > 0) { mic_audioChunks.push(event.data); } }; mic_mediaRecorder.onstop = async () => { console.log("Mic recording stopped. Chunks:", mic_audioChunks.length); mic_updateStatus('Processing...'); const audioBlob = new Blob(mic_audioChunks, { type: mic_recordedMimeType }); mic_audioChunks = []; mic_stopMicTracks(); if (audioBlob.size === 0) { console.error("Audio Blob is empty."); mic_updateStatus('No audio data.', 'error'); uInput.value = ''; mic_resetButton(); return; } console.log("Audio Blob size:", audioBlob.size, "type:", audioBlob.type); await mic_sendAudioToGemini(audioBlob, geminiApiKey, mic_recordedMimeType); }; mic_mediaRecorder.onerror = (event) => { console.error("MediaRecorder error:", event.error); mic_updateStatus(`Rec Error: ${event.error.name}`, 'error'); uInput.value = ''; mic_stopMicTracks(); mic_resetButton(); }; mic_mediaRecorder.start(); mic_isRecording = true; mic_updateStatus('🔴 Recording'); micTranscribeBtn.classList.add('recording'); micButtonText.textContent = 'Stop'; } catch (err) { console.error('Error accessing mic or starting recorder:', err); let errorMsg = `Error: ${err.message}`; if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") errorMsg = "Mic access denied."; else if (err.name === "NotFoundError" || err.name === "DevicesNotFoundError") errorMsg = "No mic found."; else errorMsg = `Start Error: ${err.name}`; mic_updateStatus(errorMsg, 'error'); uInput.value = ''; mic_stopMicTracks(); mic_resetButton(); } }
+        function mic_stopRecording() { if (!mic_isRecording || !mic_mediaRecorder) { console.log("Not recording or recorder not initialized."); if(mic_isRecording) mic_resetButton(); return; } if (mic_mediaRecorder.state === 'inactive') { console.log("Recorder already stopped."); mic_resetButton(); return; } console.log("Stopping mic recording..."); mic_updateStatus('Stopping...'); mic_mediaRecorder.stop(); }
+        async function mic_sendAudioToGemini(audioBlob, apiKey, mimeType) { mic_updateStatus('Converting...'); const reader = new FileReader(); reader.readAsDataURL(audioBlob); reader.onloadend = async () => { const base64Audio = reader.result.split(',')[1]; if (!base64Audio) { console.error("Failed Base64 conversion."); mic_updateStatus('Audio Err', 'error'); uInput.value = ''; mic_resetButton(); return; } console.log(`Base64 conversion complete. Approx size: ${Math.round(base64Audio.length * 3/4)} bytes`); const MODEL_NAME = "gemini-2.0-flash"; const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${apiKey}`; const requestBody = { contents: [{ parts: [ { "text": "Transcribe the following audio accurately:" }, { "inlineData": { "mimeType": mimeType, "data": base64Audio } } ] }] }; mic_updateStatus('Sending API...'); console.log(`Sending request to Gemini (${MODEL_NAME}) API...`); try { const response = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(requestBody), }); const responseData = await response.json(); if (!response.ok) { console.error("Gemini API Error Response:", responseData); let errorMsg = `API Error: ${response.status}`; if (responseData.error?.message) { errorMsg = `API Err: ${responseData.error.message.substring(0, 50)}...`; } throw new Error(errorMsg); } console.log("Gemini API Success Response:", responseData); let transcription = "[Transcription not found]"; let blockReason = responseData.promptFeedback?.blockReason; if (blockReason) { transcription = `Blocked: ${blockReason}`; mic_updateStatus('Blocked', 'error'); } else if (responseData.candidates?.[0]?.content?.parts?.[0]?.text) { transcription = responseData.candidates[0].content.parts[0].text.trim(); mic_updateStatus('Done!', 'success'); uInput.value = transcription; uInput.focus(); } else if (responseData.candidates?.[0]?.finishReason && responseData.candidates[0].finishReason !== 'STOP') { transcription = `[Stopped: ${responseData.candidates[0].finishReason}]`; mic_updateStatus('Stopped', 'error'); } else { console.warn("Could not find transcription text in response:", responseData); transcription = "[Parse Error]"; mic_updateStatus('Parse Err', 'error'); } if (transcription.startsWith('[') || transcription.startsWith('Blocked')) { uInput.value = transcription; } } catch (error) { console.error('Error calling/processing Gemini API:', error); mic_updateStatus(`${error.message}`, 'error'); uInput.value = `[Transcription Error]`; } finally { mic_resetButton(); setTimeout(() => { if (micStatusSpan.className !== 'error') mic_updateStatus(''); }, 3000); } }; reader.onerror = (error) => { console.error("FileReader error:", error); mic_updateStatus('Read Error', 'error'); uInput.value = ''; mic_resetButton(); }; }
 
         // --- Event Listeners ---
         uInput.onkeypress=(e)=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage()}};
@@ -517,18 +497,14 @@
         msgCtxMenu.onclick=(e)=>{const a=e.target.dataset.action;if(ctxTargetMsgIndex===null||!a)return;if(a==='copy')copyMessageContent(ctxTargetMsgIndex);if(a==='edit')startEditingMessage(ctxTargetMsgIndex);if(a==='regenerate')regenerateMessage(ctxTargetMsgIndex);hideCtxMenus()};
         helperPromptInput.addEventListener('input', updateHelperPrompt);
         document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && searchModalOverlay.style.display === 'flex') { closeSearchModal(); } });
-        // --- NEW: Mic Button Listener ---
-        micTranscribeBtn.addEventListener('click', () => {
-            if (mic_isRecording) {
-                mic_stopRecording();
-            } else {
-                mic_startRecording();
-            }
-        });
+        micTranscribeBtn.addEventListener('click', () => { if (mic_isRecording) mic_stopRecording(); else mic_startRecording(); });
 
         // --- Init ---
         loadSerperKey();
-        currentAgiKey=getActiveAgiKey();const lastChat=Object.keys(getChats()).sort((a,b)=>(getChats()[b].ts||0)-(getChats()[a].ts||0))[0];loadChat(lastChat);selectMode('default');
+        currentAgiKey=getActiveAgiKey();
+        const lastChat=Object.keys(getChats()).sort((a,b)=>(getChats()[b].ts||0)-(getChats()[a].ts||0))[0];
+        loadChat(lastChat); // Also calls selectMode('default') inside if starting fresh
+        if(currentChatName) selectMode('default'); // Ensure modes are reset if loading an existing chat
         selectHelperAi(null);
 
     </script>
