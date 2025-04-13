@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Search Module (Configurable)</title> <!-- Updated Title -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+    <style>
+        /* --- Styles are largely the same as your original search app --- */
+        /* --- You can optionally remove styles for .api-key-section, #configButton if desired --- */
+        :root {
+            --sb-bg: #f7f7f8;
+            --chat-bg: #fff;
+            --input-bg: #f7f7f8;
+            --text-pri: #202123;
+            --text-sec: #6e6e73;
+            --accent: #4a90e2; /* Using DS Clone Accent */
+            --border: #e5e5e5;
+            --hover: #e9e9ea;
+            --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            --radius: 8px; /* Slightly smaller radius */
+            --radius-sm: 6px;
+            --transition: all 0.2s ease-in-out;
+            --shadow: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.05);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: var(--font);
+            line-height: 1.6;
+            color: var(--text-pri);
+            background-color: var(--chat-bg); /* Use chat-bg for body */
+            margin: 0;
+            font-size: 15px;
+            display: flex; /* Make body a flex container */
+            height: 100vh;
+            overflow: hidden; /* Prevent body scroll */
+        }
+
+        /* Main Module Area */
+        .search-module-area {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--chat-bg);
+            height: 100vh; /* Full viewport height */
+            position: relative;
+            overflow: hidden; /* Prevent this area scroll */
+        }
+
+        /* Header */
+        .search-header {
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+            border-bottom: 1px solid var(--border);
+            height: 45px; /* Slightly taller */
+            flex-shrink: 0;
+            background-color: var(--chat-bg); /* Ensure header bg */
+        }
+        .search-header h1 {
+            margin: 0;
+            font-size: 1.2em;
+            font-weight: 500;
+            color: var(--text-pri);
+            flex-grow: 1; /* Allow title to take space */
+        }
+        /* REMOVED Config Button Style */
+        /* #configButton { ... } */
+
+        /* Content Area (Scrollable) */
+        .search-content-area {
+            flex-grow: 1;
+            overflow-y: auto; /* Make this the scrollable part */
+            padding: 20px;
+            padding-bottom: 40px; /* Space for pagination */
+        }
+        .search-content-area::-webkit-scrollbar { display: none; }
+        .search-content-area { -ms-overflow-style: none; scrollbar-width: none; }
+
+
+        /* Search Controls */
+        .search-controls {
+            margin-bottom: 25px;
+            position: relative; /* Context for API key section */
+            padding: 0 5px; /* Slight horizontal padding */
+        }
+        /* REMOVED API Key Section Styles */
+        /* .api-key-section { ... } */
+        /* #apiKeyInput { ... } */
+
+        .search-box {
+            display: flex; margin-bottom: 12px; position: relative;
+            background: var(--input-bg); /* Input box background */
+            border-radius: 24px; /* Rounded input like DS Clone */
+            padding: 6px 8px 6px 15px; /* Padding inside the wrapper */
+            border: 1px solid var(--border);
+            transition: border-color var(--transition), box-shadow var(--transition);
+        }
+        .search-box:focus-within {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.15);
+        }
+
+        #searchInput {
+            flex-grow: 1; border: none; outline: 0; background: transparent; /* Transparent inside wrapper */
+            font-size: 1em; color: var(--text-pri); line-height: 1.5;
+            padding: 6px 0; /* Vertical padding */
+        }
+        #searchInput::placeholder { color: var(--text-sec); }
+        #searchInput:disabled { background-color: transparent; cursor: not-allowed; } /* Style when disabled */
+
+        #searchButton {
+            padding: 0 18px; min-height: 32px; /* DS Clone button size */
+            border: none; background-color: var(--accent); color: white;
+            cursor: pointer; border-radius: 16px; /* Rounded button */
+            font-size: 1em; font-weight: 500; transition: var(--transition);
+            margin-left: 8px; display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0; line-height: 1;
+        }
+        #searchButton:hover:not(:disabled) { filter: brightness(1.1); }
+        #searchButton:disabled { background-color: #ccc; cursor: not-allowed; } /* Style when disabled */
+
+        /* Search Type Buttons */
+        .search-type {
+            display: flex; justify-content: center; gap: 8px;
+            flex-wrap: wrap; margin-top: 16px;
+        }
+        .search-type button {
+            padding: 6px 15px; border: 1px solid var(--border);
+            border-radius: 15px; font-size: .85em;
+            background: var(--chat-bg); color: var(--text-sec);
+            cursor: pointer; transition: var(--transition);
+            font-weight: 500;
+        }
+        .search-type button:hover:not(:disabled) { background-color: var(--hover); color: var(--text-pri); }
+        .search-type button.active:not(:disabled) {
+            border-color: var(--accent); color: var(--accent);
+            background-color: #e3f2fd; /* Light accent background */
+            font-weight: 600;
+        }
+        .search-type button:disabled { color: #bbb; cursor: not-allowed; background-color: var(--sb-bg); opacity: 0.7; } /* Style when disabled */
+
+
+        /* Results Area */
+        #results { margin-top: 20px; min-height: 150px; position: relative; }
+
+        /* AI Summary Box */
+        #aiSummaryContainer {
+            padding: 12px 15px; margin-bottom: 20px;
+            border-radius: var(--radius); /* Match message radius */
+            background-color: var(--sb-bg); /* Assistant message bg */
+            border-bottom-left-radius: 5px; /* DS style */
+            position: relative; min-height: 30px;
+            display: none; /* Initially hidden */
+            font-size: 0.95rem; color: var(--text-pri); /* Standard text */
+            line-height: 1.6;
+            border: 1px solid var(--border); /* Subtle border */
+        }
+        #aiSummaryContainer p { margin-bottom: 0.8em; }
+        #aiSummaryContainer p:last-child { margin-bottom: 0; }
+        #aiSummaryContainer .loading, #aiSummaryContainer .error { color: var(--text-sec); font-style: italic; }
+        #aiSummaryContainer .error { color: #c53030; }
+        #aiSummaryContainer strong { font-weight: 600; }
+        #aiSummaryContainer h1, #aiSummaryContainer h2, #aiSummaryContainer h3 { color: var(--text-pri); margin-top: 1em; margin-bottom: 0.5em; font-weight: 600; line-height: 1.3; border-bottom: 1px solid var(--border); padding-bottom: 3px; }
+        #aiSummaryContainer h3 { font-size: 1.05em; border-bottom: none;}
+        #aiSummaryContainer ul, #aiSummaryContainer ol { margin: .5em 0 .8em 25px; padding-left: 0px;}
+        #aiSummaryContainer li { margin-bottom: 0.4em; }
+        #aiSummaryContainer pre { background: #e0e0e0; padding: 8px 10px; border-radius: var(--radius-sm); font-size: .85em; margin: .5em 0; white-space: pre-wrap; word-break: break-all; overflow-x: auto; }
+        #aiSummaryContainer code:not(pre code) { background: #e0e0e0; padding: .1em .3em; border-radius: 3px; }
+
+        /* Regular Result Items */
+        .result-item, .news-item, .video-item {
+            margin-bottom: 18px; padding-bottom: 18px;
+            border-bottom: 1px solid var(--border);
+            transition: background-color var(--transition);
+            border-radius: var(--radius-sm);
+        }
+        .result-item:hover, .news-item:hover, .video-item:hover {
+            background-color: rgba(0,0,0,0.02); /* Subtle hover */
+        }
+        .result-item:last-child, .news-item:last-child, .image-item-container:last-child, .video-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+
+        .result-item h3, .news-item h3, .video-item h3 { margin: 0 0 5px 0; font-size: 1.1rem; font-weight: 500; } /* Less bold */
+        .result-item h3 a, .news-item h3 a, .video-item h3 a { color: var(--accent); text-decoration: none; transition: var(--transition); cursor: pointer; } /* Use accent for links */
+        .result-item h3 a:hover, .news-item h3 a:hover, .video-item h3 a:hover { text-decoration: underline; filter: brightness(0.9); }
+
+        .result-item p, .news-item p, .video-item p { margin: 5px 0 0 0; color: var(--text-pri); font-size: 0.95rem; line-height: 1.55; } /* Slightly darker text */
+        .result-item .display-link, .news-item .source, .video-item .source { font-size: 0.85rem; color: var(--text-sec); margin-top: 6px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .result-item .display-link a { color: #006400; font-size: 0.95em; word-break: break-all;} /* Greenish link URL */
+        .news-item .source a, .video-item .source a { color: var(--accent); font-size: 0.9em; }
+
+        .video-item .video-thumbnail { max-width: 160px; height: auto; float: left; margin-right: 12px; border-radius: var(--radius-sm); border: 1px solid var(--border); transition: var(--transition); }
+        .video-item .video-thumbnail:hover { transform: scale(1.02); box-shadow: var(--shadow); }
+        .video-item .video-embed iframe { width: 100%; max-width: 500px; height: 280px; border: none; border-radius: var(--radius-sm); margin-bottom: 10px; }
+        .video-details { overflow: hidden; }
+
+        .image-results-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin-top: 16px; }
+        .image-item-container { border: 1px solid var(--border); padding: 6px; border-radius: var(--radius-sm); background-color: var(--chat-bg); transition: var(--transition); display: flex; flex-direction: column; align-items: center; overflow: hidden; }
+        .image-item-container:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+        .image-item-container img { width: 100%; height: 130px; object-fit: cover; display: block; border-radius: var(--radius-sm); cursor: pointer; transition: transform 0.2s ease-in-out; }
+        .image-item-container img:hover { transform: scale(1.03); }
+
+        /* Pagination */
+        #pagination { margin-top: 25px; padding-top: 15px; border-top: 1px solid var(--border); display: flex; justify-content: center; align-items: center; gap: 6px; flex-wrap: wrap; }
+        #pagination button, #pagination span { padding: 6px 12px; border: 1px solid var(--border); background-color: var(--chat-bg); color: var(--text-sec); cursor: pointer; border-radius: var(--radius-sm); transition: var(--transition); font-weight: 500; font-size: 0.9em; }
+        #pagination button:hover { background-color: var(--hover); border-color: #ccc; color: var(--text-pri); }
+        #pagination button:disabled { color: #bbb; cursor: not-allowed; background-color: var(--sb-bg); opacity: 0.7; }
+        #pagination span.current-page { background-color: var(--accent); color: white; border-color: var(--accent); cursor: default; font-weight: 600; }
+
+        /* Status Messages */
+        .loading, .error, .info { text-align: center; padding: 30px; font-size: 1rem; margin: 15px; color: var(--text-sec); }
+        .loading { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100px; }
+        .loading::after { content: ""; display: inline-block; width: 20px; height: 20px; margin-top: 12px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .error { color: #c53030; background-color: rgba(224, 36, 36, 0.05); padding: 15px; border-radius: var(--radius-sm); border-left: 4px solid #e53e3e; margin: 15px 0; /* Reduce margin */ }
+
+        /* Modal styles (Keep similar, minor tweaks) */
+        #contentModal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: hidden; background-color: rgba(0,0,0,0.6); }
+        .modal-content { background-color: var(--chat-bg); margin: 3% auto; padding: 0; border: 1px solid var(--border); width: 90%; height: 90%; max-width: 1200px; border-radius: var(--radius); box-shadow: 0 5px 15px rgba(0,0,0,0.2); display: flex; flex-direction: column; position: relative; overflow: hidden; }
+        .modal-header { padding: 10px 15px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background-color: var(--sb-bg); border-top-left-radius: var(--radius); border-top-right-radius: var(--radius); flex-shrink: 0; height: 40px; }
+        .modal-title { font-size: 1rem; font-weight: 500; color: var(--text-pri); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 15px; }
+        .close-button { color: var(--text-sec); font-size: 28px; font-weight: normal; cursor: pointer; padding: 0 8px; line-height: 1; background: none; border: none; transition: color 0.2s ease; }
+        .close-button:hover, .close-button:focus { color: var(--text-pri); }
+        .modal-body { flex-grow: 1; padding: 3px; overflow: hidden; display: flex; flex-direction: column; background-color: #ddd; } /* Slightly darker iframe background */
+        #contentFrame { flex-grow: 1; border: none; width: 100%; height: 100%; display: block; background-color: var(--chat-bg); }
+        .iframe-warning { font-size: 0.8rem; color: var(--accent); padding: 8px 15px; background-color: #fffbeb; border-bottom: 1px solid var(--border); display: none; flex-shrink: 0; }
+
+        /* Responsive adjustments (Simplified) */
+        @media (max-width: 768px) {
+             .search-header h1 { font-size: 1.1em; }
+             .search-content-area { padding: 15px; }
+             .search-box { flex-direction: column; padding: 8px 10px; }
+             #searchButton { margin-left: 0; margin-top: 10px; width: 100%; }
+             .search-type { gap: 6px; margin-top: 12px;}
+             .search-type button { padding: 5px 12px; font-size: .8em; }
+             .video-item .video-thumbnail { float: none; max-width: 100%; margin-right: 0; margin-bottom: 10px; }
+             .image-results-container { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="search-module-area">
+        <div class="search-header">
+            <h1>AI Web Search</h1>
+            <!-- Config Button Removed -->
+        </div>
+
+        <div class="search-content-area"> <!-- Scrollable Area -->
+            <div class="search-controls">
+                <!-- API Key Section Removed -->
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="Waiting for configuration..." disabled>
+                    <button id="searchButton" title="Search" disabled>
+                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0"></path></svg>
+                    </button>
+                </div>
+                <div class="search-type">
+                    <button data-type="web" class="active" disabled>Web</button>
+                    <button data-type="images" disabled>Images</button>
+                    <button data-type="news" disabled>News</button>
+                    <button data-type="videos" disabled>Videos</button>
+                </div>
+            </div>
+
+            <div id="results">
+                 <!-- AI Summary Container -->
+                 <div id="aiSummaryContainer" style="display: none;"></div>
+                 <!-- Initial Placeholder -->
+                 <p class="info">Waiting for configuration from parent application...</p>
+            </div>
+
+            <div id="pagination">
+                <!-- Pagination controls -->
+            </div>
+
+        </div> <!-- End Scrollable Area -->
+    </div> <!-- End Module Area -->
+
+
+     <!-- Modal (Keep outside main scroll area) -->
+    <div id="contentModal">
+        <div class="modal-content">
+             <div class="modal-header">
+                 <span class="modal-title" id="modalTitle">Loading content...</span>
+                 <button class="close-button" id="closeModalButton" title="Close">×</button>
+             </div>
+             <p class="iframe-warning" id="iframeWarning"><strong>Note:</strong> Site may block loading in frame. Try opening in new tab if blank.</p>
+             <div class="modal-body">
+                 <iframe id="contentFrame" name="contentFrame" frameborder="0" sandbox="allow-scripts allow-same-origin allow-popups allow-forms"></iframe>
+             </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Configuration (Serper base URL only) ---
+        const BASE_SERPER_URL = 'https://google.serper.dev/';
+        const RESULTS_PER_PAGE = 10;
+
+        // --- State ---
+        let appConfig = { // Will be populated by message from parent
+            serperApiKey: null,
+            aiApiUrl: null,
+            aiApiToken: null,
+            aiModel: null
+        };
+        let isConfigured = false; // Flag to check if config is received
+        let currentPage = 1;
+        let currentQuery = '';
+        let currentSearchType = 'web';
+        let totalResults = 0;
+        const searchCache = {}; // Stores { query: { type: { data: ..., html: ..., paginationHtml: ..., aiSummaryHtml: ... } } }
+
+        // --- DOM Elements ---
+        // Config button and API key elements removed
+        const searchInput = document.getElementById('searchInput');
+        const searchButton = document.getElementById('searchButton');
+        const resultsContainer = document.getElementById('results');
+        const paginationContainer = document.getElementById('pagination');
+        const searchTypeButtons = document.querySelectorAll('.search-type button[data-type]');
+        const contentModal = document.getElementById('contentModal');
+        const closeModalButton = document.getElementById('closeModalButton');
+        const contentFrame = document.getElementById('contentFrame');
+        const modalTitle = document.getElementById('modalTitle');
+        const iframeWarning = document.getElementById('iframeWarning');
+        const aiSummaryContainer = document.getElementById('aiSummaryContainer');
+        const searchContentArea = document.querySelector('.search-content-area');
+
+
+        // --- Functions ---
+
+        /** Gets the active search type */
+        function getSelectedSearchType() { return currentSearchType; }
+        /** Gets the API URL based on search type */
+        function getApiUrl(type) {
+            switch (type) {
+                case 'images': return BASE_SERPER_URL + 'images';
+                case 'news':   return BASE_SERPER_URL + 'news';
+                case 'videos': return BASE_SERPER_URL + 'videos';
+                default:       return BASE_SERPER_URL + 'search'; // web
+            }
+        }
+        /** Checks if a URL likely points to an image */
+        function isImageUrl(url) { return url && /\.(jpg|jpeg|png|gif|webp|svg|bmp)(\?.*)?$/i.test(url); }
+        /** Shows the content modal */
+        function showInModal(url, title) {
+            modalTitle.textContent = title || "Content Viewer";
+            contentFrame.srcdoc = ''; contentFrame.src = 'about:blank';
+            iframeWarning.style.display = 'none';
+            if (isImageUrl(url)) {
+                const imageHtml = `<!DOCTYPE html><html><head><style>body{margin:0;display:flex;justify-content:center;align-items:center;height:100vh;background-color:#222;overflow:hidden;}img{display:block;max-width:100%;max-height:100%;object-fit:contain;user-select:none;}</style></head><body><img src="${encodeURI(url)}" alt="${(title || 'Image').replace(/"/g, '"')}"></body></html>`;
+                contentFrame.srcdoc = imageHtml;
+            } else {
+                iframeWarning.style.display = 'block';
+                setTimeout(() => { contentFrame.src = url; }, 50);
+            }
+            contentModal.style.display = 'block';
+            // Avoid changing body style as we are inside an iframe
+        }
+        /** Hides the content modal */
+        function closeModal() {
+            contentModal.style.display = 'none';
+            contentFrame.src = 'about:blank'; contentFrame.srcdoc = '';
+            modalTitle.textContent = 'Loading content...';
+            // Avoid changing body style
+        }
+
+        /** Clears visual results and pagination, sets placeholder */
+        function clearVisualResults(message = 'Enter a search query to see results.') {
+             const resultsContent = resultsContainer.querySelectorAll(':scope > *:not(#aiSummaryContainer)');
+             resultsContent.forEach(el => el.remove());
+             aiSummaryContainer.innerHTML = '';
+             aiSummaryContainer.style.display = 'none';
+             // Remove existing info/error message before adding new one
+             const existingInfo = resultsContainer.querySelector('.info, .error, .loading');
+             if (existingInfo) existingInfo.remove();
+
+             const infoP = document.createElement('p');
+             // Determine class based on state
+             if (!isConfigured) {
+                 infoP.className = 'info error'; // Style as error if not configured yet
+             } else if (message.toLowerCase().includes('searching') || message.toLowerCase().includes('loading')) {
+                 infoP.className = 'loading';
+             } else if (message.toLowerCase().includes('failed') || message.toLowerCase().includes('error')) {
+                 infoP.className = 'error';
+             } else {
+                 infoP.className = 'info';
+             }
+             infoP.textContent = message;
+             resultsContainer.appendChild(infoP);
+             paginationContainer.innerHTML = '';
+        }
+
+        /** Displays standard web search results */
+        function displayWebResults(data, resultsPlaceholder) {
+             const infoP = resultsPlaceholder.querySelector('.info'); if (infoP) infoP.remove();
+             if (!data?.organic?.length) { if (aiSummaryContainer.style.display === 'none' || aiSummaryContainer.innerHTML === '') { const noResultsP = document.createElement('p'); noResultsP.className = 'info'; noResultsP.textContent = 'No web results found.'; resultsPlaceholder.appendChild(noResultsP); } return; }
+             data.organic.forEach(result => { const itemDiv = document.createElement('div'); itemDiv.className = 'result-item'; const titleHeader = document.createElement('h3'); const titleLink = document.createElement('a'); titleLink.textContent = result.title; titleLink.href = "#"; titleLink.onclick = (e) => { e.preventDefault(); showInModal(result.link, result.title); }; titleHeader.appendChild(titleLink); const snippetPara = document.createElement('p'); snippetPara.textContent = result.snippet || ''; const displayLinkPara = document.createElement('p'); displayLinkPara.className = 'display-link'; const displayLink = document.createElement('a'); displayLink.href = result.link; displayLink.textContent = result.link; displayLink.target = '_blank'; displayLink.rel = 'noopener noreferrer'; displayLinkPara.appendChild(displayLink); itemDiv.append(titleHeader, snippetPara, displayLinkPara); resultsPlaceholder.appendChild(itemDiv); });
+        }
+        /** Displays image search results */
+        function displayImageResults(data, resultsPlaceholder) {
+             const infoP = resultsPlaceholder.querySelector('.info'); if (infoP) infoP.remove();
+             if (!data?.images?.length) { resultsPlaceholder.innerHTML = '<p class="info">No image results found.</p>'; return; }
+             const imageGrid = document.createElement('div'); imageGrid.className = 'image-results-container'; data.images.forEach(result => { const itemDiv = document.createElement('div'); itemDiv.className = 'image-item-container'; const img = document.createElement('img'); img.src = result.imageUrl; img.alt = result.title || 'Search Result'; img.loading = 'lazy'; img.title = `Click to view: ${result.title || 'Image'}`; img.onclick = () => showInModal(result.imageUrl, result.title || 'Image Viewer'); itemDiv.appendChild(img); imageGrid.appendChild(itemDiv); }); resultsPlaceholder.appendChild(imageGrid);
+        }
+        /** Displays news search results */
+        function displayNewsResults(data, resultsPlaceholder) {
+             const infoP = resultsPlaceholder.querySelector('.info'); if (infoP) infoP.remove();
+             if (!data?.news?.length) { resultsPlaceholder.innerHTML = '<p class="info">No news results found.</p>'; return; }
+             data.news.forEach(result => { const itemDiv = document.createElement('div'); itemDiv.className = 'news-item'; const titleHeader = document.createElement('h3'); const titleLink = document.createElement('a'); titleLink.textContent = result.title; titleLink.href = "#"; titleLink.onclick = (e) => { e.preventDefault(); showInModal(result.link, result.title); }; titleHeader.appendChild(titleLink); const snippetPara = document.createElement('p'); snippetPara.textContent = result.snippet || ''; const sourcePara = document.createElement('p'); sourcePara.className = 'source'; sourcePara.textContent = `Source: ${result.source || 'N/A'}`; if (result.date) { const dateSpan = document.createElement('span'); dateSpan.className = 'date'; try { dateSpan.textContent = new Date(result.date).toLocaleDateString(); } catch (e) { dateSpan.textContent = result.date; } sourcePara.appendChild(dateSpan); } const sourcePageLink = document.createElement('a'); sourcePageLink.href = result.link; sourcePageLink.textContent = "(Visit Source)"; sourcePageLink.target = '_blank'; sourcePageLink.rel = 'noopener noreferrer'; sourcePara.appendChild(sourcePageLink); itemDiv.append(titleHeader, snippetPara, sourcePara); resultsPlaceholder.appendChild(itemDiv); });
+        }
+        /** Extracts YouTube Video ID */
+        function getYouTubeID(url) { const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/; const match = url.match(regExp); return (match && match[2].length === 11) ? match[2] : null; }
+         /** Displays video search results */
+        function displayVideoResults(data, resultsPlaceholder) {
+             const infoP = resultsPlaceholder.querySelector('.info'); if (infoP) infoP.remove();
+             if (!data?.videos?.length) { resultsPlaceholder.innerHTML = '<p class="info">No video results found.</p>'; return; }
+             data.videos.forEach(result => { const itemDiv = document.createElement('div'); itemDiv.className = 'video-item'; const videoId = getYouTubeID(result.link); const detailsDiv = document.createElement('div'); detailsDiv.className = 'video-details'; const titleHeader = document.createElement('h3'); const titleLink = document.createElement('a'); titleLink.href = result.link; titleLink.textContent = result.title; titleLink.target = '_blank'; titleLink.rel = 'noopener noreferrer'; titleLink.className = 'video-title-link'; titleHeader.appendChild(titleLink); detailsDiv.appendChild(titleHeader); if (result.snippet) { const p = document.createElement('p'); p.textContent = result.snippet; detailsDiv.appendChild(p); } const sourcePara = document.createElement('p'); sourcePara.className = 'source'; sourcePara.textContent = `Source: ${result.source || 'N/A'}`; if (result.duration) { const s = document.createElement('span'); s.className = 'duration'; s.textContent = `Duration: ${result.duration}`; sourcePara.appendChild(s); } detailsDiv.appendChild(sourcePara); itemDiv.appendChild(detailsDiv); resultsPlaceholder.appendChild(itemDiv); });
+        }
+        /** Renders pagination controls */
+        function renderPagination(totalEstimatedResults, resultsPerPage) {
+             paginationContainer.innerHTML = ''; if (!totalEstimatedResults || totalEstimatedResults <= resultsPerPage) return; const totalPages = Math.max(1, Math.ceil(totalEstimatedResults / resultsPerPage)); const maxPagesToShow = 7; const createBtn = (p, txt = p, dis = false) => { const b = document.createElement('button'); b.textContent = txt; b.disabled = dis; b.onclick = () => goToPage(p); return b; }; const createSpan = (p) => { const s = document.createElement('span'); s.textContent = p; s.className = 'current-page'; return s; }; const createEllipsis = () => { const s = document.createElement('span'); s.textContent = '...'; s.style.cssText = 'cursor: default; padding: 6px 5px; border: none; background: none;'; return s; }; paginationContainer.appendChild(createBtn(currentPage - 1, '« Prev', currentPage === 1)); if (totalPages <= maxPagesToShow) { for (let i = 1; i <= totalPages; i++) paginationContainer.appendChild(i === currentPage ? createSpan(i) : createBtn(i)); } else { let sP = Math.max(2, currentPage - Math.floor((maxPagesToShow - 3) / 2)); let eP = Math.min(totalPages - 1, currentPage + Math.floor((maxPagesToShow - 3) / 2)); const lE = sP > 2; const rE = eP < totalPages - 1; if (lE && !rE) eP = Math.min(totalPages - 1, 1 + maxPagesToShow - 2); if (!lE && rE) sP = Math.max(2, totalPages - maxPagesToShow + 2); paginationContainer.appendChild(createBtn(1)); if (lE) paginationContainer.appendChild(createEllipsis()); for (let i = sP; i <= eP; i++) paginationContainer.appendChild(i === currentPage ? createSpan(i) : createBtn(i)); if (rE) paginationContainer.appendChild(createEllipsis()); paginationContainer.appendChild(createBtn(totalPages)); } paginationContainer.appendChild(createBtn(currentPage + 1, 'Next »', currentPage === totalPages));
+        }
+         /** Go to a specific page - Always Fetches */
+         function goToPage(pageNumber) {
+             if (pageNumber !== currentPage && pageNumber > 0) { currentPage = pageNumber; searchContentArea.scrollTo({ top: 0, behavior: 'smooth' }); performSearch(currentQuery, currentSearchType, currentPage, true); }
+         }
+        /** Function to get AI Summary */
+        async function generateAiSummary(query, organicResults) {
+             // Check if configured and AI details are present
+             if (!isConfigured || !appConfig.aiApiUrl || !appConfig.aiApiToken || !appConfig.aiModel) {
+                 console.error("AI Summary called before configuration or AI details missing.");
+                 return '<p class="error">AI Summary configuration missing.</p>';
+             }
+             if (!organicResults || organicResults.length === 0) return null;
+
+             const snippets = organicResults.slice(0, 7).map((r, index) => `Result ${index + 1}: ${r.title}\nSnippet: ${r.snippet || 'N/A'}`).join('\n---\n');
+             const prompt = `Based ONLY on the following search result snippets for the query "${query}", provide a concise synthesized answer. Do not use outside knowledge. Format the answer using Markdown. If the snippets don't provide enough information, say so.\n\nSnippets:\n${snippets}`;
+
+             try {
+                 // Use configured AI details
+                 const response = await fetch(appConfig.aiApiUrl, {
+                     method: 'POST',
+                     headers: {
+                         'Content-Type': 'application/json',
+                         // Determine how to send the token based on URL (simple check)
+                         // A more robust check might be needed if URLs vary more
+                         ...(appConfig.aiApiUrl.includes('googleapis.com') ? {} : {'Authorization': `Bearer ${appConfig.aiApiToken}`})
+                         // Note: For Gemini, the token is often part of the URL query param, handled in performSearch/getApiResponse.
+                         // If *your* specific Gemini endpoint needed an Auth header instead, adjust here.
+                         // Update: Assuming the parent provided a URL that works with Bearer OR has key embedded.
+                         // If the parent *only* provides the base URL for Gemini, this fetch needs adjusting.
+                         // Sticking with Bearer for now unless it's Gemini base URL.
+                     },
+                     body: JSON.stringify({
+                         model: appConfig.aiModel,
+                         messages: [{ role: "user", content: prompt }],
+                         max_tokens: 500, // Consider making configurable?
+                         temperature: 0.5,
+                         top_p: 0.9
+                         // Ensure body matches the expected format for the specific API (OpenAI vs Gemini)
+                         // This assumes OpenAI-compatible format for now. Gemini needs 'contents'.
+                         // TODO: Adjust body based on appConfig.aiApiUrl format if needed.
+                     })
+                 });
+
+                 if (!response.ok) {
+                     const errorData = await response.json().catch(() => ({})); // Catch JSON parse errors
+                     throw new Error(`AI API Error (${response.status}): ${errorData.error?.message || response.statusText}`);
+                 }
+                 const data = await response.json();
+
+                 // Adapt response parsing based on API type (OpenAI vs Gemini)
+                 let summaryContent = null;
+                 if (data.choices && data.choices[0]?.message?.content) { // OpenAI-like
+                    summaryContent = data.choices[0].message.content;
+                 } else if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) { // Gemini-like
+                    summaryContent = data.candidates[0].content.parts[0].text;
+                 }
+
+                 if (summaryContent === null) {
+                    console.warn("Could not extract summary content from AI response:", data);
+                    return '<p class="error">Could not extract summary from AI response.</p>';
+                 }
+                 return summaryContent;
+
+             } catch (error) {
+                 console.error('AI Summary generation failed:', error);
+                 return `<p class="error" style="font-size: 0.9em; background: none; border: none; padding: 0;">Could not generate AI summary: ${error.message}</p>`;
+             }
+        }
+
+        /** Handles the API response and updates cache */
+        async function handleApiResponse(data, searchType, query, page) {
+             // Ensure results container exists and clear previous results/info
+             resultsContainer.innerHTML = ''; // Clear everything initially (simpler than removing specific elements)
+             resultsContainer.appendChild(aiSummaryContainer); // Re-add AI summary container
+             aiSummaryContainer.innerHTML = '';
+             aiSummaryContainer.style.display = 'none';
+             paginationContainer.innerHTML = '';
+
+             const resultsPlaceholder = document.createElement('div'); // Create a div to hold results
+             resultsContainer.appendChild(resultsPlaceholder);
+
+             totalResults = data?.searchInformation?.totalResults ?? data?.searchInformation?.estimatedTotalResults ?? 0;
+             const resultsOnPage = data?.organic?.length ?? data?.images?.length ?? data?.news?.length ?? data?.videos?.length ?? 0;
+             if (!totalResults && resultsOnPage > 0) { totalResults = page * RESULTS_PER_PAGE + (resultsOnPage < RESULTS_PER_PAGE ? resultsOnPage - RESULTS_PER_PAGE : 0); }
+
+             let aiSummaryGenerated = false;
+             let generatedAiSummaryHtml = null;
+
+             // Only generate summary if configured and applicable
+             if (isConfigured && appConfig.aiApiUrl && searchType === 'web' && page === 1 && data?.organic?.length > 0) {
+                 aiSummaryContainer.innerHTML = '<p class="loading" style="font-size:0.9em; padding:10px 0; background: none; border: none;">Generating AI summary...</p>';
+                 aiSummaryContainer.style.display = 'block';
+                 const summary = await generateAiSummary(query, data.organic); // Uses updated function
+                 if (summary) {
+                     try {
+                         generatedAiSummaryHtml = typeof marked !== 'undefined' ? marked.parse(summary) : `<p>${summary.replace(/</g, "<").replace(/>/g, ">")}</p>`;
+                         aiSummaryContainer.innerHTML = generatedAiSummaryHtml;
+                         aiSummaryGenerated = true;
+                     } catch (e) {
+                          console.error("Markdown parsing failed:", e);
+                          aiSummaryContainer.innerHTML = `<p class="error">Failed to render summary markdown.</p><pre>${summary.replace(/</g, "<")}</pre>`; // Show raw on error
+                          aiSummaryGenerated = true; // Still counts as generated attempt
+                     }
+                 } else {
+                     aiSummaryContainer.style.display = 'none';
+                 }
+             } else {
+                 aiSummaryContainer.style.display = 'none';
+             }
+
+             switch (searchType) {
+                 case 'images': displayImageResults(data, resultsPlaceholder); break;
+                 case 'news': displayNewsResults(data, resultsPlaceholder); break;
+                 case 'videos': displayVideoResults(data, resultsPlaceholder); break;
+                 default: displayWebResults(data, resultsPlaceholder); break;
+             }
+
+             const estimatedTotal = totalResults > 0 ? totalResults : (resultsOnPage > 0 ? page * RESULTS_PER_PAGE : 0);
+             if (estimatedTotal > RESULTS_PER_PAGE) {
+                 renderPagination(estimatedTotal, RESULTS_PER_PAGE);
+             } else if (!resultsOnPage && !aiSummaryGenerated) {
+                 resultsPlaceholder.innerHTML = `<p class="info">No ${searchType} results found.</p>`;
+             }
+
+             // Cache results for page 1
+             if (page === 1) {
+                 if (!searchCache[query]) searchCache[query] = {};
+                 searchCache[query][searchType] = {
+                     data: data,
+                     html: resultsPlaceholder.innerHTML,
+                     paginationHtml: paginationContainer.innerHTML,
+                     aiSummaryHtml: generatedAiSummaryHtml,
+                     totalResults: totalResults
+                 };
+                 console.log(`Cached results for: "${query}" [${searchType}]`);
+             }
+        }
+
+        /** Performs the search query, checks cache first */
+        async function performSearch(query, searchType, page = 1, forceFetch = false) {
+            query = query.trim();
+
+            // Check if configured BEFORE doing anything else
+            if (!isConfigured) {
+                clearVisualResults('Error: Search function called before configuration received.');
+                return;
+            }
+            // API key check is implicit via isConfigured and appConfig.serperApiKey
+            if (!appConfig.serperApiKey) {
+                 clearVisualResults('Error: Serper API Key is missing in configuration.');
+                 return;
+            }
+            if (!query) {
+                clearVisualResults('Please enter a search query.');
+                return;
+            }
+
+            currentQuery = query;
+            currentSearchType = searchType;
+            currentPage = page;
+
+            searchTypeButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.type === searchType));
+
+            // Cache check
+            if (page === 1 && !forceFetch && searchCache[query]?.[searchType]) {
+                console.log(`Using cache for: "${query}" [${searchType}]`);
+                const cached = searchCache[query][searchType];
+                // Clear existing results before adding cached ones
+                resultsContainer.innerHTML = '';
+                resultsContainer.appendChild(aiSummaryContainer);
+                aiSummaryContainer.innerHTML = '';
+                aiSummaryContainer.style.display = 'none';
+
+                if (cached.aiSummaryHtml) {
+                     aiSummaryContainer.innerHTML = cached.aiSummaryHtml;
+                     aiSummaryContainer.style.display = 'block';
+                }
+                const resultsPlaceholder = document.createElement('div');
+                resultsPlaceholder.innerHTML = cached.html;
+                resultsContainer.appendChild(resultsPlaceholder);
+                paginationContainer.innerHTML = cached.paginationHtml;
+                totalResults = cached.totalResults;
+
+                // Ensure no 'info' message remains if cache is used
+                const infoP = resultsContainer.querySelector('.info, .error, .loading');
+                if (infoP) infoP.remove();
+
+                return;
+            }
+
+            clearVisualResults('Searching...'); // Show Searching message
+
+            const apiUrl = getApiUrl(searchType);
+
+            try {
+                console.log(`Fetching ${searchType} results for "${query}", page ${page}...`);
+                // Use configured Serper API Key
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'X-API-KEY': appConfig.serperApiKey,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ q: query, page: page, num: RESULTS_PER_PAGE })
+                });
+
+                if (!response.ok) {
+                    let errorMsg = `Serper API Error (${response.status})`;
+                    try {
+                        const errorData = await response.json();
+                        errorMsg += `: ${errorData.message || response.statusText}`;
+                    } catch (e) {
+                         errorMsg += `: ${response.statusText}`;
+                    }
+                    throw new Error(errorMsg);
+                }
+
+                const responseData = await response.json();
+                await handleApiResponse(responseData, searchType, query, page);
+
+            } catch (error) {
+                console.error('Search failed:', error);
+                clearVisualResults(`Search failed. Error: ${error.message}`);
+                paginationContainer.innerHTML = '';
+            }
+        }
+
+        /** Helper to disable/enable search UI elements */
+        function setSearchUIEnabled(enabled, reason = 'Waiting for configuration...') {
+             searchInput.disabled = !enabled;
+             searchButton.disabled = !enabled;
+             searchTypeButtons.forEach(btn => { btn.disabled = !enabled; });
+             if (enabled) {
+                 searchInput.placeholder = "Enter search query...";
+             } else {
+                 searchInput.placeholder = reason;
+             }
+        }
+
+        /** Handles receiving configuration from parent */
+        function receiveConfig(event) {
+            // IMPORTANT: Add origin check in production!
+            // const expectedOrigin = 'https://your-ai-platform.com'; // Replace with App 2's actual origin
+            // if (event.origin !== expectedOrigin) {
+            //     console.warn('Message rejected from origin:', event.origin);
+            //     return;
+            // }
+
+            const receivedData = event.data;
+            console.log('Search App received message:', receivedData);
+
+            if (receivedData && receivedData.type === 'config' && receivedData.payload) {
+                 const { serperApiKey, aiModel, aiApiUrl, aiApiToken } = receivedData.payload;
+
+                 // Validate all required keys are present
+                 if (serperApiKey && aiModel && aiApiUrl && aiApiToken) {
+                    appConfig = receivedData.payload;
+                    isConfigured = true;
+
+                    // Enable UI elements now that we have config
+                    setSearchUIEnabled(true);
+
+                    // Update placeholder text and clear waiting message
+                    clearVisualResults('Configuration received. Enter search query.');
+                    searchInput.focus();
+
+                 } else {
+                     console.error('Received incomplete configuration data:', receivedData.payload);
+                     clearVisualResults('Error: Incomplete configuration received from parent.');
+                     setSearchUIEnabled(false, 'Incomplete configuration');
+                 }
+            } else {
+                 console.warn('Received non-config message or invalid format:', event);
+            }
+        }
+
+        // --- Event Listeners ---
+        // Configuration listeners removed
+
+        searchButton.addEventListener('click', () => { if (isConfigured) performSearch(searchInput.value, getSelectedSearchType(), 1); });
+        searchInput.addEventListener('keyup', (event) => { if (event.key === 'Enter' && isConfigured) { performSearch(searchInput.value, getSelectedSearchType(), 1); } });
+
+         // --- Search Type Change Listener ---
+         searchTypeButtons.forEach(button => {
+             button.addEventListener('click', () => {
+                 if (!isConfigured) return; // Don't allow type change if not configured
+
+                 const newType = button.dataset.type;
+                 const query = searchInput.value.trim();
+                 currentSearchType = newType; // Update state immediately
+
+                 // Update button visual state
+                 searchTypeButtons.forEach(btn => btn.classList.toggle('active', btn === button));
+
+                 if (query) {
+                     performSearch(query, newType, 1); // Search page 1 of the new type
+                 } else {
+                     // Just update button states & clear results if no query
+                     clearVisualResults('Enter a search query to see results.');
+                 }
+             });
+         });
+
+        // Modal Controls
+        closeModalButton.addEventListener('click', closeModal);
+        contentModal.addEventListener('click', (event) => { if (event.target === contentModal) closeModal(); });
+        document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && contentModal.style.display === 'block') closeModal(); });
+
+        // --- Message Listener for Configuration ---
+        window.addEventListener('message', receiveConfig);
+
+         // --- Initialization ---
+         window.addEventListener('DOMContentLoaded', () => {
+            // Disable UI and show waiting message until configured by parent
+            setSearchUIEnabled(false);
+            clearVisualResults('Waiting for configuration from parent application...');
+
+            // Optional: Notify parent that the iframe is ready to receive config
+            if (window.parent && window.parent !== window) {
+                 console.log("Search App ready, notifying parent.");
+                 // IMPORTANT: Replace '*' with App 2's origin in production
+                 window.parent.postMessage({ type: 'searchAppReady' }, '*');
+            }
+         });
+
+    </script>
+
+</body>
+</html>
