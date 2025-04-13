@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>AI Deep Dive</title>
+<style>
+/* --- Styles adapted from INFO SEARCH Enhanced v5 --- */
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: monospace; }
+body { background: #1a1a1a; color: #0f0; padding: 15px; line-height: 1.6; max-width: 900px; margin: 20px auto; }
+input[type="text"] { width: 100%; background: #000; color: #0f0; border: 1px solid #0f0; padding: 10px; margin-bottom: 20px; font-size: 16px; outline: none; transition: box-shadow 0.3s; border-radius: 4px; }
+input[type="text"]:focus { box-shadow: 0 0 8px #0f0; }
+input[type="text"]:disabled { background: #111; color: #070; cursor: not-allowed; border-color: #070;}
+.card { border: 1px solid #0f0; padding: 25px; background: #001a00; margin-bottom: 20px; opacity: 0; transform: translateY(15px); animation: cardAppear 0.4s ease-out forwards; border-radius: 6px; }
+@keyframes cardAppear { to { opacity: 1; transform: translateY(0); } }
+.section-title { font-size: 20px; color: #0f0; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #0a0; }
+.content { margin-bottom: 20px; }
+.content h3 { color: #33cccc; margin: 18px 0 10px 0; font-size: 16px; border-bottom: 1px dashed #077; padding-bottom: 5px; }
+.content p { margin-bottom: 14px; line-height: 1.7; font-size: 14px; color: #0e0; }
+.content ul { margin: 12px 0; padding-left: 25px; }
+.content ol { margin: 12px 0; padding-left: 25px; }
+.content li { margin: 6px 0; line-height: 1.6; font-size: 14px; color: #0e0; }
+.content pre { background-color: #002200; border: 1px solid #050; padding: 10px; margin: 15px 0; overflow-x: auto; color: #ddd; font-size: 13px; white-space: pre-wrap; word-wrap: break-word; border-radius: 4px; }
+.content code { font-family: monospace; }
+.nav { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; justify-content: center; }
+.btn { background: #000; border: 1px solid #0f0; color: #0f0; padding: 8px 15px; cursor: pointer; font-size: 13px; transition: background-color 0.2s, box-shadow 0.2s; text-transform: capitalize; border-radius: 4px; }
+.btn:hover:not(:disabled) { background: #003300; box-shadow: 0 0 5px #0f0; }
+.btn.active { background: #005500; color: #fff; box-shadow: 0 0 8px #0f0 inset; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.subreddit { color: #33cccc; font-size: 14px; margin-bottom: 10px; }
+.tldr { font-size: 14px; color: #33cccc; background: #002200; padding: 15px; margin-bottom: 20px; border-left: 3px solid #33cccc; animation: fadeIn 0.4s ease-out forwards; border-radius: 4px; }
+.tldr-heading { font-weight: bold; margin-bottom: 8px; color: #0f0; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.loading-placeholder { color: #0a0; font-style: italic; padding: 10px 0; animation: pulse 1.5s infinite ease-in-out; }
+.error-message { color: #f66; background-color: rgba(85, 0, 0, 0.5); border: 1px solid #a00; padding: 10px; margin: 10px 0; border-radius: 4px; font-size: 13px; }
+@keyframes pulse { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
+
+/* --- Added Comment Styles --- */
+.comments { margin-top: 25px; padding-top: 20px; border-top: 1px solid #050; }
+.comment { padding: 12px 15px; margin: 8px 0; border-left: 3px solid #060; animation: commentAppear 0.3s ease-out forwards; opacity: 0; background-color: rgba(0, 20, 0, 0.3); border-radius: 4px; }
+.comment.user-comment { border-left-color: #0f0; background-color: rgba(0, 50, 0, 0.4); }
+@keyframes commentAppear { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
+.comment-header { font-size: 13px; color: #0c0; margin-bottom: 6px; }
+.username { color: #fff; font-weight: bold; }
+.votes { color: #33cccc; font-size: 13px; font-weight: bold; }
+.write-comment { margin-bottom: 15px; opacity: 0; transition: opacity 0.3s ease; position: relative; }
+.write-comment.visible { opacity: 1; }
+textarea { width: 100%; background: #001100; color: #0f0; border: 1px solid #0f0; padding: 12px; margin: 0 0 5px 0; height: 90px; resize: vertical; outline: none; font-family: monospace; font-size: 14px; border-radius: 4px; transition: box-shadow 0.3s; }
+textarea:focus { box-shadow: 0 0 8px #0f0; }
+.submission-feedback { font-size: 12px; padding: 5px 0; min-height: 20px; transition: opacity 0.3s; }
+/* --- End Comment Styles --- */
+
+/* --- End Styles --- */
+</style>
+</head>
+<body>
+<input id="search" type="text" autofocus placeholder="Waiting for configuration..." disabled>
+<div id="content"><p style="text-align: center; margin-top: 50px; color: #0a0;">Waiting for configuration from parent application...</p></div>
+
+<script>
+// --- Configuration and Constants ---
+const CACHE_PREFIX = 'aiDeepDiveCache_';
+const PLACEHOLDER_LOADING = '<div class="loading-placeholder">Loading...</div>';
+const PLACEHOLDER_ERROR = (msg) => `<div class="error-message">Error: ${msg || 'Could not load data.'}</div>`;
+const SECTIONS = [ /* Sections remain the same */
+    { type: 'Core Concepts', prompt: `Create a structured explanation of "{query}" targeted at a beginner, like for r/explainlikeimfive. Use markdown:\n1.  **Brief Overview:** (2-3 sentences)\n2.  **Key Points:** (3-4 bullet points using '*')\n3.  **How It Works (Simplified):** (2-3 sentences)\n4.  **Key Terminology:** (2-3 terms with brief, simple definitions)\nFormat clearly. Avoid overly technical jargon unless defining it.`, subreddit: 'explainlikeimfive' },
+    { type: 'Technical Details', prompt: `Create a technical breakdown of "{query}" suitable for r/programming or a similar technical audience. Use markdown:\n1.  **Technical Overview:** (2-3 sentences)\n2.  **Main Components/Architecture:** (3-4 bullet points using '*')\n3.  **Implementation Aspects:** (2-3 key points, can include code snippets using \`\`\`language ... \`\`\`)\n4.  **Common Challenges/Considerations:** (2-3 points)\nFormat clearly with headings (e.g., ### Heading).`, subreddit: 'programming' },
+    { type: 'Practical Applications', prompt: `Describe the practical applications and use cases of "{query}" for an audience interested in technology (like r/technology). Use markdown:\n1.  **Primary Use Cases:** (2-3 sentences)\n2.  **Industry Examples:** (3 specific, distinct examples)\n3.  **Benefits & Advantages:** (3-4 points using '*')\n4.  **Getting Started/Implementation Tips:** (2-3 actionable tips)\nFormat clearly.`, subreddit: 'technology' },
+    { type: 'Future Implications', prompt: `Analyze the future outlook and potential impact of "{query}" for r/Futurology. Use markdown:\n1.  **Current Trends:** (2-3 sentences summarizing the state-of-the-art)\n2.  **Potential Future Developments:** (3 plausible predictions or research directions)\n3.  **Societal/Economic Impact:** (2-3 potential effects)\n4.  **Ethical Considerations/Challenges Ahead:** (2-3 points)\nFormat clearly.`, subreddit: 'Futurology' }
+];
+const GEMINI_FLASH_MODEL_ID = 'gemini-2.0-flash';
+
+// --- Global State ---
+let currentSection = 0;
+let currentQuery = '';
+let isLoading = false;
+let isCommenting = false; // Added for comment submission flag
+
+// --- AI Configuration ---
+let receivedAiApiUrl = null;
+let aiApiToken = null;
+let receivedAiModel = null;
+let isConfigReady = false;
+
+// --- Caching Functions ---
+function getCacheKey(q, sIdx, type) { return `${CACHE_PREFIX}${q.toLowerCase()}::${sIdx}::${type}`; }
+function getFromCache(key) { const c = sessionStorage.getItem(key); if (c) { try { return JSON.parse(c); } catch (e) { console.error("Bad cache:", key, e); sessionStorage.removeItem(key); } } return null; }
+function saveToCache(key, data) { try { sessionStorage.setItem(key, JSON.stringify(data)); } catch (e) { console.error("Cache save fail:", key, e); } }
+
+// --- Gemini Helper Function ---
+function transformHistoryForGemini(h) { /* Same as previous */
+    const contents = [];
+    let systemInstruction = null;
+    if (h[0]?.role === 'system') { systemInstruction = h[0].content; }
+    const chatHistory = systemInstruction ? h.slice(1) : h;
+    chatHistory.forEach(msg => { if (msg.content != null) { contents.push({ role: msg.role === 'assistant' ? 'model' : msg.role, parts: [{ text: msg.content }] }); } });
+    return { contents: contents, ...(systemInstruction && { system_instruction: { parts: [{ text: systemInstruction }] } }) };
+}
+
+// --- API Call Abstraction ---
+async function fetchFromAI(msgs, temp, max_tok = 1024) { /* Same as previous */
+    if (!isConfigReady || !receivedAiApiUrl || !receivedAiModel) { throw new Error('AI configuration not ready.'); }
+    let finalUrl = receivedAiApiUrl;
+    const headers = { 'Content-Type': 'application/json' };
+    let body;
+    let actualModelUsed = receivedAiModel;
+    const isGemini = receivedAiApiUrl.includes('generativelanguage.googleapis.com');
+
+    try {
+        const validMsgs = msgs.filter(m => m && m.role && typeof m.content === 'string');
+        if (validMsgs.length === 0) throw new Error("Cannot send empty message list to AI.");
+
+        if (isGemini) {
+            if (!aiApiToken) throw new Error('API Token (key) missing for Gemini.');
+            actualModelUsed = GEMINI_FLASH_MODEL_ID;
+            console.log(`Gemini detected. Overriding model to: ${actualModelUsed}`);
+            const baseUrl = receivedAiApiUrl.substring(0, receivedAiApiUrl.lastIndexOf('/models/') + '/models/'.length);
+            const action = receivedAiApiUrl.substring(receivedAiApiUrl.lastIndexOf(':'));
+            finalUrl = `${baseUrl}${actualModelUsed}${action}?key=${aiApiToken}`;
+
+            const { contents, system_instruction } = transformHistoryForGemini(validMsgs);
+             if (contents.length === 0 && !system_instruction) { throw new Error("Empty message history for Gemini."); }
+            body = JSON.stringify({ contents: contents, generationConfig: { temperature: temp ?? 0.7, topP: 0.9, maxOutputTokens: max_tok }, ...(system_instruction && { system_instruction: system_instruction }) });
+        } else {
+            if (aiApiToken) { headers['Authorization'] = `Bearer ${aiApiToken}`; }
+            body = JSON.stringify({ model: actualModelUsed, messages: validMsgs, temperature: temp ?? 0.7, max_tokens: max_tok, stream: false });
+        }
+
+        console.log(`Fetching from AI: URL=${finalUrl.split('?')[0]}..., Model=${actualModelUsed}, Temp=${temp}`);
+        const r = await fetch(finalUrl, { method: 'POST', headers: headers, body: body });
+
+        if (!r.ok) {
+            let m = `API error (${r.status}) for model ${actualModelUsed}`;
+            try { const d = await r.json(); m += `: ${d.error?.message || JSON.stringify(d) || 'Unknown API error'}`; } catch (e) { try { const text = await r.text(); m += `: ${text || 'Unknown non-JSON error'}`; } catch (textErr) { /* Ignore */ } }
+            throw new Error(m);
+        }
+
+        const d = await r.json();
+        let content = null;
+        if (isGemini) { content = d.candidates?.[0]?.content?.parts?.[0]?.text; }
+        else { content = d.choices?.[0]?.message?.content; }
+
+        if (content === null || typeof content === 'undefined') { throw new Error(`Invalid API response structure (content missing) for model ${actualModelUsed}.`); }
+        return content.trim();
+
+    } catch (e) {
+        console.error('Fetch From AI Error:', e);
+        throw new Error(`AI Fetch Failed: ${e.message || 'Unknown network or processing error.'}`);
+    }
+}
+
+
+// --- Data Fetching Functions ---
+async function fetchWithCache(q, sIdx, type, fetchFn) { /* Same as previous */
+    const key = getCacheKey(q, sIdx, type);
+    const cached = getFromCache(key);
+    if (cached) { console.log(`Cache hit: ${key}`); return cached; }
+    console.log(`Cache miss: ${key}. Fetching...`);
+    try {
+        const newData = await fetchFn();
+        if (newData && !newData.error) { saveToCache(key, newData); }
+        else if (newData && newData.error) { console.warn(`Not caching error response for ${key}: ${newData.message}`); }
+        return newData;
+    } catch (e) {
+        console.error(`Error during fetch for ${key}:`, e);
+        return { error: true, message: e.message };
+    }
+}
+
+async function fetchTldr(q, s) {
+    return fetchWithCache(q, SECTIONS.indexOf(s), 'tldr', async () =>
+        fetchFromAI([{ role: "user", content: `Give a concise 2-3 sentence TL;DR summary about the "${s.type}" aspect of "${q}".` }], 0.3, 150)
+    );
+}
+
+async function fetchSectionContent(q, s) {
+    const messages = [{ role: "user", content: s.prompt.replace('{query}', q) }];
+    return fetchWithCache(q, SECTIONS.indexOf(s), 'content', async () =>
+        fetchFromAI(messages, 0.4, 1500)
+    );
+}
+
+async function fetchComments(q, s) {
+    return fetchWithCache(q, SECTIONS.indexOf(s), 'comments', async () => {
+        const prompt = `Generate 3-4 diverse Reddit comments (positive, negative, questioning) from r/${s.subreddit} discussing "${q}". Realistic. STRICTLY Format EACH: Username|Karma|Comment||. Use '||' separator. Plausible usernames & karma (-50 to 2000).`;
+        const msgs = [{ role: "user", content: prompt }];
+        const txt = await fetchFromAI(msgs, 0.75, 1500);
+        return txt.split('||').map(c => c.trim()).filter(c => c).map(c => {
+            const p = c.split('|');
+            if (p.length === 3) {
+                const [u, kS, cm] = p; const k = parseInt(kS);
+                return { username: u.trim(), karma: (!isNaN(k)) ? k : Math.floor(Math.random()*1000), comment: cm.trim() };
+            }
+            return { username: 'GenUser', karma: Math.floor(Math.random()*500), comment: c };
+        });
+    });
+}
+
+async function generateAIResponse(q, userC, sType) {
+    try {
+        const prompt = `Context: Discussion on "${q}" (${sType}). User commented: "${userC}"\n\nGenerate concise, relevant reply. Format: Username|Karma|Comment. Plausible name & karma (50-1500).`;
+        const msgs = [ { role: "system", content: "Simulate a helpful and relevant Reddit user reply based on the provided context and user comment." }, { role: "user", content: prompt } ];
+        const txt = await fetchFromAI(msgs, 0.7, 300);
+        const p = txt.split('|');
+        if (p.length === 3) { const [u, kS, c] = p; return { username: u.trim(), karma: parseInt(kS) || 100, comment: c.trim() }; }
+        return { username: 'AIReplyBot', karma: 100, comment: txt };
+    } catch (e) {
+        console.error("AI Reply Generation Error:", e);
+        return { error: true, message: `AI reply failed: ${e.message}` };
+    }
+}
+
+
+// --- Formatting and Display ---
+function formatContent(text) { /* Same as previous */
+    if (!text || typeof text !== 'string') return '';
+    let html = text;
+    html = html.replace(/```(\w+)?\s*([\s\S]*?)```/g, (match, lang, code) => `<pre><code${lang ? ` class="language-${lang}"` : ''}>${code.replace(/</g, '<').replace(/>/g, '>').trim()}</code></pre>`);
+    html = html.replace(/^#+\s+(.*$)/gim, '<h3>$1</h3>');
+    html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    html = html.replace(/(?<!\*)\*(?!\*)(.*?)(?<!\*)\*(?!\*)/g, '<em>$1');
+    html = html.replace(/_(.*?)_/g, '<em>$1</em>');
+    const lines = html.split('\n');
+    let inList = false; let listType = 'ul'; let resultHtml = [];
+    lines.forEach(line => { const trimmedLine = line.trim(); let currentListType = null; let itemText = ''; let isListItem = false; if (trimmedLine.startsWith('* ') || trimmedLine.startsWith('- ')) { currentListType = 'ul'; itemText = trimmedLine.substring(2).trim(); isListItem = true; } else if (/^\d+\.\s/.test(trimmedLine)) { currentListType = 'ol'; itemText = trimmedLine.replace(/^\d+\.\s/, '').trim(); isListItem = true; } if (isListItem) { if (!inList) { inList = true; listType = currentListType; resultHtml.push(`<${listType}><li>${itemText}</li>`); } else if (currentListType === listType) { resultHtml.push(`<li>${itemText}</li>`); } else { resultHtml.push(`</${listType}>`); listType = currentListType; resultHtml.push(`<${listType}><li>${itemText}</li>`); } } else { if (inList) { resultHtml.push(`</${listType}>`); inList = false; } if (trimmedLine.length > 0 && !line.startsWith('<') && !line.startsWith('</')) { resultHtml.push(`<p>${line}</p>`); } else if (trimmedLine.length > 0) { resultHtml.push(line); } } }); if (inList) { resultHtml.push(`</${listType}>`); } html = resultHtml.join('\n').replace(/<p>\s*<\/p>/g, ''); return html;
+}
+
+function displayComments(comments) { /* Same as previous */
+    if (!comments) return PLACEHOLDER_LOADING;
+    if (comments.error) return PLACEHOLDER_ERROR(comments.message);
+    if (!Array.isArray(comments)) { console.error("Invalid comment data received:", comments); return PLACEHOLDER_ERROR("Invalid comment data structure."); }
+    if (comments.length === 0) return '<p>No comments generated yet.</p>';
+    const userComments = comments.filter(c => c.username === 'You');
+    const otherComments = comments.filter(c => c.username !== 'You').sort((a, b) => (b.karma ?? 0) - (a.karma ?? 0));
+    const sortedComments = [...userComments, ...otherComments];
+    return sortedComments.map((c, i) => ` <div class="comment ${c.username === 'You' ? 'user-comment' : ''}" style="animation-delay: ${i * 60}ms"> <div class="comment-header"> <span class="username">${c.username || 'User'}</span> ${(c.karma !== null && c.karma !== undefined) ? ` • <span class="votes">${c.karma >= 0 ? '↑' : '↓'} ${Math.abs(c.karma)}</span>` : ''} </div> ${c.comment ? formatContent(c.comment) : ''} </div> `).join('');
+}
+
+
+// --- Core Logic ---
+async function handleComment(event) { /* Same as previous */
+    if (!currentQuery) { console.warn("handleComment called without currentQuery"); return; }
+    const query = currentQuery;
+    const textarea = event.target;
+    if (event.key !== 'Enter' || event.shiftKey || isCommenting || !isConfigReady) return;
+    event.preventDefault();
+    const commentText = textarea.value.trim();
+    if (!commentText) return;
+    isCommenting = true; textarea.disabled = true; textarea.placeholder = "Submitting...";
+    const feedbackEl = textarea.parentElement.querySelector('.submission-feedback');
+    if (feedbackEl) { feedbackEl.innerHTML = PLACEHOLDER_LOADING.replace('Loading...','Processing...'); feedbackEl.style.opacity = '1'; }
+    try {
+        const cacheKey = getCacheKey(query, currentSection, 'comments');
+        let commentsData = getFromCache(cacheKey);
+        if (!Array.isArray(commentsData) || commentsData.error) { commentsData = []; }
+        const userComment = { username: 'You', karma: 1, comment: commentText };
+        commentsData.unshift(userComment);
+        const commentListContainer = document.querySelector('.comment-list-container');
+        if (commentListContainer) { commentListContainer.innerHTML = displayComments(commentsData); }
+        saveToCache(cacheKey, commentsData);
+        const aiResponse = await generateAIResponse(query, commentText, SECTIONS[currentSection].type);
+        let feedbackMessage = '';
+        if (aiResponse && !aiResponse.error) {
+            commentsData.splice(1, 0, aiResponse); feedbackMessage = `<span style="color:#0f0;">Comment submitted. AI replied.</span>`;
+        } else { const errorMsg = aiResponse?.message || "Could not get AI reply."; feedbackMessage = `<span style="color:#ffcc00;">Comment submitted, but AI reply failed: ${errorMsg}</span>`; }
+        saveToCache(cacheKey, commentsData);
+        if (commentListContainer) { commentListContainer.innerHTML = displayComments(commentsData); }
+        if (feedbackEl) { feedbackEl.innerHTML = feedbackMessage; setTimeout(() => { feedbackEl.style.opacity = '0'; }, 3500); }
+        textarea.value = '';
+    } catch (e) {
+        console.error('Failed to process comment:', e);
+        if (feedbackEl) { feedbackEl.innerHTML = PLACEHOLDER_ERROR(`Submit failed: ${e.message}`); feedbackEl.style.opacity = '1'; setTimeout(() => { feedbackEl.style.opacity = '0'; }, 4000); }
+    } finally {
+        isCommenting = false; textarea.disabled = false; textarea.placeholder = "Share your thoughts... (Enter to submit, Shift+Enter for newline)";
+    }
+}
+
+// --- Updated displaySection function ---
+function displaySection(sectionData) {
+    const contentEl = document.getElementById('content');
+    if (!SECTIONS[currentSection]) { contentEl.innerHTML = PLACEHOLDER_ERROR("Invalid section."); return; }
+    const section = SECTIONS[currentSection];
+
+    const tldrData = sectionData?.tldr;
+    const contentData = sectionData?.content;
+    const commentsData = sectionData?.comments;
+
+    const tldr = tldrData === undefined ? PLACEHOLDER_LOADING : (tldrData?.error ? PLACEHOLDER_ERROR(tldrData.message) : tldrData);
+    const mainContent = contentData === undefined ? PLACEHOLDER_LOADING : (contentData?.error ? PLACEHOLDER_ERROR(contentData.message) : formatContent(contentData));
+    const commentsHtml = displayComments(commentsData);
+
+    // Can comment only if main content exists and is not an error
+    const canComment = !(contentData === undefined || contentData?.error);
+
+    contentEl.innerHTML = `
+      <div class="card">
+        <div class="subreddit">r/${section.subreddit}</div>
+        <div class="section-title">${section.type}</div>
+        ${ (tldr !== PLACEHOLDER_LOADING && !(tldrData?.error)) ? `<div class="tldr"><div class="tldr-heading">TL;DR:</div>${tldr}</div>` : tldr }
+        <div class="content">${mainContent}</div>
+        <div class="nav">
+          ${SECTIONS.map((s, i) => `<button class="btn ${i === currentSection ? 'active' : ''}" onclick="navigate(${i})" ${isLoading ? 'disabled' : ''}>${s.type.replace(' ', ' ')}</button>`).join('')}
+        </div>
+        <div class="comments">
+          ${canComment ? `
+            <div class="write-comment visible">
+              <textarea placeholder="Share your thoughts... (Enter to submit, Shift+Enter for newline)"
+                        onkeydown="handleComment(event)"
+                        ${isCommenting ? 'disabled' : ''}
+              ></textarea>
+              <div class="submission-feedback" style="opacity: 0;"></div>
+            </div>
+            <div class="comment-list-container">${commentsHtml}</div>
+          ` : `
+            <!-- Using loading placeholder style for pending message -->
+            <div class="loading-placeholder">Comments will be loaded after main content.</div>
+          `}
+        </div>
+      </div>
+    `;
+
+     // Manage button/textarea states after render
+     setTimeout(() => {
+        document.querySelectorAll('.nav .btn').forEach(b => b.disabled = isLoading);
+        document.querySelectorAll('.nav .btn').forEach((b, i) => { b.classList.toggle('active', i === currentSection); });
+        const commentTextarea = contentEl.querySelector('.write-comment textarea');
+        if(commentTextarea) { commentTextarea.disabled = isCommenting; }
+    }, 0);
+}
+
+async function navigate(index) { /* Same as previous */
+    console.log(`Navigate called for index: ${index}`);
+    if (isLoading || index === currentSection || !currentQuery || !isConfigReady) { console.warn(`Navigation blocked: isLoading=${isLoading}, index=${index}, currentSection=${currentSection}, query=${!!currentQuery}, config=${isConfigReady}`); return; }
+    isLoading = true; currentSection = index;
+    document.querySelectorAll('.nav .btn').forEach(b => b.disabled = true);
+    displaySection({ tldr: undefined, content: undefined, comments: undefined });
+    try {
+        console.log(`Fetching data for section ${index}`);
+        const [tldrData, contentData, commentsData] = await Promise.all([ fetchTldr(currentQuery, SECTIONS[index]), fetchSectionContent(currentQuery, SECTIONS[index]), fetchComments(currentQuery, SECTIONS[index]) ]);
+        console.log(`Data received for section ${index}:`, {tldrData, contentData, commentsData});
+        if (currentSection === index) { displaySection({ tldr: tldrData, content: contentData, comments: commentsData }); }
+        else { console.log(`Navigation target changed from ${index} to ${currentSection} before display.`); }
+    } catch (e) {
+        console.error(`Navigation fetch error for index ${index}:`, e);
+         if (currentSection === index) { displaySection({ tldr: { error: true, message: `Failed TLDR: ${e.message}` }, content: { error: true, message: `Failed Content: ${e.message}` }, comments: { error: true, message: `Failed Comments: ${e.message}` } }); }
+    } finally {
+        console.log(`Navigation finished for index ${index}. Setting isLoading=false.`);
+        isLoading = false;
+        // Button state handled by displaySection timeout
+    }
+}
+
+async function search() { /* Same as previous */
+    const searchInput = document.getElementById('search'); const q = searchInput.value.trim(); if (!q || isLoading || !isConfigReady) return;
+    console.log(`Search started for query: "${q}"`); isLoading = true; currentQuery = q; currentSection = 0;
+    const queryPrefix = CACHE_PREFIX + currentQuery.toLowerCase() + '::'; Object.keys(sessionStorage).forEach(k => { if (k.startsWith(queryPrefix)) { console.log(`Clearing cache: ${k}`); sessionStorage.removeItem(k); } });
+    searchInput.disabled = true; displaySection({ tldr: undefined, content: undefined, comments: undefined });
+    try {
+        console.log("Fetching initial data (section 0)...");
+        const [tldrData, contentData, commentsData] = await Promise.all([ fetchTldr(currentQuery, SECTIONS[0]), fetchSectionContent(currentQuery, SECTIONS[0]), fetchComments(currentQuery, SECTIONS[0]) ]);
+        console.log("Initial data received:", {tldrData, contentData, commentsData});
+        displaySection({ tldr: tldrData, content: contentData, comments: commentsData });
+    } catch (e) {
+        console.error('Initial search fetch error:', e); displaySection({ tldr: { error: true, message: `Failed TLDR: ${e.message}` }, content: { error: true, message: `Failed Content: ${e.message}` }, comments: { error: true, message: `Failed Comments: ${e.message}` } });
+    } finally {
+         console.log("Search finished. Setting isLoading=false."); isLoading = false; searchInput.disabled = false;
+    }
+}
+
+// --- Initialization & PostMessage Handling ---
+function initializeApp() { /* Same as previous */
+    const searchInput = document.getElementById('search'); const contentEl = document.getElementById('content');
+    searchInput.disabled = true; searchInput.placeholder = "Waiting for configuration..."; contentEl.innerHTML = '<p style="text-align: center; margin-top: 50px; color: #0a0;">Waiting for configuration from parent application...</p>';
+    window.addEventListener('message', (event) => {
+        // IMPORTANT: Add origin check
+        if (event.data && event.data.type === 'config' && event.data.payload) {
+            const config = event.data.payload; console.log('Received configuration:', config);
+            if (config.aiApiUrl && config.aiModel) { receivedAiApiUrl = config.aiApiUrl; aiApiToken = config.aiApiToken; receivedAiModel = config.aiModel; isConfigReady = true; searchInput.disabled = false; searchInput.placeholder = "SEARCH TOPIC (PRESS ENTER)"; contentEl.innerHTML = '<p style="text-align: center; margin-top: 50px; color: #0a0;">Configuration received. Enter topic & press Enter.</p>'; console.log("Configuration Ready!"); }
+            else { console.error('Received incomplete configuration:', config); contentEl.innerHTML = PLACEHOLDER_ERROR('Received incomplete configuration from parent.'); searchInput.placeholder = "Configuration Error!"; } }
+        else { console.warn('Received unexpected message:', event.data); } });
+    searchInput.addEventListener('keypress', e => { if (e.key === 'Enter' && !searchInput.disabled) { search(); } });
+    console.log("AI Deep Dive Initialized. Waiting for config...");
+}
+
+document.addEventListener('DOMContentLoaded', initializeApp);
+
+</script>
+</body>
+</html>
