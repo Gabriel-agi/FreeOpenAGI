@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Title Updated -->
+    <title>Minimal Gemini VN - Persona Prompts & PFP Display (SambaNova Key Rotation - Markdown Fix)</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/idb-keyval@6/dist/umd.js"></script>
+    <style>
+        /* --- Styles remain unchanged --- */
+        /* VN Style */
+        html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; font-family: sans-serif; }
+        body { background-color: #333; background-size: cover; background-position: center; background-repeat: no-repeat; transition: background-image 0.5s ease-in-out; display: flex; flex-direction: column; justify-content: flex-end; }
+        #textbox-area { background: rgba(0, 0, 0, 0.75); color: #fff; padding: 15px 20px; border-top: 3px solid #555; flex-shrink: 0; position: relative; min-height: 150px; display: flex; flex-direction: column; }
+        #narrative-output { flex-grow: 1; margin-bottom: 15px; font-size: 1.1em; line-height: 1.6; max-height: 20vh; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #888 #333; }
+        #narrative-output::-webkit-scrollbar { width: 6px; }
+        #narrative-output::-webkit-scrollbar-track { background: #333; }
+        #narrative-output::-webkit-scrollbar-thumb { background-color: #888; border-radius: 3px; }
+        #narrative-output p:last-child { margin-bottom: 0; }
+        .scene-text { color: #ccc; font-style: italic; border-left: 2px solid #aaa; padding-left: 10px; margin-bottom: 10px; }
+        .input-container { display: flex; gap: 10px; margin-bottom: 10px; }
+        #user-input { flex-grow: 1; padding: 10px; border: 1px solid #888; border-radius: 4px; background-color: #eee; color: #111; font-size: 1em; }
+        #send-button { padding: 10px 15px; font-size: 1em; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        #send-button:disabled { background: #555; }
+        .textbox-controls { display: flex; justify-content: flex-end; gap: 10px; align-items: center; }
+        .textbox-controls button { background: #555; color: #eee; padding: 5px 10px; font-size: 0.9em; border: none; border-radius: 3px; cursor: pointer; }
+        .textbox-controls button:hover:not(:disabled) { background: #777; }
+        #settings-btn, #backlog-btn { font-size: 1.2em; padding: 3px 8px; }
+        #loading-indicator { color: #ccc; margin-right: auto; display: none; align-items: center; }
+
+        /* Settings & Backlog Modals */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0, 0, 0, 0.7); justify-content: center; align-items: center; z-index: 1000; padding: 20px; }
+        .modal-overlay.active { display: flex; }
+        .modal-content { background: #fff; color: #333; padding: 20px; border-radius: 8px; width: 90%; max-width: 700px; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 0 5px 15px rgba(0,0,0,0.4); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ccc; padding-bottom: 10px; margin-bottom: 15px; flex-shrink: 0; }
+        .modal-title { margin: 0; font-size: 1.4em; }
+        .modal-close-btn { font-size: 1.8em; background: none; border: none; color: #888; cursor: pointer; padding: 0 5px; line-height: 1; }
+        .modal-close-btn:hover { color: #333; }
+        .modal-body { overflow-y: auto; flex-grow: 1; padding-right: 10px; }
+        .modal-section { margin-bottom: 20px; padding: 15px; border: 1px solid #eee; border-radius: 5px; }
+        .modal-section h4 { margin-top: 0; margin-bottom: 10px; font-size: 1.1em; border-bottom: 1px solid #eee; padding-bottom: 5px;}
+        .modal-body input[type="text"], .modal-body select, .modal-body textarea, .modal-body button { font-size: 0.95em; padding: 8px; margin-bottom: 5px; border: 1px solid #ccc; border-radius: 4px; background-color: #fff; color:#333;}
+        .modal-body textarea { min-height: 60px; width: 100%; box-sizing: border-box; resize: vertical; }
+        .modal-body .controls, .modal-body .persona-editor, .modal-body .user-pfp-section, .modal-body .prompt-area { padding: 0; border: none; margin-bottom: 15px; }
+        .modal-body .user-pfp-controls, .modal-body .persona-buttons { display: flex; align-items: center; gap: 10px; }
+        .modal-body #user-pfp-display, .modal-body #persona-pfp-display { width: 40px; height: 40px; border-radius:50%; background:#ddd; object-fit:cover; border:1px solid #aaa; margin-right: 5px;}
+        .modal-body .persona-editor-header { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 10px;}
+        .modal-body .persona-buttons button { font-size: 1em; padding: 5px 8px; }
+        .modal-body button { background: #007bff; color: white; cursor: pointer; }
+        .modal-body button:disabled { background: #ccc; cursor: not-allowed; }
+        .modal-body button.danger { background: #dc3545; }
+        .modal-body button.secondary { background: #6c757d; }
+        .modal-body .chat-management-buttons { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+        .modal-body .persona-prompt-group { margin-top: 10px; }
+        /* Style for API Key section */
+        .api-key-section label { display: block; margin-bottom: 5px; font-weight: bold;}
+        .api-key-section textarea, .api-key-section input[type="text"] { width: 100%; box-sizing: border-box; margin-bottom: 10px;}
+        .api-key-section .checkbox-label { display: flex; align-items: center; gap: 8px; margin-top: 5px; font-weight: normal;}
+        .api-key-section input[type="checkbox"] { width: auto; margin-bottom: 0;}
+
+
+        /* Backlog Modal Specific */
+        #backlog-modal .modal-body { font-size: 0.95em; line-height: 1.5; }
+        .backlog-entry { margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px dashed #eee; }
+        .backlog-entry:last-child { border-bottom: none; }
+        .backlog-label { font-weight: bold; color: #555; margin-right: 8px; }
+        .backlog-scene { color: #666; font-style: italic; }
+        .backlog-narrative { color: #222; }
+        .backlog-user { color: #0056b3; }
+    </style>
+</head>
+<body>
+
+    <!-- Main VN Area -->
+    <div id="textbox-area">
+        <div id="narrative-output">Welcome! Set API Keys in Settings ⚙️ first.</div>
+        <div class="input-container">
+            <input type="text" id="user-input" placeholder="Your action or dialogue...">
+            <button id="send-button" onclick="sendMessage()">Send</button>
+        </div>
+        <div class="textbox-controls">
+            <span id="loading-indicator">⏳ Processing...</span>
+            <button id="backlog-btn" onclick="showBacklogModal()" title="Show Backlog">📜</button>
+            <button id="settings-btn" onclick="showSettingsModal()" title="Settings">⚙️</button>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal-overlay" id="settings-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Settings & Configuration</h3>
+                <button class="modal-close-btn" onclick="hideSettingsModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <!-- API Key Section -->
+                <div class="modal-section api-key-section">
+                     <h4>API Keys & Model Selection</h4>
+
+                     <label for="gemini-key-input">Gemini API Key (for Gemini Text & Image Generation):</label>
+                     <input type="text" id="gemini-key-input" placeholder="Enter your single Gemini API key...">
+
+                     <label for="sambaNova-keys-input">SambaNova API Keys (for SambaNova Text, 1 per line, rotating):</label>
+                     <textarea id="sambaNova-keys-input" rows="4" placeholder="Enter SambaNova API keys here, one key per line..."></textarea>
+
+                     <label class="checkbox-label">
+                         <input type="checkbox" id="use-sambaNova-checkbox"> Use SambaNova V3 Turbo for Text Generation (Narrative/Scene)
+                     </label>
+                     <button onclick="saveApiSettings()" title="Save API Key Settings" style="margin-top: 10px;">Save API Settings</button>
+                </div>
+
+                <!-- Other Sections Unchanged -->
+                <div class="modal-section">
+                     <h4>Chat Management</h4>
+                     <div class="controls" style="display: flex; flex-wrap: wrap; gap: 10px;">
+                         <label for="chat-history-select" style="flex-shrink: 0;">Saved Chats:</label>
+                         <select id="chat-history-select" title="Select a chat to load or delete" style="flex-grow: 1; min-width: 150px;"><option value="">-- Select a Chat --</option></select>
+                         <label for="chat-name" style="margin-left: auto; flex-shrink: 0; white-space: nowrap;">Current/Save Name:</label>
+                         <input type="text" id="chat-name" placeholder="Enter name to save" style="flex-grow: 1; min-width: 150px;">
+                     </div>
+                     <div class="chat-management-buttons">
+                        <button onclick="loadSelectedChat()" title="Load the chat selected in the dropdown">Load Selected</button>
+                        <button onclick="saveChat()" title="Save current chat state">Save</button>
+                        <button class="danger" onclick="deleteSelectedChatFromModal()" title="Delete selected chat from list">Delete Selected</button>
+                        <button class="danger" onclick="resetChat()" title="Reset current chat state">Reset Current</button>
+                     </div>
+                </div>
+                <div class="modal-section">
+                    <h4>User PFP</h4>
+                    <div class="user-pfp-controls">
+                        <img id="user-pfp-display" src="" alt="User PFP">
+                        <button id="generate-user-pfp-btn" class="secondary" onclick="generatePfp('user')" title="Generate New User PFP">Generate</button>
+                    </div>
+                </div>
+                 <div class="modal-section">
+                     <h4>Narrator Persona</h4>
+                    <div class="persona-editor">
+                        <div class="persona-editor-header">
+                            <label for="persona-select">Select:</label>
+                            <select id="persona-select"></select>
+                            <label for="persona-pfp-display" style="margin-left: auto;">PFP:</label>
+                            <img id="persona-pfp-display" src="" alt="Persona PFP">
+                            <div class="persona-buttons">
+                                 <button id="generate-persona-pfp-btn" class="secondary" onclick="generatePfp('persona')" title="Generate New PFP for Selected Persona" disabled>Generate</button>
+                                <button id="add-persona-btn" class="secondary" onclick="addPersona()" title="Add New Persona">+</button>
+                                <button id="delete-persona-btn" class="danger" onclick="deleteCurrentPersona()" title="Delete Selected Persona" disabled>🗑️</button>
+                            </div>
+                        </div>
+                        <div class="persona-prompt-group">
+                             <label for="persona-name-edit">Name:</label>
+                             <input type="text" id="persona-name-edit" placeholder="Persona Name">
+                         </div>
+                         <div class="persona-prompt-group">
+                            <label for="persona-prompt-edit">Narrator System Prompt (Text Model):</label>
+                            <textarea id="persona-prompt-edit" placeholder="Define the selected persona's narrator prompt..." disabled></textarea>
+                        </div>
+                        <div class="persona-prompt-group">
+                             <label for="persona-llm2-prompt-edit">Scene Describer System Prompt (Text Model):</label>
+                             <textarea id="persona-llm2-prompt-edit" placeholder="Define the scene describer prompt for this persona..." disabled></textarea>
+                        </div>
+                    </div>
+                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Backlog Modal -->
+    <div class="modal-overlay" id="backlog-modal">
+         <div class="modal-content">
+             <div class="modal-header">
+                 <h3 class="modal-title">Message Backlog</h3>
+                 <button class="modal-close-btn" onclick="hideBacklogModal()">×</button>
+             </div>
+             <div class="modal-body" id="backlog-content"><p>No messages yet.</p></div>
+         </div>
+    </div>
+
+
+    <script>
+        // --- Use idb-keyval global ---
+        const { get: dbGet, set: dbSet, keys: dbKeys, del: dbDel } = idbKeyval;
+
+        // --- DOM Elements ---
+        const narrativeOutput = document.getElementById('narrative-output');
+        const userInput = document.getElementById('user-input');
+        const sendButton = document.getElementById('send-button');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const settingsModal = document.getElementById('settings-modal');
+        const personaSelect = document.getElementById('persona-select');
+        const personaNameEdit = document.getElementById('persona-name-edit');
+        const personaPromptEdit = document.getElementById('persona-prompt-edit');
+        const personaLlm2PromptEdit = document.getElementById('persona-llm2-prompt-edit');
+        const deletePersonaBtn = document.getElementById('delete-persona-btn');
+        const genPersonaPfpBtn = document.getElementById('generate-persona-pfp-btn');
+        const userPfpDisplay = document.getElementById('user-pfp-display');
+        const personaPfpDisplay = document.getElementById('persona-pfp-display');
+        const chatHistorySelect = document.getElementById('chat-history-select');
+        const chatNameInput = document.getElementById('chat-name');
+        const backlogModal = document.getElementById('backlog-modal');
+        const backlogContent = document.getElementById('backlog-content');
+        const geminiKeyInput = document.getElementById('gemini-key-input');
+        const sambaNovaKeysInput = document.getElementById('sambaNova-keys-input');
+        const useSambaNovaCheckbox = document.getElementById('use-sambaNova-checkbox');
+
+        // --- State ---
+        let messageHistory = [];
+        let displayLog = [];
+        let personas = {};
+        let currentPersonaId = null;
+        let userPfp = null;
+        let currentChatName = null;
+        let geminiApiKey = '';
+        let sambaNovaApiKeys = [];
+        let useSambaNovaForText = false;
+        let currentSambaNovaKeyIndex = 0;
+
+        // --- Configuration ---
+        const GEMINI_MODEL_NAME = 'gemini-2.0-flash-exp-image-generation'; // Single model for Gemini
+        const GOOGLE_API_BASE = `https://generativelanguage.googleapis.com/v1beta/models/`;
+        const SAMBANOVA_API_BASE = 'https://api.sambanova.ai/v1/chat/completions';
+        const SAMBANOVA_MODEL_ID = 'DeepSeek-V3-0324';
+
+        // --- IndexedDB Keys ---
+        const PERSONA_STORE_KEY = 'vnPersonas_v5_pfp';
+        const CHAT_STORE_KEY = 'vnMergedPromptChats_v1_idb';
+        const USER_PFP_STORE_KEY = 'vnUserPfp_v1_idb';
+        const GEMINI_KEY_STORE_KEY = 'vnGeminiKey_v2';
+        const SAMBANOVA_KEYS_STORE_KEY = 'vnSambaNovaKeys_v1';
+        const USE_SAMBANOVA_STORE_KEY = 'vnUseSambaNova_v1';
+        const GOOD_SAMBANOVA_KEY_IDX_STORE_KEY = 'vnGoodSambaNovaKeyIdx_v1';
+
+        // --- Helper Functions ---
+        function getBase64Data(dataUrl) { if (!dataUrl || !dataUrl.startsWith('data:image')) return null; return dataUrl.split(',')[1]; }
+        function getMimeType(dataUrl) { if (!dataUrl || !dataUrl.startsWith('data:image')) return 'image/png'; return dataUrl.substring(dataUrl.indexOf(':') + 1, dataUrl.indexOf(';')); }
+        function displayError(message) { console.error("Error:", message); displayOutput(`Error: ${message}`, 'error'); if (message.includes("API key") || message.includes("failed")) { alert(`Error: ${message}\nPlease check API keys in Settings.`); } }
+
+        // --- Modal Functions ---
+        async function showSettingsModal() { geminiKeyInput.value = geminiApiKey || ''; sambaNovaKeysInput.value = sambaNovaApiKeys.join('\n'); useSambaNovaCheckbox.checked = useSambaNovaForText; await updateChatSelector(); settingsModal.classList.add('active'); }
+        function hideSettingsModal() { settingsModal.classList.remove('active'); }
+        function showBacklogModal() { updateBacklogDisplay(); backlogModal.classList.add('active'); }
+        function hideBacklogModal() { backlogModal.classList.remove('active'); }
+
+        // --- Backlog Functions ---
+        function addToLog(type, content) { if (content || type === 'error') { displayLog.push([type, content || `[Empty ${type} entry]`]); } }
+        function updateBacklogDisplay() { if (displayLog.length === 0) { backlogContent.innerHTML = '<p>No messages yet.</p>'; return; } let backlogHTML = ''; displayLog.forEach(([type, content]) => { const escapedContent = content.replace(/</g, "&lt;").replace(/>/g, "&gt;"); backlogHTML += `<div class="backlog-entry"><span class="backlog-label">${type.charAt(0).toUpperCase() + type.slice(1)}:</span><span class="backlog-${type}">${escapedContent}</span></div>`; }); backlogContent.innerHTML = backlogHTML; backlogContent.scrollTop = backlogContent.scrollHeight; }
+
+        // --- Persona Functions ---
+        async function loadPersonas() { console.log("Loading personas from IndexedDB..."); const storedPersonas = await dbGet(PERSONA_STORE_KEY) || {}; personas = storedPersonas; if (Object.keys(personas).length === 0) { console.log("No personas found, adding default."); await addPersona("Narrator", "You are a neutral narrator.", "Based *only* on the last user message, output a concise visual description.", `default_${Date.now()}`); return; } let personasModified = false; Object.values(personas).forEach(p => { if (p.llm2Prompt === undefined) { p.llm2Prompt = "Based *only* on the last user message, output a concise visual description."; personasModified = true; } if (p.pfp && typeof p.pfp !== 'string' || (p.pfp && !p.pfp.startsWith('data:image'))) { console.warn(`Invalid PFP data found for persona ${p.name}, resetting.`); p.pfp = null; personasModified = true; } }); if (personasModified) { console.log("Updating persona structure..."); await savePersonas(); } console.log("Personas loaded."); }
+        async function savePersonas() { const personasToSave = {}; for (const id in personas) { if(personas.hasOwnProperty(id) && personas[id]) { personasToSave[id] = { name: personas[id].name, systemPrompt: personas[id].systemPrompt, llm2Prompt: personas[id].llm2Prompt, pfp: personas[id].pfp || null }; } else { console.warn(`Skipping saving invalid persona data for ID: ${id}`); } } await dbSet(PERSONA_STORE_KEY, personasToSave); console.log("Personas (including PFPs) saved to IndexedDB"); }
+        function populatePersonaSelector() { const previousSelectedId = personaSelect.value || currentPersonaId; personaSelect.innerHTML = ''; const sortedIds = Object.keys(personas).sort((a, b) => personas[a].name.localeCompare(personas[b].name)); if (sortedIds.length === 0) { console.warn("No personas found after load/delete."); currentPersonaId=null; handlePersonaChange(); return; } sortedIds.forEach(id => { const option = document.createElement('option'); option.value = id; option.textContent = personas[id].name; personaSelect.appendChild(option); }); if (previousSelectedId && personas[previousSelectedId]) { personaSelect.value = previousSelectedId; } else if (sortedIds.length > 0) { personaSelect.value = sortedIds[0]; } else { personaSelect.value = '';} handlePersonaChange(); }
+        function handlePersonaChange() { currentPersonaId = personaSelect.value; const selectedPersona = personas[currentPersonaId]; if (selectedPersona) { personaNameEdit.value = selectedPersona.name; personaPromptEdit.value = selectedPersona.systemPrompt; personaLlm2PromptEdit.value = selectedPersona.llm2Prompt; personaPfpDisplay.src = selectedPersona.pfp || ''; personaPfpDisplay.style.backgroundColor = selectedPersona.pfp ? 'transparent' : '#bbb'; personaNameEdit.disabled = false; personaPromptEdit.disabled = false; personaLlm2PromptEdit.disabled = false; deletePersonaBtn.disabled = false; genPersonaPfpBtn.disabled = false; deletePersonaBtn.title = "Delete Selected Persona"; genPersonaPfpBtn.title = "Generate New PFP for Selected Persona"; console.log("Selected Persona:", currentPersonaId, selectedPersona.name); } else { personaNameEdit.value = ''; personaPromptEdit.value = ''; personaLlm2PromptEdit.value = ''; personaPfpDisplay.src = ''; personaPfpDisplay.style.backgroundColor = '#bbb'; personaNameEdit.disabled = true; personaPromptEdit.disabled = true; personaLlm2PromptEdit.disabled = true; deletePersonaBtn.disabled = true; genPersonaPfpBtn.disabled = true; deletePersonaBtn.title = "No persona selected"; genPersonaPfpBtn.title = "No persona selected"; currentPersonaId = null; console.warn("No valid persona selected."); } }
+        async function handlePersonaNameInput() { if (!currentPersonaId || !personas[currentPersonaId]) return; const newName = personaNameEdit.value.trim(); if (personas[currentPersonaId].name !== newName) { personas[currentPersonaId].name = newName || "Unnamed"; const option = personaSelect.querySelector(`option[value="${currentPersonaId}"]`); if (option) option.textContent = personas[currentPersonaId].name; await savePersonas(); console.log(`Persona ${currentPersonaId} name updated`); } }
+        async function handlePersonaPromptInput() { if (!currentPersonaId || !personas[currentPersonaId]) return; const newPrompt = personaPromptEdit.value; if (personas[currentPersonaId].systemPrompt !== newPrompt) { personas[currentPersonaId].systemPrompt = newPrompt; await savePersonas(); console.log(`Persona ${currentPersonaId} prompt updated`); } }
+        async function handlePersonaLLM2PromptInput() { if (!currentPersonaId || !personas[currentPersonaId]) return; const newLlm2Prompt = personaLlm2PromptEdit.value; if (personas[currentPersonaId].llm2Prompt !== newLlm2Prompt) { personas[currentPersonaId].llm2Prompt = newLlm2Prompt; await savePersonas(); console.log(`Persona ${currentPersonaId} LLM2 prompt updated`); } }
+        async function addPersona(name = "New Persona", prompt = "", llm2Prompt = "Based *only* on the last user message...", id = null) { const newId = id || `persona_${Date.now()}`; if (personas[newId]) return; personas[newId] = { name: name, systemPrompt: prompt, llm2Prompt: llm2Prompt, pfp: null }; await savePersonas(); populatePersonaSelector(); personaSelect.value = newId; handlePersonaChange(); personaNameEdit.focus(); personaNameEdit.select(); }
+        async function deleteCurrentPersona() { if (!currentPersonaId || !personas[currentPersonaId]) return; const personaName = personas[currentPersonaId].name; if (confirm(`Delete persona "${personaName}"? This cannot be undone.`)) { delete personas[currentPersonaId]; await savePersonas(); currentPersonaId = null; populatePersonaSelector(); } }
+
+        // --- PFP Generation ---
+        async function generatePfp(target) {
+            if (!geminiApiKey) { alert("Gemini API Key is missing. Please add it in Settings for PFP generation."); showSettingsModal(); return; }
+            if (target === 'persona' && (!currentPersonaId || !personas[currentPersonaId])) { alert("Select a persona first."); return; }
+            const defaultDesc = target === 'persona' ? personas[currentPersonaId]?.name : "User Avatar";
+            const description = prompt(`Enter PFP description:`, defaultDesc)?.trim();
+             if (description === null) return;
+            const finalDesc = description || defaultDesc || "Avatar";
+            const pfpPrompt = `Generate a simple, round profile picture icon representing: ${finalDesc}. Flat design, vector style, no text.`;
+            const genButton = target === 'persona' ? genPersonaPfpBtn : document.getElementById('generate-user-pfp-btn');
+            const originalText = genButton.textContent;
+            genButton.disabled = true; genButton.textContent = '⏳';
+            try {
+                const imageData = await callGeminiImageGenerator(pfpPrompt, true); // true = isPfp
+                if (imageData) {
+                    const dataUrl = `data:image/png;base64,${imageData}`;
+                    if (target === 'user') {
+                        userPfp = dataUrl; userPfpDisplay.src = userPfp; userPfpDisplay.style.backgroundColor = 'transparent';
+                        await dbSet(USER_PFP_STORE_KEY, userPfp); console.log("User PFP Updated and Saved.");
+                    } else if (target === 'persona' && currentPersonaId && personas[currentPersonaId]) {
+                        personas[currentPersonaId].pfp = dataUrl; personaPfpDisplay.src = dataUrl; personaPfpDisplay.style.backgroundColor = 'transparent';
+                        await savePersonas(); console.log(`Persona ${currentPersonaId} PFP Updated and Saved.`);
+                    }
+                } else {
+                    alert("PFP generation succeeded but did not return image data. Check console."); console.warn("PFP generation API call finished but returned no image data.");
+                }
+            } catch (error) {
+                console.error(`PFP generation failed for ${target}:`, error); displayError(`PFP generation failed: ${error.message}`);
+            } finally {
+                genButton.disabled = false; genButton.textContent = originalText;
+            }
+        }
+
+        // --- API Settings Saving/Loading ---
+        async function saveApiSettings() { const newGeminiKey = geminiKeyInput.value.trim(); const newSambaNovaKeys = sambaNovaKeysInput.value.split('\n').map(k => k.trim()).filter(Boolean); const newUseSambaNova = useSambaNovaCheckbox.checked; geminiApiKey = newGeminiKey; sambaNovaApiKeys = newSambaNovaKeys; useSambaNovaForText = newUseSambaNova; currentSambaNovaKeyIndex = 0; await dbSet(GEMINI_KEY_STORE_KEY, geminiApiKey); await dbSet(SAMBANOVA_KEYS_STORE_KEY, sambaNovaApiKeys); await dbSet(USE_SAMBANOVA_STORE_KEY, useSambaNovaForText); await dbSet(GOOD_SAMBANOVA_KEY_IDX_STORE_KEY, currentSambaNovaKeyIndex); alert("API Settings Saved!"); console.log("API Settings Saved:", { hasGeminiKey: !!geminiApiKey, sambaNovaKeysCount: sambaNovaApiKeys.length, useSambaNova: useSambaNovaForText }); hideSettingsModal(); }
+        async function loadApiSettings() { geminiApiKey = await dbGet(GEMINI_KEY_STORE_KEY) || ''; sambaNovaApiKeys = await dbGet(SAMBANOVA_KEYS_STORE_KEY) || []; useSambaNovaForText = await dbGet(USE_SAMBANOVA_STORE_KEY) || false; currentSambaNovaKeyIndex = await dbGet(GOOD_SAMBANOVA_KEY_IDX_STORE_KEY) || 0; if (currentSambaNovaKeyIndex >= sambaNovaApiKeys.length) { currentSambaNovaKeyIndex = 0; await dbSet(GOOD_SAMBANOVA_KEY_IDX_STORE_KEY, currentSambaNovaKeyIndex); } console.log("API Settings Loaded:", { hasGeminiKey: !!geminiApiKey, sambaNovaKeysCount: sambaNovaApiKeys.length, useSambaNova: useSambaNovaForText, goodSambaNovaKeyIndex: currentSambaNovaKeyIndex }); geminiKeyInput.value = geminiApiKey; sambaNovaKeysInput.value = sambaNovaApiKeys.join('\n'); useSambaNovaCheckbox.checked = useSambaNovaForText; }
+
+        // --- API Call Functions ---
+        async function callTextGenerator(history, systemPrompt) {
+             if (useSambaNovaForText) {
+                if (sambaNovaApiKeys.length === 0) throw new Error("No SambaNova API keys found. Please add keys or uncheck 'Use SambaNova' in Settings.");
+                console.log(`Calling Text Generator using: SambaNova (rotating)`); let lastError = null;
+                for (let i = 0; i < sambaNovaApiKeys.length; i++) {
+                    const keyIndex = (currentSambaNovaKeyIndex + i) % sambaNovaApiKeys.length; const apiKey = sambaNovaApiKeys[keyIndex];
+                    console.log(`Attempting SambaNova key index ${keyIndex}...`);
+                    try {
+                        const responseText = await _fetchSambaNova(apiKey, history, systemPrompt);
+                        currentSambaNovaKeyIndex = keyIndex; await dbSet(GOOD_SAMBANOVA_KEY_IDX_STORE_KEY, currentSambaNovaKeyIndex);
+                        console.log(`Success with SambaNova key index ${keyIndex}.`); return responseText;
+                    } catch (error) { console.error(`SambaNova key index ${keyIndex} failed:`, error.message); lastError = error; }
+                }
+                console.error(`All ${sambaNovaApiKeys.length} SambaNova keys failed.`); throw new Error(`All SambaNova API keys failed. Last error: ${lastError?.message || 'Unknown error'}`);
+            } else {
+                if (!geminiApiKey) throw new Error("Gemini API key is missing. Please add the key or check 'Use SambaNova' in Settings.");
+                console.log(`Calling Text Generator using: Gemini (single key)`);
+                try {
+                    const responseText = await _fetchGeminiText(geminiApiKey, history, systemPrompt);
+                    console.log(`Success with Gemini key.`); return responseText;
+                } catch (error) { console.error(`Gemini key failed:`, error.message); throw new Error(`Gemini API call failed: ${error.message}`); }
+            }
+        }
+
+        async function _fetchGeminiText(apiKey, history, systemPrompt) {
+            const endpoint = `${GOOGLE_API_BASE}${GEMINI_MODEL_NAME}:generateContent?key=${apiKey}`;
+            const contentsPayload = [];
+            if (systemPrompt) {
+                contentsPayload.push({ role: 'user', parts: [{ text: systemPrompt }] });
+                contentsPayload.push({ role: 'model', parts: [{ text: "Understood." }] });
+            }
+            contentsPayload.push(...history.map(m => ({
+                role: m.role === 'assistant' ? 'model' : 'user',
+                parts: m.parts
+            })));
+            const payload = {
+                contents: contentsPayload,
+                generationConfig: { temperature: 0.7, topP: 0.9, maxOutputTokens: 1024 } // Kept generationConfig
+            };
+            console.log(`Calling Google API (Text - Exp Model)`);
+            const response = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            const data = await response.json(); console.log(`Google API Text Response (${response.status}):`, data);
+            if (!response.ok) throw new Error(`Google Text API Error (${response.status}): ${data?.error?.message || response.statusText}`);
+            if (data.promptFeedback?.blockReason) throw new Error(`Request blocked (Text): ${data.promptFeedback.blockReason}`);
+            let responseText = '';
+            if (data.candidates?.[0]?.content?.parts) { responseText = data.candidates[0].content.parts.map(p => p.text || '').join('\n'); }
+            else if (data.candidates?.[0]?.finishReason && data.candidates[0]?.finishReason !== 'STOP') {
+                 console.warn(`Text response stopped: ${data.candidates[0].finishReason}`);
+                 if (data.candidates?.[0]?.content?.parts) { responseText = data.candidates[0].content.parts.map(p => p.text || '').join('\n'); }
+            }
+             if (responseText === '' && data.candidates?.[0]?.content?.parts?.length > 0) {
+                 console.warn("Received non-text parts in text response, attempting to filter:", data.candidates[0].content.parts);
+                 responseText = data.candidates[0].content.parts.filter(p => p.text).map(p => p.text).join('\n');
+             }
+            return responseText.trim();
+        }
+
+        async function _fetchSambaNova(apiKey, history, systemPrompt) {
+            const endpoint = SAMBANOVA_API_BASE; const messagesPayload = [];
+            if (systemPrompt) messagesPayload.push({ role: 'system', content: systemPrompt });
+            messagesPayload.push(...history.map(m => ({ role: m.role, content: m.parts.map(p => p.text || '').join('\n') })));
+            const payload = { model: SAMBANOVA_MODEL_ID, messages: messagesPayload, temperature: 0.7, top_p: 0.9, };
+            console.log(`Calling SambaNova API (Model: ${SAMBANOVA_MODEL_ID})`);
+            const response = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` }, body: JSON.stringify(payload) });
+            const data = await response.json(); console.log(`SambaNova API Response (${response.status}):`, data);
+            if (!response.ok) { const errorMsg = data?.error?.message || data?.detail || response.statusText; throw new Error(`SambaNova API Error (${response.status}): ${errorMsg}`); }
+            let responseText = data.choices?.[0]?.message?.content;
+            if (typeof responseText !== 'string') { console.warn(`SambaNova response issue: Finish reason=${data.choices?.[0]?.finish_reason}`, data); responseText = ""; }
+            return responseText.trim();
+        }
+
+        async function callGeminiImageGenerator(textPrompt, isPfp = false) {
+             if (!geminiApiKey) { throw new Error("Gemini API Key is missing. Please add it in Settings for Image Generation."); }
+             const endpoint = `${GOOGLE_API_BASE}${GEMINI_MODEL_NAME}:generateContent?key=${geminiApiKey}`;
+             const userPfpDataOnly = !isPfp ? getBase64Data(userPfp) : null;
+             const currentPersonaPfpDataUrl = !isPfp && currentPersonaId ? personas[currentPersonaId]?.pfp : null;
+             const personaPfpDataOnly = !isPfp ? getBase64Data(currentPersonaPfpDataUrl) : null;
+             const parts = [];
+             if (userPfpDataOnly) parts.push({ inlineData: { mimeType: getMimeType(userPfp), data: userPfpDataOnly } });
+             if (personaPfpDataOnly) parts.push({ inlineData: { mimeType: getMimeType(currentPersonaPfpDataUrl), data: personaPfpDataOnly } });
+             parts.push({ text: textPrompt });
+             const payload = {
+                 contents: [{ role: "user", parts: parts }],
+                 generationConfig: { response_modalities: ["IMAGE", "TEXT"], temperature: 0.4, topP: 1.0 } // Added response_modalities
+             };
+             console.log("Calling Google API (Image - Exp Model) with prompt:", textPrompt.substring(0, 100) + "...");
+             try {
+                 const response = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                 const data = await response.json(); console.log(`Google API Image Response (${response.status}):`, data);
+                 if (!response.ok) throw new Error(`Google Image API Error (${response.status}): ${data?.error?.message || response.statusText}`);
+                 if (data.promptFeedback?.blockReason) throw new Error(`Request blocked (Image): ${data.promptFeedback.blockReason}`);
+                 const imagePart = data.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
+                 const imageData = imagePart?.inlineData?.data;
+                 if (!imageData) {
+                    let errorText = 'API call successful but no image data found in response.';
+                    const textPart = data.candidates?.[0]?.content?.parts?.find(p => p.text);
+                    if (textPart?.text) errorText += ` | Text response: ${textPart.text.substring(0,100)}...`;
+                    const finishReason = data.candidates?.[0]?.finishReason;
+                    if (finishReason && finishReason !== 'STOP') errorText += ` | Finish Reason: ${finishReason}`;
+                    console.error(errorText, "Full response:", data); return null;
+                 }
+                 return imageData;
+             } catch (error) { console.error('Google Image Call Error:', error); throw error; }
+         }
+
+        // --- Chat Functions ---
+        async function sendMessage() {
+            if (useSambaNovaForText) { if (sambaNovaApiKeys.length === 0) { displayError("SambaNova is selected, but no SambaNova API keys found. Add keys in Settings."); showSettingsModal(); return; } }
+            else { if (!geminiApiKey) { displayError("Gemini is selected for text, but the Gemini API key is missing. Add the key in Settings."); showSettingsModal(); return; } }
+            const llm2PromptTextCheck = personas[currentPersonaId]?.llm2Prompt;
+            if (llm2PromptTextCheck && !geminiApiKey) { displayError("Gemini API Key is needed for Image Generation, but it's missing. Add the key in Settings."); showSettingsModal(); return; }
+            const userMessageContent = userInput.value.trim(); if (!userMessageContent || sendButton.disabled) return;
+            const selectedPersona = personas[currentPersonaId]; const baseLlm3SystemPrompt = selectedPersona ? selectedPersona.systemPrompt : "You are a narrator."; const llm2SystemPrompt = selectedPersona ? selectedPersona.llm2Prompt : "Describe the scene based on the last user message."; if (!selectedPersona) console.warn("No/Invalid persona selected, using fallback prompts.");
+            setLoading(true); addToLog('user', userMessageContent); userInput.value = ''; displayOutput("...", "narrative");
+            const currentUserMessageForApi = { role: "user", parts: [{ text: userMessageContent }] };
+            const historyForLLM2 = messageHistory.map(m => ({ ...m, parts: [...m.parts] })); historyForLLM2.push(currentUserMessageForApi);
+            let sceneDescription = ''; let narrativeResponse = null; let imageBase64Data = null;
+            try {
+                if (llm2SystemPrompt) {
+                    sceneDescription = await callTextGenerator(historyForLLM2, llm2SystemPrompt);
+                    if (sceneDescription !== null) { displayOutput(sceneDescription, 'scene'); } else { console.warn("Scene description call returned null."); sceneDescription = ""; }
+                } else { console.log("Skipping scene description (LLM2 prompt missing)."); narrativeOutput.innerHTML = ''; }
+                messageHistory.push(currentUserMessageForApi);
+                const llm3SystemPromptWithScene = `${baseLlm3SystemPrompt}\n\n[Current Scene: ${sceneDescription || 'None'}]`;
+                const llm3Promise = callTextGenerator(messageHistory, llm3SystemPromptWithScene);
+                let imagePromise = Promise.resolve(null);
+                if (sceneDescription && sceneDescription.trim() !== '') { const finalImagePrompt = `Scene Description: "${sceneDescription}"`; imagePromise = callGeminiImageGenerator(finalImagePrompt, false); }
+                else { console.log("Skipping image gen (empty scene)."); }
+                [narrativeResponse, imageBase64Data] = await Promise.all([llm3Promise, imagePromise]);
+                if (narrativeResponse !== null) { displayOutput(narrativeResponse, 'narrative'); messageHistory.push({ role: "assistant", parts: [{ text: narrativeResponse }] }); }
+                else { if (!sceneDescription) displayOutput("Narrative generation failed.", "error"); }
+                if (imageBase64Data !== null) { updateBackgroundImage(imageBase64Data); }
+                else if (sceneDescription && sceneDescription.trim() !== '') { console.warn("Image generation finished but returned no image data."); }
+            } catch (error) { console.error("Error during message processing pipeline:", error); displayError(`Processing failed: ${error.message}`); if (!messageHistory.find(m => m.parts[0].text === userMessageContent && m.role === 'user')) { messageHistory.push(currentUserMessageForApi); }
+            } finally { setLoading(false); }
+        }
+
+        // --- UI & Utility Functions ---
+        // INCORPORATED MARKDOWN FIX HERE
+        function displayOutput(content, type = 'narrative') {
+            let htmlContent = '';
+            addToLog(type, content); // Log the raw content first
+            let processedContent = content || ''; // Work with a copy
+
+            if (type === 'narrative') {
+                // --- FIX: Strip potential Markdown code block fences ---
+                processedContent = processedContent.trim();
+                const codeBlockRegex = /^```(?:[\w-]*\s*)?\n?([\s\S]*?)\n?```$/;
+                const match = processedContent.match(codeBlockRegex);
+                if (match && match[1]) {
+                     console.log("Stripping markdown code block fence.");
+                     processedContent = match[1].trim(); // Use the content inside
+                } // --- End FIX ---
+
+                try {
+                    if (typeof marked === 'undefined') { console.error("Marked library is not loaded!"); throw new Error("Markdown library not available."); }
+                    htmlContent = marked.parse(processedContent); // Parse potentially cleaned content
+                } catch (e) {
+                    console.error("Markdown parsing error:", e);
+                    htmlContent = `<p>${processedContent.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</p>`; // Fallback
+                }
+            } else if (type === 'error') {
+                 htmlContent = `<p style="color: #ffaaaa;"><b>Error:</b> ${processedContent.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</p>`;
+            } else if (type === 'scene') {
+                 htmlContent = `<div class="scene-text">Scene: ${processedContent.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</div>`;
+            } else {
+                htmlContent = `<p>${processedContent.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</p>`; // Default fallback
+            }
+
+            if (!processedContent && type !== 'error') { // Check after processing
+                htmlContent = `<p><i>[${type === 'scene' ? 'Scene' : 'Narrative'} returned empty.]</i></p>`;
+            }
+
+            narrativeOutput.innerHTML = htmlContent;
+            narrativeOutput.scrollTop = 0; // Scroll to top
+        }
+
+        function updateBackgroundImage(base64Data) { const dataUrl = `data:image/png;base64,${base64Data}`; document.body.style.backgroundImage = `url(${dataUrl})`; }
+        function setLoading(isLoading) { loadingIndicator.style.display = isLoading ? 'inline' : 'none'; sendButton.disabled = isLoading; userInput.disabled = isLoading; }
+
+        // --- Chat Management Functions ---
+         async function saveChat() { const name = chatNameInput.value.trim(); if (!name) { alert('Please enter a name for the chat in the "Current/Save Name" field.'); return; } const historyToSave = messageHistory.filter(m => m.role && m.parts && Array.isArray(m.parts)); const displayLogToSave = displayLog.filter(log => Array.isArray(log) && log.length === 2); let chats = await dbGet(CHAT_STORE_KEY) || {}; chats[name] = { history: historyToSave, displayLog: displayLogToSave, personaId: currentPersonaId }; await dbSet(CHAT_STORE_KEY, chats); currentChatName = name; await updateChatSelector(); chatHistorySelect.value = name; alert(`Chat "${name}" saved.`); }
+         async function loadSelectedChat() { const name = chatHistorySelect.value; if (!name) { alert("Please select a chat from the dropdown list to load."); return; } await loadChatByName(name); }
+         async function loadChatByName(name) { const chats = await dbGet(CHAT_STORE_KEY) || {}; if (chats[name]) { const chatData = chats[name]; messageHistory = chatData.history?.filter(m => m.role && m.parts && Array.isArray(m.parts)).map(msg => ({ role: msg.role, parts: msg.parts.map(p => (typeof p === 'string' ? { text: p } : p)) })) || []; displayLog = chatData.displayLog?.filter(log => Array.isArray(log) && log.length === 2) || []; currentPersonaId = chatData.personaId || Object.keys(personas)[0] || null; if (currentPersonaId && personas[currentPersonaId]) { personaSelect.value = currentPersonaId; } else if (Object.keys(personas).length > 0) { const firstPersonaId = Object.keys(personas)[0]; currentPersonaId = firstPersonaId; personaSelect.value = firstPersonaId; console.warn(`Saved persona ID "${chatData.personaId}" not found. Switched to "${personas[currentPersonaId]?.name}".`); } else { currentPersonaId = null; } handlePersonaChange(); userPfpDisplay.src = userPfp || ''; userPfpDisplay.style.backgroundColor = userPfp ? 'transparent' : '#ddd'; currentChatName = name; chatNameInput.value = name; const lastLogEntry = displayLog.length > 0 ? displayLog[displayLog.length - 1] : null; if (lastLogEntry) { displayOutput(lastLogEntry[1], lastLogEntry[0]); } else if (messageHistory.length > 0) { const lastModelMsg = [...messageHistory].reverse().find(m => m.role === 'model'); displayOutput(lastModelMsg?.parts?.[0]?.text || "Chat loaded.", 'narrative'); } else { displayOutput("Chat loaded. Start typing!", 'narrative'); } document.body.style.backgroundImage = 'none'; alert(`Chat "${name}" loaded.`); hideSettingsModal(); } else { alert(`Failed to load chat: ${name}`); } }
+         async function deleteSelectedChatFromModal() { const nameToDelete = chatHistorySelect.value; if (!nameToDelete) { alert("Select a chat from the list to delete."); return; } let chats = await dbGet(CHAT_STORE_KEY) || {}; if (!chats[nameToDelete]) { alert(`Chat "${nameToDelete}" not found.`); return; } if (!confirm(`Delete chat "${nameToDelete}"? This cannot be undone.`)) { return; } delete chats[nameToDelete]; await dbSet(CHAT_STORE_KEY, chats); if (currentChatName === nameToDelete) { await resetChat(false); chatNameInput.value = ''; } await updateChatSelector(); alert(`Chat "${nameToDelete}" deleted.`); }
+         async function updateChatSelector() { const chats = await dbGet(CHAT_STORE_KEY) || {}; chatHistorySelect.innerHTML = '<option value="">-- Select a Chat --</option>'; Object.keys(chats).sort().forEach(name => { const option = document.createElement('option'); option.value = name; option.textContent = name; chatHistorySelect.appendChild(option); }); chatHistorySelect.value = ''; console.log("Chat selector updated from IndexedDB."); }
+         async function resetChat(resetPersona = true) { messageHistory = []; displayLog = []; currentChatName = null; chatNameInput.value = ''; chatHistorySelect.value = ''; document.body.style.backgroundImage = 'none'; displayOutput("Chat reset. Start typing!", 'narrative'); if (resetPersona) { if (Object.keys(personas).length > 0) { const firstPersonaId = Object.keys(personas).sort((a, b) => personas[a].name.localeCompare(personas[b].name))[0]; if(personaSelect.value !== firstPersonaId) { personaSelect.value = firstPersonaId; handlePersonaChange(); } } else { personaSelect.innerHTML = ''; handlePersonaChange(); } } else { handlePersonaChange(); } console.log("Chat reset."); }
+
+        // --- Event Listeners ---
+        userInput.addEventListener('keypress', (e) => { if (e.key === 'Enter' && !sendButton.disabled) sendMessage(); });
+        personaSelect.addEventListener('change', handlePersonaChange);
+        personaNameEdit.addEventListener('input', handlePersonaNameInput);
+        personaPromptEdit.addEventListener('input', handlePersonaPromptInput);
+        personaLlm2PromptEdit.addEventListener('input', handlePersonaLLM2PromptInput);
+
+        // --- Init ---
+        async function initializeApp() {
+            console.log("Initializing application..."); setLoading(true);
+            await loadApiSettings();
+            userPfp = await dbGet(USER_PFP_STORE_KEY); userPfpDisplay.src = userPfp || ''; userPfpDisplay.style.backgroundColor = userPfp ? 'transparent' : '#ddd';
+            await loadPersonas();
+            personaPfpDisplay.src = ''; personaPfpDisplay.style.backgroundColor = '#bbb'; populatePersonaSelector(); await updateChatSelector(); await resetChat(false);
+            if (useSambaNovaForText) { if (sambaNovaApiKeys.length === 0) { narrativeOutput.innerHTML = "Welcome! SambaNova is selected, but no keys are set. Please add SambaNova API Keys in Settings ⚙️."; } else { narrativeOutput.innerHTML = "Welcome! Ready when you are (using SambaNova)."; } }
+            else { if (!geminiApiKey) { narrativeOutput.innerHTML = "Welcome! Gemini is selected, but the key is missing. Please add the Gemini API Key in Settings ⚙️."; } else { narrativeOutput.innerHTML = "Welcome! Ready when you are (using Gemini)."; } }
+            if (useSambaNovaForText && !geminiApiKey) { console.warn("Gemini API Key is missing. Image features (background, PFP gen) will fail until added in Settings."); }
+            console.log("Application Initialized"); setLoading(false);
+        }
+
+        // --- Start the app ---
+        initializeApp();
+
+    </script>
+</body>
+</html>
