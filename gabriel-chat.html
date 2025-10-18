@@ -8,6 +8,7 @@
         :root {
             --sidebar-width-expanded: 260px;
             --sidebar-width-collapsed: 72px;
+            --sidebar-width-mobile: 280px;
         }
 
         body, html {
@@ -16,11 +17,14 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: #ffffff;
             color: #111;
+            -webkit-text-size-adjust: 100%;
+            -ms-text-size-adjust: 100%;
         }
 
         .container {
             display: flex;
             height: 100vh;
+            position: relative;
         }
 
         .sidebar {
@@ -31,8 +35,10 @@
             flex-direction: column;
             padding: 8px;
             box-sizing: border-box;
-            transition: width 0.3s ease-in-out;
+            transition: width 0.3s ease-in-out, transform 0.3s ease-in-out;
             overflow-x: hidden;
+            position: relative;
+            z-index: 100;
         }
         
         .sidebar.collapsed {
@@ -215,6 +221,7 @@
             justify-content: flex-end;
             padding: 20px;
             position: relative;
+            overflow: hidden;
         }
 
         #initial-view {
@@ -227,6 +234,8 @@
             left: 0;
             right: 0;
             bottom: 0;
+            padding: 20px;
+            box-sizing: border-box;
         }
 
         .slogan {
@@ -237,6 +246,7 @@
             display: flex;
             align-items: center;
             gap: 12px;
+            text-align: center;
         }
 
         .input-area {
@@ -715,10 +725,168 @@
         .file-input {
             display: none;
         }
+
+        /* Mobile menu button */
+        .mobile-menu-button {
+            display: none;
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 101;
+            background-color: #f7f7f8;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 8px;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .mobile-menu-button:hover {
+            background-color: #e9e9eb;
+        }
+
+        /* Overlay for mobile sidebar */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 99;
+        }
+
+        .sidebar-overlay.show {
+            display: block;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .slogan {
+                font-size: 1.5em;
+            }
+            
+            .input-area {
+                padding: 16px;
+            }
+            
+            .main-content {
+                padding: 16px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .mobile-menu-button {
+                display: block;
+            }
+            
+            .sidebar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                height: 100vh;
+                transform: translateX(-100%);
+                box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            }
+            
+            .sidebar.mobile-open {
+                transform: translateX(0);
+                width: var(--sidebar-width-mobile);
+            }
+            
+            .sidebar.collapsed {
+                width: var(--sidebar-width-mobile);
+                transform: translateX(-100%);
+            }
+            
+            .sidebar.mobile-open.collapsed {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                padding: 60px 16px 16px;
+            }
+            
+            .slogan {
+                font-size: 1.3em;
+                flex-direction: column;
+                gap: 8px;
+            }
+            
+            .input-area {
+                padding: 14px;
+            }
+            
+            .modal-content {
+                width: 95%;
+                padding: 20px;
+            }
+            
+            .profile-avatar-section {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+            
+            .message {
+                font-size: 15px;
+            }
+            
+            .user-message, .bot-message {
+                padding: 10px 12px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .slogan {
+                font-size: 1.1em;
+            }
+            
+            .input-area {
+                padding: 12px;
+            }
+            
+            textarea {
+                font-size: 15px;
+            }
+            
+            .upload-button {
+                width: 36px;
+                height: 36px;
+            }
+            
+            .modal-content {
+                width: 98%;
+                padding: 16px;
+            }
+            
+            .modal-title {
+                font-size: 18px;
+            }
+            
+            .message {
+                font-size: 14px;
+            }
+            
+            .user-message, .bot-message {
+                padding: 8px 10px;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="container">
+        <!-- Mobile menu button -->
+        <div class="mobile-menu-button" onclick="toggleMobileSidebar()">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M3 12H21M3 6H21M3 18H21" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </div>
+        
+        <!-- Overlay for mobile sidebar -->
+        <div class="sidebar-overlay" onclick="closeMobileSidebar()"></div>
+        
         <div class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <div class="sidebar-logo">
@@ -871,9 +1039,6 @@
         </div>
     </div>
 
-    <!-- Reference to the external script file for API definitions -->
-    <script src="api_providers.js"></script>
-
     <script>
         const sidebar = document.getElementById('sidebar');
         const initialView = document.getElementById('initial-view');
@@ -891,6 +1056,7 @@
         const userIdElement = document.getElementById('user-id');
         const userAvatarElement = document.getElementById('user-avatar');
         const chatHistoryList = document.getElementById('chat-history-list');
+        const sidebarOverlay = document.querySelector('.sidebar-overlay');
         
         let conversationHistory = [];
         let personas = [];
@@ -904,10 +1070,7 @@
         let conversations = [];
         let currentConversationId = null;
         let isNewConversation = true;
-        
-        // API provider variables
-        let selectedProvider = 'BIGMODEL_PROXY';
-        let selectedModel = 'glm-4.5-flash';
+        let isMobile = window.innerWidth <= 768;
 
         // Initialize personas from localStorage
         function initPersonas() {
@@ -969,7 +1132,24 @@
         }
 
         function toggleSidebar() {
-            sidebar.classList.toggle('collapsed');
+            if (isMobile) {
+                // On mobile, toggle the mobile sidebar
+                sidebar.classList.toggle('mobile-open');
+                sidebarOverlay.classList.toggle('show');
+            } else {
+                // On desktop, toggle the collapsed state
+                sidebar.classList.toggle('collapsed');
+            }
+        }
+
+        function toggleMobileSidebar() {
+            sidebar.classList.toggle('mobile-open');
+            sidebarOverlay.classList.toggle('show');
+        }
+
+        function closeMobileSidebar() {
+            sidebar.classList.remove('mobile-open');
+            sidebarOverlay.classList.remove('show');
         }
 
         function toggleDropdown() {
@@ -980,6 +1160,11 @@
             userDropdown.classList.remove('show');
             personasModal.classList.add('show');
             renderPersonas();
+            
+            // Close mobile sidebar when opening modal
+            if (isMobile) {
+                closeMobileSidebar();
+            }
         }
 
         function closePersonasModal() {
@@ -990,6 +1175,11 @@
             userDropdown.classList.remove('show');
             profileSettingsModal.classList.add('show');
             usernameInput.value = userProfile.username;
+            
+            // Close mobile sidebar when opening modal
+            if (isMobile) {
+                closeMobileSidebar();
+            }
         }
 
         function closeProfileSettingsModal() {
@@ -1201,6 +1391,11 @@
             
             // Update chat history UI
             renderChatHistory();
+            
+            // Close mobile sidebar when starting new conversation
+            if (isMobile) {
+                closeMobileSidebar();
+            }
         }
 
         function loadConversation(conversationId) {
@@ -1232,23 +1427,35 @@
                 
                 // Update chat history UI
                 renderChatHistory();
+                
+                // Close mobile sidebar when loading conversation
+                if (isMobile) {
+                    closeMobileSidebar();
+                }
             }
         }
 
         function deleteConversation(conversationId) {
             if (confirm('Tem certeza de que deseja excluir esta conversa?')) {
-                // Remove from conversations array
-                conversations = conversations.filter(c => c.id !== conversationId);
-                
-                // Save to localStorage
-                saveConversationsToStorage();
-                
-                // If we deleted the current conversation, start a new one
-                if (conversationId === currentConversationId) {
-                    newConversation();
-                } else {
-                    // Just update the UI
-                    renderChatHistory();
+                try {
+                    // Remove from conversations array
+                    conversations = conversations.filter(c => c.id !== conversationId);
+                    
+                    // Save to localStorage
+                    saveConversationsToStorage();
+                    
+                    // If we deleted the current conversation, start a new one
+                    if (conversationId === currentConversationId) {
+                        newConversation();
+                    } else {
+                        // Just update the UI
+                        renderChatHistory();
+                    }
+                    
+                    console.log('Conversation deleted successfully');
+                } catch (error) {
+                    console.error('Error deleting conversation:', error);
+                    alert('Ocorreu um erro ao excluir a conversa. Por favor, tente novamente.');
                 }
             }
         }
@@ -1271,12 +1478,24 @@
                 
                 chatItem.innerHTML = `
                     <div class="chat-history-item-title">${conversation.title}</div>
-                    <div class="chat-history-item-delete" onclick="event.stopPropagation(); deleteConversation('${conversation.id}')">
+                    <div class="chat-history-item-delete" data-id="${conversation.id}">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 6H5H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M19 6V20C19 21.1 18.1 22 17 22H7C5.9 22 5 21.1 5 20V6M8 6V4C8 2.9 8.9 2 10 2H14C15.1 2 16 2.9 16 4V6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </div>
                 `;
                 
-                chatItem.addEventListener('click', () => loadConversation(conversation.id));
+                // Add event listener for loading conversation
+                chatItem.addEventListener('click', function(e) {
+                    if (!e.target.closest('.chat-history-item-delete')) {
+                        loadConversation(conversation.id);
+                    }
+                });
+                
+                // Add event listener for delete button
+                const deleteButton = chatItem.querySelector('.chat-history-item-delete');
+                deleteButton.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    deleteConversation(conversation.id);
+                });
                 
                 chatHistoryList.appendChild(chatItem);
             });
@@ -1420,44 +1639,70 @@
         }
 
         async function getBotResponse() {
-            try {
-                // Build system prompt
-                let systemPrompt = currentPersona.prompt;
+            const botMessage = await callZaiApi();
+            hideThinkingIndicator();
+            if (botMessage) {
+                appendMessage(botMessage, 'bot');
+                conversationHistory.push({ role: "assistant", content: botMessage });
                 
-                // Automatically append username if it's different from default
-                if (userProfile.username !== "Usuário") {
-                    systemPrompt += `\n\nNome de Usuário: ${userProfile.username}`;
-                }
+                // Save the conversation after adding the bot response
+                saveCurrentConversation();
                 
-                // Prepare messages for API
-                const messagesToSend = [{ role: "system", content: systemPrompt }, ...conversationHistory];
-                
-                // Call API through proxy
-                const botMessage = await getApiResponse(
-                    selectedProvider, 
-                    selectedModel, 
-                    messagesToSend, 
-                    null, 
-                    { temperature: 0.9 }
-                );
-                
-                hideThinkingIndicator();
-                if (botMessage) {
-                    appendMessage(botMessage, 'bot');
-                    conversationHistory.push({ role: "assistant", content: botMessage });
-                    
-                    // Save the conversation after adding the bot response
-                    saveCurrentConversation();
-                    
-                    // Update the chat history UI
-                    renderChatHistory();
-                }
-            } catch (error) {
-                console.error('Error getting bot response:', error);
-                hideThinkingIndicator();
-                appendMessage(`Desculpe, encontrei um erro. Verifique a conexão e tente novamente. (${error.message})`, 'bot');
+                // Update the chat history UI
+                renderChatHistory();
             }
         }
+
+        async function callZaiApi() {
+            const apiKey = "86765bb00a5e4e56b36e382ee324c183.ZFwwfI7uDHx8MndT";
+            const url = "https://api.z.ai/api/paas/v4/chat/completions";
+            
+            // Build system prompt
+            let systemPrompt = currentPersona.prompt;
+            
+            // Automatically append username if it's different from default
+            if (userProfile.username !== "Usuário") {
+                systemPrompt += `\n\nNome de Usuário: ${userProfile.username}`;
+            }
+            
+            const messagesToSend = [{ role: "system", content: systemPrompt }, ...conversationHistory];
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ model: "glm-4.5-flash", messages: messagesToSend, temperature: 0.9 })
+                });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(`Erro de API: ${response.status} - ${errorData.error.message || 'Erro desconhecido'}`);
+                }
+                const data = await response.json();
+                return data.choices[0].message.content;
+            } catch (error)
+            {
+                console.error('Erro ao chamar a API Z.AI:', error);
+                const errorMessage = "Desculpe, encontrei um erro. Verifique a chave da API ou a rede e tente novamente. (" + error.message + ")";
+                hideThinkingIndicator();
+                appendMessage(errorMessage, 'bot'); 
+                conversationHistory.pop();
+                return null;
+            }
+        }
+
+        // Handle window resize
+        window.addEventListener('resize', function() {
+            const newIsMobile = window.innerWidth <= 768;
+            if (newIsMobile !== isMobile) {
+                isMobile = newIsMobile;
+                
+                // Reset sidebar state when switching between mobile and desktop
+                if (!isMobile) {
+                    sidebar.classList.remove('mobile-open');
+                    sidebarOverlay.classList.remove('show');
+                }
+            }
+        });
 
         // Initialize personas, user profile, and conversations on page load
         initPersonas();
