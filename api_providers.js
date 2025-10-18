@@ -7,8 +7,8 @@ const PROVIDERS = {
         name: "BigModel (via Proxy)",
         format: "proxy_compatible",
         baseURL: "/api/proxy",
-        availableModels: ["glm-4-flash"],
-        defaultModel: "glm-4-flash",
+        availableModels: ["glm-4.5-flash"],
+        defaultModel: "glm-4.5-flash",
         apiKeyLocation: "none",
         supportsSystemPromptInMessages: true,
         supportsImages: false, // Explicitly mark as not supporting images via proxy
