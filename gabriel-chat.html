@@ -871,112 +871,10 @@
         </div>
     </div>
 
+    <!-- Reference to the external script file for API definitions -->
+    <script src="api_providers.js"></script>
+
     <script>
-        // API Provider Configuration
-        const PROVIDERS = {
-            BIGMODEL_PROXY: {
-                name: "BigModel (via Proxy)",
-                format: "proxy_compatible",
-                baseURL: "/api/proxy",
-                availableModels: ["glm-4.5-flash"],
-                defaultModel: "glm-4.5-flash",
-                apiKeyLocation: "none",
-                supportsSystemPromptInMessages: true,
-                supportsImages: false,
-            }
-        };
-
-        // Helper function to call the API through the proxy
-        async function getApiResponse(providerName, modelName, conversationHistory, options = {}) {
-            console.log(`[API Provider] Requesting completion from ${providerName} using model ${modelName}.`);
-            const providerConfig = PROVIDERS[providerName];
-
-            if (!providerConfig) throw new Error(`Configuration for provider "${providerName}" not found.`);
-
-            let requestURL;
-            const headers = { 'Content-Type': 'application/json' };
-            let requestBody;
-
-            try {
-                // Prepare history for the proxy
-                let processedHistory = conversationHistory
-                    .filter(msg => msg && msg.role && (typeof msg.content === 'string' || msg.role === 'system'))
-                    .filter(msg => providerConfig.supportsSystemPromptInMessages || msg.role !== 'system')
-                    .map(msg => ({ role: msg.role, content: msg.content }));
-
-                // Format request for proxy
-                if (providerConfig.format === "proxy_compatible") {
-                    requestURL = providerConfig.baseURL;
-                    requestBody = {
-                        model: modelName,
-                        messages: processedHistory,
-                        temperature: options.temperature ?? 0.7,
-                        stream: options.stream ?? false,
-                    };
-                    console.log("[API Provider] Using proxy_compatible format.");
-                } else {
-                    throw new Error(`Unsupported provider format: ${providerConfig.format}`);
-                }
-            } catch (error) {
-                console.error(`[API Provider] Error preparing request for ${providerName}:`, error);
-                throw error;
-            }
-
-            console.log(`[API Provider] Calling URL: ${requestURL}`);
-
-            // Fetch and Response Handling
-            try {
-                const response = await fetch(requestURL, {
-                    method: 'POST',
-                    headers: headers,
-                    body: JSON.stringify(requestBody)
-                });
-
-                if (!response.ok) {
-                    let errorData;
-                    let errorMessage = `API Error ${response.status}: ${response.statusText}`;
-                    try {
-                        errorData = await response.json();
-                        console.error(`[API Provider] ${providerName} Error Response Body:`, errorData);
-                        errorMessage = errorData.error?.message
-                                      || errorData.message
-                                      || errorData.details?.[0]?.message
-                                      || errorData.detail
-                                      || (typeof errorData === 'string' ? errorData : JSON.stringify(errorData))
-                                      || errorMessage;
-                    } catch (jsonError) {
-                         console.warn(`[API Provider] Could not parse ${providerName} error response as JSON.`);
-                         try { const textError = await response.text(); if (textError) errorMessage = textError; } catch(textErr) { /* Ignore */ }
-                    }
-                    console.error(`[API Provider] Fetch failed for ${providerName}: Status ${response.status}, Message: ${errorMessage}`);
-                    throw new Error(errorMessage);
-                }
-
-                const data = await response.json();
-                let messageContent = null;
-
-                // Extract response from proxy
-                messageContent = data.choices?.[0]?.message?.content;
-
-                // Allow empty string, but handle null/undefined as error
-                if (messageContent === null || messageContent === undefined) {
-                    console.error(`[API Provider] Invalid response structure from ${providerName}: Could not extract message content. Data:`, data);
-                    throw new Error(`Invalid API response from ${providerName}: Could not find message content.`);
-                }
-                if (messageContent === "") {
-                     console.warn(`[API Provider] Received empty string message content from ${providerName}.`);
-                }
-
-                console.log(`[API Provider] Received successful response from ${providerName}.`);
-                return messageContent; // Return string (could be empty)
-
-            } catch (error) {
-                console.error(`[API Provider] Error during API call to ${providerName}:`, error);
-                if (error instanceof Error) { throw error; }
-                else { throw new Error(String(error)); }
-            }
-        }
-
         const sidebar = document.getElementById('sidebar');
         const initialView = document.getElementById('initial-view');
         const chatView = document.getElementById('chat-view');
@@ -1006,6 +904,10 @@
         let conversations = [];
         let currentConversationId = null;
         let isNewConversation = true;
+        
+        // API provider variables
+        let selectedProvider = 'BIGMODEL_PROXY';
+        let selectedModel = 'glm-4.5-flash';
 
         // Initialize personas from localStorage
         function initPersonas() {
@@ -1518,23 +1420,42 @@
         }
 
         async function getBotResponse() {
-            const botMessage = await getApiResponse(
-                'BIGMODEL_PROXY', 
-                'glm-4.5-flash', 
-                conversationHistory, 
-                null, 
-                { temperature: 0.9 }
-            );
-            hideThinkingIndicator();
-            if (botMessage) {
-                appendMessage(botMessage, 'bot');
-                conversationHistory.push({ role: "assistant", content: botMessage });
+            try {
+                // Build system prompt
+                let systemPrompt = currentPersona.prompt;
                 
-                // Save the conversation after adding the bot response
-                saveCurrentConversation();
+                // Automatically append username if it's different from default
+                if (userProfile.username !== "Usuário") {
+                    systemPrompt += `\n\nNome de Usuário: ${userProfile.username}`;
+                }
                 
-                // Update the chat history UI
-                renderChatHistory();
+                // Prepare messages for API
+                const messagesToSend = [{ role: "system", content: systemPrompt }, ...conversationHistory];
+                
+                // Call API through proxy
+                const botMessage = await getApiResponse(
+                    selectedProvider, 
+                    selectedModel, 
+                    messagesToSend, 
+                    null, 
+                    { temperature: 0.9 }
+                );
+                
+                hideThinkingIndicator();
+                if (botMessage) {
+                    appendMessage(botMessage, 'bot');
+                    conversationHistory.push({ role: "assistant", content: botMessage });
+                    
+                    // Save the conversation after adding the bot response
+                    saveCurrentConversation();
+                    
+                    // Update the chat history UI
+                    renderChatHistory();
+                }
+            } catch (error) {
+                console.error('Error getting bot response:', error);
+                hideThinkingIndicator();
+                appendMessage(`Desculpe, encontrei um erro. Verifique a conexão e tente novamente. (${error.message})`, 'bot');
             }
         }
 
